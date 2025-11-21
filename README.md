@@ -1,367 +1,109 @@
-# JS App Template
+# Quake2TS Explorer
 
-A production-ready template for building React + TypeScript web applications with comprehensive testing infrastructure, CI/CD, and modern build tools.
+A web application to explore and view Quake II PAK file contents using the [quake2ts](https://www.npmjs.com/package/quake2ts) library.
 
-## Features
+## Overview
 
-- **React 19** with TypeScript in strict mode
-- **Vite 7** for lightning-fast development and optimized builds
-- **Jest 29** with React Testing Library for unit and integration tests
-- **Coverage reporting** with 80% threshold (lines, statements), 85% (functions), 70% (branches)
-- **GitHub Actions** CI/CD pipeline testing on Node.js 20.x, 22.x, and 24.x
-- **ESM-first** architecture with proper module resolution
-- **Path aliases** (@/*) for cleaner imports
+Quake2TS Explorer allows you to:
 
-## Quick Start
+- **Load PAK files** via file picker or drag-and-drop
+- **Browse contents** with an interactive file tree
+- **Preview assets** including:
+  - PCX and WAL images/textures
+  - MD2 and MD3 3D models (metadata and frame info)
+  - WAV audio playback
+  - Text/config files
+- **View metadata** for any file in the archive
 
-### 1. Clone this template
-
-```bash
-git clone <your-repo-url> my-new-app
-cd my-new-app
-```
-
-### 2. Install dependencies
+## Getting Started
 
 ```bash
+# Install dependencies
 npm install
-```
 
-### 3. Start development server
-
-```bash
+# Start development server
 npm run dev
+
+# Run tests
+npm run test:unit
+npm run test:integration
+
+# Build for production
+npm run build
 ```
 
-Visit http://localhost:3000 to see your app.
+## Usage
 
-### 4. Run tests
+1. Open the application in your browser
+2. Click "Open PAK File" or drag-and-drop a `.pak` file onto the window
+3. Browse the file tree on the left panel
+4. Click a file to see its preview in the center and metadata on the right
 
-```bash
-# Run all tests
-npm test
+## Architecture
 
-# Run with coverage
-npm run test:coverage
-
-# Watch mode for development
-npm run test:watch
-```
+- **React 19 + TypeScript** frontend with Vite
+- **quake2ts** for PAK file parsing and asset decoding
+- **Jest + jsdom** for unit and integration testing
+- **Canvas** for image/texture rendering
 
 ## Project Structure
 
 ```
-js-app-template/
+quake2ts-explorer/
 ├── src/
-│   ├── components/      # React components
-│   ├── services/        # Business logic and utilities
-│   ├── hooks/           # Custom React hooks
-│   ├── App.tsx          # Main application component
-│   ├── main.tsx         # Application entry point
-│   └── index.css        # Global styles
+│   ├── components/     # React UI components
+│   │   ├── Toolbar.tsx
+│   │   ├── FileTree.tsx
+│   │   ├── PreviewPanel.tsx
+│   │   └── MetadataPanel.tsx
+│   ├── hooks/          # Custom React hooks
+│   ├── services/       # PAK file service layer
+│   │   └── pakService.ts
+│   ├── App.tsx
+│   └── main.tsx
 ├── tests/
-│   ├── setup.ts         # Jest test environment setup
-│   ├── Button.test.tsx  # Example component test
-│   ├── calculator.test.ts  # Example service test
-│   └── useCounter.test.ts  # Example hook test
-├── public/              # Static assets
-├── .github/workflows/   # CI/CD configuration
-│   └── node.js.yml      # GitHub Actions workflow
-├── jest.config.js       # Jest configuration
-├── tsconfig.json        # TypeScript configuration
-├── vite.config.ts       # Vite configuration
-├── babel.config.cjs     # Babel configuration
-└── package.json         # Dependencies and scripts
+│   ├── unit/           # Fast isolated tests with mocks
+│   ├── integration/    # Browser experience tests with canvas
+│   └── utils/          # Shared test utilities
+├── implementation.md   # Detailed implementation plan
+└── package.json
 ```
 
 ## Available Scripts
 
 | Script | Description |
 |--------|-------------|
-| `npm run dev` | Start development server on port 3000 |
+| `npm run dev` | Start development server |
 | `npm run build` | Type-check and build for production |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run all tests |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run test:watch` | Run tests in watch mode |
-| `npm run type-check` | Type-check without building |
-
-## Testing
-
-### Writing Tests
-
-The template includes three types of example tests:
-
-#### 1. Component Tests (`tests/Button.test.tsx`)
-
-```typescript
-import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { Button } from '@/src/components/Button';
-
-it('calls onClick when clicked', async () => {
-  const handleClick = jest.fn();
-  const user = userEvent.setup();
-
-  render(<Button label="Click" onClick={handleClick} />);
-  await user.click(screen.getByTestId('button'));
-
-  expect(handleClick).toHaveBeenCalledTimes(1);
-});
-```
-
-#### 2. Service Tests (`tests/calculator.test.ts`)
-
-```typescript
-import { add, divide } from '@/src/services/calculator';
-
-it('adds two numbers', () => {
-  expect(add(2, 3)).toBe(5);
-});
-
-it('throws error when dividing by zero', () => {
-  expect(() => divide(10, 0)).toThrow('Cannot divide by zero');
-});
-```
-
-#### 3. Hook Tests (`tests/useCounter.test.ts`)
-
-```typescript
-import { renderHook, act } from '@testing-library/react';
-import { useCounter } from '@/src/hooks/useCounter';
-
-it('increments count', () => {
-  const { result } = renderHook(() => useCounter(0));
-
-  act(() => {
-    result.current.increment();
-  });
-
-  expect(result.current.count).toBe(1);
-});
-```
-
-### Coverage Thresholds
-
-The project enforces minimum coverage thresholds:
-
-- **Lines**: 80%
-- **Functions**: 85%
-- **Branches**: 70%
-- **Statements**: 80%
-
-Coverage reports are generated in the `coverage/` directory:
-- `coverage/index.html` - Interactive HTML report
-- `coverage/lcov.info` - LCOV format for CI/CD tools
-
-## CI/CD
-
-### GitHub Actions
-
-The template includes a GitHub Actions workflow (`.github/workflows/node.js.yml`) that:
-
-1. Runs on pushes and pull requests to the `main` branch
-2. Tests on Node.js versions 20.x, 22.x, and 24.x
-3. Installs dependencies with caching
-4. Runs type checking and builds
-5. Executes tests with coverage
-6. Fails if tests fail or coverage thresholds aren't met
-
-### Customizing the Workflow
-
-Edit `.github/workflows/node.js.yml` to:
-- Change target branches
-- Add/remove Node.js versions
-- Add deployment steps
-- Integrate with external services
-
-## Configuration
-
-### TypeScript (`tsconfig.json`)
-
-- **Target**: ES2022
-- **Module**: ESNext (native ES modules)
-- **Strict mode**: Enabled
-- **Path aliases**: `@/*` maps to project root
-
-### Vite (`vite.config.ts`)
-
-- **Dev server**: Port 3000, listening on all interfaces
-- **React plugin**: Fast Refresh enabled
-- **Path aliases**: `@/` maps to project root
-
-### Jest (`jest.config.js`)
-
-- **Environment**: jsdom (browser-like)
-- **Preset**: ts-jest for TypeScript support
-- **Transform**: babel-jest for ESM compatibility
-- **Coverage**: Collects from `src/**/*.{ts,tsx}`, excluding type definitions
-
-### Babel (`babel.config.cjs`)
-
-- **Presets**:
-  - `@babel/preset-env` targeting current Node.js
-  - `@babel/preset-typescript` for TypeScript support
-
-## Customization Guide
-
-### 1. Update Package Name
-
-Edit `package.json`:
-
-```json
-{
-  "name": "my-awesome-app",
-  "version": "1.0.0",
-  "description": "My awesome application"
-}
-```
-
-### 2. Add ESM Dependencies to Transform
-
-If you install ESM-only packages that need transformation, add them to `jest.config.js`:
-
-```javascript
-transformIgnorePatterns: [
-  'node_modules/(?!(your-esm-package|another-package)/)',
-],
-```
-
-### 3. Adjust Coverage Thresholds
-
-Edit `jest.config.js` if the default thresholds are too strict/lenient:
-
-```javascript
-coverageThreshold: {
-  global: {
-    lines: 75,      // Lower if needed
-    functions: 80,
-    branches: 65,
-    statements: 75,
-  },
-},
-```
-
-### 4. Add Environment Variables
-
-For development, create `.env.local` (gitignored):
-
-```bash
-VITE_API_URL=http://localhost:3001
-```
-
-Access in code:
-
-```typescript
-const apiUrl = import.meta.env.VITE_API_URL;
-```
-
-Update `vite.config.ts` for more complex environment variable handling.
-
-### 5. Remove Example Code
-
-When starting your project, remove:
-
-```bash
-rm src/components/Button.tsx
-rm src/services/calculator.ts
-rm src/hooks/useCounter.ts
-rm tests/Button.test.tsx
-rm tests/calculator.test.ts
-rm tests/useCounter.test.ts
-```
-
-Then update `src/App.tsx` with your own components.
-
-## Best Practices
-
-### File Organization
-
-- **Components**: React UI components in `src/components/`
-- **Services**: Business logic, API calls, utilities in `src/services/`
-- **Hooks**: Custom React hooks in `src/hooks/`
-- **Tests**: All tests in `tests/` directory matching `*.test.{ts,tsx}`
-
-### Test File Naming
-
-- Component tests: `ComponentName.test.tsx`
-- Service/utility tests: `serviceName.test.ts`
-- Hook tests: `useHookName.test.ts`
-
-### Path Aliases
-
-Use `@/` prefix for absolute imports:
-
-```typescript
-// Good
-import { Button } from '@/src/components/Button';
-import { add } from '@/src/services/calculator';
-
-// Avoid
-import { Button } from '../../components/Button';
-```
-
-### Test Coverage
-
-- Aim for meaningful tests, not just coverage numbers
-- Focus on testing behavior, not implementation details
-- Test edge cases and error conditions
-- Use descriptive test names
-
-## Troubleshooting
-
-### Tests Failing with Module Resolution Errors
-
-If you see `Cannot find module` errors:
-
-1. Check that path aliases in `jest.config.js` match `tsconfig.json`
-2. Verify ESM packages are listed in `transformIgnorePatterns`
-3. Ensure `.js` extension mapping is configured in `moduleNameMapper`
-
-### Memory Issues During Tests
-
-If tests crash with out-of-memory errors:
-
-1. Increase `NODE_OPTIONS` in package.json scripts
-2. Reduce `maxWorkers` in `jest.config.js`
-3. Adjust `workerIdleMemoryLimit` setting
-
-### Vite Build Errors
-
-If the build fails:
-
-1. Run `npm run type-check` to see TypeScript errors
-2. Check that all imports use correct file extensions
-3. Verify that environment variables are prefixed with `VITE_`
-
-## Requirements
-
-- **Node.js**: >= 20.0.0
-- **npm**: 7.x or higher (comes with Node.js 20+)
+| `npm run test:unit` | Run unit tests with mocks |
+| `npm run test:integration` | Run integration tests |
+| `npm run test:coverage` | Run unit tests with coverage report |
+
+## Supported File Types
+
+| Extension | Type | Preview |
+|-----------|------|---------|
+| `.pcx` | Image | Canvas render |
+| `.wal` | Texture | Canvas render |
+| `.md2` | Model | Frame/animation info |
+| `.md3` | Model | Surface/tag info |
+| `.wav` | Audio | Playback controls |
+| `.txt`, `.cfg` | Text | Text viewer |
+| Other | Binary | Hex dump |
+
+## Technology Stack
+
+- [React 19](https://react.dev/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [Vite](https://vite.dev/)
+- [quake2ts](https://www.npmjs.com/package/quake2ts)
+- [Jest](https://jestjs.io/)
+- [React Testing Library](https://testing-library.com/)
+
+## Development
+
+See [implementation.md](implementation.md) for detailed implementation plan and progress tracking.
 
 ## License
 
-This template is open source and available under the MIT License.
-
-## Contributing
-
-Feel free to customize this template for your needs. Common customizations:
-
-- Add linting (ESLint, Prettier)
-- Add styling solutions (Tailwind, styled-components)
-- Add routing (React Router)
-- Add state management (Redux, Zustand, Jotai)
-- Add API client libraries (axios, React Query)
-- Add UI component libraries (Material-UI, Chakra UI)
-
-## Support
-
-For issues with:
-- **This template**: Create an issue in your repository
-- **Vite**: https://github.com/vitejs/vite
-- **Jest**: https://jestjs.io/
-- **React Testing Library**: https://testing-library.com/
-
-## Acknowledgments
-
-This template is inspired by modern React development best practices and includes testing infrastructure patterns from production applications.
+MIT

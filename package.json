@@ -1,9 +1,9 @@
 {
-  "name": "js-app-template",
+  "name": "quake2ts-explorer",
   "private": true,
   "version": "0.1.0",
   "type": "module",
-  "description": "A template for React + TypeScript web applications with comprehensive testing setup",
+  "description": "A web application to explore and view Quake II PAK file contents using quake2ts",
   "engines": {
     "node": ">=20.0.0"
   },
@@ -20,6 +20,7 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
+    "@wasm-audio-decoders/ogg-vorbis": "^0.1.20",
     "quake2ts": "^0.0.59",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -30,6 +31,7 @@
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@jest/globals": "^29.7.0",
+    "@napi-rs/canvas": "^0.1.82",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

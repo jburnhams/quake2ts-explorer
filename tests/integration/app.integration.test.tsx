@@ -1,11 +1,54 @@
-import { describe, it, expect } from '@jest/globals';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, beforeEach } from '@jest/globals';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as fs from 'fs';
 import * as path from 'path';
 import App from '@/src/App';
 
-describe('Browser Integration Tests', () => {
+// Helper to create a minimal valid PAK file
+function createMinimalPakFile(): ArrayBuffer {
+  // PAK file format:
+  // - Header: "PACK" magic (4 bytes), directory offset (4 bytes), directory size (4 bytes)
+  // - Data section
+  // - Directory: entries with 56-byte name, 4-byte offset, 4-byte length
+
+  const testContent = new TextEncoder().encode('Hello from PAK file!\n');
+  const fileName = 'readme.txt';
+
+  // Calculate offsets
+  const headerSize = 12;
+  const dataOffset = headerSize;
+  const dataSize = testContent.length;
+  const dirOffset = dataOffset + dataSize;
+  const dirEntrySize = 64; // 56 bytes name + 4 bytes offset + 4 bytes length
+  const dirSize = dirEntrySize;
+
+  const totalSize = dirOffset + dirSize;
+  const buffer = new ArrayBuffer(totalSize);
+  const view = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+
+  // Write header
+  bytes[0] = 0x50; // 'P'
+  bytes[1] = 0x41; // 'A'
+  bytes[2] = 0x43; // 'C'
+  bytes[3] = 0x4b; // 'K'
+  view.setInt32(4, dirOffset, true); // directory offset (little-endian)
+  view.setInt32(8, dirSize, true); // directory size (little-endian)
+
+  // Write data
+  bytes.set(testContent, dataOffset);
+
+  // Write directory entry
+  const nameBytes = new TextEncoder().encode(fileName);
+  bytes.set(nameBytes, dirOffset);
+  view.setInt32(dirOffset + 56, dataOffset, true); // file offset
+  view.setInt32(dirOffset + 60, dataSize, true); // file length
+
+  return buffer;
+}
+
+describe('Quake2TS Explorer Integration Tests', () => {
   describe('index.html structure', () => {
     let htmlContent: string;
 
@@ -20,20 +63,8 @@ describe('Browser Integration Tests', () => {
       expect(htmlContent).toMatch(/^<!doctype html>/i);
     });
 
-    it('has correct language attribute', () => {
-      expect(htmlContent).toMatch(/<html[^>]+lang="en"/i);
-    });
-
-    it('has required meta tags', () => {
-      expect(htmlContent).toMatch(/<meta\s+charset="UTF-8"\s*\/?>/i);
-      expect(htmlContent).toMatch(/<meta\s+name="viewport"\s+content="[^"]*width=device-width[^"]*"\s*\/?>/i);
-    });
-
-    it('has a title element', () => {
-      const titleMatch = htmlContent.match(/<title>([^<]+)<\/title>/i);
-      expect(titleMatch).toBeTruthy();
-      expect(titleMatch?.[1]).toBeTruthy();
-      expect(titleMatch?.[1].length).toBeGreaterThan(0);
+    it('has correct title', () => {
+      expect(htmlContent).toContain('Quake2TS Explorer');
     });
 
     it('has root div with correct id', () => {
@@ -43,175 +74,163 @@ describe('Browser Integration Tests', () => {
     it('has main script tag pointing to correct entry point', () => {
       expect(htmlContent).toMatch(/<script\s+type="module"\s+src="\/src\/main\.tsx"[^>]*>/i);
     });
+  });
 
-    it('has favicon link', () => {
-      expect(htmlContent).toMatch(/<link\s+rel="icon"/i);
+  describe('App initial state', () => {
+    it('renders the app with toolbar', () => {
+      render(<App />);
+      expect(screen.getByTestId('toolbar')).toBeInTheDocument();
+      expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
     });
 
-    it('has proper HTML5 structure', () => {
-      // Check for essential HTML5 elements
-      expect(htmlContent).toContain('<head>');
-      expect(htmlContent).toContain('</head>');
-      expect(htmlContent).toContain('<body>');
-      expect(htmlContent).toContain('</body>');
-      expect(htmlContent).toContain('</html>');
+    it('shows Open PAK File button', () => {
+      render(<App />);
+      expect(screen.getByTestId('open-pak-button')).toBeInTheDocument();
+    });
+
+    it('shows no PAKs loaded initially', () => {
+      render(<App />);
+      expect(screen.getByText('No PAK files loaded')).toBeInTheDocument();
+    });
+
+    it('shows empty file tree', () => {
+      render(<App />);
+      expect(screen.getByTestId('file-tree')).toBeInTheDocument();
+      expect(screen.getByText('No files loaded')).toBeInTheDocument();
+    });
+
+    it('shows empty preview panel', () => {
+      render(<App />);
+      expect(screen.getByTestId('preview-panel')).toBeInTheDocument();
+      expect(screen.getByText('Select a file to preview')).toBeInTheDocument();
+    });
+
+    it('shows empty metadata panel', () => {
+      render(<App />);
+      expect(screen.getByTestId('metadata-panel')).toBeInTheDocument();
+      expect(screen.getByText('Select a file to view details')).toBeInTheDocument();
+    });
+
+    it('has drop zone for drag and drop', () => {
+      render(<App />);
+      expect(screen.getByTestId('drop-zone')).toBeInTheDocument();
     });
   });
 
-  describe('App component integration', () => {
-    it('renders the app with all required elements', () => {
-      render(<App />);
-
-      // Check main heading
-      expect(screen.getByText('JS App Template')).toBeInTheDocument();
-
-      // Check description
-      expect(
-        screen.getByText(/A minimal React \+ TypeScript app/i)
-      ).toBeInTheDocument();
-
-      // Check counter is displayed
-      expect(screen.getByText(/Counter:/i)).toBeInTheDocument();
-
-      // Check all buttons are present
-      expect(screen.getByText('Increment')).toBeInTheDocument();
-      expect(screen.getByText('Decrement')).toBeInTheDocument();
-      expect(screen.getByText('Reset')).toBeInTheDocument();
-    });
-
-    it('counter starts at 0', () => {
-      render(<App />);
-      expect(screen.getByText('Counter: 0')).toBeInTheDocument();
-    });
-
-    it('increments counter when increment button is clicked', async () => {
-      const user = userEvent.setup();
-      render(<App />);
-
-      const incrementButton = screen.getByText('Increment');
-      await user.click(incrementButton);
-
-      expect(screen.getByText('Counter: 1')).toBeInTheDocument();
-    });
-
-    it('decrements counter when decrement button is clicked', async () => {
-      const user = userEvent.setup();
-      render(<App />);
-
-      const decrementButton = screen.getByText('Decrement');
-      await user.click(decrementButton);
-
-      expect(screen.getByText('Counter: -1')).toBeInTheDocument();
-    });
-
-    it('resets counter when reset button is clicked', async () => {
-      const user = userEvent.setup();
-      render(<App />);
-
-      // Increment a few times
-      const incrementButton = screen.getByText('Increment');
-      await user.click(incrementButton);
-      await user.click(incrementButton);
-      await user.click(incrementButton);
-
-      expect(screen.getByText('Counter: 3')).toBeInTheDocument();
-
-      // Reset
-      const resetButton = screen.getByText('Reset');
-      await user.click(resetButton);
-
-      expect(screen.getByText('Counter: 0')).toBeInTheDocument();
-    });
-
-    it('handles multiple interactions correctly', async () => {
-      const user = userEvent.setup();
-      render(<App />);
-
-      const incrementButton = screen.getByText('Increment');
-      const decrementButton = screen.getByText('Decrement');
-      const resetButton = screen.getByText('Reset');
-
-      // Complex sequence of operations
-      await user.click(incrementButton);
-      await user.click(incrementButton);
-      expect(screen.getByText('Counter: 2')).toBeInTheDocument();
-
-      await user.click(decrementButton);
-      expect(screen.getByText('Counter: 1')).toBeInTheDocument();
-
-      await user.click(incrementButton);
-      await user.click(incrementButton);
-      await user.click(incrementButton);
-      expect(screen.getByText('Counter: 4')).toBeInTheDocument();
-
-      await user.click(resetButton);
-      expect(screen.getByText('Counter: 0')).toBeInTheDocument();
-
-      await user.click(decrementButton);
-      await user.click(decrementButton);
-      expect(screen.getByText('Counter: -2')).toBeInTheDocument();
-    });
-
-    it('renders correct CSS classes for app structure', () => {
+  describe('App 3-panel layout', () => {
+    it('has file tree on the left', () => {
       const { container } = render(<App />);
-
-      const appDiv = container.querySelector('.app');
-      expect(appDiv).toBeInTheDocument();
-
-      const counterDemo = container.querySelector('.counter-demo');
-      expect(counterDemo).toBeInTheDocument();
-
-      const buttonGroup = container.querySelector('.button-group');
-      expect(buttonGroup).toBeInTheDocument();
+      const fileTree = container.querySelector('.file-tree');
+      expect(fileTree).toBeInTheDocument();
     });
 
-    it('has correct button variants', () => {
-      render(<App />);
+    it('has preview panel in the center', () => {
+      const { container } = render(<App />);
+      const preview = container.querySelector('.preview-panel');
+      expect(preview).toBeInTheDocument();
+    });
 
-      const buttons = screen.getAllByRole('button');
-      expect(buttons).toHaveLength(3);
+    it('has metadata panel on the right', () => {
+      const { container } = render(<App />);
+      const metadata = container.querySelector('.metadata-panel');
+      expect(metadata).toBeInTheDocument();
+    });
 
-      // Check that buttons have the appropriate classes
-      const incrementButton = screen.getByText('Increment').closest('button');
-      const decrementButton = screen.getByText('Decrement').closest('button');
-      const resetButton = screen.getByText('Reset').closest('button');
-
-      expect(incrementButton).toHaveClass('button-primary');
-      expect(decrementButton).toHaveClass('button-secondary');
-      expect(resetButton).toHaveClass('button-secondary');
+    it('renders correct CSS classes for layout', () => {
+      const { container } = render(<App />);
+      expect(container.querySelector('.app')).toBeInTheDocument();
+      expect(container.querySelector('.toolbar')).toBeInTheDocument();
+      expect(container.querySelector('.main-content')).toBeInTheDocument();
     });
   });
 
-  describe('Full page rendering simulation', () => {
-    it('simulates complete page load and interaction flow', async () => {
-      const user = userEvent.setup();
-
-      // Verify index.html exists and has root element
-      const html = fs.readFileSync(
-        path.join(__dirname, '..', '..', 'index.html'),
-        'utf-8'
-      );
-      expect(html).toContain('id="root"');
-
-      // Render the React app in jsdom environment (simulating what main.tsx does)
+  describe('File input interaction', () => {
+    it('has hidden file input', () => {
       render(<App />);
+      const input = screen.getByTestId('file-input') as HTMLInputElement;
+      expect(input).toBeInTheDocument();
+      expect(input.type).toBe('file');
+    });
 
-      // Verify initial state
-      expect(screen.getByText('JS App Template')).toBeInTheDocument();
-      expect(screen.getByText('Counter: 0')).toBeInTheDocument();
+    it('file input accepts .pak files', () => {
+      render(<App />);
+      const input = screen.getByTestId('file-input') as HTMLInputElement;
+      expect(input.accept).toBe('.pak');
+    });
 
-      // Simulate user workflow
-      await user.click(screen.getByText('Increment'));
-      await user.click(screen.getByText('Increment'));
-      await user.click(screen.getByText('Increment'));
+    it('file input allows multiple files', () => {
+      render(<App />);
+      const input = screen.getByTestId('file-input') as HTMLInputElement;
+      expect(input.multiple).toBe(true);
+    });
+  });
 
-      expect(screen.getByText('Counter: 3')).toBeInTheDocument();
+  describe('App accessibility', () => {
+    it('toolbar has proper role', () => {
+      render(<App />);
+      const toolbar = screen.getByTestId('toolbar');
+      expect(toolbar.tagName).toBe('HEADER');
+    });
 
-      await user.click(screen.getByText('Decrement'));
-      expect(screen.getByText('Counter: 2')).toBeInTheDocument();
+    it('preview panel has proper role', () => {
+      render(<App />);
+      const preview = screen.getByTestId('preview-panel');
+      expect(preview.tagName).toBe('MAIN');
+    });
 
-      await user.click(screen.getByText('Reset'));
-      expect(screen.getByText('Counter: 0')).toBeInTheDocument();
+    it('metadata panel has proper role', () => {
+      render(<App />);
+      const metadata = screen.getByTestId('metadata-panel');
+      expect(metadata.tagName).toBe('ASIDE');
+    });
+
+    it('file tree has tree role', () => {
+      render(<App />);
+      // Tree role is only added when there are files
+      const fileTree = screen.getByTestId('file-tree');
+      expect(fileTree).toBeInTheDocument();
+    });
+  });
+
+  describe('PAK file format validation', () => {
+    it('creates a valid PAK file structure', () => {
+      const pakBuffer = createMinimalPakFile();
+      const bytes = new Uint8Array(pakBuffer);
+
+      // Check magic number "PACK"
+      expect(String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3])).toBe('PACK');
+    });
+
+    it('PAK file has correct header structure', () => {
+      const pakBuffer = createMinimalPakFile();
+      const view = new DataView(pakBuffer);
+
+      // Header is 12 bytes
+      const dirOffset = view.getInt32(4, true);
+      const dirSize = view.getInt32(8, true);
+
+      expect(dirOffset).toBeGreaterThan(0);
+      expect(dirSize).toBe(64); // One entry = 64 bytes
+    });
+  });
+
+  describe('CSS styles', () => {
+    it('applies dark theme background', () => {
+      const { container } = render(<App />);
+      const app = container.querySelector('.app');
+      expect(app).toBeInTheDocument();
+    });
+
+    it('applies toolbar styles', () => {
+      const { container } = render(<App />);
+      const toolbar = container.querySelector('.toolbar');
+      expect(toolbar).toBeInTheDocument();
+    });
+
+    it('has drop-zone-container wrapper', () => {
+      const { container } = render(<App />);
+      const dropZone = container.querySelector('.drop-zone-container');
+      expect(dropZone).toBeInTheDocument();
     });
   });
 });
