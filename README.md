@@ -15,23 +15,6 @@ Quake2TS Explorer allows you to:
   - Text/config files
 - **View metadata** for any file in the archive
 
-## Getting Started
-
-```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Run tests
-npm run test:unit
-npm run test:integration
-
-# Build for production
-npm run build
-```
-
 ## Usage
 
 1. Open the application in your browser
@@ -45,39 +28,6 @@ npm run build
 - **quake2ts** for PAK file parsing and asset decoding
 - **Jest + jsdom** for unit and integration testing
 - **Canvas** for image/texture rendering
-
-## Project Structure
-
-```
-quake2ts-explorer/
-├── src/
-│   ├── components/     # React UI components
-│   │   ├── Toolbar.tsx
-│   │   ├── FileTree.tsx
-│   │   ├── PreviewPanel.tsx
-│   │   └── MetadataPanel.tsx
-│   ├── hooks/          # Custom React hooks
-│   ├── services/       # PAK file service layer
-│   │   └── pakService.ts
-│   ├── App.tsx
-│   └── main.tsx
-├── tests/
-│   ├── unit/           # Fast isolated tests with mocks
-│   ├── integration/    # Browser experience tests with canvas
-│   └── utils/          # Shared test utilities
-├── implementation.md   # Detailed implementation plan
-└── package.json
-```
-
-## Available Scripts
-
-| Script | Description |
-|--------|-------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Type-check and build for production |
-| `npm run test:unit` | Run unit tests with mocks |
-| `npm run test:integration` | Run integration tests |
-| `npm run test:coverage` | Run unit tests with coverage report |
 
 ## Supported File Types
 
