@@ -5,6 +5,7 @@ const baseConfig = {
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '\\.(css|less|scss|sass)$': '<rootDir>/tests/utils/styleMock.js',
   },
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': [
@@ -17,7 +18,7 @@ const baseConfig = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!(your-esm-package-here)/)'],
+  transformIgnorePatterns: ['node_modules/(?!(quake2ts|@wasm-audio-decoders|codec-parser|@eshaz|ogg-opus-decoder|mpg123-decoder|ogg-vorbis-decoder)/)'],
   setupFilesAfterEnv: ['<rootDir>/tests/utils/setup.ts'],
   maxWorkers: 2,
   workerIdleMemoryLimit: '512MB',

@@ -1,24 +1,57 @@
 import React from 'react';
-import { Button } from './components/Button';
-import { useCounter } from './hooks/useCounter';
+import { Toolbar } from './components/Toolbar';
+import { FileTree } from './components/FileTree';
+import { PreviewPanel } from './components/PreviewPanel';
+import { MetadataPanel } from './components/MetadataPanel';
+import { DropZone } from './components/DropZone';
+import { usePakExplorer } from './hooks/usePakExplorer';
+import './App.css';
 
 function App() {
-  const { count, increment, decrement, reset } = useCounter(0);
+  const {
+    fileTree,
+    selectedPath,
+    metadata,
+    parsedFile,
+    pakCount,
+    fileCount,
+    loading,
+    error,
+    handleFileSelect,
+    handleTreeSelect,
+    dismissError,
+  } = usePakExplorer();
 
   return (
-    <div className="app">
-      <h1>JS App Template</h1>
-      <p>A minimal React + TypeScript app with comprehensive testing setup</p>
-
-      <div className="counter-demo">
-        <h2>Counter: {count}</h2>
-        <div className="button-group">
-          <Button label="Increment" onClick={increment} variant="primary" />
-          <Button label="Decrement" onClick={decrement} variant="secondary" />
-          <Button label="Reset" onClick={reset} variant="secondary" />
+    <DropZone onDrop={handleFileSelect}>
+      <div className="app" data-testid="app">
+        <Toolbar
+          onFileSelect={handleFileSelect}
+          pakCount={pakCount}
+          fileCount={fileCount}
+        />
+        {error && (
+          <div className="error-banner" data-testid="error-banner">
+            {error}
+            <button onClick={dismissError}>Dismiss</button>
+          </div>
+        )}
+        {loading && (
+          <div className="loading-banner" data-testid="loading-banner">
+            Loading PAK file...
+          </div>
+        )}
+        <div className="main-content">
+          <FileTree
+            root={fileTree}
+            selectedPath={selectedPath}
+            onSelect={handleTreeSelect}
+          />
+          <PreviewPanel parsedFile={parsedFile} filePath={selectedPath} />
+          <MetadataPanel metadata={metadata} parsedFile={parsedFile} />
         </div>
       </div>
-    </div>
+    </DropZone>
   );
 }
 
