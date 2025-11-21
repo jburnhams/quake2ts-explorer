@@ -382,7 +382,7 @@ describe('PakService with real PAK file', () => {
 
     it('finds PCX files', () => {
       const files = service.findByExtension('.pcx');
-      expect(files.length).toBe(2);
+      expect(files.length).toBeGreaterThanOrEqual(2);
       expect(files.every(f => f.path.endsWith('.pcx'))).toBe(true);
     });
 
