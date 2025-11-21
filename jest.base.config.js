@@ -6,6 +6,7 @@ const baseConfig = {
     '^@/(.*)$': '<rootDir>/$1',
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/utils/styleMock.js',
+    'quake2ts': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
   },
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': [
@@ -13,6 +14,7 @@ const baseConfig = {
       {
         presets: [
           ['@babel/preset-env', { targets: { node: 'current' } }],
+          ['@babel/preset-react', { runtime: 'automatic' }],
           '@babel/preset-typescript',
         ],
       },
