@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
-import { PakArchive, VirtualFileSystem } from 'quake2ts/engine';
+import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from 'quake2ts/engine';
 
 describe('PAK File Integration Tests', () => {
   const pakPath = path.join(__dirname, '..', '..', 'pak.pak');
@@ -251,6 +251,165 @@ describe('PAK File Integration Tests', () => {
 
     it('should throw when reading non-existent files', async () => {
       await expect(vfs.readFile('nonexistent.txt')).rejects.toThrow();
+    });
+  });
+
+  describe('MD2 Model parsing', () => {
+    const md2Path = 'models/deadbods/dude/tris.md2';
+
+    it('should contain the tris.md2 model file', () => {
+      expect(vfs.hasFile(md2Path)).toBe(true);
+    });
+
+    it('should read MD2 file with valid header magic', async () => {
+      const data = await vfs.readFile(md2Path);
+      expect(data).toBeInstanceOf(Uint8Array);
+
+      // MD2 files start with "IDP2" magic
+      const magic = String.fromCharCode(data[0], data[1], data[2], data[3]);
+      expect(magic).toBe('IDP2');
+    });
+
+    it('should parse MD2 model header correctly', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.header).toBeDefined();
+      expect(model.header.numVertices).toBeGreaterThan(0);
+      expect(model.header.numTriangles).toBeGreaterThan(0);
+      expect(model.header.numFrames).toBeGreaterThan(0);
+      expect(model.header.skinWidth).toBeGreaterThan(0);
+      expect(model.header.skinHeight).toBeGreaterThan(0);
+    });
+
+    it('should parse MD2 frames', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.frames.length).toBe(model.header.numFrames);
+      expect(model.frames.length).toBeGreaterThan(0);
+
+      // Each frame should have vertices
+      for (const frame of model.frames) {
+        expect(frame.name).toBeDefined();
+        expect(frame.name.length).toBeGreaterThan(0);
+        expect(frame.vertices.length).toBe(model.header.numVertices);
+      }
+    });
+
+    it('should parse MD2 triangles', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.triangles.length).toBe(model.header.numTriangles);
+
+      // Each triangle should have valid vertex indices
+      for (const tri of model.triangles) {
+        expect(tri.vertexIndices).toHaveLength(3);
+        expect(tri.texCoordIndices).toHaveLength(3);
+        for (const idx of tri.vertexIndices) {
+          expect(idx).toBeGreaterThanOrEqual(0);
+          expect(idx).toBeLessThan(model.header.numVertices);
+        }
+      }
+    });
+
+    it('should parse MD2 skins', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.skins.length).toBe(model.header.numSkins);
+
+      // Check skin paths are valid strings
+      for (const skin of model.skins) {
+        expect(typeof skin.name).toBe('string');
+      }
+    });
+
+    it('should parse MD2 texture coordinates', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.texCoords.length).toBe(model.header.numTexCoords);
+
+      // Texture coords should be within valid range
+      for (const tc of model.texCoords) {
+        expect(typeof tc.s).toBe('number');
+        expect(typeof tc.t).toBe('number');
+      }
+    });
+
+    it('should parse MD2 GL commands', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      expect(model.glCommands.length).toBeGreaterThan(0);
+
+      // GL commands should have valid mode
+      for (const cmd of model.glCommands) {
+        expect(['strip', 'fan']).toContain(cmd.mode);
+        expect(cmd.vertices.length).toBeGreaterThanOrEqual(3);
+      }
+    });
+
+    it('should group animations from frame names', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+      const animations = groupMd2Animations(model.frames);
+
+      expect(animations.length).toBeGreaterThan(0);
+
+      // Each animation should have valid frame range
+      for (const anim of animations) {
+        expect(anim.name.length).toBeGreaterThan(0);
+        expect(anim.firstFrame).toBeGreaterThanOrEqual(0);
+        expect(anim.lastFrame).toBeGreaterThanOrEqual(anim.firstFrame);
+        expect(anim.lastFrame).toBeLessThan(model.frames.length);
+      }
+    });
+
+    it('should have frame vertices with valid positions and normals', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      const frame = model.frames[0];
+      expect(frame.vertices.length).toBeGreaterThan(0);
+
+      for (const vertex of frame.vertices) {
+        // Position should be a Vec3 object with x, y, z
+        expect(vertex.position).toBeDefined();
+        expect(typeof vertex.position.x).toBe('number');
+        expect(typeof vertex.position.y).toBe('number');
+        expect(typeof vertex.position.z).toBe('number');
+
+        // Normal should be a Vec3 object with x, y, z
+        expect(vertex.normal).toBeDefined();
+        expect(typeof vertex.normal.x).toBe('number');
+        expect(typeof vertex.normal.y).toBe('number');
+        expect(typeof vertex.normal.z).toBe('number');
+      }
+    });
+
+    it('should have associated skin file in PAK', async () => {
+      const data = await vfs.readFile(md2Path);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const model = parseMd2(buffer);
+
+      // Check if any referenced skins exist in the PAK
+      const skinPath = 'models/deadbods/dude/dead1.pcx';
+      expect(vfs.hasFile(skinPath)).toBe(true);
+
+      // Verify the skin is a valid PCX
+      const skinData = await vfs.readFile(skinPath);
+      expect(skinData[0]).toBe(0x0A); // PCX magic byte
     });
   });
 });

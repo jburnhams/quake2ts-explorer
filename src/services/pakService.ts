@@ -6,11 +6,13 @@ import {
   parseWal,
   walToRgba,
   parseMd2,
+  groupMd2Animations,
   parseMd3,
   parseWav,
   type PcxImage,
   type WalTexture,
   type Md2Model,
+  type Md2Animation,
   type Md3Model,
   type WavData,
 } from 'quake2ts/engine';
@@ -65,7 +67,10 @@ export interface ParsedWal {
 export interface ParsedMd2 {
   type: 'md2';
   model: Md2Model;
+  animations: Md2Animation[];
 }
+
+export type { Md2Animation };
 
 export interface ParsedMd3 {
   type: 'md3';
@@ -207,7 +212,8 @@ export class PakService {
       }
       case 'md2': {
         const model = parseMd2(buffer);
-        return { type: 'md2', model };
+        const animations = groupMd2Animations(model.frames);
+        return { type: 'md2', model, animations };
       }
       case 'md3': {
         const model = parseMd3(buffer);

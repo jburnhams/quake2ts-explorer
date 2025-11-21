@@ -421,6 +421,74 @@ body {
   word-break: break-all;
 }
 
+/* MD2 Model Details */
+.md2-skin-list,
+.md2-animation-list,
+.md2-frame-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.75rem;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.md2-skin-item,
+.md2-animation-item,
+.md2-frame-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+}
+
+.md2-skin-path,
+.md2-frame-name {
+  color: var(--text-secondary);
+  word-break: break-all;
+}
+
+.md2-animation-name {
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.md2-animation-frames {
+  color: var(--text-secondary);
+}
+
+.md2-frame-index {
+  color: var(--accent);
+  min-width: 24px;
+}
+
+.md2-no-skins {
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.md2-skin-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.md2-skin-link:hover {
+  color: #ff6b6b;
+}
+
+.md2-skin-missing {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 /* Drop Zone */
 .drop-zone-container {
   height: 100%;

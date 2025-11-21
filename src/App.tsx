@@ -20,6 +20,7 @@ function App() {
     error,
     handleFileSelect,
     handleTreeSelect,
+    hasFile,
     dismissError,
   } = usePakExplorer();
 
@@ -73,7 +74,12 @@ function App() {
             title="Details"
             testId="metadata-panel-wrapper"
           >
-            <MetadataPanel metadata={metadata} parsedFile={parsedFile} />
+            <MetadataPanel
+              metadata={metadata}
+              parsedFile={parsedFile}
+              hasFile={hasFile}
+              onNavigateToFile={handleTreeSelect}
+            />
           </ResizablePanel>
         </div>
       </div>
