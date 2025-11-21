@@ -468,6 +468,27 @@ body {
   font-style: italic;
 }
 
+.md2-skin-link {
+  background: none;
+  border: none;
+  color: var(--accent);
+  cursor: pointer;
+  text-align: left;
+  padding: 0;
+  font-size: inherit;
+  text-decoration: underline;
+  word-break: break-all;
+}
+
+.md2-skin-link:hover {
+  color: #ff6b6b;
+}
+
+.md2-skin-missing {
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
 /* Drop Zone */
 .drop-zone-container {
   height: 100%;

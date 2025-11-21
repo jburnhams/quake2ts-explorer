@@ -91,12 +91,61 @@ describe('MetadataPanel Component', () => {
         },
         animations: [{ name: 'stand', firstFrame: 0, lastFrame: 0 }],
       };
-      render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} />);
+      const hasFile = jest.fn(() => true);
+      const onNavigateToFile = jest.fn();
+      render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
       expect(screen.getByTestId('md2-details')).toBeInTheDocument();
       expect(screen.getByText('200')).toBeInTheDocument(); // vertices
       expect(screen.getByText('100')).toBeInTheDocument(); // triangles
       expect(screen.getByText('stand')).toBeInTheDocument(); // animation name
-      expect(screen.getByText('models/test/skin.pcx')).toBeInTheDocument(); // skin path
+      expect(screen.getByText('models/test/skin.pcx')).toBeInTheDocument(); // skin path as button text
+    });
+
+    it('shows clickable skin links when file exists', () => {
+      const md2Metadata: FileMetadata = { ...mockMetadata, path: 'models/test.md2', name: 'test.md2', extension: 'md2', fileType: 'md2' };
+      const parsedMd2: ParsedFile = {
+        type: 'md2',
+        model: {
+          header: { numFrames: 1, numVertices: 10, numTriangles: 5, numSkins: 1, numGlCommands: 10, skinWidth: 256, skinHeight: 256 },
+          frames: [{ name: 'frame01', vertices: [] }],
+          skins: [{ name: 'models/test/skin.pcx' }],
+          texCoords: [],
+          triangles: [],
+          glCommands: [],
+        },
+        animations: [],
+      };
+      const hasFile = jest.fn(() => true);
+      const onNavigateToFile = jest.fn();
+      render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
+
+      const skinButton = screen.getByRole('button', { name: /models\/test\/skin\.pcx/i });
+      expect(skinButton).toBeInTheDocument();
+
+      skinButton.click();
+      expect(onNavigateToFile).toHaveBeenCalledWith('models/test/skin.pcx');
+    });
+
+    it('shows missing indicator for non-existent skins', () => {
+      const md2Metadata: FileMetadata = { ...mockMetadata, path: 'models/test.md2', name: 'test.md2', extension: 'md2', fileType: 'md2' };
+      const parsedMd2: ParsedFile = {
+        type: 'md2',
+        model: {
+          header: { numFrames: 1, numVertices: 10, numTriangles: 5, numSkins: 1, numGlCommands: 10, skinWidth: 256, skinHeight: 256 },
+          frames: [{ name: 'frame01', vertices: [] }],
+          skins: [{ name: 'models/missing/skin.pcx' }],
+          texCoords: [],
+          triangles: [],
+          glCommands: [],
+        },
+        animations: [],
+      };
+      const hasFile = jest.fn(() => false);
+      const onNavigateToFile = jest.fn();
+      render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
+
+      expect(screen.getByText(/models\/missing\/skin\.pcx \(missing\)/i)).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /models\/missing\/skin\.pcx/i })).not.toBeInTheDocument();
     });
   });
 

@@ -18,6 +18,7 @@ export interface UsePakExplorerResult {
   error: string | null;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
+  hasFile: (path: string) => boolean;
   dismissError: () => void;
 }
 
@@ -86,6 +87,11 @@ export function usePakExplorer(): UsePakExplorerResult {
     setError(null);
   }, []);
 
+  const hasFile = useCallback(
+    (path: string) => pakService.hasFile(path),
+    [pakService]
+  );
+
   return {
     pakService,
     fileTree,
@@ -98,6 +104,7 @@ export function usePakExplorer(): UsePakExplorerResult {
     error,
     handleFileSelect,
     handleTreeSelect,
+    hasFile,
     dismissError,
   };
 }

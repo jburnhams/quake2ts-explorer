@@ -4,6 +4,8 @@ import type { FileMetadata, ParsedFile } from '../services/pakService';
 export interface MetadataPanelProps {
   metadata: FileMetadata | null;
   parsedFile: ParsedFile | null;
+  hasFile?: (path: string) => boolean;
+  onNavigateToFile?: (path: string) => void;
 }
 
 function formatBytes(bytes: number): string {
@@ -12,7 +14,14 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
 }
 
-function renderFileTypeDetails(parsed: ParsedFile): React.ReactNode {
+interface RenderOptions {
+  hasFile?: (path: string) => boolean;
+  onNavigateToFile?: (path: string) => void;
+}
+
+function renderFileTypeDetails(parsed: ParsedFile, options: RenderOptions = {}): React.ReactNode {
+  const { hasFile, onNavigateToFile } = options;
+
   switch (parsed.type) {
     case 'pcx':
       return (
@@ -60,11 +69,28 @@ function renderFileTypeDetails(parsed: ParsedFile): React.ReactNode {
           <h4>Skins ({parsed.model.skins.length})</h4>
           {parsed.model.skins.length > 0 ? (
             <ul className="md2-skin-list">
-              {parsed.model.skins.map((skin, i) => (
-                <li key={i} className="md2-skin-item">
-                  <span className="md2-skin-path">{skin.name}</span>
-                </li>
-              ))}
+              {parsed.model.skins.map((skin, i) => {
+                const exists = hasFile?.(skin.name) ?? false;
+                const canNavigate = exists && onNavigateToFile;
+                return (
+                  <li key={i} className="md2-skin-item">
+                    {canNavigate ? (
+                      <button
+                        className="md2-skin-link"
+                        onClick={() => onNavigateToFile(skin.name)}
+                        title={`Navigate to ${skin.name}`}
+                      >
+                        {skin.name}
+                      </button>
+                    ) : (
+                      <span className={exists ? 'md2-skin-path' : 'md2-skin-path md2-skin-missing'}>
+                        {skin.name}
+                        {!exists && ' (missing)'}
+                      </span>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
           ) : (
             <p className="md2-no-skins">No skins defined</p>
@@ -154,7 +180,7 @@ function renderFileTypeDetails(parsed: ParsedFile): React.ReactNode {
   }
 }
 
-export function MetadataPanel({ metadata, parsedFile }: MetadataPanelProps) {
+export function MetadataPanel({ metadata, parsedFile, hasFile, onNavigateToFile }: MetadataPanelProps) {
   if (!metadata) {
     return (
       <aside className="metadata-panel metadata-panel-empty" data-testid="metadata-panel">
@@ -180,7 +206,7 @@ export function MetadataPanel({ metadata, parsedFile }: MetadataPanelProps) {
           <dd>{metadata.sourcePak}</dd>
         </dl>
       </div>
-      {parsedFile && renderFileTypeDetails(parsedFile)}
+      {parsedFile && renderFileTypeDetails(parsedFile, { hasFile, onNavigateToFile })}
     </aside>
   );
 }
