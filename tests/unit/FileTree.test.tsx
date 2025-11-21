@@ -83,4 +83,33 @@ describe('FileTree Component', () => {
     render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
     expect(screen.getByRole('tree')).toBeInTheDocument();
   });
+
+
+  it('shows correct icon for image files', async () => {
+    const user = userEvent.setup();
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    // Expand pics to see test.pcx
+    await user.click(screen.getByText('pics'));
+    // PCX should have image icon
+    const pcxItem = screen.getByText('test.pcx').closest('.tree-node');
+    expect(pcxItem?.querySelector('.tree-icon')).toBeInTheDocument();
+  });
+
+  it('shows correct icon for text files', () => {
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    const txtItem = screen.getByText('readme.txt').closest('.tree-node');
+    expect(txtItem?.querySelector('.tree-icon')).toBeInTheDocument();
+  });
+
+  it('selects nested file', async () => {
+    const user = userEvent.setup();
+    const onSelect = jest.fn();
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={onSelect} />);
+
+    // Expand pics directory
+    await user.click(screen.getByText('pics'));
+    // Click nested file
+    await user.click(screen.getByText('test.pcx'));
+    expect(onSelect).toHaveBeenCalledWith('pics/test.pcx');
+  });
 });

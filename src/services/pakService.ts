@@ -27,7 +27,15 @@ export interface DirectoryListing {
   readonly directories: string[];
 }
 
-export type FileType = 'pcx' | 'wal' | 'md2' | 'md3' | 'wav' | 'bsp' | 'txt' | 'unknown';
+import {
+  getFileType as getFileTypeHelper,
+  getExtension,
+  getFileName,
+  toArrayBuffer,
+  type FileType,
+} from '../utils/helpers';
+
+export type { FileType };
 
 export interface FileMetadata {
   path: string;
@@ -89,38 +97,9 @@ export interface TreeNode {
   file?: VirtualFileHandle;
 }
 
+// Use helper function
 function getFileType(path: string): FileType {
-  const ext = path.toLowerCase().split('.').pop() || '';
-  switch (ext) {
-    case 'pcx': return 'pcx';
-    case 'wal': return 'wal';
-    case 'md2': return 'md2';
-    case 'md3': return 'md3';
-    case 'wav': return 'wav';
-    case 'bsp': return 'bsp';
-    case 'txt':
-    case 'cfg':
-    case 'ent':
-      return 'txt';
-    default: return 'unknown';
-  }
-}
-
-function getExtension(path: string): string {
-  const parts = path.split('.');
-  return parts.length > 1 ? parts.pop()!.toLowerCase() : '';
-}
-
-function getFileName(path: string): string {
-  return path.split('/').pop() || path;
-}
-
-// Convert Uint8Array to ArrayBuffer for parsers
-function toArrayBuffer(data: Uint8Array): ArrayBuffer {
-  // Create a new ArrayBuffer and copy data to avoid SharedArrayBuffer issues
-  const buffer = new ArrayBuffer(data.byteLength);
-  new Uint8Array(buffer).set(data);
-  return buffer;
+  return getFileTypeHelper(path);
 }
 
 export class PakService {

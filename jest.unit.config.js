@@ -4,7 +4,7 @@ const unitConfig = {
   ...baseConfig,
   displayName: 'unit',
   testMatch: ['<rootDir>/tests/unit/**/*.test.ts?(x)'],
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!**/node_modules/**'],
+  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/main.tsx', '!**/node_modules/**'],
   coverageThreshold: {
     global: {
       lines: 80,

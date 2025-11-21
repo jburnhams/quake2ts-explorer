@@ -172,5 +172,70 @@ describe('PreviewPanel Component', () => {
       render(<PreviewPanel parsedFile={parsedUnknown} filePath="file.bin" />);
       expect(screen.getByTestId('hex-preview')).toBeInTheDocument();
     });
+
+    it('shows truncation message for large files', () => {
+      const parsedUnknown: ParsedFile = {
+        type: 'unknown',
+        data: new Uint8Array(1024), // > 512 bytes
+      };
+      render(<PreviewPanel parsedFile={parsedUnknown} filePath="large.bin" />);
+      expect(screen.getByText(/Showing first 512 of 1024 bytes/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Audio Playback', () => {
+    it('shows Play button initially', () => {
+      const parsedWav: ParsedFile = {
+        type: 'wav',
+        audio: {
+          channels: 1,
+          sampleRate: 22050,
+          bitsPerSample: 16,
+          samples: new Int16Array(22050),
+        },
+      };
+      render(<PreviewPanel parsedFile={parsedWav} filePath="sounds/test.wav" />);
+      expect(screen.getByText('Play')).toBeInTheDocument();
+    });
+
+    it('shows singular channel text', () => {
+      const parsedWav: ParsedFile = {
+        type: 'wav',
+        audio: {
+          channels: 1,
+          sampleRate: 22050,
+          bitsPerSample: 16,
+          samples: new Int16Array(22050),
+        },
+      };
+      render(<PreviewPanel parsedFile={parsedWav} filePath="sounds/test.wav" />);
+      expect(screen.getByText(/1 channel,/)).toBeInTheDocument();
+    });
+  });
+
+  describe('Image scaling', () => {
+    it('scales small images up', () => {
+      const parsedPcx: ParsedFile = {
+        type: 'pcx',
+        image: { width: 32, height: 32, bitsPerPixel: 8, palette: new Uint8Array(768), data: new Uint8Array(32 * 32) },
+        rgba: new Uint8Array(32 * 32 * 4),
+        width: 32,
+        height: 32,
+      };
+      render(<PreviewPanel parsedFile={parsedPcx} filePath="pics/small.pcx" />);
+      expect(screen.getByText(/4x zoom/)).toBeInTheDocument();
+    });
+
+    it('does not show zoom for large images', () => {
+      const parsedPcx: ParsedFile = {
+        type: 'pcx',
+        image: { width: 512, height: 512, bitsPerPixel: 8, palette: new Uint8Array(768), data: new Uint8Array(512 * 512) },
+        rgba: new Uint8Array(512 * 512 * 4),
+        width: 512,
+        height: 512,
+      };
+      render(<PreviewPanel parsedFile={parsedPcx} filePath="pics/large.pcx" />);
+      expect(screen.queryByText(/zoom/)).not.toBeInTheDocument();
+    });
   });
 });
