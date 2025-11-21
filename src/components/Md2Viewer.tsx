@@ -121,7 +121,7 @@ export function Md2Viewer({
     const handleMouseUp = () => setIsDragging(false);
     const handleMouseMove = (e: MouseEvent) => {
       if (!stateRef.current.isDragging) return;
-      setOrbit((prev) => ({
+      setOrbit((prev: OrbitState) => ({
         ...prev,
         theta: prev.theta + e.movementX * 0.01,
         phi: Math.max(
@@ -132,7 +132,7 @@ export function Md2Viewer({
     };
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
-      setOrbit((prev) => ({
+      setOrbit((prev: OrbitState) => ({
         ...prev,
         radius: Math.max(10, Math.min(500, prev.radius + e.deltaY * 0.1)),
       }));
@@ -150,11 +150,11 @@ export function Md2Viewer({
       lastTime = currentTime;
 
       if (stateRef.current.isPlaying) {
-        setAnimState((prev) => advanceAnimation(prev, deltaSeconds * stateRef.current.animSpeed));
+        setAnimState((prev: AnimationState) => advanceAnimation(prev, deltaSeconds * stateRef.current.animSpeed));
       }
 
       if (stateRef.current.autoRotate) {
-        setOrbit((prev) => ({
+        setOrbit((prev: OrbitState) => ({
           ...prev,
           theta: (prev.theta + 0.5 * deltaSeconds) % (Math.PI * 2),
         }));
@@ -243,7 +243,7 @@ export function Md2Viewer({
   };
 
   const handleRadiusChange = (radius: number) => {
-    setOrbit((prev) => ({ ...prev, radius }));
+    setOrbit((prev: OrbitState) => ({ ...prev, radius }));
   };
 
   const handleAnimationChange = (index: number) => {
@@ -252,7 +252,7 @@ export function Md2Viewer({
   };
 
   const handleScrub = (time: number) => {
-    setAnimState((prev) => ({ ...prev, time }));
+    setAnimState((prev: AnimationState) => ({ ...prev, time }));
   };
 
   const handleSkinChange = (index: number) => {
@@ -290,7 +290,7 @@ export function Md2Viewer({
               value={skinIndex}
               onChange={(e) => handleSkinChange(parseInt(e.target.value))}
             >
-              {model.skins.map((skin, i) => (
+              {model.skins.map((skin: { name: string }, i: number) => (
                 <option key={i} value={i}>
                   {skin.name}
                 </option>
