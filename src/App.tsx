@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Toolbar } from './components/Toolbar';
 import { FileTree } from './components/FileTree';
 import { PreviewPanel } from './components/PreviewPanel';
 import { MetadataPanel } from './components/MetadataPanel';
 import { DropZone } from './components/DropZone';
+import { ResizablePanel } from './components/ResizablePanel';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import './App.css';
 
@@ -21,6 +22,9 @@ function App() {
     handleTreeSelect,
     dismissError,
   } = usePakExplorer();
+
+  const [leftCollapsed, setLeftCollapsed] = useState(false);
+  const [rightCollapsed, setRightCollapsed] = useState(false);
 
   return (
     <DropZone onDrop={handleFileSelect}>
@@ -42,13 +46,35 @@ function App() {
           </div>
         )}
         <div className="main-content">
-          <FileTree
-            root={fileTree}
-            selectedPath={selectedPath}
-            onSelect={handleTreeSelect}
-          />
+          <ResizablePanel
+            defaultWidth={280}
+            minWidth={180}
+            maxWidth={500}
+            position="left"
+            collapsed={leftCollapsed}
+            onCollapsedChange={setLeftCollapsed}
+            title="Files"
+            testId="file-tree-panel"
+          >
+            <FileTree
+              root={fileTree}
+              selectedPath={selectedPath}
+              onSelect={handleTreeSelect}
+            />
+          </ResizablePanel>
           <PreviewPanel parsedFile={parsedFile} filePath={selectedPath} />
-          <MetadataPanel metadata={metadata} parsedFile={parsedFile} />
+          <ResizablePanel
+            defaultWidth={280}
+            minWidth={180}
+            maxWidth={500}
+            position="right"
+            collapsed={rightCollapsed}
+            onCollapsedChange={setRightCollapsed}
+            title="Details"
+            testId="metadata-panel-wrapper"
+          >
+            <MetadataPanel metadata={metadata} parsedFile={parsedFile} />
+          </ResizablePanel>
         </div>
       </div>
     </DropZone>

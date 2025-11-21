@@ -37,10 +37,34 @@ jest.mock('quake2ts/engine', () => ({
         if (!files.has(path)) throw new Error(`File not found: ${path}`);
         return new Uint8Array(files.get(path)!.size);
       }),
-      list: jest.fn(() => ({
-        files: Array.from(files.values()),
-        directories: [],
-      })),
+      list: jest.fn((dirPath?: string) => {
+        const prefix = dirPath ? `${dirPath}/` : '';
+        const filesInDir: Array<{ path: string; size: number; sourcePak: string }> = [];
+        const directories = new Set<string>();
+
+        for (const file of files.values()) {
+          if (dirPath) {
+            // Files must start with dirPath/
+            if (!file.path.startsWith(prefix)) continue;
+          }
+
+          const relativePath = dirPath ? file.path.slice(prefix.length) : file.path;
+          const slashIndex = relativePath.indexOf('/');
+
+          if (slashIndex === -1) {
+            // File is directly in this directory
+            filesInDir.push(file);
+          } else {
+            // File is in a subdirectory
+            directories.add(relativePath.slice(0, slashIndex));
+          }
+        }
+
+        return {
+          files: filesInDir,
+          directories: Array.from(directories),
+        };
+      }),
       findByExtension: jest.fn((ext: string) =>
         Array.from(files.values()).filter(f => f.path.endsWith(ext))
       ),
@@ -104,12 +128,32 @@ describe('PakService', () => {
   });
 
   describe('listDirectory', () => {
-    it('returns files from mounted PAK', async () => {
+    it('returns files from root directory', async () => {
       const buffer = new ArrayBuffer(1024);
       await service.loadPakFromBuffer('test.pak', buffer);
 
       const listing = service.listDirectory();
-      expect(listing.files.length).toBe(3);
+      // Only test.txt is at root level
+      expect(listing.files.length).toBe(1);
+      expect(listing.files[0].path).toBe('test.txt');
+    });
+
+    it('returns subdirectories from root', async () => {
+      const buffer = new ArrayBuffer(1024);
+      await service.loadPakFromBuffer('test.pak', buffer);
+
+      const listing = service.listDirectory();
+      expect(listing.directories).toContain('pics');
+      expect(listing.directories).toContain('models');
+    });
+
+    it('returns files from subdirectory', async () => {
+      const buffer = new ArrayBuffer(1024);
+      await service.loadPakFromBuffer('test.pak', buffer);
+
+      const listing = service.listDirectory('pics');
+      expect(listing.files.length).toBe(1);
+      expect(listing.files[0].path).toBe('pics/test.pcx');
     });
   });
 

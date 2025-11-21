@@ -234,13 +234,24 @@ export class PakService {
       children: [],
     };
 
-    const listing = this.listDirectory();
+    // Recursively gather all files from VFS
+    const allFiles: VirtualFileHandle[] = [];
+    const gatherFiles = (dirPath?: string) => {
+      const listing = this.listDirectory(dirPath);
+      allFiles.push(...listing.files);
+      for (const subDir of listing.directories) {
+        const fullPath = dirPath ? `${dirPath}/${subDir}` : subDir;
+        gatherFiles(fullPath);
+      }
+    };
+    gatherFiles();
+
     const nodeMap = new Map<string, TreeNode>();
     nodeMap.set('', root);
 
     // Create directory nodes
     const allDirs = new Set<string>();
-    for (const file of listing.files) {
+    for (const file of allFiles) {
       const parts = file.path.split('/');
       let currentPath = '';
       for (let i = 0; i < parts.length - 1; i++) {
@@ -268,7 +279,7 @@ export class PakService {
     }
 
     // Add file nodes
-    for (const file of listing.files) {
+    for (const file of allFiles) {
       const parts = file.path.split('/');
       const name = parts.pop()!;
       const parentPath = parts.join('/');
