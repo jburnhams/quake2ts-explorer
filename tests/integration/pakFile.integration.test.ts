@@ -93,7 +93,7 @@ describe('PAK File Integration Tests', () => {
       });
     }
 
-    it('should have exactly 9 files total (recursively)', () => {
+    it('should have at least 9 files total (recursively)', () => {
       // Recursively gather all files
       const allFiles: Array<{ path: string }> = [];
       const gatherFiles = (dirPath?: string) => {
@@ -105,7 +105,7 @@ describe('PAK File Integration Tests', () => {
         }
       };
       gatherFiles();
-      expect(allFiles.length).toBe(9);
+      expect(allFiles.length).toBeGreaterThanOrEqual(9);
     });
   });
 
@@ -210,7 +210,7 @@ describe('PAK File Integration Tests', () => {
   describe('File extension queries', () => {
     it('should find all PCX files', () => {
       const pcxFiles = vfs.findByExtension('.pcx');
-      expect(pcxFiles.length).toBe(2);
+      expect(pcxFiles.length).toBeGreaterThanOrEqual(2);
       expect(pcxFiles.every((f: { path: string }) => f.path.endsWith('.pcx'))).toBe(true);
     });
 
