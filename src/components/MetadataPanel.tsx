@@ -49,17 +49,52 @@ function renderFileTypeDetails(parsed: ParsedFile): React.ReactNode {
         <div className="metadata-section" data-testid="md2-details">
           <h4>MD2 Model</h4>
           <dl>
-            <dt>Frames</dt>
-            <dd>{parsed.model.header.numFrames}</dd>
             <dt>Vertices</dt>
             <dd>{parsed.model.header.numVertices}</dd>
             <dt>Triangles</dt>
             <dd>{parsed.model.header.numTriangles}</dd>
-            <dt>Skins</dt>
-            <dd>{parsed.model.header.numSkins}</dd>
-            <dt>GL Commands</dt>
-            <dd>{parsed.model.header.numGlCommands}</dd>
+            <dt>Skin Size</dt>
+            <dd>{parsed.model.header.skinWidth} x {parsed.model.header.skinHeight}</dd>
           </dl>
+
+          <h4>Skins ({parsed.model.skins.length})</h4>
+          {parsed.model.skins.length > 0 ? (
+            <ul className="md2-skin-list">
+              {parsed.model.skins.map((skin, i) => (
+                <li key={i} className="md2-skin-item">
+                  <span className="md2-skin-path">{skin.name}</span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="md2-no-skins">No skins defined</p>
+          )}
+
+          <h4>Animations ({parsed.animations.length})</h4>
+          {parsed.animations.length > 0 ? (
+            <ul className="md2-animation-list">
+              {parsed.animations.map((anim, i) => (
+                <li key={i} className="md2-animation-item">
+                  <span className="md2-animation-name">{anim.name}</span>
+                  <span className="md2-animation-frames">
+                    frames {anim.firstFrame}-{anim.lastFrame} ({anim.lastFrame - anim.firstFrame + 1})
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>No animations detected</p>
+          )}
+
+          <h4>All Frames ({parsed.model.frames.length})</h4>
+          <ul className="md2-frame-list">
+            {parsed.model.frames.map((frame, i) => (
+              <li key={i} className="md2-frame-item">
+                <span className="md2-frame-index">{i}</span>
+                <span className="md2-frame-name">{frame.name}</span>
+              </li>
+            ))}
+          </ul>
         </div>
       );
     case 'md3':

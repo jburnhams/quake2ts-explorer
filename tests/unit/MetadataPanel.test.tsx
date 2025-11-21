@@ -82,18 +82,21 @@ describe('MetadataPanel Component', () => {
       const parsedMd2: ParsedFile = {
         type: 'md2',
         model: {
-          header: { numFrames: 40, numVertices: 200, numTriangles: 100, numSkins: 2, numGlCommands: 500 },
-          frames: [],
-          skins: [],
+          header: { numFrames: 40, numVertices: 200, numTriangles: 100, numSkins: 2, numGlCommands: 500, skinWidth: 256, skinHeight: 256 },
+          frames: [{ name: 'stand01', vertices: [] }],
+          skins: [{ name: 'models/test/skin.pcx' }],
           texCoords: [],
           triangles: [],
           glCommands: [],
         },
+        animations: [{ name: 'stand', firstFrame: 0, lastFrame: 0 }],
       };
       render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} />);
       expect(screen.getByTestId('md2-details')).toBeInTheDocument();
-      expect(screen.getByText('40')).toBeInTheDocument(); // frames
       expect(screen.getByText('200')).toBeInTheDocument(); // vertices
+      expect(screen.getByText('100')).toBeInTheDocument(); // triangles
+      expect(screen.getByText('stand')).toBeInTheDocument(); // animation name
+      expect(screen.getByText('models/test/skin.pcx')).toBeInTheDocument(); // skin path
     });
   });
 

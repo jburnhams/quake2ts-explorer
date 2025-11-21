@@ -87,8 +87,13 @@ jest.mock('quake2ts/engine', () => ({
     levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }],
   })),
   parseMd2: jest.fn(() => ({
-    header: { numFrames: 10, numVertices: 100, numTriangles: 50, numSkins: 1, numGlCommands: 200 },
+    header: { numFrames: 10, numVertices: 100, numTriangles: 50, numSkins: 1, numGlCommands: 200, skinWidth: 256, skinHeight: 256 },
+    skins: [{ name: 'models/test/skin.pcx' }],
+    frames: [{ name: 'stand01', vertices: [] }, { name: 'stand02', vertices: [] }],
   })),
+  groupMd2Animations: jest.fn(() => [
+    { name: 'stand', firstFrame: 0, lastFrame: 1 },
+  ]),
   parseMd3: jest.fn(() => ({
     header: { numFrames: 5, numSurfaces: 2, numTags: 1 },
   })),
