@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Toolbar } from './components/Toolbar';
 import { FileTree } from './components/FileTree';
 import { PreviewPanel } from './components/PreviewPanel';
@@ -23,10 +23,15 @@ function App() {
     handleTreeSelect,
     hasFile,
     dismissError,
+    loadFromUrl,
   } = usePakExplorer();
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [rightCollapsed, setRightCollapsed] = useState(false);
+
+  useEffect(() => {
+    loadFromUrl('pak.pak');
+  }, [loadFromUrl]);
 
   return (
     <DropZone onDrop={handleFileSelect}>

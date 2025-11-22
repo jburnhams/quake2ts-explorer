@@ -166,4 +166,74 @@ describe('usePakExplorer Hook', () => {
     expect(result.current.metadata).toBeNull();
     expect(result.current.parsedFile).toBeNull();
   });
+
+  it('loadFromUrl loads PAK from URL and clears previous', async () => {
+    const { result } = renderHook(() => usePakExplorer());
+    const originalFetch = global.fetch;
+
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: true,
+        arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
+        statusText: 'OK'
+      })
+    ) as jest.Mock;
+
+    try {
+      // Initial load manually to simulate existing state
+      const file = new File(['PACK'], 'initial.pak', { type: 'application/octet-stream' });
+      Object.defineProperty(file, 'arrayBuffer', {
+        value: jest.fn().mockResolvedValue(new ArrayBuffer(10))
+      });
+      const fileList = { length: 1, item: () => file, 0: file, [Symbol.iterator]: function* () { yield file; } } as FileList;
+      await act(async () => {
+        await result.current.handleFileSelect(fileList);
+      });
+
+      if (result.current.error) {
+          console.error('handleFileSelect error:', result.current.error);
+      }
+      console.log('Mounted Paks:', result.current.pakService.getMountedPaks());
+
+      expect(result.current.pakService.getMountedPaks()).toHaveLength(1);
+      expect(result.current.pakService.getMountedPaks()[0].name).toBe('initial.pak');
+
+      // Load from URL
+      await act(async () => {
+        await result.current.loadFromUrl('http://example.com/default.pak');
+      });
+
+      expect(global.fetch).toHaveBeenCalledWith('http://example.com/default.pak', expect.objectContaining({
+        signal: expect.any(Object)
+      }));
+      expect(result.current.pakService.getMountedPaks()).toHaveLength(1);
+      expect(result.current.pakService.getMountedPaks()[0].name).toBe('default.pak');
+      expect(result.current.error).toBeNull();
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
+
+  it('loadFromUrl handles fetch errors', async () => {
+    const { result } = renderHook(() => usePakExplorer());
+    const originalFetch = global.fetch;
+
+    global.fetch = jest.fn(() =>
+      Promise.resolve({
+        ok: false,
+        statusText: 'Not Found'
+      })
+    ) as jest.Mock;
+
+    try {
+      await act(async () => {
+        await result.current.loadFromUrl('http://example.com/missing.pak');
+      });
+
+      expect(result.current.error).toContain('Failed to fetch');
+      expect(result.current.error).toContain('Not Found');
+    } finally {
+      global.fetch = originalFetch;
+    }
+  });
 });
