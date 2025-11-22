@@ -1,9 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import App from '../../src/App';
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => ({
+jest.mock('quake2ts', () => ({
   PakArchive: {
     fromArrayBuffer: jest.fn((name: string, _buffer: ArrayBuffer) => ({
       name,
@@ -73,8 +74,6 @@ jest.mock('quake2ts/engine', () => ({
     samples: new Int16Array(22050),
   })),
 }));
-
-import App from '@/src/App';
 
 describe('App Component', () => {
   beforeEach(() => {
@@ -182,7 +181,7 @@ describe('App Component', () => {
   describe('Error handling', () => {
     it('shows error banner when PAK loading fails', async () => {
       // Override PakArchive to throw
-      const { PakArchive } = await import('quake2ts/engine');
+      const { PakArchive } = await import('quake2ts');
       (PakArchive.fromArrayBuffer as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Invalid PAK file');
       });
@@ -205,7 +204,7 @@ describe('App Component', () => {
 
     it('dismisses error when button clicked', async () => {
       const user = userEvent.setup();
-      const { PakArchive } = await import('quake2ts/engine');
+      const { PakArchive } = await import('quake2ts');
       (PakArchive.fromArrayBuffer as jest.Mock).mockImplementationOnce(() => {
         throw new Error('Invalid PAK file');
       });

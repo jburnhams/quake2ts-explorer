@@ -1,9 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import type { ParsedFile } from '../services/pakService';
+import type { ParsedFile, PakService } from '../services/pakService';
+import { Md2Viewer } from './Md2Viewer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
   filePath: string | null;
+  pakService: PakService;
 }
 
 interface ImagePreviewProps {
@@ -185,7 +187,7 @@ function HexPreview({ data }: HexPreviewProps) {
   );
 }
 
-export function PreviewPanel({ parsedFile, filePath }: PreviewPanelProps) {
+export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelProps) {
   if (!parsedFile || !filePath) {
     return (
       <main className="preview-panel preview-panel-empty" data-testid="preview-panel">
@@ -221,7 +223,15 @@ export function PreviewPanel({ parsedFile, filePath }: PreviewPanelProps) {
           </div>
         );
       case 'md2':
-        return <ModelPreview type="md2" />;
+        return (
+          <Md2Viewer
+            model={parsedFile.model}
+            animations={parsedFile.animations}
+            skinPath={parsedFile.model.skins[0]?.name}
+            hasFile={(path: string) => pakService.hasFile(path)}
+            loadFile={async (path: string) => await pakService.readFile(path)}
+          />
+        );
       case 'md3':
         return <ModelPreview type="md3" />;
       case 'wav':

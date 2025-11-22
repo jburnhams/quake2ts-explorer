@@ -10,6 +10,7 @@ import './App.css';
 
 function App() {
   const {
+    pakService,
     fileTree,
     selectedPath,
     metadata,
@@ -63,7 +64,11 @@ function App() {
               onSelect={handleTreeSelect}
             />
           </ResizablePanel>
-          <PreviewPanel parsedFile={parsedFile} filePath={selectedPath} />
+          <PreviewPanel
+            parsedFile={parsedFile}
+            filePath={selectedPath}
+            pakService={pakService}
+          />
           <ResizablePanel
             defaultWidth={280}
             minWidth={180}
