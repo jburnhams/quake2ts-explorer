@@ -1,38 +1,48 @@
 import React from 'react';
+import { OrbitState } from '../utils/cameraUtils';
 
 interface Md2CameraControlsProps {
-  radius: number;
+  orbit: OrbitState;
+  setOrbit: React.Dispatch<React.SetStateAction<OrbitState>>;
   autoRotate: boolean;
-  onReset: () => void;
-  onRadiusChange: (radius: number) => void;
-  onAutoRotateChange: (autoRotate: boolean) => void;
+  setAutoRotate: (autoRotate: boolean) => void;
 }
 
 export function Md2CameraControls({
-  radius,
+  orbit,
+  setOrbit,
   autoRotate,
-  onReset,
-  onRadiusChange,
-  onAutoRotateChange,
+  setAutoRotate,
 }: Md2CameraControlsProps) {
+  const resetCamera = () => {
+    setOrbit(prev => ({
+        ...prev,
+        radius: 100,
+        theta: 0,
+        phi: Math.PI / 4,
+    }));
+  };
+
   return (
-    <div className="md2-camera-controls">
-      <button onClick={onReset}>Reset Camera</button>
+    <div className="md2-control-group">
+      <button onClick={resetCamera}>Reset Camera</button>
+
       <label>
-        Distance: {radius.toFixed(0)}
+        Distance: {orbit.radius.toFixed(0)}
         <input
           type="range"
           min="10"
           max="500"
-          value={radius}
-          onChange={(e) => onRadiusChange(parseFloat(e.target.value))}
+          value={orbit.radius}
+          onChange={(e) => setOrbit(prev => ({ ...prev, radius: parseFloat(e.target.value) }))}
         />
       </label>
+
       <label>
         <input
           type="checkbox"
           checked={autoRotate}
-          onChange={(e) => onAutoRotateChange(e.target.checked)}
+          onChange={(e) => setAutoRotate(e.target.checked)}
         />
         Auto-rotate
       </label>
