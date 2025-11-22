@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import type { ParsedFile, PakService } from '../services/pakService';
 import { Md2Viewer } from './Md2Viewer';
 import { SpriteViewer } from './SpriteViewer';
+import { BspViewer } from './BspViewer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -235,6 +236,8 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
         );
       case 'md3':
         return <ModelPreview type="md3" />;
+      case 'bsp':
+        return <BspViewer map={parsedFile.map} pakService={pakService} />;
       case 'sp2':
         return (
           <SpriteViewer

@@ -10,6 +10,7 @@ jest.mock('quake2ts/engine', () => ({
         ['pics/test.pcx', { name: 'pics/test.pcx', offset: 100, length: 200 }],
         ['models/test.md2', { name: 'models/test.md2', offset: 300, length: 500 }],
         ['sprites/test.sp2', { name: 'sprites/test.sp2', offset: 800, length: 100 }],
+        ['maps/test.bsp', { name: 'maps/test.bsp', offset: 1200, length: 2000 }],
       ]),
       checksum: 12345,
       size: 1024,
@@ -18,6 +19,7 @@ jest.mock('quake2ts/engine', () => ({
         { name: 'pics/test.pcx', offset: 100, length: 200 },
         { name: 'models/test.md2', offset: 300, length: 500 },
         { name: 'sprites/test.sp2', offset: 800, length: 100 },
+        { name: 'maps/test.bsp', offset: 1200, length: 2000 },
       ],
     })),
   },
@@ -104,6 +106,15 @@ jest.mock('quake2ts/engine', () => ({
     sampleRate: 22050,
     bitsPerSample: 16,
     samples: new Int16Array(22050),
+  })),
+  parseBsp: jest.fn(() => ({
+    header: { version: 38, lumps: new Map() },
+    entities: { raw: '', entities: [], worldspawn: undefined },
+    models: [],
+    faces: [],
+    vertices: [],
+    texInfo: [],
+    leafs: [],
   })),
 }));
 
@@ -231,6 +242,14 @@ describe('PakService', () => {
 
       const parsed = await service.parseFile('sprites/test.sp2');
       expect(parsed.type).toBe('sp2');
+    });
+
+    it('parses BSP files', async () => {
+      const buffer = new ArrayBuffer(1024);
+      await service.loadPakFromBuffer('test.pak', buffer);
+
+      const parsed = await service.parseFile('maps/test.bsp');
+      expect(parsed.type).toBe('bsp');
     });
 
     it('parses TXT files', async () => {
