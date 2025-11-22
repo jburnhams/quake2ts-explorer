@@ -22,7 +22,7 @@
   "dependencies": {
     "@wasm-audio-decoders/ogg-vorbis": "^0.1.20",
     "gl-matrix": "^3.4.4",
-    "quake2ts": "^0.0.72",
+    "quake2ts": "0.0.73",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

@@ -9,6 +9,7 @@ import {
   groupMd2Animations,
   parseMd3,
   parseWav,
+  parseBsp,
   type PcxImage,
   type WalTexture,
   type Md2Model,
@@ -16,6 +17,7 @@ import {
   type Md3Model,
   type SpriteModel,
   type WavData,
+  type BspMap,
 } from 'quake2ts/engine';
 
 // Re-define interfaces since they're not exported from quake2ts/engine
@@ -80,6 +82,11 @@ export interface ParsedMd3 {
   model: Md3Model;
 }
 
+export interface ParsedBsp {
+  type: 'bsp';
+  map: BspMap;
+}
+
 export interface ParsedSprite {
   type: 'sp2';
   model: SpriteModel;
@@ -100,7 +107,7 @@ export interface ParsedUnknown {
   data: Uint8Array;
 }
 
-export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
+export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
 
 export interface TreeNode {
   name: string;
@@ -226,6 +233,15 @@ export class PakService {
       case 'md3': {
         const model = parseMd3(buffer);
         return { type: 'md3', model };
+      }
+      case 'bsp': {
+        try {
+          const map = parseBsp(buffer);
+          return { type: 'bsp', map };
+        } catch (e) {
+          console.warn(`Failed to parse BSP file ${path}:`, e);
+          return { type: 'unknown', data };
+        }
       }
       case 'sp2': {
         const model = parseSprite(buffer);

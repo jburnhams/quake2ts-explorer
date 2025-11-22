@@ -137,6 +137,60 @@ function renderFileTypeDetails(parsed: ParsedFile, options: RenderOptions = {}):
           </dl>
         </div>
       );
+    case 'bsp': {
+      const uniqueTextures = new Set(parsed.map.texInfo.map(t => t.texture));
+      const sortedTextures = Array.from(uniqueTextures).sort();
+      return (
+        <div className="metadata-section" data-testid="bsp-details">
+          <h4>BSP Map</h4>
+          <dl>
+            <dt>Version</dt>
+            <dd>{parsed.map.header.version}</dd>
+            <dt>Entities</dt>
+            <dd>{parsed.map.entities.entities.length}</dd>
+            <dt>Models</dt>
+            <dd>{parsed.map.models.length}</dd>
+            <dt>Faces</dt>
+            <dd>{parsed.map.faces.length}</dd>
+            <dt>Vertices</dt>
+            <dd>{parsed.map.vertices.length}</dd>
+            <dt>Leaves</dt>
+            <dd>{parsed.map.leafs.length}</dd>
+            <dt>Textures</dt>
+            <dd>{uniqueTextures.size}</dd>
+          </dl>
+
+          <h4>Textures ({uniqueTextures.size})</h4>
+          <ul className="bsp-texture-list" style={{ maxHeight: '200px', overflowY: 'auto', listStyle: 'none', padding: 0 }}>
+            {sortedTextures.map((tex, i) => {
+              const path = `textures/${tex}.wal`;
+              const exists = hasFile?.(path) ?? false;
+              const canNavigate = exists && onNavigateToFile;
+
+              return (
+                <li key={i} className="bsp-texture-item" style={{ marginBottom: '4px' }}>
+                   {canNavigate ? (
+                      <button
+                        className="bsp-texture-link"
+                        onClick={() => onNavigateToFile(path)}
+                        title={`Navigate to ${path}`}
+                        style={{ background: 'none', border: 'none', color: '#646cff', cursor: 'pointer', padding: 0, textAlign: 'left' }}
+                      >
+                        {tex}
+                      </button>
+                    ) : (
+                      <span className={exists ? 'bsp-texture-path' : 'bsp-texture-path bsp-texture-missing'} style={{ color: exists ? 'inherit' : '#888' }}>
+                        {tex}
+                        {!exists && ' (missing)'}
+                      </span>
+                    )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      );
+    }
     case 'wav':
       return (
         <div className="metadata-section" data-testid="wav-details">
