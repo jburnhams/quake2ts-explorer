@@ -1,4 +1,4 @@
-import { vec3 } from 'quake2ts';
+import { vec3 } from 'gl-matrix';
 
 export interface OrbitState {
   radius: number;

@@ -14,6 +14,7 @@ import {
   type Md2Model,
   type Md2Animation,
   type Md3Model,
+  type SpriteModel,
   type WavData,
 } from 'quake2ts/engine';
 
@@ -28,6 +29,8 @@ export interface DirectoryListing {
   readonly files: VirtualFileHandle[];
   readonly directories: string[];
 }
+
+import { parseSprite } from '../utils/sp2Parser';
 
 import {
   getFileType as getFileTypeHelper,
@@ -77,6 +80,11 @@ export interface ParsedMd3 {
   model: Md3Model;
 }
 
+export interface ParsedSprite {
+  type: 'sp2';
+  model: SpriteModel;
+}
+
 export interface ParsedWav {
   type: 'wav';
   audio: WavData;
@@ -92,7 +100,7 @@ export interface ParsedUnknown {
   data: Uint8Array;
 }
 
-export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedWav | ParsedText | ParsedUnknown;
+export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
 
 export interface TreeNode {
   name: string;
@@ -218,6 +226,10 @@ export class PakService {
       case 'md3': {
         const model = parseMd3(buffer);
         return { type: 'md3', model };
+      }
+      case 'sp2': {
+        const model = parseSprite(buffer);
+        return { type: 'sp2', model };
       }
       case 'wav': {
         const audio = parseWav(buffer);

@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { ParsedFile, PakService } from '../services/pakService';
 import { Md2Viewer } from './Md2Viewer';
+import { SpriteViewer } from './SpriteViewer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -234,6 +235,13 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
         );
       case 'md3':
         return <ModelPreview type="md3" />;
+      case 'sp2':
+        return (
+          <SpriteViewer
+            model={parsedFile.model}
+            loadFile={async (path: string) => await pakService.readFile(path)}
+          />
+        );
       case 'wav':
         return <AudioPreview audio={parsedFile.audio} />;
       case 'txt':
