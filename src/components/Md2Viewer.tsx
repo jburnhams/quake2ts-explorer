@@ -13,10 +13,10 @@ import {
   parsePcx,
   pcxToRgba,
   Texture2D,
-  mat4,
-  vec3,
-  Md2FrameBlend
-} from 'quake2ts';
+  Md2FrameBlend,
+  AnimationSequence
+} from 'quake2ts/engine';
+import { mat4, vec3 } from 'gl-matrix';
 import { Md2AnimationControls } from './Md2AnimationControls';
 import { Md2CameraControls } from './Md2CameraControls';
 import { computeCameraPosition, OrbitState } from '../utils/cameraUtils';
@@ -31,7 +31,7 @@ export interface Md2ViewerProps {
 
 export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md2ViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext; state: any } | null>(null);
+  const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [pipeline, setPipeline] = useState<Md2Pipeline | null>(null);
   const [meshBuffers, setMeshBuffers] = useState<Md2MeshBuffers | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
@@ -45,17 +45,27 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
   });
   const [autoRotate, setAutoRotate] = useState(false);
 
-  const [animState, setAnimState] = useState(() => createAnimationState(animations[0], 0));
+  const [animState, setAnimState] = useState(() => {
+    const sequence: AnimationSequence = {
+      name: animations[0].name,
+      start: animations[0].firstFrame,
+      end: animations[0].lastFrame,
+      fps: 9,
+      loop: true
+    };
+    return createAnimationState(sequence);
+  });
   const [isPlaying, setIsPlaying] = useState(true);
   const [animSpeed, setAnimSpeed] = useState(1.0);
 
   useEffect(() => {
     if (!canvasRef.current) return;
     const context = createWebGLContext(canvasRef.current, {
-      alpha: false,
-      depth: true,
-      antialias: true,
-      preserveDrawingBuffer: false
+      contextAttributes: {
+        depth: true,
+        antialias: true,
+        preserveDrawingBuffer: false
+      }
     });
     setGlContext(context);
 
@@ -66,9 +76,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
     setMeshBuffers(new Md2MeshBuffers(gl, model, initialBlend));
 
     const newCamera = new Camera();
-    newCamera.setFov(60);
-    newCamera.setNear(0.1);
-    newCamera.setFar(1000);
+    newCamera.fov = 60;
     setCamera(newCamera);
 
   }, [model]);
@@ -80,26 +88,24 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
     const { gl } = glContext;
 
     async function loadSkin() {
+      if (!skinPath) return;
       const data = await loadFile(skinPath);
       if (isCancelled) return;
 
-      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+      const buffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
       const pcx = parsePcx(buffer);
       const rgba = pcxToRgba(pcx);
 
       const texture = new Texture2D(gl);
-      texture.upload({
-        width: pcx.width,
-        height: pcx.height,
-        data: rgba,
-        format: gl.RGBA,
-        type: gl.UNSIGNED_BYTE,
+      texture.bind();
+      texture.setParameters({
         minFilter: gl.LINEAR_MIPMAP_LINEAR,
         magFilter: gl.LINEAR,
         wrapS: gl.REPEAT,
-        wrapT: gl.REPEAT,
-        generateMipmaps: true
+        wrapT: gl.REPEAT
       });
+      texture.uploadImage(0, gl.RGBA, pcx.width, pcx.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+      gl.generateMipmap(gl.TEXTURE_2D);
       setSkinTexture(texture);
     }
 
@@ -144,12 +150,18 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       gl.enable(gl.CULL_FACE);
 
       const frameBlend = computeFrameBlend(animState);
-      meshBuffers.update(model, frameBlend);
+      meshBuffers.update(model, {
+        currentFrame: frameBlend.frame,
+        nextFrame: frameBlend.nextFrame,
+        lerp: frameBlend.lerp
+      });
 
       const eye = computeCameraPosition(orbit);
-      const view = mat4.lookAt(eye, orbit.target, [0, 1, 0] as vec3);
-      const projection = camera.getProjectionMatrix();
-      const mvp = mat4.multiply(projection, view);
+      const view = mat4.create();
+      mat4.lookAt(view, eye, orbit.target, [0, 1, 0] as vec3);
+      const projection = camera.projectionMatrix;
+      const mvp = mat4.create();
+      mat4.multiply(mvp, projection, view);
 
       if (skinTexture) {
         gl.activeTexture(gl.TEXTURE0);
@@ -157,7 +169,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       }
 
       pipeline.bind({
-        modelViewProjection: mvp,
+        modelViewProjection: mvp as any,
         lightDirection: [0.5, 1.0, 0.3],
         tint: [1.0, 1.0, 1.0, 1.0],
         diffuseSampler: 0
@@ -183,7 +195,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       canvas.width = canvas.clientWidth * window.devicePixelRatio;
       canvas.height = canvas.clientHeight * window.devicePixelRatio;
       glContext?.gl.viewport(0, 0, canvas.width, canvas.height);
-      camera.setAspect(canvas.width / canvas.height);
+      camera.aspect = canvas.width / canvas.height;
     };
 
     window.addEventListener('resize', handleResize);

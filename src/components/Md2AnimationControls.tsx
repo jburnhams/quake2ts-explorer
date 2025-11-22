@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Md2Animation, AnimationState, createAnimationState } from 'quake2ts';
+import { Md2Animation, AnimationState, createAnimationState, AnimationSequence } from 'quake2ts/engine';
 
 interface Md2AnimationControlsProps {
   animations: Md2Animation[];
@@ -24,7 +24,15 @@ export function Md2AnimationControls({
 
   const switchAnimation = (index: number) => {
     setCurrentAnimIndex(index);
-    setAnimState(createAnimationState(animations[index], 0));
+    const anim = animations[index];
+    const sequence: AnimationSequence = {
+      name: anim.name,
+      start: anim.firstFrame,
+      end: anim.lastFrame,
+      fps: 9,
+      loop: true
+    };
+    setAnimState(createAnimationState(sequence));
   };
 
   const scrubToFrame = (time: number) => {
