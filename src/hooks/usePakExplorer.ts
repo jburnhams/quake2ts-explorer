@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import {
   PakService,
   type TreeNode,
@@ -20,6 +20,7 @@ export interface UsePakExplorerResult {
   handleTreeSelect: (path: string) => Promise<void>;
   hasFile: (path: string) => boolean;
   dismissError: () => void;
+  loadFromUrl: (url: string) => Promise<void>;
 }
 
 export function usePakExplorer(): UsePakExplorerResult {
@@ -32,6 +33,7 @@ export function usePakExplorer(): UsePakExplorerResult {
   const [fileCount, setFileCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
     const tree = pakService.buildFileTree();
@@ -46,6 +48,9 @@ export function usePakExplorer(): UsePakExplorerResult {
       setLoading(true);
       setError(null);
 
+      // Clear existing PAKs to replace them
+      pakService.clear();
+
       try {
         for (const file of Array.from(files)) {
           if (file.name.toLowerCase().endsWith('.pak')) {
@@ -57,6 +62,47 @@ export function usePakExplorer(): UsePakExplorerResult {
         setError(err instanceof Error ? err.message : 'Failed to load PAK file');
       } finally {
         setLoading(false);
+      }
+    },
+    [pakService, updateTreeAndCounts]
+  );
+
+  const loadFromUrl = useCallback(
+    async (url: string) => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+
+      setLoading(true);
+      setError(null);
+
+      // Clear existing PAKs to replace them
+      pakService.clear();
+
+      try {
+        const response = await fetch(url, { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
+        }
+        const buffer = await response.arrayBuffer();
+        const name = url.split('/').pop() || 'default.pak';
+
+        if (controller.signal.aborted) return;
+
+        await pakService.loadPakFromBuffer(name, buffer);
+        updateTreeAndCounts();
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') {
+          return;
+        }
+        setError(err instanceof Error ? err.message : 'Failed to load PAK from URL');
+      } finally {
+        if (abortControllerRef.current === controller) {
+          setLoading(false);
+          abortControllerRef.current = null;
+        }
       }
     },
     [pakService, updateTreeAndCounts]
@@ -106,5 +152,6 @@ export function usePakExplorer(): UsePakExplorerResult {
     handleTreeSelect,
     hasFile,
     dismissError,
+    loadFromUrl,
   };
 }

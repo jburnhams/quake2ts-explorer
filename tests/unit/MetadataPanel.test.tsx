@@ -1,5 +1,5 @@
-import { describe, it, expect } from '@jest/globals';
-import { render, screen } from '@testing-library/react';
+import { describe, it, expect, jest } from '@jest/globals';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { MetadataPanel } from '@/src/components/MetadataPanel';
 import type { FileMetadata, ParsedFile } from '@/src/services/pakService';
 
@@ -178,5 +178,66 @@ describe('MetadataPanel Component', () => {
       expect(screen.getByTestId('txt-details')).toBeInTheDocument();
       expect(screen.getByText('3')).toBeInTheDocument(); // lines
     });
+  });
+
+  describe('BSP details', () => {
+    it('shows BSP map details and textures', () => {
+      const bspMetadata: FileMetadata = { ...mockMetadata, path: 'maps/test.bsp', name: 'test.bsp', extension: 'bsp', fileType: 'bsp' };
+      const parsedBsp: ParsedFile = {
+        type: 'bsp',
+        map: {
+           header: { version: 38 },
+           entities: { entities: [] },
+           models: [],
+           faces: [],
+           vertices: [],
+           leafs: [],
+           texInfo: [
+               { texture: 'e1u1/floor' } as any,
+               { texture: 'e1u1/wall' } as any
+           ]
+        } as any
+      };
+      const hasFile = jest.fn((path) => path === 'textures/e1u1/floor.wal');
+      const onNavigateToFile = jest.fn();
+
+      render(<MetadataPanel metadata={bspMetadata} parsedFile={parsedBsp} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
+      expect(screen.getByTestId('bsp-details')).toBeInTheDocument();
+      // Textures count appears twice in the UI (dt/dd and h4 header)
+      // We can check strictly or just presence
+      expect(screen.getAllByText('2').length).toBeGreaterThanOrEqual(1);
+
+      // Check clickable texture
+      const texButton = screen.getByRole('button', { name: /e1u1\/floor/i });
+      fireEvent.click(texButton);
+      expect(onNavigateToFile).toHaveBeenCalledWith('textures/e1u1/floor.wal');
+
+      // Check missing texture
+      expect(screen.getByText(/e1u1\/wall \(missing\)/i)).toBeInTheDocument();
+    });
+  });
+
+  describe('Unknown file details', () => {
+    it('shows binary file size', () => {
+      const unknownMetadata: FileMetadata = { ...mockMetadata, fileType: 'unknown' };
+      const parsedUnknown: ParsedFile = {
+        type: 'unknown',
+        data: new Uint8Array(2048)
+      };
+      render(<MetadataPanel metadata={unknownMetadata} parsedFile={parsedUnknown} />);
+      expect(screen.getByTestId('unknown-details')).toBeInTheDocument();
+      expect(screen.getByText('2.0 KB')).toBeInTheDocument();
+    });
+  });
+
+  describe('formatBytes utility', () => {
+      it('formats bytes', () => {
+          const { unmount } = render(<MetadataPanel metadata={{...mockMetadata, size: 100}} parsedFile={null} />);
+          expect(screen.getByText('100 B')).toBeInTheDocument();
+          unmount();
+
+          render(<MetadataPanel metadata={{...mockMetadata, size: 1024 * 1024 * 2.5}} parsedFile={null} />);
+          expect(screen.getByText('2.50 MB')).toBeInTheDocument();
+      });
   });
 });
