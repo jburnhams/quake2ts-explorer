@@ -82,6 +82,11 @@ export interface ParsedMd3 {
   model: Md3Model;
 }
 
+export interface ParsedDm2 {
+  type: 'dm2';
+  data: Uint8Array;
+}
+
 export interface ParsedBsp {
   type: 'bsp';
   map: BspMap;
@@ -108,7 +113,7 @@ export interface ParsedUnknown {
   error?: string;
 }
 
-export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
+export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedDm2 | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
 
 export interface TreeNode {
   name: string;
@@ -256,6 +261,9 @@ export class PakService {
           console.warn(`Failed to parse BSP file ${path}:`, e);
           return { type: 'unknown', data, error };
         }
+      }
+      case 'dm2': {
+        return { type: 'dm2', data };
       }
       case 'sp2': {
         try {
