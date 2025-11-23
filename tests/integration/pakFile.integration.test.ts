@@ -2,6 +2,7 @@ import { describe, it, expect, beforeAll } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
 import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from 'quake2ts/engine';
+import { PakService } from '../../src/services/pakService';
 
 describe('PAK File Integration Tests', () => {
   const pakPath = path.join(__dirname, '..', '..', 'pak.pak');
@@ -411,5 +412,31 @@ describe('PAK File Integration Tests', () => {
       const skinData = await vfs.readFile(skinPath);
       expect(skinData[0]).toBe(0x0A); // PCX magic byte
     });
+  });
+
+  describe('PakService Integration', () => {
+      it('parses demo1.dm2 correctly', async () => {
+          const service = new PakService(vfs);
+
+          const parsed = await service.parseFile('demos/demo1.dm2');
+          expect(parsed.type).toBe('dm2');
+          if (parsed.type === 'dm2') {
+              expect(parsed.data).toBeInstanceOf(Uint8Array);
+              expect(parsed.data.length).toBeGreaterThan(0);
+          }
+      });
+
+      it('handles demo1.bsp parsing', async () => {
+          const service = new PakService(vfs);
+
+          const parsed = await service.parseFile('maps/demo1.bsp');
+          expect(parsed).toBeDefined();
+          // We verify it doesn't crash. It might return unknown if the file is invalid.
+          if (parsed.type === 'bsp') {
+               expect(parsed.map).toBeDefined();
+          } else {
+               expect(parsed.type).toBe('unknown');
+          }
+      });
   });
 });
