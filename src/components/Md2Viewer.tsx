@@ -72,7 +72,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
     const { gl } = context;
     setPipeline(new Md2Pipeline(gl));
 
-    const initialBlend: Md2FrameBlend = { currentFrame: 0, nextFrame: 0, lerp: 0.0 };
+    const initialBlend: Md2FrameBlend = { frame0: 0, frame1: 0, lerp: 0.0 };
     setMeshBuffers(new Md2MeshBuffers(gl, model, initialBlend));
 
     const newCamera = new Camera();
@@ -148,12 +148,12 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       const frameBlend = computeFrameBlend(animState);
 
       if (frameOverlayRef.current) {
-        frameOverlayRef.current.textContent = `Frame: ${Math.floor(frameBlend.frame)}`;
+        frameOverlayRef.current.textContent = `Frame: ${Math.floor(frameBlend.frame0)}`;
       }
 
       meshBuffers.update(model, {
-        currentFrame: frameBlend.frame,
-        nextFrame: frameBlend.nextFrame,
+        frame0: frameBlend.frame0,
+        frame1: frameBlend.frame1,
         lerp: frameBlend.lerp
       });
 
