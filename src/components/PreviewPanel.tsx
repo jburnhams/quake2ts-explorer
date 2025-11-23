@@ -160,9 +160,10 @@ function TextPreview({ content }: TextPreviewProps) {
 
 interface HexPreviewProps {
   data: Uint8Array;
+  error?: string;
 }
 
-function HexPreview({ data }: HexPreviewProps) {
+function HexPreview({ data, error }: HexPreviewProps) {
   const maxBytes = 512;
   const displayData = data.slice(0, maxBytes);
   const lines: string[] = [];
@@ -179,6 +180,11 @@ function HexPreview({ data }: HexPreviewProps) {
 
   return (
     <div className="preview-hex" data-testid="hex-preview">
+      {error && (
+        <div className="preview-error" data-testid="parse-error">
+          <strong>Parse Error:</strong> {error}
+        </div>
+      )}
       <pre>{lines.join('\n')}</pre>
       {data.length > maxBytes && (
         <p className="preview-hex-truncated">
@@ -250,7 +256,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
       case 'txt':
         return <TextPreview content={parsedFile.content} />;
       case 'unknown':
-        return <HexPreview data={parsedFile.data} />;
+        return <HexPreview data={parsedFile.data} error={parsedFile.error} />;
       default:
         return <p>Unknown file type</p>;
     }

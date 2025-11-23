@@ -105,6 +105,7 @@ export interface ParsedText {
 export interface ParsedUnknown {
   type: 'unknown';
   data: Uint8Array;
+  error?: string;
 }
 
 export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
@@ -226,26 +227,45 @@ export class PakService {
         return { type: 'wal', texture, rgba, width: texture.width, height: texture.height };
       }
       case 'md2': {
-        const model = parseMd2(buffer);
-        const animations = groupMd2Animations(model.frames);
-        return { type: 'md2', model, animations };
+        try {
+          const model = parseMd2(buffer);
+          const animations = groupMd2Animations(model.frames);
+          return { type: 'md2', model, animations };
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          console.warn(`Failed to parse MD2 file ${path}:`, e);
+          return { type: 'unknown', data, error };
+        }
       }
       case 'md3': {
-        const model = parseMd3(buffer);
-        return { type: 'md3', model };
+        try {
+          const model = parseMd3(buffer);
+          return { type: 'md3', model };
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          console.warn(`Failed to parse MD3 file ${path}:`, e);
+          return { type: 'unknown', data, error };
+        }
       }
       case 'bsp': {
         try {
           const map = parseBsp(buffer);
           return { type: 'bsp', map };
         } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
           console.warn(`Failed to parse BSP file ${path}:`, e);
-          return { type: 'unknown', data };
+          return { type: 'unknown', data, error };
         }
       }
       case 'sp2': {
-        const model = parseSprite(buffer);
-        return { type: 'sp2', model };
+        try {
+          const model = parseSprite(buffer);
+          return { type: 'sp2', model };
+        } catch (e) {
+          const error = e instanceof Error ? e.message : String(e);
+          console.warn(`Failed to parse SP2 file ${path}:`, e);
+          return { type: 'unknown', data, error };
+        }
       }
       case 'wav': {
         const audio = parseWav(buffer);
