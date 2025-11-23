@@ -3,12 +3,14 @@
   flex-direction: column;
   height: 100%;
   background: #2d2d2d;
+  position: relative;
 }
 
 .md2-canvas-container {
   flex: 1;
   position: relative;
   min-height: 400px;
+  overflow: hidden;
 }
 
 .md2-viewer-canvas {
@@ -22,6 +24,20 @@
   cursor: grabbing;
 }
 
+.md2-frame-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.5);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 10;
+}
+
 .md2-controls-panel {
   padding: 12px;
   background: #1e1e1e;
@@ -32,12 +48,97 @@
 }
 
 .md2-animation-controls,
-.md2-camera-controls,
 .md2-skin-controls {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.md2-gamepad-controls {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 24px;
+  padding: 8px;
+  background: #252525;
+  border-radius: 8px;
+}
+
+.d-pad-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.d-pad-label {
+  font-size: 0.75rem;
+  color: #aaa;
+  text-transform: uppercase;
+  font-weight: bold;
+}
+
+.d-pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 4px;
+  width: 90px;
+  height: 90px;
+}
+
+.d-pad-btn {
+  background: #444;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  padding: 0;
+  transition: background 0.1s;
+}
+
+.d-pad-btn:hover {
+  background: #555;
+}
+
+.d-pad-btn:active {
+  background: #666;
+  transform: translateY(1px);
+}
+
+.d-pad-btn.center {
+  background: #333;
+  font-size: 0.7rem;
+  font-weight: bold;
+}
+
+/* Positioning in the 3x3 grid */
+.d-pad-btn.up { grid-column: 2; grid-row: 1; }
+.d-pad-btn.left { grid-column: 1; grid-row: 2; }
+.d-pad-btn.right { grid-column: 3; grid-row: 2; }
+.d-pad-btn.down { grid-column: 2; grid-row: 3; }
+.d-pad-btn.center { grid-column: 2; grid-row: 2; visibility: hidden; } /* Placeholder for spacing unless used */
+
+.md2-reset-btn {
+  align-self: center;
+  padding: 8px 16px;
+  background: #e94560;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+
+.md2-reset-btn:hover {
+  background: #ff6b6b;
 }
 
 .md2-animation-controls label,
@@ -64,8 +165,7 @@
   min-width: 120px;
 }
 
-.md2-animation-controls button,
-.md2-camera-controls button {
+.md2-animation-controls button {
   padding: 6px 12px;
   background: #5a5a5a;
   color: white;
@@ -75,7 +175,6 @@
   font-size: 0.875rem;
 }
 
-.md2-animation-controls button:hover,
-.md2-camera-controls button:hover {
+.md2-animation-controls button:hover {
   background: #6a6a6a;
 }
