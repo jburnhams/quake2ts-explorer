@@ -1,8 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import type { ParsedFile, PakService } from '../services/pakService';
-import { Md2Viewer } from './Md2Viewer';
 import { SpriteViewer } from './SpriteViewer';
-import { BspViewer } from './BspViewer';
+import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -52,21 +51,6 @@ function ImagePreview({ rgba, width, height }: ImagePreviewProps) {
       <div className="preview-dimensions">
         {width} x {height} {scale > 1 && `(${scale}x zoom)`}
       </div>
-    </div>
-  );
-}
-
-interface ModelPreviewProps {
-  type: 'md2' | 'md3';
-}
-
-function ModelPreview({ type }: ModelPreviewProps) {
-  return (
-    <div className="preview-model" data-testid="model-preview">
-      <div className="preview-model-icon">{'\uD83D\uDC7E'}</div>
-      <h3>{type.toUpperCase()} Model</h3>
-      <p>3D preview not yet implemented</p>
-      <p>See metadata panel for model details</p>
     </div>
   );
 }
@@ -231,19 +215,16 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
           </div>
         );
       case 'md2':
+      case 'md3':
+      case 'bsp':
+      case 'dm2':
         return (
-          <Md2Viewer
-            model={parsedFile.model}
-            animations={parsedFile.animations}
-            skinPath={parsedFile.model.skins[0]?.name}
-            hasFile={(path: string) => pakService.hasFile(path)}
-            loadFile={async (path: string) => await pakService.readFile(path)}
+          <UniversalViewer
+            parsedFile={parsedFile}
+            pakService={pakService}
+            filePath={filePath}
           />
         );
-      case 'md3':
-        return <ModelPreview type="md3" />;
-      case 'bsp':
-        return <BspViewer map={parsedFile.map} pakService={pakService} />;
       case 'sp2':
         return (
           <SpriteViewer

@@ -259,9 +259,9 @@ describe('PakService with real PAK file', () => {
       }
     });
 
-    it('returns unknown for DM2 files', async () => {
+    it('parses DM2 files as dm2 type', async () => {
       const parsed = await service.parseFile('demos/demo1.dm2');
-      expect(parsed.type).toBe('unknown');
+      expect(parsed.type).toBe('dm2');
     });
   });
 
