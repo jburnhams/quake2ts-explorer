@@ -4,7 +4,6 @@ import {
   Md2Animation,
   createWebGLContext,
   Md2Pipeline,
-  buildMd2Geometry,
   Md2MeshBuffers,
   Camera,
   createAnimationState,
@@ -20,6 +19,7 @@ import { mat4, vec3 } from 'gl-matrix';
 import { Md2AnimationControls } from './Md2AnimationControls';
 import { Md2CameraControls } from './Md2CameraControls';
 import { computeCameraPosition, OrbitState } from '../utils/cameraUtils';
+import '../styles/md2Viewer.css';
 
 export interface Md2ViewerProps {
   model: Md2Model;
@@ -31,6 +31,7 @@ export interface Md2ViewerProps {
 
 export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md2ViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const frameOverlayRef = useRef<HTMLDivElement>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [pipeline, setPipeline] = useState<Md2Pipeline | null>(null);
   const [meshBuffers, setMeshBuffers] = useState<Md2MeshBuffers | null>(null);
@@ -43,7 +44,6 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
     phi: Math.PI / 4,
     target: [0, 0, 24] as vec3,
   });
-  const [autoRotate, setAutoRotate] = useState(false);
 
   const [animState, setAnimState] = useState(() => {
     const sequence: AnimationSequence = {
@@ -137,10 +137,6 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       const delta = currentTime - lastTime;
       lastTime = currentTime;
 
-      if (autoRotate) {
-        setOrbit(prev => ({ ...prev, theta: (prev.theta + delta * 0.0005) % (Math.PI * 2) }));
-      }
-
       if (!glContext || !pipeline || !meshBuffers || !camera) return;
       const { gl } = glContext;
 
@@ -150,6 +146,11 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
       gl.enable(gl.CULL_FACE);
 
       const frameBlend = computeFrameBlend(animState);
+
+      if (frameOverlayRef.current) {
+        frameOverlayRef.current.textContent = `Frame: ${Math.floor(frameBlend.frame)}`;
+      }
+
       meshBuffers.update(model, {
         currentFrame: frameBlend.frame,
         nextFrame: frameBlend.nextFrame,
@@ -185,7 +186,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
     });
 
     return () => cancelAnimationFrame(frameId);
-  }, [glContext, pipeline, meshBuffers, camera, orbit, animState, skinTexture, model, autoRotate]);
+  }, [glContext, pipeline, meshBuffers, camera, orbit, animState, skinTexture, model]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -206,6 +207,7 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
   return (
     <div className="md2-viewer">
       <div className="md2-canvas-container">
+        <div className="md2-frame-overlay" ref={frameOverlayRef}>Frame: 0</div>
         <canvas ref={canvasRef} className="md2-viewer-canvas" />
       </div>
       <div className="md2-controls-panel">
@@ -221,8 +223,6 @@ export function Md2Viewer({ model, animations, skinPath, hasFile, loadFile }: Md
         <Md2CameraControls
             orbit={orbit}
             setOrbit={setOrbit}
-            autoRotate={autoRotate}
-            setAutoRotate={setAutoRotate}
         />
       </div>
     </div>

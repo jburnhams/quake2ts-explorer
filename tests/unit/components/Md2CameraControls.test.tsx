@@ -6,7 +6,6 @@ import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 
 describe('Md2CameraControls', () => {
   const mockSetOrbit = jest.fn();
-  const mockSetAutoRotate = jest.fn();
   const orbit: OrbitState = {
     radius: 100,
     theta: 0,
@@ -23,13 +22,13 @@ describe('Md2CameraControls', () => {
       <Md2CameraControls
         orbit={orbit}
         setOrbit={mockSetOrbit}
-        autoRotate={false}
-        setAutoRotate={mockSetAutoRotate}
       />
     );
-    expect(screen.getByText('Reset Camera')).toBeInTheDocument();
-    expect(screen.getByText(/Distance:/)).toBeInTheDocument();
-    expect(screen.getByLabelText('Auto-rotate')).toBeInTheDocument();
+    expect(screen.getByText('Reset')).toBeInTheDocument();
+    expect(screen.getByText('Move / Zoom')).toBeInTheDocument();
+    expect(screen.getByText('Rotate')).toBeInTheDocument();
+    expect(screen.getByTitle('Zoom In')).toBeInTheDocument();
+    expect(screen.getByTitle('Zoom Out')).toBeInTheDocument();
   });
 
   it('handles reset camera', () => {
@@ -37,38 +36,53 @@ describe('Md2CameraControls', () => {
       <Md2CameraControls
         orbit={orbit}
         setOrbit={mockSetOrbit}
-        autoRotate={false}
-        setAutoRotate={mockSetAutoRotate}
       />
     );
-    fireEvent.click(screen.getByText('Reset Camera'));
+    fireEvent.click(screen.getByText('Reset'));
     expect(mockSetOrbit).toHaveBeenCalled();
   });
 
-  it('handles auto-rotate toggle', () => {
+  it('handles zoom in', () => {
     render(
       <Md2CameraControls
         orbit={orbit}
         setOrbit={mockSetOrbit}
-        autoRotate={false}
-        setAutoRotate={mockSetAutoRotate}
       />
     );
-    fireEvent.click(screen.getByLabelText('Auto-rotate'));
-    expect(mockSetAutoRotate).toHaveBeenCalledWith(true);
+    fireEvent.click(screen.getByTitle('Zoom In'));
+    expect(mockSetOrbit).toHaveBeenCalled();
   });
 
-  it('handles distance change', () => {
+  it('handles zoom out', () => {
     render(
       <Md2CameraControls
         orbit={orbit}
         setOrbit={mockSetOrbit}
-        autoRotate={false}
-        setAutoRotate={mockSetAutoRotate}
       />
     );
-    const range = screen.getByLabelText(/Distance:/);
-    fireEvent.change(range, { target: { value: '200' } });
+    fireEvent.click(screen.getByTitle('Zoom Out'));
+    expect(mockSetOrbit).toHaveBeenCalled();
+  });
+
+  it('handles rotation', () => {
+    render(
+      <Md2CameraControls
+        orbit={orbit}
+        setOrbit={mockSetOrbit}
+      />
+    );
+    fireEvent.click(screen.getByTitle('Rotate Left'));
+    expect(mockSetOrbit).toHaveBeenCalled();
+  });
+
+  it('handles panning', () => {
+    render(
+      <Md2CameraControls
+        orbit={orbit}
+        setOrbit={mockSetOrbit}
+      />
+    );
+    fireEvent.click(screen.getByTitle('Pan Left'));
     expect(mockSetOrbit).toHaveBeenCalled();
   });
 });
