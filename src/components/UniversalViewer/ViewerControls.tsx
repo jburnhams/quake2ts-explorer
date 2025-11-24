@@ -12,6 +12,8 @@ interface ViewerControlsProps {
   speed: number;
   setSpeed: (speed: number) => void;
   showCameraControls: boolean;
+  cameraMode: 'orbit' | 'free';
+  setCameraMode: (mode: 'orbit' | 'free') => void;
 }
 
 export function ViewerControls({
@@ -22,7 +24,9 @@ export function ViewerControls({
   hasPlayback,
   speed,
   setSpeed,
-  showCameraControls
+  showCameraControls,
+  cameraMode,
+  setCameraMode
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -41,13 +45,6 @@ export function ViewerControls({
 
         const f = vec3.fromValues(-eyeX, -eyeY, -eyeZ);
         vec3.normalize(f, f);
-
-        // Assume Y-up for controls calculation logic from Md2Viewer?
-        // Md2CameraControls used Y-up.
-        // UniversalViewer might be Z-up.
-        // This control logic depends on coordinate system used for orbit.
-        // If UniversalViewer normalizes inputs, we are fine.
-        // Let's stick to Md2CameraControls logic for now.
 
         const up = vec3.fromValues(0, 1, 0);
         const right = vec3.create();
@@ -121,32 +118,49 @@ export function ViewerControls({
 
       {showCameraControls && (
         <div className="md2-gamepad-controls">
-           {/* Reusing structure from Md2CameraControls */}
-           <div className="d-pad-group">
-            <span className="d-pad-label">Move / Zoom</span>
-            <div className="d-pad">
-              <button className="d-pad-btn up" onClick={() => handleMove('forward')}>▲</button>
-              <button className="d-pad-btn left" onClick={() => handleMove('left')}>◀</button>
-              <button className="d-pad-btn center" disabled>MV</button>
-              <button className="d-pad-btn right" onClick={() => handleMove('right')}>▶</button>
-              <button className="d-pad-btn down" onClick={() => handleMove('backward')}>▼</button>
-            </div>
-          </div>
+           <div className="camera-mode-toggle" style={{ marginBottom: '10px' }}>
+              <button
+                 onClick={() => setCameraMode(cameraMode === 'orbit' ? 'free' : 'orbit')}
+                 style={{ width: '100%' }}
+              >
+                 Mode: {cameraMode === 'orbit' ? 'Orbit' : 'Free Look'}
+              </button>
+              {cameraMode === 'free' && (
+                  <div style={{ fontSize: '10px', marginTop: '5px', color: '#aaa', textAlign: 'center' }}>
+                      Click & Drag to Look<br/>WASD / Arrows to Move
+                  </div>
+              )}
+           </div>
 
-          <button className="md2-reset-btn" onClick={resetCamera}>
-            Reset Cam
-          </button>
+           {cameraMode === 'orbit' && (
+             <>
+               <div className="d-pad-group">
+                <span className="d-pad-label">Move / Zoom</span>
+                <div className="d-pad">
+                  <button className="d-pad-btn up" onClick={() => handleMove('forward')}>▲</button>
+                  <button className="d-pad-btn left" onClick={() => handleMove('left')}>◀</button>
+                  <button className="d-pad-btn center" disabled>MV</button>
+                  <button className="d-pad-btn right" onClick={() => handleMove('right')}>▶</button>
+                  <button className="d-pad-btn down" onClick={() => handleMove('backward')}>▼</button>
+                </div>
+              </div>
 
-          <div className="d-pad-group">
-            <span className="d-pad-label">Rotate</span>
-            <div className="d-pad">
-              <button className="d-pad-btn up" onClick={() => handleRotate('up')}>▲</button>
-              <button className="d-pad-btn left" onClick={() => handleRotate('left')}>◀</button>
-              <button className="d-pad-btn center" disabled>ROT</button>
-              <button className="d-pad-btn right" onClick={() => handleRotate('right')}>▶</button>
-              <button className="d-pad-btn down" onClick={() => handleRotate('down')}>▼</button>
-            </div>
-          </div>
+              <button className="md2-reset-btn" onClick={resetCamera}>
+                Reset Cam
+              </button>
+
+              <div className="d-pad-group">
+                <span className="d-pad-label">Rotate</span>
+                <div className="d-pad">
+                  <button className="d-pad-btn up" onClick={() => handleRotate('up')}>▲</button>
+                  <button className="d-pad-btn left" onClick={() => handleRotate('left')}>◀</button>
+                  <button className="d-pad-btn center" disabled>ROT</button>
+                  <button className="d-pad-btn right" onClick={() => handleRotate('right')}>▶</button>
+                  <button className="d-pad-btn down" onClick={() => handleRotate('down')}>▼</button>
+                </div>
+              </div>
+             </>
+           )}
         </div>
       )}
     </div>
