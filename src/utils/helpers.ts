@@ -18,6 +18,7 @@ export function getFileIcon(name: string, isDirectory: boolean): string {
   switch (ext) {
     case 'pcx':
     case 'wal':
+    case 'tga':
       return '\uD83D\uDDBC'; // image
     case 'md2':
     case 'md3':
@@ -74,13 +75,14 @@ export function calculateAudioDuration(samplesLength: number, channels: number, 
 /**
  * Get file type from path
  */
-export type FileType = 'pcx' | 'wal' | 'md2' | 'md3' | 'sp2' | 'wav' | 'bsp' | 'dm2' | 'txt' | 'unknown';
+export type FileType = 'pcx' | 'wal' | 'tga' | 'md2' | 'md3' | 'sp2' | 'wav' | 'bsp' | 'dm2' | 'txt' | 'unknown';
 
 export function getFileType(path: string): FileType {
   const ext = path.toLowerCase().split('.').pop() || '';
   switch (ext) {
     case 'pcx': return 'pcx';
     case 'wal': return 'wal';
+    case 'tga': return 'tga';
     case 'md2': return 'md2';
     case 'md3': return 'md3';
     case 'sp2': return 'sp2';

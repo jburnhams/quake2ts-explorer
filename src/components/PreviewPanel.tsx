@@ -191,6 +191,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
   const renderPreview = () => {
     switch (parsedFile.type) {
       case 'pcx':
+      case 'tga':
         return (
           <ImagePreview
             rgba={parsedFile.rgba}
