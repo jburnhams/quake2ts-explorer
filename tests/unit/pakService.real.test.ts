@@ -237,6 +237,16 @@ describe('PakService with real PAK file', () => {
       }
     });
 
+    it('parses TGA files', async () => {
+      const parsed = await service.parseFile('env/sky1rt.tga');
+      expect(parsed.type).toBe('tga');
+      if (parsed.type === 'tga') {
+        expect(parsed.width).toBeGreaterThan(0);
+        expect(parsed.height).toBeGreaterThan(0);
+        expect(parsed.rgba).toBeInstanceOf(Uint8Array);
+      }
+    });
+
     it('parses WAV files', async () => {
       const parsed = await service.parseFile('sound/berserk/attack.wav');
       expect(parsed.type).toBe('wav');
@@ -246,16 +256,11 @@ describe('PakService with real PAK file', () => {
       }
     });
 
-    it('returns unknown for BSP files if parsing fails', async () => {
+    it('parses BSP files', async () => {
       const parsed = await service.parseFile('maps/demo1.bsp');
-      // demo1.bsp in pak.pak appears to be invalid or unsupported by the current parser
-      // so it falls back to unknown
-      expect(parsed.type).toBe('unknown');
-      if (parsed.type === 'unknown') {
-        expect(parsed.data).toBeInstanceOf(Uint8Array);
-        // Verify it's actually a BSP by checking magic
-        const magic = String.fromCharCode(parsed.data[0], parsed.data[1], parsed.data[2], parsed.data[3]);
-        expect(magic).toBe('IBSP');
+      expect(parsed.type).toBe('bsp');
+      if (parsed.type === 'bsp') {
+        expect(parsed.map).toBeDefined();
       }
     });
 

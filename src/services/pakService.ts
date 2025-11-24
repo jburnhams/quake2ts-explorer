@@ -10,6 +10,7 @@ import {
   parseMd3,
   parseWav,
   parseBsp,
+  parseTga,
   type PcxImage,
   type WalTexture,
   type Md2Model,
@@ -18,6 +19,7 @@ import {
   type SpriteModel,
   type WavData,
   type BspMap,
+  type TgaImage,
 } from 'quake2ts/engine';
 
 // Re-define interfaces since they're not exported from quake2ts/engine
@@ -69,6 +71,14 @@ export interface ParsedWal {
   height: number;
 }
 
+export interface ParsedTga {
+  type: 'tga';
+  image: TgaImage;
+  rgba: Uint8Array;
+  width: number;
+  height: number;
+}
+
 export interface ParsedMd2 {
   type: 'md2';
   model: Md2Model;
@@ -113,7 +123,7 @@ export interface ParsedUnknown {
   error?: string;
 }
 
-export type ParsedFile = ParsedPcx | ParsedWal | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedDm2 | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
+export type ParsedFile = ParsedPcx | ParsedWal | ParsedTga | ParsedMd2 | ParsedMd3 | ParsedBsp | ParsedDm2 | ParsedSprite | ParsedWav | ParsedText | ParsedUnknown;
 
 export interface TreeNode {
   name: string;
@@ -230,6 +240,10 @@ export class PakService {
           rgba = prepared.levels[0]?.rgba ?? null;
         }
         return { type: 'wal', texture, rgba, width: texture.width, height: texture.height };
+      }
+      case 'tga': {
+        const image = parseTga(buffer);
+        return { type: 'tga', image, rgba: image.pixels, width: image.width, height: image.height };
       }
       case 'md2': {
         try {

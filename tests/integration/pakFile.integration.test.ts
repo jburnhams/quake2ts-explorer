@@ -414,29 +414,54 @@ describe('PAK File Integration Tests', () => {
     });
   });
 
-  describe('PakService Integration', () => {
-      it('parses demo1.dm2 correctly', async () => {
-          const service = new PakService(vfs);
+  describe('Comprehensive File Parsing', () => {
+    it('should successfully parse every file in the PAK with a specific loader', async () => {
+      const service = new PakService(vfs);
 
-          const parsed = await service.parseFile('demos/demo1.dm2');
-          expect(parsed.type).toBe('dm2');
-          if (parsed.type === 'dm2') {
-              expect(parsed.data).toBeInstanceOf(Uint8Array);
-              expect(parsed.data.length).toBeGreaterThan(0);
-          }
-      });
+      // Collect all files
+      const allFiles: string[] = [];
+      const gatherFiles = (dirPath?: string) => {
+        const listing = service.listDirectory(dirPath);
+        for (const file of listing.files) {
+          allFiles.push(file.path);
+        }
+        for (const subDir of listing.directories) {
+          const fullPath = dirPath ? `${dirPath}/${subDir}` : subDir;
+          gatherFiles(fullPath);
+        }
+      };
+      gatherFiles();
 
-      it('handles demo1.bsp parsing', async () => {
-          const service = new PakService(vfs);
+      console.log(`Testing parsing for ${allFiles.length} files...`);
+      expect(allFiles.length).toBeGreaterThan(0);
 
-          const parsed = await service.parseFile('maps/demo1.bsp');
-          expect(parsed).toBeDefined();
-          // We verify it doesn't crash. It might return unknown if the file is invalid.
-          if (parsed.type === 'bsp') {
-               expect(parsed.map).toBeDefined();
-          } else {
-               expect(parsed.type).toBe('unknown');
-          }
-      });
+      for (const filePath of allFiles) {
+        const parsed = await service.parseFile(filePath);
+
+        // Assert type is NOT unknown. Every file in pak.pak should have a specific loader.
+        if (parsed.type === 'unknown') {
+            console.error(`Failed to parse ${filePath}: returned unknown type`);
+        }
+        expect(parsed.type).not.toBe('unknown');
+
+        // Specific checks based on extension
+        if (filePath.endsWith('.tga')) {
+            expect(parsed.type).toBe('tga');
+            if (parsed.type === 'tga') {
+                expect(parsed.width).toBeGreaterThan(0);
+                expect(parsed.height).toBeGreaterThan(0);
+                expect(parsed.rgba).toBeInstanceOf(Uint8Array);
+                // TGA from quake2ts is likely RGBA (4 bytes per pixel)
+                // Note: bitsPerPixel in TgaImage might vary but pixels should be decoded to RGBA.
+                // tga.d.ts says "Parses a TGA image buffer into raw RGBA pixels."
+                expect(parsed.rgba.length).toBe(parsed.width * parsed.height * 4);
+            }
+        } else if (filePath.endsWith('.dm2')) {
+            expect(parsed.type).toBe('dm2');
+        } else if (filePath.endsWith('.bsp')) {
+            expect(parsed.type).toBe('bsp');
+        }
+      }
+    });
   });
 });

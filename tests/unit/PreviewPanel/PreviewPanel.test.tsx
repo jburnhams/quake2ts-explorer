@@ -31,4 +31,22 @@ describe('PreviewPanel Component', () => {
     );
     expect(screen.getByText('readme.txt')).toBeInTheDocument();
   });
+
+  it('renders TGA image preview', () => {
+    const parsedTga: ParsedFile = {
+        type: 'tga',
+        rgba: new Uint8Array(4),
+        width: 1,
+        height: 1,
+        image: {} as any
+    };
+    render(
+      <PreviewPanel
+        parsedFile={parsedTga}
+        filePath="test.tga"
+        pakService={mockPakService}
+      />
+    );
+    expect(screen.getByTestId('image-preview')).toBeInTheDocument();
+  });
 });
