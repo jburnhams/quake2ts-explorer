@@ -1,13 +1,29 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ViewerControls } from '../../../src/components/UniversalViewer/ViewerControls';
-import { OrbitState } from '../../../src/utils/cameraUtils';
+import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
+import { OrbitState } from '../../../../src/utils/cameraUtils';
 import { vec3 } from 'gl-matrix';
+import '@testing-library/jest-dom';
+
+// Mock the external dependencies
+jest.mock('@uiw/react-color-colorful', () => {
+  const Colorful = ({ color, onChange }: { color: any, onChange: (color: any) => void }) => (
+    <div data-testid="colorful-picker" onClick={() => onChange({ hsva: { h: 240, s: 100, v: 100, a: 1 } })}>
+      Mock Colorful
+    </div>
+  );
+  return {
+    __esModule: true,
+    default: Colorful,
+  };
+});
 
 describe('ViewerControls', () => {
   const mockSetOrbit = jest.fn();
   const mockSetSpeed = jest.fn();
   const mockOnPlayPause = jest.fn();
+  const mockSetRenderColor = jest.fn();
+  const mockSetRenderMode = jest.fn();
 
   const defaultOrbit: OrbitState = {
     radius: 100,
@@ -28,9 +44,9 @@ describe('ViewerControls', () => {
     cameraMode: 'orbit' as const,
     setCameraMode: jest.fn(),
     renderMode: 'textured' as const,
-    setRenderMode: jest.fn(),
+    setRenderMode: mockSetRenderMode,
     renderColor: [1, 1, 1] as [number, number, number],
-    setRenderColor: jest.fn(),
+    setRenderColor: mockSetRenderColor,
   };
 
   beforeEach(() => {
@@ -221,10 +237,9 @@ describe('ViewerControls', () => {
     });
 
     it('calls setRenderMode when a render mode button is clicked', () => {
-      const setRenderMode = jest.fn();
-      render(<ViewerControls {...defaultProps} setRenderMode={setRenderMode} />);
+      render(<ViewerControls {...defaultProps} />);
       fireEvent.click(screen.getByText('Wireframe'));
-      expect(setRenderMode).toHaveBeenCalledWith('wireframe');
+      expect(mockSetRenderMode).toHaveBeenCalledWith('wireframe');
     });
 
     it('disables the currently active render mode button', () => {
@@ -234,30 +249,26 @@ describe('ViewerControls', () => {
   });
 
   describe('Color Controls', () => {
-    it('does not show color swatches when in textured mode', () => {
-      const { container } = render(<ViewerControls {...defaultProps} renderMode="textured" />);
-      expect(container.querySelector('.color-controls')).toBeNull();
+    it('does not show color picker when in textured mode', () => {
+      const { queryByTestId } = render(<ViewerControls {...defaultProps} renderMode="textured" />);
+      expect(queryByTestId('colorful-picker')).not.toBeInTheDocument();
     });
 
-    it('shows color swatches when in wireframe mode', () => {
-      const { container } = render(<ViewerControls {...defaultProps} renderMode="wireframe" />);
-      expect(container.querySelector('.color-controls')).not.toBeNull();
+    it('shows color picker when in wireframe mode', () => {
+      const { getByTestId } = render(<ViewerControls {...defaultProps} renderMode="wireframe" />);
+      expect(getByTestId('colorful-picker')).toBeInTheDocument();
     });
 
-    it('shows color swatches when in solid mode', () => {
-        const { container } = render(<ViewerControls {...defaultProps} renderMode="solid" />);
-        expect(container.querySelector('.color-controls')).not.toBeNull();
+    it('shows color picker when in solid mode', () => {
+        const { getByTestId } = render(<ViewerControls {...defaultProps} renderMode="solid" />);
+        expect(getByTestId('colorful-picker')).toBeInTheDocument();
     });
 
-    it('calls setRenderColor when a color swatch is clicked', () => {
-      const setRenderColor = jest.fn();
-      const { container } = render(
-        <ViewerControls {...defaultProps} renderMode="solid" setRenderColor={setRenderColor} />
-      );
-      const colorControls = container.querySelector('.color-controls');
-      const redButton = colorControls?.children[0] as HTMLElement;
-      fireEvent.click(redButton);
-      expect(setRenderColor).toHaveBeenCalledWith([1, 0, 0]);
+    it('calls setRenderColor when the color is changed', () => {
+      const { getByTestId } = render(<ViewerControls {...defaultProps} renderMode="solid" />);
+      const colorPicker = getByTestId('colorful-picker');
+      fireEvent.click(colorPicker);
+      expect(mockSetRenderColor).toHaveBeenCalledWith([0, 0, 1]);
     });
   });
 });

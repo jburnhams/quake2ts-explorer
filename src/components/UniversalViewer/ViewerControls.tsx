@@ -1,5 +1,7 @@
 import React from 'react';
 import { vec3 } from 'gl-matrix';
+import Colorful from '@uiw/react-color-colorful';
+import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
 import { OrbitState } from '../../utils/cameraUtils';
 import '../../styles/md2Viewer.css';
 
@@ -103,11 +105,10 @@ export function ViewerControls({
     });
   };
 
-  const colors: { [key: string]: [number, number, number] } = {
-    'Red': [1, 0, 0],
-    'Green': [0, 1, 0],
-    'Blue': [0, 0, 1],
-    'White': [1, 1, 1],
+  const handleColorChange = (color: { hsva: { h: number; s: number; v: number; a: number; }; }) => {
+    const rgba = hsvaToRgba(color.hsva);
+    const newColor: [number, number, number] = [rgba.r / 255, rgba.g / 255, rgba.b / 255];
+    setRenderColor(newColor);
   };
 
   return (
@@ -119,17 +120,11 @@ export function ViewerControls({
        </div>
        {renderMode !== 'textured' && (
         <div className="color-controls" style={{ marginBottom: '10px' }}>
-          {Object.entries(colors).map(([name, color]) => (
-            <button
-              key={name}
-              aria-label={name}
-              style={{
-                backgroundColor: `rgb(${color[0] * 255}, ${color[1] * 255}, ${color[2] * 255})`,
-                border: renderColor.toString() === color.toString() ? '2px solid #fff' : '2px solid transparent',
-              }}
-              onClick={() => setRenderColor(color)}
-            />
-          ))}
+          <Colorful
+            color={rgbaToHsva({ r: renderColor[0] * 255, g: renderColor[1] * 255, b: renderColor[2] * 255, a: 1 })}
+            onChange={handleColorChange}
+            disableAlpha={true}
+          />
         </div>
        )}
       {hasPlayback && (
