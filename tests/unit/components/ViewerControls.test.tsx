@@ -25,6 +25,8 @@ describe('ViewerControls', () => {
     speed: 1.0,
     setSpeed: mockSetSpeed,
     showCameraControls: true,
+    cameraMode: 'orbit' as const,
+    setCameraMode: jest.fn(),
   };
 
   beforeEach(() => {
