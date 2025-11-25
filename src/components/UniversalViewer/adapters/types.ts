@@ -3,7 +3,7 @@ import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 
 export interface RenderOptions {
-  mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random';
+  mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted';
   color: [number, number, number];
   generateRandomColor?: boolean;
 }

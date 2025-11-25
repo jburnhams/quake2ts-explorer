@@ -327,7 +327,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
       if (renderMode === 'random') {
         adapter.setRenderOptions({ mode: 'solid', color: renderColor, generateRandomColor: true });
       } else {
-        adapter.setRenderOptions({ mode: renderMode, color: renderColor });
+        adapter.setRenderOptions({ mode: renderMode as 'textured' | 'wireframe' | 'solid' | 'solid-faceted', color: renderColor });
       }
     }
   }, [adapter, renderMode, renderColor]);
