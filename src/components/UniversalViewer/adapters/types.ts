@@ -2,11 +2,19 @@ import { Camera } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 
+export interface RenderOptions {
+  mode: 'textured' | 'wireframe' | 'solid';
+  color: [number, number, number];
+}
+
 export interface ViewerAdapter {
   load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void>;
   update(deltaTime: number): void;
   render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void;
   cleanup(): void;
+
+  // Render options
+  setRenderOptions?(options: RenderOptions): void;
 
   // Playback controls
   play?(): void;

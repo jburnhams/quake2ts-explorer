@@ -1,10 +1,11 @@
 import { Camera, Md2Model, Md2Pipeline, Md2MeshBuffers, createAnimationState, advanceAnimation, computeFrameBlend, parsePcx, pcxToRgba, Texture2D, Md2FrameBlend, AnimationSequence, Md2Animation } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { RenderOptions, ViewerAdapter } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class Md2Adapter implements ViewerAdapter {
   private pipeline: Md2Pipeline | null = null;
+  private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private meshBuffers: Md2MeshBuffers | null = null;
   private skinTexture: Texture2D | null = null;
   private animState: any = null;
@@ -85,16 +86,22 @@ export class Md2Adapter implements ViewerAdapter {
     this.pipeline.bind({
       modelViewProjection: mvp as any,
       lightDirection: [0.5, 1.0, 0.3],
-      tint: [1.0, 1.0, 1.0, 1.0],
-      diffuseSampler: 0
+      tint: [...this.renderOptions.color, 1.0],
+      diffuseSampler: 0,
+      useSolidColor: this.renderOptions.mode === 'solid' || this.renderOptions.mode === 'wireframe',
     });
 
     this.meshBuffers.bind();
-    gl.drawElements(gl.TRIANGLES, this.meshBuffers.indexCount, gl.UNSIGNED_SHORT, 0);
+    const drawMode = this.renderOptions.mode === 'wireframe' ? gl.LINES : gl.TRIANGLES;
+    gl.drawElements(drawMode, this.meshBuffers.indexCount, gl.UNSIGNED_SHORT, 0);
   }
 
   cleanup(): void {
     // No-op
+  }
+
+  setRenderOptions(options: RenderOptions) {
+    this.renderOptions = options;
   }
 
   play() { this.isPlayingState = true; }
