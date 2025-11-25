@@ -2,7 +2,7 @@ import React from 'react';
 import { vec3 } from 'gl-matrix';
 import Colorful from '@uiw/react-color-colorful';
 import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
-import { OrbitState } from '../../utils/cameraUtils';
+import { OrbitState, FreeCameraState } from '../../utils/cameraUtils';
 import '../../styles/md2Viewer.css';
 
 interface ViewerControlsProps {
@@ -10,6 +10,8 @@ interface ViewerControlsProps {
   onPlayPause: () => void;
   orbit: OrbitState;
   setOrbit: React.Dispatch<React.SetStateAction<OrbitState>>;
+  freeCamera: FreeCameraState;
+  setFreeCamera: React.Dispatch<React.SetStateAction<FreeCameraState>>;
   hasPlayback: boolean;
   speed: number;
   setSpeed: (speed: number) => void;
@@ -27,6 +29,8 @@ export function ViewerControls({
   onPlayPause,
   orbit,
   setOrbit,
+  freeCamera,
+  setFreeCamera,
   hasPlayback,
   speed,
   setSpeed,
@@ -40,60 +44,108 @@ export function ViewerControls({
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
-    setOrbit(prev => {
-      const newOrbit = { ...prev };
-      const step = 5;
+    if (cameraMode === 'orbit') {
+      setOrbit(prev => {
+        const newOrbit = { ...prev };
+        const step = 5;
 
-      if (direction === 'forward') {
-        newOrbit.radius = Math.max(10, prev.radius - step);
-      } else if (direction === 'backward') {
-        newOrbit.radius = Math.min(2000, prev.radius + step);
-      } else {
-        const eyeX = prev.radius * Math.sin(prev.phi) * Math.cos(prev.theta);
-        const eyeY = prev.radius * Math.cos(prev.phi);
-        const eyeZ = prev.radius * Math.sin(prev.phi) * Math.sin(prev.theta);
+        if (direction === 'forward') {
+          newOrbit.radius = Math.max(10, prev.radius - step);
+        } else if (direction === 'backward') {
+          newOrbit.radius = Math.min(2000, prev.radius + step);
+        } else {
+          const eyeX = prev.radius * Math.sin(prev.phi) * Math.cos(prev.theta);
+          const eyeY = prev.radius * Math.cos(prev.phi);
+          const eyeZ = prev.radius * Math.sin(prev.phi) * Math.sin(prev.theta);
 
-        const f = vec3.fromValues(-eyeX, -eyeY, -eyeZ);
-        vec3.normalize(f, f);
+          const f = vec3.fromValues(-eyeX, -eyeY, -eyeZ);
+          vec3.normalize(f, f);
 
-        const up = vec3.fromValues(0, 1, 0);
+          const up = vec3.fromValues(0, 1, 0);
+          const right = vec3.create();
+          vec3.cross(right, f, up);
+          vec3.normalize(right, right);
+
+          const panStep = 2.0;
+          const moveVec = vec3.create();
+
+          if (direction === 'left') {
+            vec3.scale(moveVec, right, -panStep);
+          } else if (direction === 'right') {
+            vec3.scale(moveVec, right, panStep);
+          }
+
+          const newTarget = vec3.create();
+          vec3.add(newTarget, prev.target, moveVec);
+          newOrbit.target = newTarget;
+        }
+        return newOrbit;
+      });
+    } else {
+      setFreeCamera(prev => {
+        const newState = { ...prev, position: vec3.clone(prev.position) };
+        const moveSpeed = 10;
+        const forward = vec3.create();
         const right = vec3.create();
-        vec3.cross(right, f, up);
+
+        vec3.set(forward,
+          Math.cos(newState.rotation[1]) * Math.cos(newState.rotation[0]),
+          Math.sin(newState.rotation[1]),
+          Math.cos(newState.rotation[1]) * Math.sin(newState.rotation[0])
+        );
+        vec3.normalize(forward, forward);
+
+        vec3.cross(right, forward, [0, 1, 0]);
         vec3.normalize(right, right);
 
-        const panStep = 2.0;
-        const moveVec = vec3.create();
-
-        if (direction === 'left') {
-          vec3.scale(moveVec, right, -panStep);
+        if (direction === 'forward') {
+          vec3.scaleAndAdd(newState.position, newState.position, forward, moveSpeed);
+        } else if (direction === 'backward') {
+          vec3.scaleAndAdd(newState.position, newState.position, forward, -moveSpeed);
+        } else if (direction === 'left') {
+          vec3.scaleAndAdd(newState.position, newState.position, right, -moveSpeed);
         } else if (direction === 'right') {
-          vec3.scale(moveVec, right, panStep);
+          vec3.scaleAndAdd(newState.position, newState.position, right, moveSpeed);
         }
-
-        const newTarget = vec3.create();
-        vec3.add(newTarget, prev.target, moveVec);
-        newOrbit.target = newTarget;
-      }
-      return newOrbit;
-    });
+        return newState;
+      });
+    }
   };
 
   const handleRotate = (direction: 'up' | 'down' | 'left' | 'right') => {
-    setOrbit(prev => {
-      const newOrbit = { ...prev };
-      const step = 0.1;
+    if (cameraMode === 'orbit') {
+      setOrbit(prev => {
+        const newOrbit = { ...prev };
+        const step = 0.1;
 
-      if (direction === 'left') {
-        newOrbit.theta = (prev.theta - step) % (Math.PI * 2);
-      } else if (direction === 'right') {
-        newOrbit.theta = (prev.theta + step) % (Math.PI * 2);
-      } else if (direction === 'up') {
-        newOrbit.phi = Math.max(0.1, prev.phi - step);
-      } else if (direction === 'down') {
-        newOrbit.phi = Math.min(Math.PI - 0.1, prev.phi + step);
-      }
-      return newOrbit;
-    });
+        if (direction === 'left') {
+          newOrbit.theta = (prev.theta - step) % (Math.PI * 2);
+        } else if (direction === 'right') {
+          newOrbit.theta = (prev.theta + step) % (Math.PI * 2);
+        } else if (direction === 'up') {
+          newOrbit.phi = Math.max(0.1, prev.phi - step);
+        } else if (direction === 'down') {
+          newOrbit.phi = Math.min(Math.PI - 0.1, prev.phi + step);
+        }
+        return newOrbit;
+      });
+    } else {
+      setFreeCamera(prev => {
+        const newState = { ...prev, rotation: vec3.clone(prev.rotation) };
+        const rotateSpeed = 0.1;
+
+        if (direction === 'left') {
+          newState.rotation[0] -= rotateSpeed;
+        } else if (direction === 'right') {
+          newState.rotation[0] += rotateSpeed;
+        } else if (direction === 'up') {
+          newState.rotation[1] = Math.min(Math.PI / 2 - 0.01, newState.rotation[1] + rotateSpeed);
+        } else if (direction === 'down') {
+          newState.rotation[1] = Math.max(-Math.PI / 2 + 0.01, newState.rotation[1] - rotateSpeed);
+        }
+        return newState;
+      });
+    }
   };
 
   const resetCamera = () => {
