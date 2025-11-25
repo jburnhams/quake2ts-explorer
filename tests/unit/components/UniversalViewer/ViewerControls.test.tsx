@@ -32,11 +32,18 @@ describe('ViewerControls', () => {
     target: [0, 0, 0] as unknown as vec3,
   };
 
+  const defaultFreeCamera = {
+    position: [0, 0, 0] as vec3,
+    rotation: [0, 0, 0] as vec3,
+  };
+
   const defaultProps = {
     isPlaying: false,
     onPlayPause: mockOnPlayPause,
     orbit: defaultOrbit,
     setOrbit: mockSetOrbit,
+    freeCamera: defaultFreeCamera,
+    setFreeCamera: jest.fn(),
     hasPlayback: true,
     speed: 1.0,
     setSpeed: mockSetSpeed,
@@ -225,6 +232,27 @@ describe('ViewerControls', () => {
       const updater = mockSetOrbit.mock.calls[0][0];
       const newState = updater(defaultOrbit);
       expect(newState.phi).toBeGreaterThan(defaultOrbit.phi);
+    });
+  });
+
+  describe('Free Look Camera', () => {
+    it('updates free camera position on move', () => {
+      const setFreeCamera = jest.fn();
+      render(
+        <ViewerControls
+          {...defaultProps}
+          cameraMode="free"
+          setFreeCamera={setFreeCamera}
+        />
+      );
+
+      const buttons = screen.getAllByText('▲');
+      fireEvent.click(buttons[0]);
+
+      expect(setFreeCamera).toHaveBeenCalled();
+      const updater = setFreeCamera.mock.calls[0][0];
+      const newState = updater(defaultFreeCamera);
+      expect(newState.position[0]).not.toBe(0); // Should move forward/backward on x-axis initially
     });
   });
 

@@ -455,6 +455,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
           onPlayPause={() => setIsPlaying(!isPlaying)}
           orbit={orbit}
           setOrbit={setOrbit}
+          freeCamera={freeCamera}
+          setFreeCamera={setFreeCamera}
           hasPlayback={adapter?.play !== undefined}
           speed={speed}
           setSpeed={setSpeed}
