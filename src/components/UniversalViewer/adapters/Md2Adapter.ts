@@ -86,9 +86,13 @@ export class Md2Adapter implements ViewerAdapter {
     this.pipeline.bind({
       modelViewProjection: mvp as any,
       lightDirection: [0.5, 1.0, 0.3],
-      tint: [...this.renderOptions.color, 1.0],
+      tint: [1.0, 1.0, 1.0, 1.0],
       diffuseSampler: 0,
-      useSolidColor: this.renderOptions.mode === 'solid' || this.renderOptions.mode === 'wireframe',
+      renderMode: {
+        mode: this.renderOptions.mode,
+        color: [...this.renderOptions.color, 1.0],
+        applyToAll: true,
+      }
     });
 
     this.meshBuffers.bind();
