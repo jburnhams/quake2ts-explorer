@@ -1,7 +1,7 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { Md3Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md3Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
-import { Md3ModelMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
+import { Md3SurfaceMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 
 // Mock dependencies
@@ -9,8 +9,9 @@ jest.mock('quake2ts/engine', () => {
   return {
     Md3Pipeline: jest.fn().mockImplementation(() => ({
         bind: jest.fn(),
+        drawSurface: jest.fn(),
     })),
-    Md3ModelMesh: jest.fn().mockImplementation(() => ({
+    Md3SurfaceMesh: jest.fn().mockImplementation(() => ({
         bind: jest.fn(),
         indexCount: 100,
     })),
@@ -57,13 +58,13 @@ describe('Md3Adapter', () => {
   it('loads md3 model', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { skins: [] }
+        model: { surfaces: [{ name: 'surface1', shaders: [] }] }
     } as any;
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
 
     expect(Md3Pipeline).toHaveBeenCalledWith(mockGl);
-    expect(Md3ModelMesh).toHaveBeenCalledWith(mockGl, file.model, 0, 0);
+    expect(Md3SurfaceMesh).toHaveBeenCalledWith(mockGl, file.model.surfaces[0], { frame0: 0, frame1: 0, lerp: 0 });
   });
 
   it('updates (no-op)', () => {
@@ -74,7 +75,7 @@ describe('Md3Adapter', () => {
   it('renders if loaded', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { skins: [] }
+        model: { surfaces: [] }
     } as any;
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
 
@@ -105,7 +106,7 @@ describe('Md3Adapter', () => {
     const file: ParsedFile = {
         type: 'md3',
         model: {
-            skins: [{ name: 'models/players/model/skin.pcx' }]
+            surfaces: [{ name: 'surface1', shaders: [{ name: 'models/players/model/skin.pcx' }] }]
         }
     } as any;
 
@@ -124,7 +125,7 @@ describe('Md3Adapter', () => {
   it('sets render options and uses them during render', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { skins: [] }
+        model: { surfaces: [{ name: 'surface1', shaders: [] }] }
     } as any;
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
@@ -136,10 +137,8 @@ describe('Md3Adapter', () => {
     adapter.setRenderOptions({ mode: 'wireframe', color: [0.1, 0.2, 0.3] });
     adapter.render(mockGl, camera, viewMatrix);
 
-    expect(mockGl.drawElements).toHaveBeenCalledWith(mockGl.LINES, 100, mockGl.UNSIGNED_SHORT, 0);
-
     const pipeline = (Md3Pipeline as jest.Mock).mock.results[0].value;
-    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+    expect(pipeline.drawSurface).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         renderMode: {
             mode: 'wireframe',
             color: [0.1, 0.2, 0.3, 1.0],
@@ -151,8 +150,7 @@ describe('Md3Adapter', () => {
     adapter.setRenderOptions({ mode: 'solid', color: [0.4, 0.5, 0.6] });
     adapter.render(mockGl, camera, viewMatrix);
 
-    expect(mockGl.drawElements).toHaveBeenCalledWith(mockGl.TRIANGLES, 100, mockGl.UNSIGNED_SHORT, 0);
-    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+    expect(pipeline.drawSurface).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         renderMode: {
             mode: 'solid',
             color: [0.4, 0.5, 0.6, 1.0],
@@ -164,7 +162,7 @@ describe('Md3Adapter', () => {
   it('binds skin texture during render', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { skins: [{ name: 'someskin.pcx' }] }
+        model: { surfaces: [{ name: 'surface1', shaders: [{ name: 'someskin.pcx' }] }] }
     } as any;
 
     mockPakService.hasFile.mockReturnValue(true);
