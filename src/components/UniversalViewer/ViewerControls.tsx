@@ -14,6 +14,10 @@ interface ViewerControlsProps {
   showCameraControls: boolean;
   cameraMode: 'orbit' | 'free';
   setCameraMode: (mode: 'orbit' | 'free') => void;
+  renderMode: 'textured' | 'wireframe' | 'solid';
+  setRenderMode: (mode: 'textured' | 'wireframe' | 'solid') => void;
+  renderColor: [number, number, number];
+  setRenderColor: (color: [number, number, number]) => void;
 }
 
 export function ViewerControls({
@@ -26,7 +30,11 @@ export function ViewerControls({
   setSpeed,
   showCameraControls,
   cameraMode,
-  setCameraMode
+  setCameraMode,
+  renderMode,
+  setRenderMode,
+  renderColor,
+  setRenderColor
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -95,8 +103,35 @@ export function ViewerControls({
     });
   };
 
+  const colors: { [key: string]: [number, number, number] } = {
+    'Red': [1, 0, 0],
+    'Green': [0, 1, 0],
+    'Blue': [0, 0, 1],
+    'White': [1, 1, 1],
+  };
+
   return (
     <div className="md2-controls-panel">
+       <div className="render-mode-controls" style={{ marginBottom: '10px' }}>
+         <button onClick={() => setRenderMode('textured')} disabled={renderMode === 'textured'}>Textured</button>
+         <button onClick={() => setRenderMode('wireframe')} disabled={renderMode === 'wireframe'}>Wireframe</button>
+         <button onClick={() => setRenderMode('solid')} disabled={renderMode === 'solid'}>Solid</button>
+       </div>
+       {renderMode !== 'textured' && (
+        <div className="color-controls" style={{ marginBottom: '10px' }}>
+          {Object.entries(colors).map(([name, color]) => (
+            <button
+              key={name}
+              aria-label={name}
+              style={{
+                backgroundColor: `rgb(${color[0] * 255}, ${color[1] * 255}, ${color[2] * 255})`,
+                border: renderColor.toString() === color.toString() ? '2px solid #fff' : '2px solid transparent',
+              }}
+              onClick={() => setRenderColor(color)}
+            />
+          ))}
+        </div>
+       )}
       {hasPlayback && (
         <div className="md2-anim-controls">
              <button onClick={onPlayPause}>

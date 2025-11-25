@@ -31,6 +31,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
+  const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid'>('textured');
+  const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
 
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
@@ -321,6 +323,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
   // I will re-write the loop effect logic.
 
   useEffect(() => {
+    if (adapter && adapter.setRenderOptions) {
+      adapter.setRenderOptions({ mode: renderMode, color: renderColor });
+    }
+  }, [adapter, renderMode, renderColor]);
+
+  useEffect(() => {
       if (!adapter || !glContext || !camera) return;
       const { gl } = glContext;
 
@@ -449,6 +457,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
           showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}
           cameraMode={cameraMode}
           setCameraMode={setCameraMode}
+          renderMode={renderMode}
+          setRenderMode={setRenderMode}
+          renderColor={renderColor}
+          setRenderColor={setRenderColor}
        />
      </div>
   );

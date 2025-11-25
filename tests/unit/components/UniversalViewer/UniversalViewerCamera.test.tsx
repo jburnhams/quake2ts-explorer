@@ -43,6 +43,24 @@ jest.mock('quake2ts/engine', () => ({
     angles: new Float32Array(3),
     viewMatrix: new Float32Array(16),
   })),
+  BspSurfacePipeline: jest.fn(() => ({
+    bind: jest.fn(),
+    cleanup: jest.fn(),
+  })),
+  createBspSurfaces: jest.fn(() => []),
+  buildBspGeometry: jest.fn(() => ({
+    surfaces: [],
+    lightmaps: []
+  })),
+  resolveLightStyles: jest.fn(() => new Map()),
+  applySurfaceState: jest.fn(),
+  Texture2D: jest.fn(() => ({
+      bind: jest.fn(),
+      setParameters: jest.fn(),
+      uploadImage: jest.fn()
+  })),
+  parseWal: jest.fn(() => ({})),
+  walToRgba: jest.fn(() => ({ levels: [] })),
 }));
 
 // Mock adapters using js extension as required by jest config map if present, or just path
@@ -119,6 +137,10 @@ describe('ViewerControls Interaction', () => {
                 showCameraControls={true}
                 cameraMode={'orbit'}
                 setCameraMode={setCameraMode}
+                renderMode="textured"
+                setRenderMode={() => {}}
+                renderColor={[1, 1, 1]}
+                setRenderColor={() => {}}
             />
         );
 

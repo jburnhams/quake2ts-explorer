@@ -27,6 +27,10 @@ describe('ViewerControls', () => {
     showCameraControls: true,
     cameraMode: 'orbit' as const,
     setCameraMode: jest.fn(),
+    renderMode: 'textured' as const,
+    setRenderMode: jest.fn(),
+    renderColor: [1, 1, 1] as [number, number, number],
+    setRenderColor: jest.fn(),
   };
 
   beforeEach(() => {
@@ -205,6 +209,55 @@ describe('ViewerControls', () => {
       const updater = mockSetOrbit.mock.calls[0][0];
       const newState = updater(defaultOrbit);
       expect(newState.phi).toBeGreaterThan(defaultOrbit.phi);
+    });
+  });
+
+  describe('Render Mode Controls', () => {
+    it('renders render mode buttons', () => {
+      render(<ViewerControls {...defaultProps} />);
+      expect(screen.getByText('Textured')).toBeInTheDocument();
+      expect(screen.getByText('Wireframe')).toBeInTheDocument();
+      expect(screen.getByText('Solid')).toBeInTheDocument();
+    });
+
+    it('calls setRenderMode when a render mode button is clicked', () => {
+      const setRenderMode = jest.fn();
+      render(<ViewerControls {...defaultProps} setRenderMode={setRenderMode} />);
+      fireEvent.click(screen.getByText('Wireframe'));
+      expect(setRenderMode).toHaveBeenCalledWith('wireframe');
+    });
+
+    it('disables the currently active render mode button', () => {
+      render(<ViewerControls {...defaultProps} renderMode="wireframe" />);
+      expect(screen.getByText('Wireframe')).toBeDisabled();
+    });
+  });
+
+  describe('Color Controls', () => {
+    it('does not show color swatches when in textured mode', () => {
+      const { container } = render(<ViewerControls {...defaultProps} renderMode="textured" />);
+      expect(container.querySelector('.color-controls')).toBeNull();
+    });
+
+    it('shows color swatches when in wireframe mode', () => {
+      const { container } = render(<ViewerControls {...defaultProps} renderMode="wireframe" />);
+      expect(container.querySelector('.color-controls')).not.toBeNull();
+    });
+
+    it('shows color swatches when in solid mode', () => {
+        const { container } = render(<ViewerControls {...defaultProps} renderMode="solid" />);
+        expect(container.querySelector('.color-controls')).not.toBeNull();
+    });
+
+    it('calls setRenderColor when a color swatch is clicked', () => {
+      const setRenderColor = jest.fn();
+      const { container } = render(
+        <ViewerControls {...defaultProps} renderMode="solid" setRenderColor={setRenderColor} />
+      );
+      const colorControls = container.querySelector('.color-controls');
+      const redButton = colorControls?.children[0] as HTMLElement;
+      fireEvent.click(redButton);
+      expect(setRenderColor).toHaveBeenCalledWith([1, 0, 0]);
     });
   });
 });
