@@ -205,109 +205,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
      };
   }, [parsedFile, glContext, pakService]);
 
-  // Update & Render Loop
-  useEffect(() => {
-      if (!adapter || !glContext || !camera) return;
-      const { gl } = glContext;
-
-      let lastTime = performance.now();
-      let frameId: number;
-      let running = true;
-
-      const loop = (currentTime: number) => {
-          if (!running) return;
-          const delta = (currentTime - lastTime) / 1000;
-          lastTime = currentTime;
-
-          // Update
-          if (adapter.setSpeed) adapter.setSpeed(speed);
-          if (isPlaying && adapter.play && !adapter.isPlaying?.()) adapter.play();
-          else if (!isPlaying && adapter.pause && adapter.isPlaying?.()) adapter.pause();
-
-          adapter.update(delta);
-
-          // Camera Logic
-          const viewMatrix = mat4.create();
-          const useZUp = adapter.useZUp ? adapter.useZUp() : false;
-
-          if (adapter.hasCameraControl && adapter.hasCameraControl()) {
-               const update = adapter.getCameraUpdate ? adapter.getCameraUpdate() : null;
-               if (update) {
-                   // Adapter controls camera (e.g. DM2)
-                   if (camera.position) vec3.copy(camera.position, update.position);
-                   if (camera.angles) vec3.copy(camera.angles, update.angles);
-
-                   if ((camera as any).updateMatrices) {
-                       (camera as any).updateMatrices();
-                   }
-
-                   if (camera.viewMatrix) {
-                       mat4.copy(viewMatrix, camera.viewMatrix as mat4);
-                   }
-               }
-          } else {
-               if (cameraMode === 'free') {
-                   // Update Free Camera State
-                   const inputs = {
-                       forward: !!(keysPressed.current['ArrowUp'] || keysPressed.current['KeyW']),
-                       backward: !!(keysPressed.current['ArrowDown'] || keysPressed.current['KeyS']),
-                       left: !!(keysPressed.current['ArrowLeft'] || keysPressed.current['KeyA']),
-                       right: !!(keysPressed.current['ArrowRight'] || keysPressed.current['KeyD']),
-                       deltaX: mouseState.current.deltaX,
-                       deltaY: mouseState.current.deltaY
-                   };
-
-                   // Consume deltas
-                   mouseState.current.deltaX = 0;
-                   mouseState.current.deltaY = 0;
-
-                   // Ideally we should use functional update or ref for state to avoid dependency loop if we were using setFreeCamera inside loop.
-                   // But here we can't easily use setFreeCamera with dependency because loop runs every frame.
-                   // So we need a ref for freeCamera or just update it here and force re-render?
-                   // Re-rendering every frame via React state update is bad for performance if not careful.
-                   // But here we are inside `useEffect` with `adapter`.
-
-                   // Best practice for game loop in React: Use ref for mutable game state.
-                   // But I already have `freeCamera` as state.
-                   // I should use a Ref for the camera state used in the loop, and maybe sync to React state occasionally or just use Ref.
-                   // Let's use a Ref for the live camera state.
-               } else {
-                   // Orbit Control
-                   const eye = useZUp ? computeCameraPositionZUp(orbit) : computeCameraPosition(orbit);
-                   const up = useZUp ? [0, 0, 1] : [0, 1, 0];
-
-                   mat4.lookAt(viewMatrix, eye, orbit.target, up as vec3);
-
-                   // Also set camera position for completeness
-                   if (camera.position) {
-                       vec3.copy(camera.position, eye);
-                   }
-               }
-          }
-
-          // Wait, I need to implement the Free Camera update properly using Ref to avoid closure staleness.
-          // But I can't easily switch between State and Ref without refactoring how UniversalViewer handles state.
-          // For now, I'll rely on a Ref that is initialized from state.
-
-          gl.clearColor(0.15, 0.15, 0.2, 1.0);
-          gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-          gl.enable(gl.DEPTH_TEST);
-          gl.enable(gl.CULL_FACE);
-
-          // To properly handle free camera update, I need to move the logic into this loop block
-          // and use a Ref for FreeCameraState.
-
-          adapter.render(gl, camera, viewMatrix);
-
-          frameId = requestAnimationFrame(loop);
-      };
-
-      frameId = requestAnimationFrame(loop);
-      return () => {
-          running = false;
-          cancelAnimationFrame(frameId);
-      };
-  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode]); // Dependencies restart loop.
 
   // We need a separate effect to update the FreeCameraState ref when state changes (initial load)
   // And we need to store the current FreeCameraState in a Ref so the loop can update it without restarting.
@@ -315,6 +212,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
   useEffect(() => {
       freeCameraRef.current = freeCamera;
   }, [freeCamera]);
+
+  const orbitRef = useRef<OrbitState>(orbit);
+  useEffect(() => {
+    orbitRef.current = orbit;
+  }, [orbit]);
 
   // But if we update Ref inside loop, the React state won't update, so UI won't reflect it (if we displayed pos).
   // That's fine.
@@ -381,25 +283,38 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
 
                    const newState = updateFreeCamera(freeCameraRef.current, inputs, delta, 300, 0.002, useZUp);
                    freeCameraRef.current = newState;
+                   setFreeCamera(newState);
 
                    computeFreeCameraViewMatrix(newState, viewMatrix, useZUp);
 
                    if (camera.position) vec3.copy(camera.position, newState.position);
                    // Angles in camera might be useful for other things, but viewMatrix is key.
                } else {
-                   // Orbit Control
-                   // Use orbit state directly (it's in dependency so loop restarts on orbit change)
-                   // But wait, orbit changes via controls which updates state -> restarts loop.
-                   // Free camera updates via loop -> doesn't restart loop.
+                    // Orbit Control
+                    if (mouseState.current.isDragging) {
+                        const sensitivity = 0.01;
+                        const newOrbit = { ...orbitRef.current };
+                        newOrbit.theta -= mouseState.current.deltaX * sensitivity;
+                        newOrbit.phi -= mouseState.current.deltaY * sensitivity;
 
-                   const eye = useZUp ? computeCameraPositionZUp(orbit) : computeCameraPosition(orbit);
-                   const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+                        // Clamp phi to avoid flipping
+                        newOrbit.phi = Math.max(0.1, Math.min(Math.PI - 0.1, newOrbit.phi));
 
-                   mat4.lookAt(viewMatrix, eye, orbit.target, up as vec3);
+                        orbitRef.current = newOrbit;
+                        setOrbit(newOrbit);
+                    }
 
-                   if (camera.position) {
-                       vec3.copy(camera.position, eye);
-                   }
+                    mouseState.current.deltaX = 0;
+                    mouseState.current.deltaY = 0;
+
+                    const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
+                    const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+
+                    mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
+
+                    if (camera.position) {
+                        vec3.copy(camera.position, eye);
+                    }
                }
           }
 
