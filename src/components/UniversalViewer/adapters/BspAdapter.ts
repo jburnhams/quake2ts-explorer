@@ -1,6 +1,6 @@
 import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { RenderOptions, ViewerAdapter } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class BspAdapter implements ViewerAdapter {
@@ -8,6 +8,7 @@ export class BspAdapter implements ViewerAdapter {
   private geometry: BspGeometryBuildResult | null = null;
   private textures: Map<string, Texture2D> = new Map();
   private map: BspMap | null = null;
+  private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -97,13 +98,19 @@ export class BspAdapter implements ViewerAdapter {
             lightmapSampler: 1,
             styleValues: styleValues,
             surfaceFlags: surface.surfaceFlags,
-            timeSeconds: timeSeconds
+            timeSeconds: timeSeconds,
+            renderMode: {
+                mode: this.renderOptions.mode,
+                color: [...this.renderOptions.color, 1.0],
+                applyToAll: true,
+            }
         });
 
         applySurfaceState(gl, state);
 
         surface.vao.bind();
-        gl.drawElements(gl.TRIANGLES, surface.indexCount, gl.UNSIGNED_SHORT, 0);
+        const drawMode = this.renderOptions.mode === 'wireframe' ? gl.LINES : gl.TRIANGLES;
+        gl.drawElements(drawMode, surface.indexCount, gl.UNSIGNED_SHORT, 0);
     }
   }
 
@@ -115,4 +122,8 @@ export class BspAdapter implements ViewerAdapter {
   }
 
   useZUp() { return true; }
+
+  setRenderOptions(options: RenderOptions) {
+    this.renderOptions = options;
+  }
 }

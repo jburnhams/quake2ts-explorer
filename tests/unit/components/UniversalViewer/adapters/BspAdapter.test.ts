@@ -55,6 +55,7 @@ describe('BspAdapter', () => {
         TEXTURE1: 8,
         TRIANGLES: 9,
         UNSIGNED_SHORT: 10,
+        LINES: 1,
         generateMipmap: jest.fn(),
         activeTexture: jest.fn(),
         drawElements: jest.fn(),
@@ -201,5 +202,50 @@ describe('BspAdapter', () => {
 
   it('returns true for useZUp', () => {
       expect(adapter.useZUp()).toBe(true);
+  });
+
+  it('sets render options and uses them during render', async () => {
+    const file: ParsedFile = { type: 'bsp', map: {} } as any;
+    const mockVao = { bind: jest.fn() };
+
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [
+            { vao: mockVao, indexCount: 6, texture: 'test' }
+        ],
+        lightmaps: []
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    const camera = { projectionMatrix: mat4.create() } as any;
+    const viewMatrix = mat4.create();
+
+    // Test wireframe
+    adapter.setRenderOptions({ mode: 'wireframe', color: [0.1, 0.2, 0.3] });
+    adapter.render(mockGl, camera, viewMatrix);
+
+    expect(mockGl.drawElements).toHaveBeenCalledWith(1, 6, mockGl.UNSIGNED_SHORT, 0); // Assuming 1 is LINES for wireframe in mock
+
+    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+        renderMode: {
+            mode: 'wireframe',
+            color: [0.1, 0.2, 0.3, 1.0],
+            applyToAll: true
+        }
+    }));
+
+    // Test solid color
+    adapter.setRenderOptions({ mode: 'solid', color: [0.4, 0.5, 0.6] });
+    adapter.render(mockGl, camera, viewMatrix);
+
+    expect(mockGl.drawElements).toHaveBeenCalledWith(mockGl.TRIANGLES, 6, mockGl.UNSIGNED_SHORT, 0);
+    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+        renderMode: {
+            mode: 'solid',
+            color: [0.4, 0.5, 0.6, 1.0],
+            applyToAll: true
+        }
+    }));
   });
 });
