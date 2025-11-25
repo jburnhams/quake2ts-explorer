@@ -1,6 +1,6 @@
 import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { ViewerAdapter, RenderingOptions } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class BspAdapter implements ViewerAdapter {
@@ -65,7 +65,7 @@ export class BspAdapter implements ViewerAdapter {
     // Static map
   }
 
-  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
+  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4, options: RenderingOptions): void {
     if (!this.pipeline || !this.geometry) return;
 
     const projection = camera.projectionMatrix;

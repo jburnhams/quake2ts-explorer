@@ -32,8 +32,8 @@ jest.mock('quake2ts/engine', () => {
         parsePcx: jest.fn().mockReturnValue({ width: 32, height: 32 }),
         pcxToRgba: jest.fn().mockReturnValue(new Uint8Array(10)),
         // BSP
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn() })),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
+        BspSurfacePipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn(), draw: jest.fn() })),
+        createBspSurfaces: jest.fn().mockReturnValue([{}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}]),
         buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [{ texture: 't1', indexCount: 6, vao: { bind: jest.fn() }, surfaceFlags: 0 }], lightmaps: [] }),
         resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
         applySurfaceState: jest.fn(),
@@ -141,8 +141,6 @@ describe('UniversalViewer', () => {
 
       await waitFor(() => {
            (global as any).runAllFrames(0);
-           // Need surfaces to verify rendering loop calls
-           // My mock returns 1 surface.
            expect(pipeline.bind).toHaveBeenCalled();
       });
   });

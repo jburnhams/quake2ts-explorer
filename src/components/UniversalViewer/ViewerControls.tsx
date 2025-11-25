@@ -1,6 +1,7 @@
 import React from 'react';
 import { vec3 } from 'gl-matrix';
 import { OrbitState } from '../../utils/cameraUtils';
+import { RenderingOptions } from './adapters/types';
 import '../../styles/md2Viewer.css';
 
 interface ViewerControlsProps {
@@ -14,6 +15,8 @@ interface ViewerControlsProps {
   showCameraControls: boolean;
   cameraMode: 'orbit' | 'free';
   setCameraMode: (mode: 'orbit' | 'free') => void;
+  renderingOptions: RenderingOptions;
+  setRenderingOptions: React.Dispatch<React.SetStateAction<RenderingOptions>>;
 }
 
 export function ViewerControls({
@@ -26,7 +29,9 @@ export function ViewerControls({
   setSpeed,
   showCameraControls,
   cameraMode,
-  setCameraMode
+  setCameraMode,
+  renderingOptions = { fillMode: 'solid' },
+  setRenderingOptions
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -97,6 +102,35 @@ export function ViewerControls({
 
   return (
     <div className="md2-controls-panel">
+       <div className="rendering-controls" style={{ padding: '10px', borderBottom: '1-solid #ccc' }}>
+            <label htmlFor="fill-mode-select" style={{ marginRight: '10px' }}>Fill Mode:</label>
+            <select
+                id="fill-mode-select"
+                value={renderingOptions.fillMode}
+                onChange={(e) => setRenderingOptions(prev => ({ ...prev, fillMode: e.target.value as any }))}
+            >
+                <option value="solid">Solid</option>
+                <option value="wireframe">Wireframe</option>
+                <option value="point">Point</option>
+            </select>
+            {renderingOptions.fillMode === 'solid' && (
+                <div style={{ marginTop: '10px' }}>
+                    <label htmlFor="solid-color-picker" style={{ marginRight: '10px' }}>Solid Color:</label>
+                    <input
+                        type="color"
+                        id="solid-color-picker"
+                        defaultValue={renderingOptions.solidColor ? `#${renderingOptions.solidColor.map(c => Math.floor(c * 255).toString(16).padStart(2, '0')).join('')}` : '#ffffff'}
+                        onChange={(e) => {
+                            const hex = e.target.value;
+                            const r = parseInt(hex.slice(1, 3), 16) / 255;
+                            const g = parseInt(hex.slice(3, 5), 16) / 255;
+                            const b = parseInt(hex.slice(5, 7), 16) / 255;
+                            setRenderingOptions(prev => ({ ...prev, solidColor: [r, g, b] }));
+                        }}
+                    />
+                </div>
+            )}
+        </div>
       {hasPlayback && (
         <div className="md2-anim-controls">
              <button onClick={onPlayPause}>

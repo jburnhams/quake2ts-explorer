@@ -1,6 +1,6 @@
 import { Camera, Md2Model, Md2Pipeline, Md2MeshBuffers, createAnimationState, advanceAnimation, computeFrameBlend, parsePcx, pcxToRgba, Texture2D, Md2FrameBlend, AnimationSequence, Md2Animation } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { ViewerAdapter, RenderingOptions } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class Md2Adapter implements ViewerAdapter {
@@ -70,7 +70,7 @@ export class Md2Adapter implements ViewerAdapter {
     }
   }
 
-  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
+  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4, options: RenderingOptions): void {
     if (!this.pipeline || !this.meshBuffers) return;
 
     if (this.skinTexture) {
@@ -89,8 +89,11 @@ export class Md2Adapter implements ViewerAdapter {
       diffuseSampler: 0
     });
 
-    this.meshBuffers.bind();
-    gl.drawElements(gl.TRIANGLES, this.meshBuffers.indexCount, gl.UNSIGNED_SHORT, 0);
+    this.pipeline.draw(this.meshBuffers, {
+        mode: options.fillMode === 'wireframe' ? 'wireframe' : options.fillMode === 'solid' ? 'solid' : 'textured',
+        applyToAll: true,
+        color: options.solidColor ? [...options.solidColor, 1.0] : undefined
+    });
   }
 
   cleanup(): void {
