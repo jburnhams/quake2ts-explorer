@@ -119,6 +119,8 @@ describe('ViewerControls Interaction', () => {
                 showCameraControls={true}
                 cameraMode={'orbit'}
                 setCameraMode={setCameraMode}
+                renderingOptions={{ fillMode: 'solid' }}
+                setRenderingOptions={() => {}}
             />
         );
 

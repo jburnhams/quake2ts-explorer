@@ -1,6 +1,6 @@
 import { Camera, Md3ModelMesh, Md3Pipeline } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { ViewerAdapter, RenderingOptions } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class Md3Adapter implements ViewerAdapter {

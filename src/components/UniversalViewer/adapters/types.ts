@@ -2,10 +2,17 @@ import { Camera } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 
+export type FillMode = 'solid' | 'wireframe' | 'point';
+
+export interface RenderingOptions {
+  fillMode: FillMode;
+  solidColor?: [number, number, number];
+}
+
 export interface ViewerAdapter {
   load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void>;
   update(deltaTime: number): void;
-  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void;
+  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4, options: RenderingOptions): void;
   cleanup(): void;
 
   // Playback controls

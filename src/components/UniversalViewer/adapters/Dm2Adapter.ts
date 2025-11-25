@@ -1,6 +1,6 @@
 import { Camera, DemoPlaybackController } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { ViewerAdapter } from './types';
+import { ViewerAdapter, RenderingOptions } from './types';
 import { mat4, vec3 } from 'gl-matrix';
 import { BspAdapter } from './BspAdapter';
 
@@ -65,9 +65,9 @@ export class Dm2Adapter implements ViewerAdapter {
     }
   }
 
-  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
+  render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4, options: RenderingOptions): void {
       if (this.bspAdapter) {
-          this.bspAdapter.render(gl, camera, viewMatrix);
+          this.bspAdapter.render(gl, camera, viewMatrix, options);
       }
   }
 
