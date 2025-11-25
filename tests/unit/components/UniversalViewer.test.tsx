@@ -73,6 +73,8 @@ jest.mock('gl-matrix', () => {
             scale: jest.fn(),
             add: jest.fn(),
             copy: jest.fn(),
+            clone: jest.fn().mockImplementation(v => new Float32Array(v)),
+            set: jest.fn(),
         }
     };
 });
@@ -139,12 +141,15 @@ describe('UniversalViewer', () => {
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
       const pipeline = quake2tsMock.BspSurfacePipeline.mock.results[0].value;
 
-      await waitFor(() => {
-           (global as any).runAllFrames(0);
-           // Need surfaces to verify rendering loop calls
-           // My mock returns 1 surface.
-           expect(pipeline.bind).toHaveBeenCalled();
+      await act(async () => {
+        // Flush all pending promises
+        await new Promise(resolve => setTimeout(resolve, 0));
       });
+
+      act(() => {
+        (global as any).runAllFrames(0);
+      });
+      expect(pipeline.bind).toHaveBeenCalled();
   });
 
   it('renders DM2 adapter and attempts to load map from filename', async () => {
