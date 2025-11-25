@@ -31,7 +31,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
-  const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid'>('textured');
+  const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random'>('textured');
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
 
   const [orbit, setOrbit] = useState<OrbitState>({
@@ -324,7 +324,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
 
   useEffect(() => {
     if (adapter && adapter.setRenderOptions) {
-      adapter.setRenderOptions({ mode: renderMode, color: renderColor });
+      if (renderMode === 'random') {
+        adapter.setRenderOptions({ mode: 'solid', color: renderColor, generateRandomColor: true });
+      } else {
+        adapter.setRenderOptions({ mode: renderMode, color: renderColor });
+      }
     }
   }, [adapter, renderMode, renderColor]);
 

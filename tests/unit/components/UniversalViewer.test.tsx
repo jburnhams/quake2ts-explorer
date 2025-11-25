@@ -167,7 +167,7 @@ describe('UniversalViewer', () => {
   it('renders MD3 adapter', async () => {
       const parsedFile: ParsedFile = {
           type: 'md3',
-          model: { header: {} } as any,
+          model: { header: {}, surfaces: [] } as any,
       };
 
       render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
