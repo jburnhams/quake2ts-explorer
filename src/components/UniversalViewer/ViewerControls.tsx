@@ -16,8 +16,8 @@ interface ViewerControlsProps {
   showCameraControls: boolean;
   cameraMode: 'orbit' | 'free';
   setCameraMode: (mode: 'orbit' | 'free') => void;
-  renderMode: 'textured' | 'wireframe' | 'solid';
-  setRenderMode: (mode: 'textured' | 'wireframe' | 'solid') => void;
+  renderMode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random';
+  setRenderMode: (mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random') => void;
   renderColor: [number, number, number];
   setRenderColor: (color: [number, number, number]) => void;
 }
@@ -117,6 +117,8 @@ export function ViewerControls({
          <button onClick={() => setRenderMode('textured')} disabled={renderMode === 'textured'}>Textured</button>
          <button onClick={() => setRenderMode('wireframe')} disabled={renderMode === 'wireframe'}>Wireframe</button>
          <button onClick={() => setRenderMode('solid')} disabled={renderMode === 'solid'}>Solid</button>
+         <button onClick={() => setRenderMode('solid-faceted')} disabled={renderMode === 'solid-faceted'}>Faceted</button>
+         <button onClick={() => setRenderMode('random')} disabled={renderMode === 'random'}>Random</button>
        </div>
        {renderMode !== 'textured' && (
         <div className="color-controls" style={{ marginBottom: '10px' }}>
@@ -162,7 +164,7 @@ export function ViewerControls({
               )}
            </div>
 
-           {cameraMode === 'orbit' && (
+           {
              <>
                <div className="d-pad-group">
                 <span className="d-pad-label">Move / Zoom</span>
@@ -190,7 +192,7 @@ export function ViewerControls({
                 </div>
               </div>
              </>
-           )}
+           }
         </div>
       )}
     </div>

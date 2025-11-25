@@ -84,6 +84,7 @@ export class Md3Adapter implements ViewerAdapter {
           mode: this.renderOptions.mode,
           color: [...this.renderOptions.color, 1.0],
           applyToAll: true,
+          generateRandomColor: this.renderOptions.generateRandomColor,
         }
       });
     }
