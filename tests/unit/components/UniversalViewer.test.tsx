@@ -133,7 +133,7 @@ describe('UniversalViewer', () => {
   it('renders BSP adapter', async () => {
       const parsedFile: ParsedFile = {
           type: 'bsp',
-          map: { models: [] } as any,
+          map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
       };
 
       render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
@@ -182,5 +182,31 @@ describe('UniversalViewer', () => {
       await waitFor(() => {
           (global as any).runAllFrames(0);
       });
+  });
+
+  it('calls onClassnamesLoaded when BSP is loaded', async () => {
+      const classnames = ['worldspawn', 'light'];
+      const mockMap = {
+          entities: {
+              getUniqueClassnames: jest.fn().mockReturnValue(classnames)
+          },
+          models: []
+      };
+      const parsedFile: ParsedFile = {
+          type: 'bsp',
+          map: mockMap as any,
+      };
+
+      const onClassnamesLoaded = jest.fn();
+
+      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onClassnamesLoaded={onClassnamesLoaded} />);
+
+      await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
+
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      expect(onClassnamesLoaded).toHaveBeenCalledWith(classnames);
   });
 });

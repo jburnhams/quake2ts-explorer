@@ -579,3 +579,48 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-secondary);
 }
+
+/* Entity Legend */
+.entity-legend {
+  border-top: 1px solid var(--border);
+  padding: 16px;
+  background: var(--bg-secondary);
+}
+
+.entity-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.entity-item {
+  padding: 4px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.entity-item:last-child {
+  border-bottom: none;
+}
+
+.entity-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  color: var(--text-primary);
+  user-select: none;
+}
+
+.entity-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.entity-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

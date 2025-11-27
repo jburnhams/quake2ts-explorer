@@ -14,7 +14,7 @@ All three of these features are **now available** in `quake2ts`.
 
 ## 2. Implementation Plan
 
-### Task 1: Display Entity Legend (Small)
+### Task 1: Display Entity Legend (Small) - **COMPLETE**
 
 The first step is to display a legend of all available entity types in a new sidebar.
 
@@ -78,3 +78,9 @@ This task adds a visual cue to show which object is currently under the mouse.
     -   If it does, use the `renderOptions` to apply a highlight effect (e.g., render as `solid` or with a different color).
 
 **Acceptance Criteria:** As the user moves the mouse over different objects, they are highlighted in real-time.
+
+## Progress Status
+- [x] Task 1: Display Entity Legend (Implemented in `App.tsx`, `EntityLegend.tsx`, `BspAdapter.ts`)
+- [ ] Task 2: Implement Toggling Visibility
+- [ ] Task 3: Implement Mouse Picking and Metadata Display
+- [ ] Task 4: Highlighting on Hover

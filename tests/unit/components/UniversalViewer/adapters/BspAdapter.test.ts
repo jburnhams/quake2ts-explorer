@@ -248,4 +248,27 @@ describe('BspAdapter', () => {
         }
     }));
   });
+
+  it('returns unique classnames from map', async () => {
+    const classnames = ['worldspawn', 'info_player_start'];
+    const mockMap = {
+        entities: {
+            getUniqueClassnames: jest.fn().mockReturnValue(classnames)
+        }
+    };
+    const file: ParsedFile = { type: 'bsp', map: mockMap } as any;
+
+    // We don't need full load for this test if we just assign map, but adapter.load sets this.map
+    // So let's mock load essentials
+    (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    expect(adapter.getUniqueClassnames()).toBe(classnames);
+    expect(mockMap.entities.getUniqueClassnames).toHaveBeenCalled();
+  });
+
+  it('returns empty array if map not loaded', () => {
+      expect(adapter.getUniqueClassnames()).toEqual([]);
+  });
 });
