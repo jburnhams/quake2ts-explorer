@@ -271,4 +271,26 @@ describe('BspAdapter', () => {
   it('returns empty array if map not loaded', () => {
       expect(adapter.getUniqueClassnames()).toEqual([]);
   });
+
+  it('rebuilds geometry with hidden classnames when setHiddenClasses is called', async () => {
+    const file: ParsedFile = { type: 'bsp', map: {} } as any;
+    const surfaces = [{ texture: 'wall' }];
+    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+
+    // Setup initial call return
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [],
+        lightmaps: []
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    // Clear initial calls
+    (buildBspGeometry as jest.Mock).mockClear();
+
+    const hidden = new Set(['bad_entity']);
+    adapter.setHiddenClasses(hidden);
+
+    expect(buildBspGeometry).toHaveBeenCalledWith(mockGl, surfaces, file.map, { hiddenClassnames: hidden });
+  });
 });

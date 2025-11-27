@@ -97,6 +97,7 @@ function App() {
             filePath={selectedPath}
             pakService={pakService}
             onClassnamesLoaded={handleClassnamesLoaded}
+            hiddenClassnames={hiddenClassnames}
           />
           <ResizablePanel
             defaultWidth={280}

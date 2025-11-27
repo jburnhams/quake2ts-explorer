@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, it, expect, beforeEach, jest } from '@jest/globals';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import App from '../../src/App';
 import { usePakExplorer } from '../../src/hooks/usePakExplorer';
 
@@ -50,7 +50,12 @@ jest.mock('gl-matrix', () => ({
         create: () => new Float32Array(3),
         fromValues: () => new Float32Array(3),
         copy: jest.fn(),
-        set: jest.fn()
+        set: jest.fn(),
+        clone: jest.fn().mockImplementation(v => new Float32Array(v)),
+        add: jest.fn(),
+        scale: jest.fn(),
+        cross: jest.fn(),
+        normalize: jest.fn(),
     }
 }));
 
@@ -107,5 +112,71 @@ describe('Legend Integration', () => {
 
         expect(screen.getByText('worldspawn')).toBeInTheDocument();
         expect(screen.getByText('func_door')).toBeInTheDocument();
+    });
+
+    it('rebuilds geometry when entity visibility is toggled', async () => {
+        const classnames = ['worldspawn', 'func_door'];
+        const mockMap = {
+            header: { version: 38 },
+            entities: {
+                getUniqueClassnames: jest.fn().mockReturnValue(classnames),
+                entities: []
+            },
+            texInfo: [],
+            models: [],
+            faces: [],
+            vertices: [],
+            leafs: []
+        };
+        const quake2ts = require('quake2ts/engine');
+
+        // Need surfaces to prevent bail out
+        quake2ts.createBspSurfaces.mockReturnValue([{}]);
+
+        // Setup buildBspGeometry return
+        quake2ts.buildBspGeometry.mockReturnValue({ surfaces: [], lightmaps: [] });
+
+        (usePakExplorer as jest.Mock).mockReturnValue({
+            pakService: { hasFile: jest.fn(), readFile: jest.fn() },
+            fileTree: { name: 'root', children: [] },
+            selectedPath: 'maps/test.bsp',
+            metadata: { name: 'test.bsp', extension: 'bsp', size: 100, path: 'maps/test.bsp' },
+            parsedFile: { type: 'bsp', map: mockMap },
+            pakCount: 1,
+            fileCount: 5,
+            loading: false,
+            error: null,
+            handleFileSelect: jest.fn(),
+            handleTreeSelect: jest.fn(),
+            hasFile: jest.fn(),
+            dismissError: jest.fn(),
+            loadFromUrl: jest.fn(),
+        });
+
+        render(<App />);
+
+        // Wait for initial load
+        await waitFor(() => {
+            expect(screen.getByTestId('toggle-func_door')).toBeInTheDocument();
+        });
+
+        // Wait for adapter load
+        await new Promise(resolve => setTimeout(resolve, 0));
+
+        // Clear initial build call
+        quake2ts.buildBspGeometry.mockClear();
+
+        const toggle = screen.getByTestId('toggle-func_door');
+        fireEvent.click(toggle);
+
+        // Expect rebuild with hidden classname
+        await waitFor(() => {
+            expect(quake2ts.buildBspGeometry).toHaveBeenCalledWith(
+                expect.anything(),
+                expect.anything(),
+                mockMap,
+                { hiddenClassnames: new Set(['func_door']) }
+            );
+        });
     });
 });

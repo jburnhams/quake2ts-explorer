@@ -30,7 +30,7 @@ The first step is to display a legend of all available entity types in a new sid
 
 **Acceptance Criteria:** When a BSP map is loaded, a list of all unique entity `classname`s appears in the sidebar with toggle switches.
 
-### Task 2: Implement Toggling Visibility (Small)
+### Task 2: Implement Toggling Visibility (Small) - **COMPLETE**
 
 This task uses the legend created in Task 1 to control which objects are visible.
 
@@ -81,6 +81,6 @@ This task adds a visual cue to show which object is currently under the mouse.
 
 ## Progress Status
 - [x] Task 1: Display Entity Legend (Implemented in `App.tsx`, `EntityLegend.tsx`, `BspAdapter.ts`)
-- [ ] Task 2: Implement Toggling Visibility
+- [x] Task 2: Implement Toggling Visibility (Implemented in `App.tsx`, `UniversalViewer.tsx`, `BspAdapter.ts`)
 - [ ] Task 3: Implement Mouse Picking and Metadata Display
 - [ ] Task 4: Highlighting on Hover
