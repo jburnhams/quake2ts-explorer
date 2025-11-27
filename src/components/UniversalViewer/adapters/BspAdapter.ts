@@ -1,6 +1,6 @@
-import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput } from 'quake2ts/engine';
+import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter } from './types';
+import { RenderOptions, ViewerAdapter, Ray } from './types';
 import { mat4 } from 'gl-matrix';
 
 export class BspAdapter implements ViewerAdapter {
@@ -12,6 +12,7 @@ export class BspAdapter implements ViewerAdapter {
   private gl: WebGL2RenderingContext | null = null;
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
+  private hoveredEntity: BspEntity | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -70,6 +71,31 @@ export class BspAdapter implements ViewerAdapter {
     // Static map
   }
 
+  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number } | null {
+    if (!this.map) return null;
+    return this.map.pickEntity(ray);
+  }
+
+  setHoveredEntity(entity: BspEntity | null) {
+      this.hoveredEntity = entity;
+  }
+
+  private getModelFromEntity(entity: BspEntity): any {
+      if (!this.map || !entity) return null;
+
+      if (entity.classname === 'worldspawn') {
+          return this.map.models[0];
+      }
+
+      if (entity.properties && entity.properties.model && entity.properties.model.startsWith('*')) {
+          const modelIndex = parseInt(entity.properties.model.substring(1));
+          if (!isNaN(modelIndex) && modelIndex >= 0 && modelIndex < this.map.models.length) {
+              return this.map.models[modelIndex];
+          }
+      }
+      return null;
+  }
+
   render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
     if (!this.pipeline || !this.geometry) return;
 
@@ -81,7 +107,19 @@ export class BspAdapter implements ViewerAdapter {
     const styleValues = Array.from(lightStyles);
     const timeSeconds = performance.now() / 1000;
 
-    for (const surface of this.geometry.surfaces) {
+    const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
+
+    for (let i = 0; i < this.geometry.surfaces.length; i++) {
+        const surface = this.geometry.surfaces[i];
+        const inputSurface = this.surfaces[i];
+
+        let isHighlighted = false;
+        if (hoveredModel) {
+             if (inputSurface.faceIndex >= hoveredModel.firstFace && inputSurface.faceIndex < hoveredModel.firstFace + hoveredModel.numFaces) {
+                 isHighlighted = true;
+             }
+        }
+
         const texture = this.textures.get(surface.texture);
         if (texture) {
             gl.activeTexture(gl.TEXTURE0);
@@ -104,10 +142,10 @@ export class BspAdapter implements ViewerAdapter {
             surfaceFlags: surface.surfaceFlags,
             timeSeconds: timeSeconds,
             renderMode: {
-                mode: this.renderOptions.mode,
-                color: [...this.renderOptions.color, 1.0],
+                mode: isHighlighted ? 'solid' : this.renderOptions.mode,
+                color: isHighlighted ? [1.0, 0.0, 0.0, 1.0] : [...this.renderOptions.color, 1.0],
                 applyToAll: true,
-                generateRandomColor: this.renderOptions.generateRandomColor,
+                generateRandomColor: isHighlighted ? false : this.renderOptions.generateRandomColor,
             }
         });
 

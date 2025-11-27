@@ -197,7 +197,6 @@ describe('BspAdapter', () => {
 
   it('cleans up (no-op/simple clear)', () => {
       adapter.cleanup();
-      // Test just verifies it doesn't crash
   });
 
   it('returns true for useZUp', () => {
@@ -258,8 +257,6 @@ describe('BspAdapter', () => {
     };
     const file: ParsedFile = { type: 'bsp', map: mockMap } as any;
 
-    // We don't need full load for this test if we just assign map, but adapter.load sets this.map
-    // So let's mock load essentials
     (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
 
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
@@ -277,7 +274,6 @@ describe('BspAdapter', () => {
     const surfaces = [{ texture: 'wall' }];
     (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
 
-    // Setup initial call return
     (buildBspGeometry as jest.Mock).mockReturnValue({
         surfaces: [],
         lightmaps: []
@@ -285,12 +281,53 @@ describe('BspAdapter', () => {
 
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
-    // Clear initial calls
     (buildBspGeometry as jest.Mock).mockClear();
 
     const hidden = new Set(['bad_entity']);
     adapter.setHiddenClasses(hidden);
 
     expect(buildBspGeometry).toHaveBeenCalledWith(mockGl, surfaces, file.map, { hiddenClassnames: hidden });
+  });
+
+  it('delegates pickEntity to map', async () => {
+    const file: ParsedFile = { type: 'bsp', map: { pickEntity: jest.fn().mockReturnValue('hit') } } as any;
+    (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    const result = adapter.pickEntity!('ray' as any);
+    expect(file.map.pickEntity).toHaveBeenCalledWith('ray');
+    expect(result).toBe('hit');
+  });
+
+  it('handles highlighting in render', async () => {
+    const file: ParsedFile = { type: 'bsp', map: { models: [{firstFace: 0, numFaces: 1}] } } as any;
+    const mockVao = { bind: jest.fn() };
+    const surfaces = [{ faceIndex: 0 }]; // Input surface
+    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [
+            { vao: mockVao, indexCount: 6, texture: 'test', surfaceFlags: 0 }
+        ],
+        lightmaps: []
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    const hoveredEntity = { classname: 'worldspawn', properties: {} };
+    adapter.setHoveredEntity!(hoveredEntity as any);
+
+    const camera = { projectionMatrix: mat4.create() } as any;
+    adapter.render(mockGl, camera, mat4.create());
+
+    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+        renderMode: {
+            mode: 'solid',
+            color: [1.0, 0.0, 0.0, 1.0], // Red highlight
+            applyToAll: true,
+            generateRandomColor: false
+        }
+    }));
   });
 });

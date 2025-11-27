@@ -6,6 +6,7 @@ import { MetadataPanel } from './components/MetadataPanel';
 import { DropZone } from './components/DropZone';
 import { ResizablePanel } from './components/ResizablePanel';
 import { EntityLegend } from './components/EntityLegend';
+import { EntityMetadata } from './components/EntityMetadata';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import './App.css';
 
@@ -31,11 +32,13 @@ function App() {
   const [rightCollapsed, setRightCollapsed] = useState(false);
   const [entityClassnames, setEntityClassnames] = useState<string[]>([]);
   const [hiddenClassnames, setHiddenClassnames] = useState<Set<string>>(new Set());
+  const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
 
   // Reset when file changes
   useEffect(() => {
     setEntityClassnames([]);
     setHiddenClassnames(new Set());
+    setSelectedEntity(null);
   }, [selectedPath]);
 
   const handleClassnamesLoaded = (classnames: string[]) => {
@@ -98,6 +101,7 @@ function App() {
             pakService={pakService}
             onClassnamesLoaded={handleClassnamesLoaded}
             hiddenClassnames={hiddenClassnames}
+            onEntitySelected={setSelectedEntity}
           />
           <ResizablePanel
             defaultWidth={280}
@@ -115,6 +119,7 @@ function App() {
               hasFile={hasFile}
               onNavigateToFile={handleTreeSelect}
             />
+            <EntityMetadata entity={selectedEntity} />
             <EntityLegend
               classnames={entityClassnames}
               hiddenClassnames={hiddenClassnames}

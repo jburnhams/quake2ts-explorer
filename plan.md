@@ -45,7 +45,7 @@ This task uses the legend created in Task 1 to control which objects are visible
 
 **Acceptance Criteria:** Toggling a `classname` in the legend hides or shows all corresponding objects in the 3D viewer.
 
-### Task 3: Implement Mouse Picking and Metadata Display (Medium)
+### Task 3: Implement Mouse Picking and Metadata Display (Medium) - **COMPLETE**
 
 This task adds the ability to click on an object and see its metadata.
 
@@ -64,7 +64,7 @@ This task adds the ability to click on an object and see its metadata.
 
 **Acceptance Criteria:** Clicking an object in the viewer displays its metadata in the sidebar and shows a descriptive overlay in the 3D view.
 
-### Task 4: Highlighting on Hover (Small)
+### Task 4: Highlighting on Hover (Small) - **COMPLETE**
 
 This task adds a visual cue to show which object is currently under the mouse.
 
@@ -82,5 +82,5 @@ This task adds a visual cue to show which object is currently under the mouse.
 ## Progress Status
 - [x] Task 1: Display Entity Legend (Implemented in `App.tsx`, `EntityLegend.tsx`, `BspAdapter.ts`)
 - [x] Task 2: Implement Toggling Visibility (Implemented in `App.tsx`, `UniversalViewer.tsx`, `BspAdapter.ts`)
-- [ ] Task 3: Implement Mouse Picking and Metadata Display
-- [ ] Task 4: Highlighting on Hover
+- [x] Task 3: Implement Mouse Picking and Metadata Display (Implemented in `src/utils/camera.ts`, `UniversalViewer.tsx`, `EntityMetadata.tsx`, `App.tsx`)
+- [x] Task 4: Highlighting on Hover (Implemented in `UniversalViewer.tsx`, `BspAdapter.ts`)

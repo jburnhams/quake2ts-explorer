@@ -9,6 +9,7 @@ import { BspAdapter } from './adapters/BspAdapter';
 import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
+import { createPickingRay } from '../../utils/camera';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -17,6 +18,7 @@ export interface UniversalViewerProps {
   filePath?: string;
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
+  onEntitySelected?: (entity: any) => void;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -27,7 +29,7 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames }: UniversalViewerProps) {
+export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames, onEntitySelected }: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -35,6 +37,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
   const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random'>('textured');
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
+  const [hoveredEntity, setHoveredEntity] = useState<any | null>(null);
 
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
@@ -59,7 +62,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       lastX: 0,
       lastY: 0,
       deltaX: 0,
-      deltaY: 0
+      deltaY: 0,
+      hasMoved: false
   });
 
   // Handle Inputs
@@ -89,13 +93,19 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             mouseState.current.isDragging = true;
             mouseState.current.lastX = e.clientX;
             mouseState.current.lastY = e.clientY;
+            mouseState.current.hasMoved = false;
         }
     };
 
     const handleMouseMove = (e: MouseEvent) => {
         if (mouseState.current.isDragging) {
-            mouseState.current.deltaX += e.clientX - mouseState.current.lastX;
-            mouseState.current.deltaY += e.clientY - mouseState.current.lastY;
+            const dx = e.clientX - mouseState.current.lastX;
+            const dy = e.clientY - mouseState.current.lastY;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                mouseState.current.hasMoved = true;
+            }
+            mouseState.current.deltaX += dx;
+            mouseState.current.deltaY += dy;
             mouseState.current.lastX = e.clientX;
             mouseState.current.lastY = e.clientY;
         }
@@ -171,12 +181,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              // Reset orbit/free camera defaults based on type
              if (parsedFile.type === 'bsp' || parsedFile.type === 'dm2') {
                  setCameraMode('free');
-                 // For BSP, maybe start at a reasonable position if available (e.g. from entities), but default 0,0,0 is okay usually.
-                 // Actually BSP maps are huge, 0,0,0 might be in void.
-                 // BspAdapter might have loaded entities and know player_start.
-                 // But we don't expose it yet.
-                 // Let's stick to default.
-
                  setFreeCamera({
                     position: [0, 0, 50] as vec3,
                     rotation: [0, 0, 0] as vec3
@@ -215,8 +219,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   }, [parsedFile, glContext, pakService]);
 
 
-  // We need a separate effect to update the FreeCameraState ref when state changes (initial load)
-  // And we need to store the current FreeCameraState in a Ref so the loop can update it without restarting.
   const freeCameraRef = useRef<FreeCameraState>(freeCamera);
   useEffect(() => {
       freeCameraRef.current = freeCamera;
@@ -226,12 +228,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   useEffect(() => {
     orbitRef.current = orbit;
   }, [orbit]);
-
-  // But if we update Ref inside loop, the React state won't update, so UI won't reflect it (if we displayed pos).
-  // That's fine.
-
-  // I need to override the loop effect above to include Free Camera logic properly.
-  // I will re-write the loop effect logic.
 
   useEffect(() => {
     if (adapter && adapter.setRenderOptions) {
@@ -248,6 +244,80 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       adapter.setHiddenClasses(hiddenClassnames);
     }
   }, [adapter, hiddenClassnames]);
+
+  // Picking Logic
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !adapter || !adapter.pickEntity || !camera) return;
+
+    const getCurrentViewMatrix = () => {
+        const viewMatrix = mat4.create();
+        const useZUp = adapter.useZUp ? adapter.useZUp() : false;
+
+        if (adapter.hasCameraControl && adapter.hasCameraControl()) {
+            // Picking generally not supported in demo/playback mode or if adapter controls camera rigidly
+            return null;
+        }
+
+        if (cameraMode === 'free') {
+             computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
+        } else {
+             const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
+             const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+             mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
+        }
+        return viewMatrix;
+    };
+
+    const handleMouseMove = (e: MouseEvent) => {
+        if (mouseState.current.isDragging) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const viewMatrix = getCurrentViewMatrix();
+        if (!viewMatrix) return;
+
+        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+
+        const result = adapter.pickEntity!(pickRay);
+        setHoveredEntity(result ? result.entity : null);
+    };
+
+    const handleClick = (e: MouseEvent) => {
+        if (mouseState.current.isDragging || mouseState.current.hasMoved) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const viewMatrix = getCurrentViewMatrix();
+        if (!viewMatrix) return;
+
+        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+
+        const result = adapter.pickEntity!(pickRay);
+        if (onEntitySelected) {
+            onEntitySelected(result ? result.entity : null);
+        }
+    };
+
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('click', handleClick);
+
+    return () => {
+        canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('click', handleClick);
+    };
+  }, [adapter, camera, cameraMode, onEntitySelected]);
+
+  useEffect(() => {
+      if (adapter && adapter.setHoveredEntity) {
+          adapter.setHoveredEntity(hoveredEntity);
+      }
+  }, [adapter, hoveredEntity]);
+
 
   useEffect(() => {
       if (!adapter || !glContext || !camera) return;
@@ -303,7 +373,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
                    computeFreeCameraViewMatrix(newState, viewMatrix, useZUp);
 
                    if (camera.position) vec3.copy(camera.position, newState.position);
-                   // Angles in camera might be useful for other things, but viewMatrix is key.
                } else {
                     // Orbit Control
                     if (mouseState.current.isDragging) {
@@ -312,7 +381,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
                         newOrbit.theta -= mouseState.current.deltaX * sensitivity;
                         newOrbit.phi -= mouseState.current.deltaY * sensitivity;
 
-                        // Clamp phi to avoid flipping
                         newOrbit.phi = Math.max(0.1, Math.min(Math.PI - 0.1, newOrbit.phi));
 
                         orbitRef.current = newOrbit;
@@ -348,7 +416,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           running = false;
           cancelAnimationFrame(frameId);
       };
-  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode]); // Note: orbit is dependency
+  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode]);
 
   // Resize Handler
   useEffect(() => {

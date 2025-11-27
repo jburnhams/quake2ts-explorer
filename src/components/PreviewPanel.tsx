@@ -9,6 +9,7 @@ export interface PreviewPanelProps {
   pakService: PakService;
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
+  onEntitySelected?: (entity: any) => void;
 }
 
 interface ImagePreviewProps {
@@ -181,7 +182,7 @@ function HexPreview({ data, error }: HexPreviewProps) {
   );
 }
 
-export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoaded, hiddenClassnames }: PreviewPanelProps) {
+export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoaded, hiddenClassnames, onEntitySelected }: PreviewPanelProps) {
   if (!parsedFile || !filePath) {
     return (
       <main className="preview-panel preview-panel-empty" data-testid="preview-panel">
@@ -228,6 +229,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
             filePath={filePath}
             onClassnamesLoaded={onClassnamesLoaded}
             hiddenClassnames={hiddenClassnames}
+            onEntitySelected={onEntitySelected}
           />
         );
       case 'sp2':
