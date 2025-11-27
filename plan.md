@@ -79,8 +79,22 @@ This task adds a visual cue to show which object is currently under the mouse.
 
 **Acceptance Criteria:** As the user moves the mouse over different objects, they are highlighted in real-time.
 
+### Task 5: Verification & Quality Assurance - **COMPLETE**
+
+This task ensures that the new features are robust and well-tested.
+
+1.  **Update Dependencies**:
+    -   Update `quake2ts` to the latest version (`^0.0.184`).
+2.  **Add Unit Tests**:
+    -   Add comprehensive unit tests for `BspAdapter`, `UniversalViewer`, and `EntityLegend`.
+    -   Verify highlighting logic for complex entity models (e.g., `*modelIndex`).
+    -   Verify interaction logic (hover, picking).
+3.  **Add Integration Tests**:
+    -   Ensure integration tests cover the end-to-end flow of loading a map and interacting with it.
+
 ## Progress Status
 - [x] Task 1: Display Entity Legend (Implemented in `App.tsx`, `EntityLegend.tsx`, `BspAdapter.ts`)
 - [x] Task 2: Implement Toggling Visibility (Implemented in `App.tsx`, `UniversalViewer.tsx`, `BspAdapter.ts`)
 - [x] Task 3: Implement Mouse Picking and Metadata Display (Implemented in `src/utils/camera.ts`, `UniversalViewer.tsx`, `EntityMetadata.tsx`, `App.tsx`)
 - [x] Task 4: Highlighting on Hover (Implemented in `UniversalViewer.tsx`, `BspAdapter.ts`)
+- [x] Task 5: Verification & Quality Assurance (Dependencies updated, comprehensive tests added)

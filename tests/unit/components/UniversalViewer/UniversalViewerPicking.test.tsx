@@ -1,6 +1,7 @@
 import { render, waitFor, act, fireEvent } from '@testing-library/react';
 import { UniversalViewer } from '../../../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile } from '../../../../src/services/pakService';
+import { BspAdapter } from '../../../../src/components/UniversalViewer/adapters/BspAdapter';
 import React from 'react';
 
 // Mock gl-matrix (use actual for math logic in picking)
@@ -117,5 +118,48 @@ describe('UniversalViewer Picking', () => {
 
       expect(mockMap.pickEntity).toHaveBeenCalled();
       expect(onEntitySelected).toHaveBeenCalledWith(pickedEntity);
+  });
+
+  it('updates hovered entity on mousemove', async () => {
+      const setHoveredSpy = jest.spyOn(BspAdapter.prototype, 'setHoveredEntity');
+      const hoveredEntity = { classname: 'func_door', properties: {} };
+      const mockMap = {
+          entities: {
+              getUniqueClassnames: jest.fn().mockReturnValue([])
+          },
+          models: [],
+          pickEntity: jest.fn().mockReturnValue({ entity: hoveredEntity, model: {}, distance: 10 })
+      };
+
+      const parsedFile: ParsedFile = {
+          type: 'bsp',
+          map: mockMap as any,
+      };
+
+      const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+
+      await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
+
+      await act(async () => {
+         await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      const canvas = container.querySelector('canvas');
+      expect(canvas).toBeInTheDocument();
+
+      if(canvas) {
+          canvas.getBoundingClientRect = jest.fn().mockReturnValue({
+              left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
+          });
+          Object.defineProperty(canvas, 'width', { value: 800 });
+          Object.defineProperty(canvas, 'height', { value: 600 });
+      }
+
+      fireEvent.mouseMove(canvas!, { clientX: 400, clientY: 300 });
+
+      expect(mockMap.pickEntity).toHaveBeenCalled();
+      expect(setHoveredSpy).toHaveBeenCalledWith(hoveredEntity);
+
+      setHoveredSpy.mockRestore();
   });
 });

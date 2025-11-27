@@ -330,4 +330,37 @@ describe('BspAdapter', () => {
         }
     }));
   });
+
+  it('highlights entity with * model reference correctly', async () => {
+    const file: ParsedFile = { type: 'bsp', map: { models: [{firstFace: 0, numFaces: 1}, {firstFace: 10, numFaces: 5}] } } as any;
+    const mockVao = { bind: jest.fn() };
+    const surfaces = [{ faceIndex: 12 }]; // Should match model index 1
+    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [
+            { vao: mockVao, indexCount: 6, texture: 'test', surfaceFlags: 0 }
+        ],
+        lightmaps: []
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+
+    // Entity pointing to model *1
+    const hoveredEntity = { classname: 'func_door', properties: { model: '*1' } };
+    adapter.setHoveredEntity!(hoveredEntity as any);
+
+    const camera = { projectionMatrix: mat4.create() } as any;
+    adapter.render(mockGl, camera, mat4.create());
+
+    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+        renderMode: {
+            mode: 'solid',
+            color: [1.0, 0.0, 0.0, 1.0], // Red highlight
+            applyToAll: true,
+            generateRandomColor: false
+        }
+    }));
+  });
 });
