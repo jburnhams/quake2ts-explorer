@@ -15,6 +15,7 @@ export interface UniversalViewerProps {
   parsedFile: ParsedFile;
   pakService: PakService;
   filePath?: string;
+  onClassnamesLoaded?: (classnames: string[]) => void;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -25,7 +26,7 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '' }: UniversalViewerProps) {
+export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded }: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -157,6 +158,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '' }: Unive
              if (newAdapter) {
                  await newAdapter.load(gl, parsedFile, pakService, filePath);
                  setAdapter(newAdapter);
+
+                 if ((newAdapter as any).getUniqueClassnames) {
+                    const classnames = (newAdapter as any).getUniqueClassnames();
+                    onClassnamesLoaded?.(classnames);
+                 } else {
+                    onClassnamesLoaded?.([]);
+                 }
              }
 
              // Reset orbit/free camera defaults based on type

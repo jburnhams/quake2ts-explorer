@@ -7,6 +7,7 @@ export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
   filePath: string | null;
   pakService: PakService;
+  onClassnamesLoaded?: (classnames: string[]) => void;
 }
 
 interface ImagePreviewProps {
@@ -179,7 +180,7 @@ function HexPreview({ data, error }: HexPreviewProps) {
   );
 }
 
-export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelProps) {
+export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoaded }: PreviewPanelProps) {
   if (!parsedFile || !filePath) {
     return (
       <main className="preview-panel preview-panel-empty" data-testid="preview-panel">
@@ -224,6 +225,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService }: PreviewPanelP
             parsedFile={parsedFile}
             pakService={pakService}
             filePath={filePath}
+            onClassnamesLoaded={onClassnamesLoaded}
           />
         );
       case 'sp2':

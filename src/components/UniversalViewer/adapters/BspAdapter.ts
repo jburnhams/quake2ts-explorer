@@ -122,6 +122,10 @@ export class BspAdapter implements ViewerAdapter {
     this.textures.clear();
   }
 
+  getUniqueClassnames(): string[] {
+    return this.map?.entities.getUniqueClassnames() ?? [];
+  }
+
   useZUp() { return true; }
 
   setRenderOptions(options: RenderOptions) {
