@@ -16,6 +16,7 @@ export interface UniversalViewerProps {
   pakService: PakService;
   filePath?: string;
   onClassnamesLoaded?: (classnames: string[]) => void;
+  hiddenClassnames?: Set<string>;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -26,7 +27,7 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded }: UniversalViewerProps) {
+export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames }: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -241,6 +242,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       }
     }
   }, [adapter, renderMode, renderColor]);
+
+  useEffect(() => {
+    if (adapter && adapter.setHiddenClasses && hiddenClassnames) {
+      adapter.setHiddenClasses(hiddenClassnames);
+    }
+  }, [adapter, hiddenClassnames]);
 
   useEffect(() => {
       if (!adapter || !glContext || !camera) return;

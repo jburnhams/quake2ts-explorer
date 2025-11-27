@@ -1,4 +1,4 @@
-import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap } from 'quake2ts/engine';
+import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter } from './types';
 import { mat4 } from 'gl-matrix';
@@ -8,7 +8,10 @@ export class BspAdapter implements ViewerAdapter {
   private geometry: BspGeometryBuildResult | null = null;
   private textures: Map<string, Texture2D> = new Map();
   private map: BspMap | null = null;
+  private surfaces: BspSurfaceInput[] = [];
+  private gl: WebGL2RenderingContext | null = null;
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
+  private hiddenClassnames: Set<string> = new Set();
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -21,10 +24,11 @@ export class BspAdapter implements ViewerAdapter {
   }
 
   async loadMap(gl: WebGL2RenderingContext, map: BspMap, pakService: PakService) {
+    this.gl = gl;
     this.map = map;
     this.pipeline = new BspSurfacePipeline(gl);
-    const surfaces = createBspSurfaces(map);
-    this.geometry = buildBspGeometry(gl, surfaces);
+    this.surfaces = createBspSurfaces(map);
+    this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
 
     const neededTextures = new Set<string>();
     this.geometry.surfaces.forEach(s => neededTextures.add(s.texture));
@@ -130,5 +134,12 @@ export class BspAdapter implements ViewerAdapter {
 
   setRenderOptions(options: RenderOptions) {
     this.renderOptions = options;
+  }
+
+  setHiddenClasses(hidden: Set<string>) {
+    this.hiddenClassnames = hidden;
+    if (this.gl && this.map && this.surfaces.length > 0) {
+        this.geometry = buildBspGeometry(this.gl, this.surfaces, this.map, { hiddenClassnames: hidden });
+    }
   }
 }

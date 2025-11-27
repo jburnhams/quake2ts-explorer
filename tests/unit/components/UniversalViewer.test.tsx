@@ -209,4 +209,35 @@ describe('UniversalViewer', () => {
 
       expect(onClassnamesLoaded).toHaveBeenCalledWith(classnames);
   });
+
+  it('updates hidden classes on adapter when prop changes', async () => {
+      const parsedFile: ParsedFile = {
+          type: 'bsp',
+          map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
+      };
+
+      // Ensure surfaces are returned so setHiddenClasses doesn't bail out
+      quake2tsMock.createBspSurfaces.mockReturnValue([{}]);
+
+      const { rerender } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+
+      await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
+
+      // Wait for adapter load
+      await act(async () => {
+        await new Promise(resolve => setTimeout(resolve, 0));
+      });
+
+      quake2tsMock.buildBspGeometry.mockClear();
+
+      const hidden = new Set(['hidden_entity']);
+      rerender(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} hiddenClassnames={hidden} />);
+
+      expect(quake2tsMock.buildBspGeometry).toHaveBeenCalledWith(
+          expect.anything(),
+          expect.anything(),
+          parsedFile.map,
+          { hiddenClassnames: hidden }
+      );
+  });
 });

@@ -33,4 +33,7 @@ export interface ViewerAdapter {
 
   // Returns true if the adapter requires Z-up coordinate system (e.g. BSP/DM2)
   useZUp?(): boolean;
+
+  // Set hidden classes for visibility toggling
+  setHiddenClasses?(hidden: Set<string>): void;
 }
