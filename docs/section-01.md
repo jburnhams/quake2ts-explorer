@@ -98,7 +98,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/utils/gameLoop.ts`
+- [x] **2.1**: Create `src/utils/gameLoop.ts`
   - Import `FixedTimestepLoop` from `@quake2ts/engine`
   - Export `createGameLoop(simulate: (deltaMs: number) => void, render: (alpha: number) => void): GameLoop`
   - Export interface `GameLoop` with methods: `start()`, `stop()`, `isRunning(): boolean`
@@ -113,13 +113,13 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
     - Interpolate entity positions using `alpha`
     - Render frame via existing `UniversalViewer`
 
-- [ ] **2.3**: Connect loop to game mode activation
+- [x] **2.3**: Connect loop to game mode activation
   - Add `startGameMode(mapName: string)` to application hook
   - Initialize game service and loop
   - Start loop with `requestAnimationFrame`
   - Stop loop on component unmount or mode switch
 
-- [ ] **2.4**: Handle pause/resume
+- [x] **2.4**: Handle pause/resume
   - Add `pauseGame()` and `resumeGame()` methods
   - Store paused state and skip simulation when paused
   - Continue rendering paused state
