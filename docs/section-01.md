@@ -40,7 +40,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **1.1**: Create `src/services/gameService.ts`
+- [x] **1.1**: Create `src/services/gameService.ts`
   - Export `createGameSimulation(vfs: VirtualFileSystem, mapName: string): GameSimulation`
   - Export interface `GameSimulation` with methods: `start()`, `stop()`, `tick(deltaMs: number, cmd: UserCommand)`, `getSnapshot(): GameStateSnapshot`
   - Import `createGame, GameImports, GameExports` from `@quake2ts/game`
@@ -48,7 +48,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Implement `GameImports` interface methods (trace, pointcontents, multicast, unicast, configstring, etc.)
   - Store game instance and expose via service singleton
 
-- [ ] **1.2**: Implement game imports callbacks
+- [x] **1.2**: Implement game imports callbacks
   - Define `trace(start: Vec3, mins: Vec3, maxs: Vec3, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult`
     - Delegate to BSP collision detection (from loaded map)
   - Define `pointcontents(point: Vec3): number`
@@ -58,7 +58,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Define `soundIndex(name: string): number`, `modelIndex(name: string): number`, `imageIndex(name: string): number`
     - Register assets and return index
 
-- [ ] **1.3**: Create game lifecycle methods
+- [x] **1.3**: Create game lifecycle methods
   - `initGame(mapName: string, options: GameCreateOptions): void`
     - Load map via `assetManager.getMap(mapName)`
     - Call `game.init()`
@@ -69,7 +69,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - `resetGame(): void`
     - Restart current map
 
-- [ ] **1.4**: Implement game state snapshot conversion
+- [x] **1.4**: Implement game state snapshot conversion
   - Convert `GameStateSnapshot` from library to application state format
   - Extract `PlayerState` for rendering
   - Extract `EntityState[]` for entity rendering
