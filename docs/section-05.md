@@ -42,13 +42,13 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **1.1**: Create `src/components/TextureAtlas.tsx`
+- [x] **1.1**: Create `src/components/TextureAtlas.tsx`
   - Replace/extend `ImagePreview` for selected textures
   - Display texture at multiple zoom levels (25%, 50%, 100%, 200%, 400%)
   - Pixel grid overlay at high zoom
   - Pan and zoom controls
 
-- [ ] **1.2**: Display texture metadata
+- [x] **1.2**: Display texture metadata
   - Dimensions (width x height)
   - Format (PCX, WAL, TGA)
   - Color depth (8-bit indexed, 24-bit RGB, 32-bit RGBA)
@@ -56,7 +56,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Mipmap levels (if applicable)
   - Palette information (for 8-bit textures)
 
-- [ ] **1.3**: Implement palette viewer
+- [x] **1.3**: Implement palette viewer
   - For 8-bit textures, show palette as color swatches
   - Display 256 colors in grid
   - Click color to see index and RGB values

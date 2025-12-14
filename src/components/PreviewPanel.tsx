@@ -1,7 +1,8 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import type { ParsedFile, PakService } from '../services/pakService';
 import { SpriteViewer } from './SpriteViewer';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
+import { TextureAtlas } from './TextureAtlas';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -10,52 +11,6 @@ export interface PreviewPanelProps {
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
   onEntitySelected?: (entity: any) => void;
-}
-
-interface ImagePreviewProps {
-  rgba: Uint8Array;
-  width: number;
-  height: number;
-}
-
-function ImagePreview({ rgba, width, height }: ImagePreviewProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const imageData = ctx.createImageData(width, height);
-    imageData.data.set(rgba);
-    ctx.putImageData(imageData, 0, 0);
-  }, [rgba, width, height]);
-
-  // Scale up small images for visibility
-  const scale = Math.max(1, Math.min(4, Math.floor(400 / Math.max(width, height))));
-  const displayWidth = width * scale;
-  const displayHeight = height * scale;
-
-  return (
-    <div className="preview-image" data-testid="image-preview">
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: `${displayWidth}px`,
-          height: `${displayHeight}px`,
-          imageRendering: 'pixelated',
-        }}
-        data-testid="preview-canvas"
-      />
-      <div className="preview-dimensions">
-        {width} x {height} {scale > 1 && `(${scale}x zoom)`}
-      </div>
-    </div>
-  );
 }
 
 interface AudioPreviewProps {
@@ -194,21 +149,37 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
   const renderPreview = () => {
     switch (parsedFile.type) {
       case 'pcx':
-      case 'tga':
         return (
-          <ImagePreview
+          <TextureAtlas
             rgba={parsedFile.rgba}
             width={parsedFile.width}
             height={parsedFile.height}
+            format="pcx"
+            name={filePath.split('/').pop() || 'unknown'}
+            palette={parsedFile.image.palette}
+          />
+        );
+      case 'tga':
+        return (
+          <TextureAtlas
+            rgba={parsedFile.rgba}
+            width={parsedFile.width}
+            height={parsedFile.height}
+            format="tga"
+            name={filePath.split('/').pop() || 'unknown'}
           />
         );
       case 'wal':
         if (parsedFile.rgba) {
           return (
-            <ImagePreview
+            <TextureAtlas
               rgba={parsedFile.rgba}
               width={parsedFile.width}
               height={parsedFile.height}
+              format="wal"
+              name={filePath.split('/').pop() || 'unknown'}
+              palette={pakService.getPalette() || undefined}
+              mipmaps={4}
             />
           );
         }
