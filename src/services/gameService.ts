@@ -1,303 +1,310 @@
 import {
-  createGame,
-  GameImports,
-  GameExports,
-  GameCreateOptions,
-  Entity,
-  GameStateSnapshot,
-  MulticastType
-} from 'quake2ts/game';
-import {
-  VirtualFileSystem,
   AssetManager,
-  BspMap,
-  BspPlane,
-  BspNode,
-  BspLeaf,
-  BspModel,
+  VirtualFileSystem,
+  type BspMap,
+  type BspPlane,
+  type BspNode,
+  type BspLeaf,
+  type BspBrush,
+  type BspBrushSide,
+  type BspModel
 } from 'quake2ts/engine';
+
 import {
-  Vec3,
-  UserCommand,
-  buildCollisionModel,
-  CollisionLumpData,
-  CollisionModel,
-  CollisionEntityIndex,
+  createGame,
+  type GameImports,
+  type GameExports,
+  type GameCreateOptions,
+  type Entity,
+  type GameTraceResult,
+  type GameStateSnapshot,
+  type UserCommand,
+} from 'quake2ts/game';
+
+import {
+  type Vec3,
+  vec3,
   traceBox,
-  CollisionTraceParams,
-  CollisionEntityTraceParams,
-  CollisionEntityTraceResult,
-  CollisionTraceResult,
-  CollisionPlane,
-  pointContents,
-  CollisionEntityLink
+  buildCollisionModel,
+  type CollisionModel,
+  type CollisionLumpData,
+  pointContents
 } from 'quake2ts/shared';
 
-// Type aliases for types not exported from engine
-type BspBrush = BspMap['brushes'][number];
-type BspBrushSide = BspMap['brushSides'][number];
-
-export interface GameSimulationWrapper {
+export interface GameSimulation {
+  initGame(mapName: string, options: GameCreateOptions): Promise<void>;
   start(): void;
   stop(): void;
   tick(deltaMs: number, cmd: UserCommand): void;
   getSnapshot(): GameStateSnapshot | null;
+  isRunning(): boolean;
   shutdown(): void;
 }
 
-export interface GameTraceResult {
-    allsolid: boolean;
-    startsolid: boolean;
-    fraction: number;
-    endpos: Vec3;
-    plane: CollisionPlane | null;
-    surfaceFlags: number;
-    contents: number;
-    ent: Entity | null;
+export interface GameServiceState {
+  isInitialized: boolean;
+  isRunning: boolean;
+  currentMap: string | null;
 }
 
-// Helper to convert tuple to shared Vec3
-function toVec3(v: [number, number, number]): Vec3 {
-  // Construct an object that satisfies Vec3 interface (array-like with x,y,z)
-  const res: any = [v[0], v[1], v[2]];
-  res.x = v[0];
-  res.y = v[1];
-  res.z = v[2];
-  return res as Vec3;
-}
+class GameServiceImpl implements GameSimulation {
+  private game: GameExports | null = null;
+  private assetManager: AssetManager;
+  private vfs: VirtualFileSystem;
+  private mapName: string | null = null;
+  private bspMap: BspMap | null = null;
+  private collisionModel: CollisionModel | null = null;
 
-function createVec3(x: number, y: number, z: number): Vec3 {
-  return toVec3([x, y, z]);
-}
+  // Game imports implementation
+  private configStrings = new Map<number, string>();
+  private frameCount = 0;
 
-function bspToCollisionLump(map: BspMap): CollisionLumpData {
-  const planes = map.planes.map(p => ({
-    normal: toVec3(p.normal),
-    dist: p.dist,
-    type: p.type
-  }));
-
-  const nodes = map.nodes.map(n => ({
-    planenum: n.planeIndex,
-    children: n.children
-  }));
-
-  const leaves = map.leafs.map(l => ({
-    contents: l.contents,
-    cluster: l.cluster,
-    area: l.area,
-    firstLeafBrush: l.firstLeafBrush,
-    numLeafBrushes: l.numLeafBrushes
-  }));
-
-  const brushes = map.brushes.map(b => ({
-    firstSide: b.firstSide,
-    numSides: b.numSides,
-    contents: b.contents
-  }));
-
-  const resolvedBrushSides = map.brushSides.map(bs => {
-    const texInfo = map.texInfo[bs.texInfo];
-    return {
-      planenum: bs.planeIndex,
-      surfaceFlags: texInfo ? texInfo.flags : 0
-    };
-  });
-
-  const newLeafBrushes: number[] = [];
-  const newLeaves = leaves.map((l, i) => {
-     const leafBrushList = map.leafLists.leafBrushes[i];
-     const first = newLeafBrushes.length;
-     if (leafBrushList) {
-       newLeafBrushes.push(...leafBrushList);
-     }
-     return {
-       ...l,
-       firstLeafBrush: first,
-       numLeafBrushes: leafBrushList ? leafBrushList.length : 0
-     };
-  });
-
-  const bmodels = map.models.map(m => ({
-    mins: toVec3(m.mins),
-    maxs: toVec3(m.maxs),
-    origin: toVec3(m.origin),
-    headnode: m.headNode
-  }));
-
-  let visibility = undefined;
-  if (map.visibility) {
-    visibility = {
-      numClusters: map.visibility.numClusters,
-      clusters: map.visibility.clusters.map(c => ({
-        pvs: c.pvs,
-        phs: c.phs
-      }))
-    };
+  constructor(vfs: VirtualFileSystem) {
+    this.vfs = vfs;
+    this.assetManager = new AssetManager(vfs);
   }
 
-  return {
-    planes,
-    nodes,
-    leaves: newLeaves,
-    brushes,
-    brushSides: resolvedBrushSides,
-    leafBrushes: newLeafBrushes,
-    bmodels,
-    visibility
-  };
-}
+  async initGame(mapName: string, options: GameCreateOptions): Promise<void> {
+    this.mapName = mapName;
 
-export async function createGameSimulation(vfs: VirtualFileSystem, mapName: string): Promise<GameSimulationWrapper> {
-  const assetManager = new AssetManager(vfs);
-  let map: BspMap | undefined;
-  try {
-    map = await assetManager.loadMap(mapName);
-  } catch (e) {
-    console.error(`Failed to load map ${mapName}`, e);
-    throw e;
+    // Load map assets
+    this.bspMap = await this.assetManager.getMap(mapName);
+
+    // Build collision model from BSP
+    this.collisionModel = this.createCollisionModel(this.bspMap);
+
+    // Create game instance
+    this.game = createGame(
+      this.createGameImports(),
+      { vfs: this.vfs, assetManager: this.assetManager },
+      options
+    );
+
+    this.game.init();
   }
 
-  if (!map) {
-      throw new Error(`Map ${mapName} loaded but is undefined`);
-  }
+  private createCollisionModel(map: BspMap): CollisionModel {
+    // Reconstruct the flat leafBrushes array and update leaves
+    const leafBrushes: number[] = [];
 
-  const collisionLumps = bspToCollisionLump(map);
-  const collisionModel = buildCollisionModel(collisionLumps);
-  const entityIndex = new CollisionEntityIndex();
+    const leaves = map.leafs.map((l: BspLeaf, index: number) => {
+      // Get the brushes for this leaf from the parsed leafLists
+      // map.leafLists.leafBrushes is an array of arrays, indexed by leaf index
+      const brushes = map.leafLists.leafBrushes[index];
 
-  let gameRef: GameExports | null = null;
+      const firstLeafBrush = leafBrushes.length;
+      let numLeafBrushes = 0;
 
-  const traceFunc = (start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult => {
-      const actualMins = mins || createVec3(0, 0, 0);
-      const actualMaxs = maxs || createVec3(0, 0, 0);
-
-      const traceParams: CollisionTraceParams = {
-        model: collisionModel,
-        start,
-        end,
-        mins: actualMins,
-        maxs: actualMaxs,
-        contentMask: contentmask
-      };
-
-      const worldTrace = traceBox(traceParams);
-
-      const entityTraceParams: CollisionEntityTraceParams = {
-        ...traceParams,
-        passId: passent ? passent.index : undefined
-      };
-
-      const entityTrace = entityIndex.trace(entityTraceParams);
-
-      let finalTrace: CollisionEntityTraceResult | CollisionTraceResult = worldTrace;
-      let hitEntity: Entity | null = null;
-
-      if (entityTrace.fraction < worldTrace.fraction) {
-         finalTrace = entityTrace;
-         if (entityTrace.entityId !== null && gameRef && gameRef.entities) {
-            // @ts-ignore - Assuming find method or access exists or iterating
-            // EntitySystem usually stores entities in an array or map.
-            // game.entities might be an object with methods.
-            // If it's the class EntitySystem, it has `find(predicate)`.
-            // Let's assume `find` exists as per docs.
-            hitEntity = gameRef.entities.find((e: Entity) => e.index === entityTrace.entityId) || null;
-         }
+      if (brushes && brushes.length > 0) {
+        leafBrushes.push(...brushes);
+        numLeafBrushes = brushes.length;
       }
 
       return {
-        allsolid: finalTrace.allsolid,
-        startsolid: finalTrace.startsolid,
-        fraction: finalTrace.fraction,
-        endpos: finalTrace.endpos,
-        plane: finalTrace.plane || null,
-        surfaceFlags: finalTrace.surfaceFlags || 0,
-        contents: finalTrace.contents || 0,
-        ent: hitEntity
+        contents: l.contents,
+        cluster: l.cluster,
+        area: l.area,
+        firstLeafBrush,
+        numLeafBrushes
       };
-  };
+    });
 
-  const gameImports: Partial<GameImports> = {
-    trace: traceFunc,
-    pointcontents: (point: Vec3): number => {
-      return pointContents(point, collisionModel);
-    },
-    multicast: (origin: Vec3, type: MulticastType, event: string, ...args: any[]): void => {
-    },
-    unicast: (ent: Entity, reliable: boolean, event: string, ...args: any[]): void => {
-    },
-    configstring: (index: number, value: string): void => {
-    },
-    serverCommand: (cmd: string): void => {
-    },
-    linkentity: (entity: Entity): void => {
-      const link: CollisionEntityLink = {
-        id: entity.index,
-        origin: entity.origin,
-        mins: entity.mins,
-        maxs: entity.maxs,
-        contents: entity.clipmask || 0,
+    const lumpData: CollisionLumpData = {
+      planes: map.planes.map((p: BspPlane) => ({
+        normal: { x: p.normal[0], y: p.normal[1], z: p.normal[2] },
+        dist: p.dist,
+        type: p.type
+      })),
+      nodes: map.nodes.map((n: BspNode) => ({
+        planenum: n.planeIndex,
+        children: n.children
+      })),
+      leaves: leaves,
+      brushes: map.brushes.map((b: BspBrush) => ({
+        firstSide: b.firstSide,
+        numSides: b.numSides,
+        contents: b.contents
+      })),
+      brushSides: map.brushSides.map((bs: BspBrushSide) => ({
+        planenum: bs.planeIndex,
         surfaceFlags: 0
-      };
-      if (entity.solid > 0) {
-          entityIndex.link(link);
+      })),
+      leafBrushes: leafBrushes,
+      bmodels: map.models.map((m: BspModel) => ({
+        mins: { x: m.mins[0], y: m.mins[1], z: m.mins[2] },
+        maxs: { x: m.maxs[0], y: m.maxs[1], z: m.maxs[2] },
+        origin: { x: m.origin[0], y: m.origin[1], z: m.origin[2] },
+        headnode: m.headNode
+      })),
+      visibility: map.visibility ? {
+        numClusters: map.visibility.numClusters,
+        clusters: map.visibility.clusters.map(c => ({
+          pvs: c.pvs,
+          phs: c.phs
+        }))
+      } : undefined
+    };
+
+    return buildCollisionModel(lumpData);
+  }
+
+  private createGameImports(): Partial<GameImports> {
+    return {
+      trace: (start: Vec3, mins: Vec3, maxs: Vec3, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult => {
+        if (!this.collisionModel) {
+          return {
+            allsolid: false,
+            startsolid: false,
+            fraction: 1.0,
+            endpos: vec3.clone(end),
+            plane: { normal: vec3.fromValues(0, 1, 0), dist: 0, type: 0, signbits: 0 },
+            surface: { name: 'default', flags: 0, value: 0 },
+            contents: 0,
+            ent: null
+          };
+        }
+
+        const trace = traceBox({
+          model: this.collisionModel,
+          start: { x: start.x, y: start.y, z: start.z },
+          end: { x: end.x, y: end.y, z: end.z },
+          mins: { x: mins.x, y: mins.y, z: mins.z },
+          maxs: { x: maxs.x, y: maxs.y, z: maxs.z },
+          contentMask: contentmask
+        });
+
+        return {
+          allsolid: trace.allsolid,
+          startsolid: trace.startsolid,
+          fraction: trace.fraction,
+          endpos: trace.endpos,
+          plane: trace.plane ? {
+             normal: trace.plane.normal,
+             dist: trace.plane.dist,
+             type: trace.plane.type,
+             signbits: trace.plane.signbits
+          } : { normal: vec3.create(), dist: 0, type: 0, signbits: 0 },
+          surface: {
+            name: 'unknown',
+            flags: trace.surfaceFlags || 0,
+            value: 0
+          },
+          contents: trace.contents || 0,
+          ent: null
+        };
+      },
+
+      pointcontents: (point: Vec3): number => {
+        if (!this.collisionModel) return 0;
+        return pointContents(
+          { x: point.x, y: point.y, z: point.z },
+          this.collisionModel
+        );
+      },
+
+      multicast: (origin: Vec3, to: number, event: string, ...args: any[]): void => {
+        // Handle multicast events (sound, effects)
+      },
+
+      unicast: (entity: Entity, reliable: boolean, event: string, ...args: any[]): void => {
+        // Handle unicast events
+      },
+
+      configstring: (index: number, value: string): void => {
+        this.configStrings.set(index, value);
+      },
+
+      serverCommand: (cmd: string): void => {
+        console.log('Server command:', cmd);
+      },
+
+      soundIndex: (name: string): number => {
+        // Should register sound and return index
+        return 0;
+      },
+
+      modelIndex: (name: string): number => {
+        // Should register model and return index
+        return 0;
+      },
+
+      imageIndex: (name: string): number => {
+        // Should register image and return index
+        return 0;
+      },
+
+      linkentity: (entity: Entity): void => {
+        // Link entity to physics world
+      },
+
+      unlinkentity: (entity: Entity): void => {
+        // Unlink entity from physics world
       }
-    },
-    // unlinkentity removed as it's not required in Partial<GameImports> and caused error
-  };
+    };
+  }
 
-  const gameEngine = {
-    vfs,
-    assetManager,
-    trace: (start: Vec3, end: Vec3): unknown => {
-       return traceFunc(start, null, null, end, null, -1);
+  start(): void {
+    if (!this.game) throw new Error('Game not initialized');
+  }
+
+  stop(): void {
+  }
+
+  tick(deltaMs: number, cmd: UserCommand): void {
+    if (!this.game) return;
+    this.game.frame(this.frameCount++, cmd);
+  }
+
+  getSnapshot(): GameStateSnapshot | null {
+    if (!this.game) return null;
+    return this.game.snapshot();
+  }
+
+  isRunning(): boolean {
+    return this.game !== null;
+  }
+
+  shutdown(): void {
+    if (this.game) {
+      this.game.shutdown();
+      this.game = null;
     }
-  };
+    this.bspMap = null;
+    this.collisionModel = null;
+    this.mapName = null;
+    this.configStrings.clear();
+    this.frameCount = 0;
+  }
+}
 
-  const gameOptions: GameCreateOptions = {
-    gravity: createVec3(0, 0, -800),
-    deathmatch: false,
-    coop: false,
-    skill: 1
-  };
+// Singleton pattern for the service
+let gameServiceInstance: GameServiceImpl | null = null;
 
-  // Cast game to any to avoid "init does not exist" errors due to potential type mismatch in library exports
-  const game = createGame(gameImports, gameEngine, gameOptions) as any;
-  gameRef = game;
+export function getGameService(vfs: VirtualFileSystem): GameSimulation {
+  // Always create a new service if VFS changes or reset existing one
+  // For simplicity and correctness with new PAKs, we recreate it if VFS doesn't match
+  // But GameServiceImpl doesn't expose VFS.
+  // Let's just create a new one if it doesn't exist, or shutdown/recreate if it does.
+  // Actually, to support switching PAKs, we should probably just return a new instance or update the existing one.
+  // Since we have `shutdown`, let's ensure we are clean.
 
-  let lastSnapshot: GameStateSnapshot | null = null;
-  let totalTime = 0;
+  if (gameServiceInstance) {
+     // Check if we need to update VFS?
+     // Simplest approach: Singleton is per-session. If VFS changes, we might want a new service.
+     // But `usePakExplorer` creates a new PakService on file load, so `vfs` object reference changes.
+     // So we should check if we need to replace the instance.
 
-  return {
-    start: () => {
-      game.init(performance.now());
-    },
-    stop: () => {
-      game.shutdown();
-    },
-    shutdown: () => {
-      game.shutdown();
-    },
-    tick: (deltaMs: number, cmd: UserCommand) => {
-      totalTime += deltaMs;
-      // Construct FixedStepContext-like object
-      const context = {
-        frame: Math.floor(totalTime / 50), // 20Hz? No, typically 40Hz (25ms) or dependent on delta.
-        // If deltaMs is variable, frame count is tricky.
-        // But game logic expects fixed steps usually.
-        // Here we just pass context.
-        time: totalTime,
-        intervalMs: deltaMs,
-        alpha: 1.0
-      };
+     // However, `GameServiceImpl` is private.
+     // Let's just shutdown and replace if it exists, ensuring we always use the latest VFS.
+     gameServiceInstance.shutdown();
+  }
+  gameServiceInstance = new GameServiceImpl(vfs);
+  return gameServiceInstance;
+}
 
-      const result = game.frame(context, cmd);
-      if (result && result.state) {
-        lastSnapshot = result.state;
-      }
-    },
-    getSnapshot: () => {
-      return lastSnapshot;
-    }
-  };
+export function resetGameService(): void {
+  if (gameServiceInstance) {
+    gameServiceInstance.shutdown();
+    gameServiceInstance = null;
+  }
 }
