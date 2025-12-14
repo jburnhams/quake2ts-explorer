@@ -1,0 +1,144 @@
+.bsp-analyzer {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #222;
+  color: #eee;
+}
+
+.bsp-analyzer-toolbar {
+  height: 40px;
+  background-color: #333;
+  border-bottom: 1px solid #444;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+}
+
+.bsp-analyzer-tabs {
+  display: flex;
+  height: 100%;
+}
+
+.bsp-analyzer-tabs button {
+  background: none;
+  border: none;
+  color: #aaa;
+  padding: 0 15px;
+  height: 100%;
+  cursor: pointer;
+  font-size: 14px;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s;
+}
+
+.bsp-analyzer-tabs button:hover {
+  color: #fff;
+  background-color: #3a3a3a;
+}
+
+.bsp-analyzer-tabs button.active {
+  color: #fff;
+  border-bottom-color: #007acc;
+  background-color: #2a2a2a;
+}
+
+.bsp-analyzer-split-view {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.bsp-analyzer-3d-view {
+  flex: 2;
+  position: relative;
+  border-right: 1px solid #444;
+}
+
+.bsp-analyzer-panel {
+  flex: 1;
+  min-width: 300px;
+  overflow-y: auto;
+  background-color: #1e1e1e;
+}
+
+.bsp-analyzer-tab-content {
+  padding: 15px;
+}
+
+.bsp-analyzer-tab-content h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #fff;
+  border-bottom: 1px solid #333;
+  padding-bottom: 8px;
+}
+
+.bsp-analyzer-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.bsp-stat-item {
+  background-color: #2a2a2a;
+  padding: 10px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.bsp-stat-item label {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.bsp-stat-item span {
+  font-size: 14px;
+  font-weight: bold;
+  color: #ddd;
+}
+
+.bsp-analyzer-table-container {
+    overflow-x: auto;
+    margin-bottom: 20px;
+}
+
+.bsp-analyzer-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background-color: #2a2a2a;
+}
+
+.bsp-analyzer-table th,
+.bsp-analyzer-table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #444;
+}
+
+.bsp-analyzer-table th {
+    background-color: #333;
+    font-weight: bold;
+    color: #ccc;
+    position: sticky;
+    top: 0;
+}
+
+.bsp-analyzer-table tr:hover {
+    background-color: #3a3a3a;
+}
+
+.bsp-analyzer h4 {
+    color: #ddd;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    font-size: 14px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+}

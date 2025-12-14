@@ -4,6 +4,7 @@ import { SpriteViewer } from './SpriteViewer';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 import { ModelInspector } from './ModelInspector';
 import { TextureAtlas } from './TextureAtlas';
+import { BspAnalyzer } from './BspAnalyzer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -200,6 +201,16 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
           />
         );
       case 'bsp':
+        return (
+          <BspAnalyzer
+            map={parsedFile.map}
+            pakService={pakService}
+            filePath={filePath}
+            onClassnamesLoaded={onClassnamesLoaded}
+            hiddenClassnames={hiddenClassnames}
+            onEntitySelected={onEntitySelected}
+          />
+        );
       case 'dm2':
         return (
           <UniversalViewer
