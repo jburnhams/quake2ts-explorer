@@ -32,13 +32,17 @@ export class EntityService {
    * This can be slow for large PAKs, so an optional progress callback is provided.
    */
   async scanAllMaps(onProgress?: (current: number, total: number, currentMap: string) => void): Promise<EntityRecord[]> {
-    const bspFiles = this.vfs.findByExtension(['bsp']);
+    const bspFiles = this.vfs.findByExtension('bsp');
     const allEntities: EntityRecord[] = [];
 
     // console.log('Found BSP files:', bspFiles);
 
     for (let i = 0; i < bspFiles.length; i++) {
-      const bspPath = bspFiles[i];
+      // bspFiles contains VirtualFileHandle objects (path, size, sourcePak)
+      // We need to cast it to any because the type definition might not be fully accurate in the environment
+      const fileHandle = bspFiles[i] as any;
+      const bspPath = fileHandle.path || fileHandle;
+
       if (onProgress) {
         onProgress(i, bspFiles.length, bspPath);
       }

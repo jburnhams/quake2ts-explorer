@@ -70,7 +70,7 @@ describe('EntityService', () => {
     const onProgress = jest.fn();
     const records = await service.scanAllMaps(onProgress);
 
-    expect(vfs.findByExtension).toHaveBeenCalledWith(['bsp']);
+    expect(vfs.findByExtension).toHaveBeenCalledWith('bsp');
     expect(vfs.readFile).toHaveBeenCalledTimes(2);
     expect(parseBsp).toHaveBeenCalledTimes(2);
 
