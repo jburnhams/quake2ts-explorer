@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../../src/services/pakService';
 import { Dm2Adapter } from '../../src/components/UniversalViewer/adapters/Dm2Adapter';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 import { DemoPlaybackController } from 'quake2ts/engine';
 
 // Mock gl-matrix
@@ -123,11 +124,13 @@ describe('UniversalViewer - Demo Integration', () => {
 
       await act(async () => {
           render(
+              <MapEditorProvider>
               <UniversalViewer
                   parsedFile={dm2File}
                   pakService={mockPakService}
                   filePath="demos/test.dm2"
               />
+              </MapEditorProvider>
           );
       });
 
@@ -147,11 +150,13 @@ describe('UniversalViewer - Demo Integration', () => {
 
       await act(async () => {
           render(
+              <MapEditorProvider>
               <UniversalViewer
                   parsedFile={dm2File}
                   pakService={mockPakService}
                   filePath="demos/test.dm2"
               />
+              </MapEditorProvider>
           );
       });
 

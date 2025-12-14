@@ -2,6 +2,7 @@ import { render, waitFor, act, fireEvent } from '@testing-library/react';
 import { UniversalViewer } from '../../../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile } from '../../../../src/services/pakService';
 import { BspAdapter } from '../../../../src/components/UniversalViewer/adapters/BspAdapter';
+import { MapEditorProvider } from '../../../../src/context/MapEditorContext';
 import React from 'react';
 
 // Mock gl-matrix (use actual for math logic in picking)
@@ -108,7 +109,11 @@ describe('UniversalViewer Picking', () => {
 
       const onEntitySelected = jest.fn();
 
-      const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onEntitySelected={onEntitySelected} />);
+      const { container } = render(
+        <MapEditorProvider>
+          <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onEntitySelected={onEntitySelected} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
 
@@ -149,7 +154,11 @@ describe('UniversalViewer Picking', () => {
           map: mockMap as any,
       };
 
-      const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      const { container } = render(
+        <MapEditorProvider>
+          <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
 

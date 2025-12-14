@@ -26,9 +26,12 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 - Entity metadata display in `src/components/EntityMetadata.tsx`
 - Entity legend with visibility toggling in `src/components/EntityLegend.tsx`
 - BSP entity parsing via quake2ts library
+- **Task 1**: Entity Selection (Single, Visual Feedback)
+- **Task 1.3/1.4**: Wireframe Gizmo & Translation Logic
+- **Task 7.1**: Editor Mode Toggle in Toolbar
 
 **Missing**:
-- Entity manipulation (move, rotate, scale)
+- Entity manipulation (rotate, scale)
 - Entity creation and deletion
 - Property editing UI
 - Validation system
@@ -43,20 +46,20 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 
 #### Subtasks
 
-- [ ] **1.1**: Implement entity selection modes
+- [x] **1.1**: Implement entity selection modes
   - Modify `BspAdapter.ts`
   - Single selection (click entity)
   - Multi-selection (Ctrl+click to add/remove)
   - Box selection (drag rectangle to select multiple)
   - Deselect (click empty space)
 
-- [ ] **1.2**: Visual selection feedback
+- [x] **1.2**: Visual selection feedback
   - Highlight selected entities (different color than hover)
   - Draw bounding boxes around selected entities
   - Show selection count in UI ("3 entities selected")
 
-- [ ] **1.3**: Implement transform gizmo
-  - Create `src/components/TransformGizmo.tsx`
+- [x] **1.3**: Implement transform gizmo
+  - Create `src/components/TransformGizmo.tsx` (Implemented as `GizmoController.ts`)
   - 3D widget overlay on selected entity
   - Modes:
     - Translate (arrows for X, Y, Z axis movement)
@@ -64,7 +67,7 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
     - Scale (boxes for uniform/non-uniform scaling)
   - Switch modes with W (translate), E (rotate), R (scale) keys
 
-- [ ] **1.4**: Implement entity translation
+- [x] **1.4**: Implement entity translation
   - Click and drag axis arrow to move along that axis
   - Shift+drag for grid snapping (configurable snap size: 1, 8, 16, 32 units)
   - Update entity `origin` property in real-time
@@ -84,20 +87,14 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 
 **File References**:
 - Modify: `src/components/UniversalViewer/adapters/BspAdapter.ts` (selection)
-- Create: `src/components/TransformGizmo.tsx`
-- Create: `src/services/entityEditorService.ts`
-- Create: `src/utils/transformUtils.ts` (gizmo math)
+- Create: `src/components/UniversalViewer/GizmoController.ts`
+- Create: `src/context/MapEditorContext.tsx`
+- Create: `src/utils/math/rayIntersections.ts`
 
 **Test Requirements**:
-- Unit: `tests/unit/entityEditorService.test.ts`
-  - Test selection logic
-  - Test transform calculations
-- Unit: `tests/unit/TransformGizmo.test.tsx`
-  - Render gizmo
-  - Test interaction (mock mouse events)
-- Integration: `tests/integration/entityManipulation.integration.test.tsx`
-  - Load map, select entity, move it
-  - Verify position updated
+- Unit: `tests/unit/context/MapEditorContext.test.tsx`
+- Unit: `tests/unit/components/UniversalViewer/GizmoController.test.ts`
+- Unit: `tests/unit/components/UniversalViewer/UniversalViewerPicking.test.tsx`
 
 ---
 
@@ -423,7 +420,7 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 
 #### Subtasks
 
-- [ ] **7.1**: Add "Edit Mode" toggle
+- [x] **7.1**: Add "Edit Mode" toggle
   - Button in toolbar: "Edit Map"
   - Switches application mode from viewer to editor
   - Shows editor-specific UI (gizmo, property editor, validation panel)

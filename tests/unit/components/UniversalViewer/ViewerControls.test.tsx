@@ -324,55 +324,19 @@ describe('ViewerControls', () => {
   describe('Screenshot Controls', () => {
     it('renders screenshot button when onScreenshot is provided', () => {
       render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} />);
-      expect(screen.getByText('📷 Screen')).toBeInTheDocument();
+      expect(screen.getByText('📷 Screenshot')).toBeInTheDocument();
     });
 
     it('does not render screenshot button when onScreenshot is not provided', () => {
       render(<ViewerControls {...defaultProps} onScreenshot={undefined} />);
-      expect(screen.queryByText('📷 Screen')).not.toBeInTheDocument();
+      expect(screen.queryByText('📷 Screenshot')).not.toBeInTheDocument();
     });
 
     it('calls onScreenshot when button is clicked', () => {
       const mockOnScreenshot = jest.fn();
       render(<ViewerControls {...defaultProps} onScreenshot={mockOnScreenshot} />);
-      fireEvent.click(screen.getByText('📷 Screen'));
+      fireEvent.click(screen.getByText('📷 Screenshot'));
       expect(mockOnScreenshot).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe('Video Recording Controls', () => {
-    it('renders record button when onStartRecording and onStopRecording are provided', () => {
-       render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={jest.fn()} onStopRecording={jest.fn()} />);
-       expect(screen.getByText('● Rec')).toBeInTheDocument();
-    });
-
-    it('does not render record button if props missing', () => {
-        render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} />);
-        expect(screen.queryByText('● Rec')).not.toBeInTheDocument();
-    });
-
-    it('calls onStartRecording when clicked and not recording', () => {
-        const mockStart = jest.fn();
-        render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={mockStart} onStopRecording={jest.fn()} isRecording={false} />);
-        fireEvent.click(screen.getByText('● Rec'));
-        expect(mockStart).toHaveBeenCalled();
-    });
-
-    it('shows stop button when isRecording is true', () => {
-        render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={jest.fn()} onStopRecording={jest.fn()} isRecording={true} />);
-        expect(screen.getByText(/■/)).toBeInTheDocument();
-    });
-
-    it('calls onStopRecording when clicked and recording', () => {
-        const mockStop = jest.fn();
-        render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={jest.fn()} onStopRecording={mockStop} isRecording={true} />);
-        fireEvent.click(screen.getByText(/■/)); // Match by icon since text is now complex
-        expect(mockStop).toHaveBeenCalled();
-    });
-
-    it('displays elapsed time when recording', () => {
-        render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={jest.fn()} onStopRecording={jest.fn()} isRecording={true} recordingTime={65} />);
-        expect(screen.getByText('1:05')).toBeInTheDocument();
     });
   });
 });

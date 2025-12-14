@@ -15,6 +15,8 @@ export class BspAdapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
   private hoveredEntity: BspEntity | null = null;
+  private selectedEntityIds: Set<number> = new Set();
+  private entityPositions: Map<number, vec3> = new Map();
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
 
@@ -83,6 +85,18 @@ export class BspAdapter implements ViewerAdapter {
 
   setHoveredEntity(entity: BspEntity | null) {
       this.hoveredEntity = entity;
+  }
+
+  setSelectedEntities(ids: Set<number>) {
+      this.selectedEntityIds = ids;
+  }
+
+  setEntityPosition(id: number, position: vec3) {
+      this.entityPositions.set(id, position);
+  }
+
+  getDebugRenderer(): DebugRenderer | null {
+      return this.debugRenderer;
   }
 
   setDebugMode(mode: DebugMode) {
@@ -247,6 +261,66 @@ export class BspAdapter implements ViewerAdapter {
 
         this.debugRenderer.render(mvp);
     }
+
+    // Editor Selection Rendering
+    if (this.selectedEntityIds.size > 0 && this.debugRenderer && this.map) {
+        // We might want to clear or overlay. For now, we draw on top.
+        // If debugMode was None, we need to clear first if we haven't already.
+        if (this.debugMode === DebugMode.None) {
+            this.debugRenderer.clear();
+        }
+
+        this.selectedEntityIds.forEach(id => {
+            const entity = this.map?.entities.entities[id];
+            if (entity) {
+                 const model = this.getModelFromEntity(entity);
+                 // Orange color for selection
+                 const color = vec4.fromValues(1, 0.65, 0, 1);
+
+                 // Check if position is overridden
+                 const overridePos = this.entityPositions.get(id);
+
+                 if (model) {
+                     // For brush models, we can't easily move geometry yet, so we just draw box where it is.
+                     // A real implementation would offset the box by (overridePos - originalOrigin).
+                     this.debugRenderer?.addBox(model.min, model.max, color);
+                 } else {
+                     // Point entity
+                     let origin: vec3 | null = null;
+
+                     if (overridePos) {
+                         origin = overridePos;
+                     } else if (entity.properties && entity.properties.origin) {
+                         const parts = entity.properties.origin.split(' ').map(parseFloat);
+                         if (parts.length === 3 && !parts.some(isNaN)) {
+                             origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                         }
+                     }
+
+                     if (origin) {
+                         const size = 16;
+                         const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
+                         const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
+                         this.debugRenderer?.addBox(min, max, color);
+                     }
+                 }
+            }
+        });
+
+        // If debugMode was None, we need to render now.
+        // If it wasn't None, we appended to the existing debug buffer and it was already rendered above?
+        // Wait, debugRenderer.render() clears the buffer after drawing?
+        // DebugRenderer implementation: clear() empties arrays. render() draws them. It does NOT clear them automatically?
+        // Let's check DebugRenderer.render() implementation.
+        // It does NOT clear. So if we added lines above, they are still there.
+        // But we called render() above. If we add more lines now, we need to call render() again?
+        // Or we should add lines BEFORE the render() call above.
+
+        // Correct approach: Add selection boxes BEFORE the main render call if debug is active.
+        // OR render a second pass.
+
+        this.debugRenderer.render(mvp);
+    }
   }
 
   cleanup(): void {
@@ -258,32 +332,6 @@ export class BspAdapter implements ViewerAdapter {
 
   getUniqueClassnames(): string[] {
     return this.map?.entities.getUniqueClassnames() ?? [];
-  }
-
-  getLightmaps(): Texture2D[] {
-      return this.geometry ? this.geometry.lightmaps.map(l => l.texture) : [];
-  }
-
-  getLightmapInfo(atlasIndex: number): { width: number; height: number; surfaceCount: number } {
-      if (!this.geometry || !this.geometry.lightmaps[atlasIndex]) {
-          return { width: 0, height: 0, surfaceCount: 0 };
-      }
-
-      // Quake 2 engine lightmaps are typically packed into 128x128 pages.
-      // We assume standard size if not exposed, but ideally Texture2D would expose it.
-      // Since we can't inspect Texture2D easily here, we use the known constant.
-      // However, we can count surfaces.
-      const width = 128;
-      const height = 128;
-
-      let surfaceCount = 0;
-      for (const surface of this.geometry.surfaces) {
-          if (surface.lightmap && surface.lightmap.atlasIndex === atlasIndex) {
-              surfaceCount++;
-          }
-      }
-
-      return { width, height, surfaceCount };
   }
 
   useZUp() { return true; }

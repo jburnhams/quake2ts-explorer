@@ -4,6 +4,7 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 import 'jest-canvas-mock';
 
 // Mock dependencies
@@ -68,11 +69,13 @@ describe('PerformanceStats Integration', () => {
 
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={mockParsedFile}
-          pakService={mockPakService}
-          showControls={true}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={mockParsedFile}
+            pakService={mockPakService}
+            showControls={true}
+          />
+        </MapEditorProvider>
       );
     });
 

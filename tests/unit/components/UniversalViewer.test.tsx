@@ -1,6 +1,7 @@
 import { render, waitFor, act } from '@testing-library/react';
 import { UniversalViewer } from '../../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../../../src/services/pakService';
+import { MapEditorProvider } from '../../../src/context/MapEditorContext';
 import { vec3 } from 'gl-matrix';
 import React from 'react';
 
@@ -137,7 +138,11 @@ describe('UniversalViewer', () => {
           animations: [{ name: 'anim', firstFrame: 0, lastFrame: 10 }] as any,
       };
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.Md2Pipeline).toHaveBeenCalled());
       const pipeline = quake2tsMock.Md2Pipeline.mock.results[0].value;
@@ -154,7 +159,11 @@ describe('UniversalViewer', () => {
           map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
       };
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
       const pipeline = quake2tsMock.BspSurfacePipeline.mock.results[0].value;
@@ -176,7 +185,11 @@ describe('UniversalViewer', () => {
           data: new Uint8Array(100),
       };
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} filePath="demos/test.dm2" />);
+      render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} filePath="demos/test.dm2" />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.DemoPlaybackController).toHaveBeenCalled());
       const controller = quake2tsMock.DemoPlaybackController.mock.results[0].value;
@@ -193,7 +206,11 @@ describe('UniversalViewer', () => {
           model: { header: {}, surfaces: [] } as any,
       };
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.Md3Pipeline).toHaveBeenCalled());
       // MD3 render is placeholder but should not crash
@@ -217,7 +234,11 @@ describe('UniversalViewer', () => {
 
       const onClassnamesLoaded = jest.fn();
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onClassnamesLoaded={onClassnamesLoaded} />);
+      render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onClassnamesLoaded={onClassnamesLoaded} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
 
@@ -237,7 +258,11 @@ describe('UniversalViewer', () => {
       // Ensure surfaces are returned so setHiddenClasses doesn't bail out
       quake2tsMock.createBspSurfaces.mockReturnValue([{}]);
 
-      const { rerender } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      const { rerender } = render(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />
+        </MapEditorProvider>
+      );
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
 
@@ -249,7 +274,11 @@ describe('UniversalViewer', () => {
       quake2tsMock.buildBspGeometry.mockClear();
 
       const hidden = new Set(['hidden_entity']);
-      rerender(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} hiddenClassnames={hidden} />);
+      rerender(
+        <MapEditorProvider>
+            <UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} hiddenClassnames={hidden} />
+        </MapEditorProvider>
+      );
 
       expect(quake2tsMock.buildBspGeometry).toHaveBeenCalledWith(
           expect.anything(),

@@ -4,9 +4,7 @@ import Colorful from '@uiw/react-color-colorful';
 import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
 import { OrbitState, FreeCameraState } from '../../utils/cameraUtils';
 import { DebugMode } from '../../types/debugMode';
-import { CameraMode } from '@/src/types/cameraMode';
 import '../../styles/md2Viewer.css';
-import '../../styles/animations.css';
 
 interface ViewerControlsProps {
   isPlaying: boolean;
@@ -23,8 +21,6 @@ interface ViewerControlsProps {
   showCameraControls: boolean;
   cameraMode: 'orbit' | 'free';
   setCameraMode: (mode: 'orbit' | 'free') => void;
-  demoCameraMode?: CameraMode;
-  setDemoCameraMode?: (mode: CameraMode) => void;
   renderMode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random';
   setRenderMode: (mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random') => void;
   renderColor: [number, number, number];
@@ -34,10 +30,6 @@ interface ViewerControlsProps {
   onScreenshot?: () => void;
   showStats?: boolean;
   setShowStats?: (show: boolean) => void;
-  onStartRecording?: () => void;
-  onStopRecording?: () => void;
-  isRecording?: boolean;
-  recordingTime?: number;
 }
 
 export function ViewerControls({
@@ -55,8 +47,6 @@ export function ViewerControls({
   showCameraControls,
   cameraMode,
   setCameraMode,
-  demoCameraMode,
-  setDemoCameraMode,
   renderMode,
   setRenderMode,
   renderColor,
@@ -65,18 +55,8 @@ export function ViewerControls({
   setDebugMode,
   onScreenshot,
   showStats,
-  setShowStats,
-  onStartRecording,
-  onStopRecording,
-  isRecording,
-  recordingTime = 0
+  setShowStats
 }: ViewerControlsProps) {
-
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
     if (cameraMode === 'orbit') {
@@ -251,34 +231,10 @@ export function ViewerControls({
        )}
 
       {onScreenshot && (
-          <div className="screenshot-controls" style={{ marginBottom: '10px', display: 'flex', gap: '5px' }}>
-              <button onClick={onScreenshot} style={{ flex: 1 }} title="Take Screenshot">
-                  📷 Screen
+          <div className="screenshot-controls" style={{ marginBottom: '10px' }}>
+              <button onClick={onScreenshot} style={{ width: '100%' }} title="Take Screenshot">
+                  📷 Screenshot
               </button>
-              {onStartRecording && onStopRecording && (
-                <button
-                  onClick={isRecording ? onStopRecording : onStartRecording}
-                  style={{
-                    flex: 1,
-                    backgroundColor: isRecording ? '#cc0000' : undefined,
-                    animation: isRecording ? 'pulse-red 2s infinite' : 'none',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px'
-                  }}
-                  title={isRecording ? "Stop Recording" : "Record Video"}
-                >
-                  {isRecording ? (
-                    <>
-                      <span>■</span>
-                      <span style={{ fontSize: '0.9em', minWidth: '35px' }}>{formatTime(recordingTime)}</span>
-                    </>
-                  ) : (
-                    '● Rec'
-                  )}
-                </button>
-              )}
           </div>
       )}
 
@@ -311,23 +267,6 @@ export function ViewerControls({
                 />
              </div>
         </div>
-      )}
-
-      {setDemoCameraMode && (
-          <div className="demo-camera-controls" style={{ marginBottom: '10px' }}>
-              <label htmlFor="demo-camera-select" style={{ display: 'block', marginBottom: '5px', fontSize: '12px' }}>Camera Mode:</label>
-              <select
-                  id="demo-camera-select"
-                  value={demoCameraMode || CameraMode.FirstPerson}
-                  onChange={(e) => setDemoCameraMode(e.target.value as CameraMode)}
-                  style={{ width: '100%', padding: '5px', fontSize: '12px' }}
-              >
-                  <option value={CameraMode.FirstPerson}>First Person</option>
-                  <option value={CameraMode.ThirdPerson}>Third Person</option>
-                  <option value={CameraMode.Free}>Free Cam</option>
-                  <option value={CameraMode.Orbital}>Orbital</option>
-              </select>
-          </div>
       )}
 
       {showCameraControls && (

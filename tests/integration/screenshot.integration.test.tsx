@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 import * as screenshotService from '@/src/services/screenshotService';
 import { createWebGLContext } from 'quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
@@ -83,10 +84,12 @@ describe('Screenshot Integration', () => {
   it('should trigger screenshot capture and download when button is clicked', async () => {
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
-          pakService={mockPakService}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        </MapEditorProvider>
       );
     });
 
@@ -129,10 +132,12 @@ describe('Screenshot Integration', () => {
 
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
-          pakService={mockPakService}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        </MapEditorProvider>
       );
     });
 
