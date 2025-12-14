@@ -19,6 +19,8 @@ export interface UniversalViewerProps {
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
   onEntitySelected?: (entity: any) => void;
+  onAdapterReady?: (adapter: ViewerAdapter) => void;
+  showControls?: boolean;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -29,7 +31,7 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames, onEntitySelected }: UniversalViewerProps) {
+export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames, onEntitySelected, onAdapterReady, showControls = true }: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -169,6 +171,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              if (newAdapter) {
                  await newAdapter.load(gl, parsedFile, pakService, filePath);
                  setAdapter(newAdapter);
+                 onAdapterReady?.(newAdapter);
 
                  if ((newAdapter as any).getUniqueClassnames) {
                     const classnames = (newAdapter as any).getUniqueClassnames();
@@ -448,24 +451,26 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
        </div>
-       <ViewerControls
-          isPlaying={isPlaying}
-          onPlayPause={() => setIsPlaying(!isPlaying)}
-          orbit={orbit}
-          setOrbit={setOrbit}
-          freeCamera={freeCamera}
-          setFreeCamera={setFreeCamera}
-          hasPlayback={adapter?.play !== undefined}
-          speed={speed}
-          setSpeed={setSpeed}
-          showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}
-          cameraMode={cameraMode}
-          setCameraMode={setCameraMode}
-          renderMode={renderMode}
-          setRenderMode={setRenderMode}
-          renderColor={renderColor}
-          setRenderColor={setRenderColor}
-       />
+       {showControls && (
+         <ViewerControls
+            isPlaying={isPlaying}
+            onPlayPause={() => setIsPlaying(!isPlaying)}
+            orbit={orbit}
+            setOrbit={setOrbit}
+            freeCamera={freeCamera}
+            setFreeCamera={setFreeCamera}
+            hasPlayback={adapter?.play !== undefined}
+            speed={speed}
+            setSpeed={setSpeed}
+            showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}
+            cameraMode={cameraMode}
+            setCameraMode={setCameraMode}
+            renderMode={renderMode}
+            setRenderMode={setRenderMode}
+            renderColor={renderColor}
+            setRenderColor={setRenderColor}
+         />
+       )}
      </div>
   );
 }

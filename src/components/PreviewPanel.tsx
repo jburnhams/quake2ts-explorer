@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import type { ParsedFile, PakService } from '../services/pakService';
 import { SpriteViewer } from './SpriteViewer';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
+import { ModelInspector } from './ModelInspector';
 import { TextureAtlas } from './TextureAtlas';
 
 export interface PreviewPanelProps {
@@ -191,6 +192,13 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
         );
       case 'md2':
       case 'md3':
+        return (
+          <ModelInspector
+            parsedFile={parsedFile}
+            pakService={pakService}
+            filePath={filePath}
+          />
+        );
       case 'bsp':
       case 'dm2':
         return (

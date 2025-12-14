@@ -105,27 +105,27 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/components/ModelInspector.tsx`
+- [x] **2.1**: Create `src/components/ModelInspector.tsx`
   - Replace/extend UniversalViewer for selected models
   - Left panel: Animation list
   - Center: 3D model view
   - Right panel: Frame details and skeleton
   - Bottom: Animation timeline
 
-- [ ] **2.2**: Implement animation list
+- [x] **2.2**: Implement animation list
   - Parse MD2/MD3 animations using `groupMd2Animations()` from library
   - Display animation names (walk, run, attack, etc.)
   - Show frame range for each animation
   - Select animation to play or scrub
 
-- [ ] **2.3**: Add animation timeline
+- [x] **2.3**: Add animation timeline
   - Horizontal scrubber showing all frames
   - Current frame indicator
   - Playback controls (play, pause, loop)
   - Frame rate adjustment
   - Step forward/backward frame buttons
 
-- [ ] **2.4**: Display frame metadata
+- [x] **2.4**: Display frame metadata
   - For current frame:
     - Frame number
     - Bounding box (mins, maxs)
@@ -139,7 +139,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Show tag names and positions
   - Highlight tag transformations during animation
 
-- [ ] **2.6**: Add vertex/triangle statistics
+- [x] **2.6**: Add vertex/triangle statistics
   - Total vertex count
   - Total triangle count
   - Per-surface breakdown (MD3)
