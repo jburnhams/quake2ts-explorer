@@ -96,6 +96,10 @@ export class BspAdapter implements ViewerAdapter {
           return this.map.models[0];
       }
 
+      // Check if entity has an origin property to determine its position if it's not a brush model
+      // Note: non-brush models (like lights, player starts) don't have a BSP model associated in the same way,
+      // but they might have an origin. We can return a small box for them.
+
       if (entity.properties && entity.properties.model && entity.properties.model.startsWith('*')) {
           const modelIndex = parseInt(entity.properties.model.substring(1));
           if (!isNaN(modelIndex) && modelIndex >= 0 && modelIndex < this.map.models.length) {
@@ -180,6 +184,17 @@ export class BspAdapter implements ViewerAdapter {
                 const model = this.getModelFromEntity(entity);
                 if (model) {
                     this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
+                } else if (entity.properties && entity.properties.origin) {
+                    // For point entities without a brush model, draw a small box at origin
+                    // Origin string format "x y z"
+                    const parts = entity.properties.origin.split(' ').map(parseFloat);
+                    if (parts.length === 3 && !parts.some(isNaN)) {
+                        const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                        const size = 16;
+                        const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
+                        const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
+                        this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1)); // Green for point entities
+                    }
                 }
             });
         }
