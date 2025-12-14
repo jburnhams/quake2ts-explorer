@@ -64,6 +64,19 @@ jest.mock('../../src/components/UniversalViewer/ViewerControls', () => ({
     ViewerControls: () => <div />
 }));
 
+// Mock DebugRenderer
+jest.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+    return {
+        DebugRenderer: jest.fn().mockImplementation(() => ({
+            clear: jest.fn(),
+            addBox: jest.fn(),
+            addLine: jest.fn(),
+            render: jest.fn(),
+            init: jest.fn()
+        }))
+    };
+});
+
 describe('Legend Integration', () => {
     beforeEach(() => {
          jest.clearAllMocks();
