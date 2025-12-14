@@ -14,6 +14,9 @@ import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, c
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
+import { PerformanceStats } from '../PerformanceStats';
+import { RenderStatistics } from '@/src/types/renderStatistics';
+import { performanceService } from '@/src/services/performanceService';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -46,6 +49,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
   const [hoveredEntity, setHoveredEntity] = useState<any | null>(null);
   const [showFrameInfo, setShowFrameInfo] = useState(false);
+  const [showStats, setShowStats] = useState(false);
+  const [stats, setStats] = useState<RenderStatistics | null>(null);
+  const [fps, setFps] = useState(0);
+  const [minFps, setMinFps] = useState(0);
+  const [maxFps, setMaxFps] = useState(0);
+  const [perfHistory, setPerfHistory] = useState<{ fps: number; frameTime: number }[]>([]);
 
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
@@ -423,15 +432,23 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   useEffect(() => {
       if (!adapter || !glContext || !camera) return;
       const { gl } = glContext;
+      const fpsCounter = performanceService.createFpsCounter();
 
+      // We use refs for stats to avoid triggering re-renders inside the loop unless throttled
       let lastTime = performance.now();
       let frameId: number;
       let running = true;
+      let lastStatsUpdate = 0;
+      const statsUpdateInterval = 200; // Update stats UI every 200ms
 
       const loop = (currentTime: number) => {
           if (!running) return;
           const delta = (currentTime - lastTime) / 1000;
+          const frameTimeMs = currentTime - lastTime;
           lastTime = currentTime;
+
+          // Update FPS counter
+          fpsCounter.update(currentTime);
 
           // Update
           if (adapter.setSpeed) adapter.setSpeed(speed);
@@ -507,7 +524,55 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           gl.enable(gl.DEPTH_TEST);
           gl.enable(gl.CULL_FACE);
 
+          const cpuStart = performance.now();
           adapter.render(gl, camera, viewMatrix);
+          const cpuEnd = performance.now();
+
+          // Collect stats if enabled
+          if (showStats && currentTime - lastStatsUpdate > statsUpdateInterval) {
+             const currentFps = Math.round(1000 / (frameTimeMs || 16.66)); // Instantaneous FPS
+
+             // Get renderer stats if available
+             let renderStats: RenderStatistics | null = null;
+             if ((adapter as any).getStatistics) {
+                 renderStats = (adapter as any).getStatistics();
+             }
+
+             // If adapter doesn't provide full stats, create basic ones
+             if (!renderStats) {
+                 renderStats = {
+                     cpuFrameTimeMs: cpuEnd - cpuStart,
+                     drawCalls: 0,
+                     triangles: 0,
+                     vertices: 0,
+                     textureBinds: 0,
+                     visibleSurfaces: 0
+                 };
+             } else {
+                 // Ensure CPU time is captured if not provided
+                 if (!renderStats.cpuFrameTimeMs) {
+                     renderStats.cpuFrameTimeMs = cpuEnd - cpuStart;
+                 }
+             }
+
+             setStats(renderStats);
+             setFps(fpsCounter.getAverageFps());
+             setMinFps(fpsCounter.getMinFps());
+             setMaxFps(fpsCounter.getMaxFps());
+
+             setPerfHistory(prev => {
+                 const newHistory = [...prev, { fps: currentFps, frameTime: frameTimeMs }];
+                 if (newHistory.length > 300) { // Keep last ~5 seconds at 60fps
+                     return newHistory.slice(newHistory.length - 300);
+                 }
+                 return newHistory;
+             });
+
+             lastStatsUpdate = currentTime;
+          } else if (!showStats && stats) {
+              // Clear stats if hidden
+              setStats(null);
+          }
 
           frameId = requestAnimationFrame(loop);
       };
@@ -549,6 +614,15 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
           <FrameInfo controller={adapter.getDemoController()!} />
        )}
+       {showStats && (
+          <PerformanceStats
+              fps={fps}
+              minFps={minFps}
+              maxFps={maxFps}
+              stats={stats}
+              history={perfHistory}
+          />
+       )}
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
               position: 'absolute',
@@ -589,6 +663,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             debugMode={debugMode}
             setDebugMode={setDebugMode}
             onScreenshot={handleScreenshot}
+            showStats={showStats}
+            setShowStats={setShowStats}
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (

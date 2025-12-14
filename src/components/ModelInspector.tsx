@@ -107,7 +107,7 @@ export function ModelInspector({ parsedFile, pakService, filePath }: ModelInspec
             pakService={pakService}
             filePath={filePath}
             onAdapterReady={handleAdapterReady}
-            showControls={false}
+            showControls={true}
           />
         </div>
 
