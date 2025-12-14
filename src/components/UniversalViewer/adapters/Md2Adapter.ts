@@ -1,6 +1,6 @@
 import { Camera, Md2Model, Md2Pipeline, Md2MeshBuffers, createAnimationState, advanceAnimation, computeFrameBlend, parsePcx, pcxToRgba, Texture2D, Md2FrameBlend, AnimationSequence, Md2Animation } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter } from './types';
+import { RenderOptions, ViewerAdapter, AnimationInfo, FrameInfo } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';

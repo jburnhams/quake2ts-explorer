@@ -477,6 +477,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             setRenderMode={setRenderMode}
             renderColor={renderColor}
             setRenderColor={setRenderColor}
+            debugMode={debugMode}
+            setDebugMode={setDebugMode}
          />
        )}
      </div>

@@ -1,7 +1,7 @@
 import { Camera, Md3Model, Md3ModelMesh, Md3Pipeline, parsePcx, pcxToRgba, Texture2D, Md3Surface, Md3SurfaceMesh } from 'quake2ts/engine';
 
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter } from './types';
+import { RenderOptions, ViewerAdapter, AnimationInfo, FrameInfo } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
