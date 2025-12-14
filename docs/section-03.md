@@ -69,12 +69,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Click marker to jump to event
   - Show event details on hover
 
-- [ ] **1.5**: Add zoom controls
+- [x] **1.5**: Add zoom controls
   - Zoom in/out on timeline to show more detail
   - Pan when zoomed (drag timeline)
   - Reset zoom button
 
-- [ ] **1.6**: Style timeline
+- [x] **1.6**: Style timeline
   - Match dark theme from `src/App.css`
   - Semi-transparent background
   - Smooth animations
@@ -125,7 +125,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Show server tick count (if available)
   - Toggle with F key or button
 
-- [ ] **2.4**: Implement smooth frame interpolation
+- [x] **2.4**: Implement smooth frame interpolation
   - When stepping, smoothly interpolate to next frame
   - Avoid jarring camera jumps
   - Render intermediate positions if possible
@@ -151,13 +151,13 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **3.1**: Create `src/services/demoRecorder.ts`
+- [x] **3.1**: Create `src/services/demoRecorder.ts`
   - Import `DemoRecorder` from `@quake2ts/client` (if available)
   - Export `startRecording(name: string): void`
   - Export `stopRecording(): Uint8Array`
   - Export `isRecording(): boolean`
 
-- [ ] **3.2**: Integrate recording with game loop
+- [x] **3.2**: Integrate recording with game loop
   - Modify `src/utils/gameLoop.ts`
   - On each simulation tick, record frame data
     - Snapshot entities
@@ -165,7 +165,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - Record events (sounds, effects, chat)
   - Pass to recorder
 
-- [ ] **3.3**: Implement recording UI
+- [x] **3.3**: Implement recording UI
   - Add "Record Demo" button to pause menu (Section 01)
   - Show recording indicator (red dot) when active
   - Show elapsed recording time
@@ -211,11 +211,11 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **4.1**: Create `src/components/DemoStats.tsx`
+- [x] **4.1**: Create `src/components/DemoStats.tsx`
   - Render as overlay (toggleable with S key or button)
   - Semi-transparent panel in top-right corner
 
-- [ ] **4.2**: Display player statistics
+- [x] **4.2**: Display player statistics
   - Current speed (units per second)
   - Position (x, y, z coordinates)
   - View angles (pitch, yaw, roll)
@@ -223,12 +223,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Health, armor, ammo (from PlayerState)
   - Current weapon
 
-- [ ] **4.3**: Display performance statistics
+- [x] **4.3**: Display performance statistics
   - Frames per second (client rendering)
   - Server tick rate (from demo metadata)
   - Frame time (ms per frame)
 
-- [ ] **4.4**: Display match statistics (if multiplayer demo)
+- [x] **4.4**: Display match statistics (if multiplayer demo)
   - **Library Enhancement Needed**: Extract player scores, kills, deaths
   - Scoreboard overlay
   - Kill feed (recent kills)

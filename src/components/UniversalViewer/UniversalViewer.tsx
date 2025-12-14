@@ -92,11 +92,18 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   });
 
   const handleStepForward = (frames: number = 1) => {
+      // Use adapter's custom step logic if available (for smooth stepping)
+      if (adapter && (adapter as any).stepForward) {
+          (adapter as any).stepForward(frames);
+          setIsPlaying(false);
+          return;
+      }
+
+      // Fallback to controller logic
       if (adapter && adapter.getDemoController) {
           const controller = adapter.getDemoController();
           if (controller) {
               if (frames > 1 && (controller as any).seekToFrame) {
-                  // Fallback if stepForward(n) isn't supported but seekToFrame is
                   const current = controller.getCurrentFrame();
                   controller.seekToFrame(current + frames);
               } else {
@@ -108,6 +115,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   };
 
   const handleStepBackward = (frames: number = 1) => {
+      // Use adapter's custom step logic if available
+      if (adapter && (adapter as any).stepBackward) {
+          (adapter as any).stepBackward(frames);
+          setIsPlaying(false);
+          return;
+      }
+
       if (adapter && adapter.getDemoController) {
           const controller = adapter.getDemoController();
           if (controller) {

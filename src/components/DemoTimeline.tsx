@@ -15,6 +15,10 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [events, setEvents] = useState<DemoEvent[]>([]);
 
+  // Zoom state
+  const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100% (fit to width), 2 = 200%, etc.
+  const [zoomOffset, setZoomOffset] = useState(0); // Offset in seconds
+
   const trackRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
 
@@ -52,13 +56,32 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
     };
   }, [controller, isDragging]);
 
+  // Adjust zoom offset to keep current time visible if moving out of view
+  useEffect(() => {
+      if (isDragging) return;
+
+      const visibleDuration = duration / zoomLevel;
+      if (currentTime < zoomOffset) {
+          setZoomOffset(Math.max(0, currentTime - visibleDuration * 0.1));
+      } else if (currentTime > zoomOffset + visibleDuration) {
+          setZoomOffset(Math.min(duration - visibleDuration, currentTime - visibleDuration * 0.9));
+      }
+  }, [currentTime, zoomLevel, zoomOffset, duration, isDragging]);
+
+  const getTimeFromClientX = (clientX: number, rect: DOMRect) => {
+      const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+      const percent = x / rect.width;
+
+      const visibleDuration = duration / zoomLevel;
+      const time = zoomOffset + (percent * visibleDuration);
+      return Math.max(0, Math.min(duration, time));
+  };
+
   const handleSeek = (e: React.MouseEvent | MouseEvent) => {
     if (!trackRef.current || !controller) return;
 
     const rect = trackRef.current.getBoundingClientRect();
-    const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-    const percent = x / rect.width;
-    const time = percent * controller.getDuration();
+    const time = getTimeFromClientX(e.clientX, rect);
 
     if (isDragging) {
        // Just update UI while dragging
@@ -70,8 +93,11 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
   };
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    setIsDragging(true);
-    handleSeek(e);
+      // Only seek on left click
+      if (e.button !== 0) return;
+
+      setIsDragging(true);
+      handleSeek(e);
   };
 
   useEffect(() => {
@@ -85,9 +111,7 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
       if (isDragging) {
         if (trackRef.current) {
             const rect = trackRef.current.getBoundingClientRect();
-            const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-            const percent = x / rect.width;
-            const time = percent * controller.getDuration();
+            const time = getTimeFromClientX(e.clientX, rect);
             controller.seekToTime(time);
         }
         setIsDragging(false);
@@ -103,18 +127,53 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, controller]);
+  }, [isDragging, controller, zoomLevel, zoomOffset, duration]);
 
   const handleMouseMoveTrack = (e: React.MouseEvent) => {
       if (!trackRef.current) return;
       const rect = trackRef.current.getBoundingClientRect();
-      const x = Math.max(0, Math.min(e.clientX - rect.left, rect.width));
-      const percent = x / rect.width;
-      setHoverTime(percent * duration);
+      const time = getTimeFromClientX(e.clientX, rect);
+      setHoverTime(time);
   };
 
   const handleMouseLeaveTrack = () => {
       setHoverTime(null);
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+      // Check if Ctrl key is pressed for zooming
+      if (e.ctrlKey) {
+          e.preventDefault();
+          const zoomDelta = e.deltaY * -0.01;
+          const newZoom = Math.min(Math.max(1, zoomLevel + zoomDelta), 20); // Max 20x zoom
+
+          // Calculate mouse position relative to track to zoom towards mouse
+          if (trackRef.current) {
+              const rect = trackRef.current.getBoundingClientRect();
+              const mouseX = e.clientX - rect.left;
+              const mousePercent = mouseX / rect.width;
+
+              const oldVisibleDuration = duration / zoomLevel;
+              const newVisibleDuration = duration / newZoom;
+
+              const mouseTime = zoomOffset + (mousePercent * oldVisibleDuration);
+
+              const newOffset = Math.max(0, Math.min(duration - newVisibleDuration, mouseTime - (mousePercent * newVisibleDuration)));
+
+              setZoomLevel(newZoom);
+              setZoomOffset(newOffset);
+          } else {
+              setZoomLevel(newZoom);
+          }
+      } else if (zoomLevel > 1) {
+           // Pan with horizontal scroll or vertical scroll if not zooming
+           e.preventDefault();
+           const visibleDuration = duration / zoomLevel;
+           // Pan speed relative to visible area
+           const panAmount = (e.deltaY + e.deltaX) * 0.001 * visibleDuration;
+
+           setZoomOffset(Math.max(0, Math.min(duration - visibleDuration, zoomOffset + panAmount)));
+      }
   };
 
   const getMarkerColor = (type: DemoEventType) => {
@@ -129,17 +188,23 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
     }
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  // Rendering helpers
+  const visibleDuration = duration > 0 ? duration / zoomLevel : 1;
+  const getLeftPercent = (time: number) => {
+      return ((time - zoomOffset) / visibleDuration) * 100;
+  };
 
   return (
-    <div className="demo-timeline">
+    <div className="demo-timeline" onWheel={handleWheel}>
       {/* Thumbnails placeholder - shown when hovering */}
       {hoverTime !== null && (
           <div
              className="timeline-thumbnail-preview"
              style={{
-                 left: `${(hoverTime / duration) * 100}%`,
-                 transform: 'translate(-50%, -10px)'
+                 left: `${getLeftPercent(hoverTime)}%`,
+                 transform: 'translate(-50%, -10px)',
+                 // Hide if out of bounds
+                 display: (hoverTime < zoomOffset || hoverTime > zoomOffset + visibleDuration) ? 'none' : 'block'
              }}
           >
               <div className="thumbnail-content">
@@ -157,13 +222,23 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
         title={hoverTime !== null ? formatTime(hoverTime) : ''}
       >
         <div className="timeline-track">
-          <div
-            className="timeline-progress"
-            style={{ width: `${progressPercent}%` }}
-          />
+            {/* Viewport markers/ticks could go here */}
+
+            {/* Progress Bar */}
+            <div
+                className="timeline-progress"
+                style={{
+                    width: `${Math.min(100, Math.max(0, getLeftPercent(currentTime)))}%`,
+                    // Hide if completely off screen? Or clamp
+                    display: (currentTime < zoomOffset && getLeftPercent(currentTime) < 0) ? 'none' : 'block'
+                }}
+            />
+
           {/* Markers */}
           {events.map((event, index) => {
-              const left = (event.time / duration) * 100;
+              const left = getLeftPercent(event.time);
+              if (left < 0 || left > 100) return null;
+
               return (
                   <div
                       key={index}
@@ -177,10 +252,14 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
               );
           })}
         </div>
-        <div
-            className="timeline-scrubber"
-            style={{ left: `${progressPercent}%` }}
-        />
+
+        {/* Scrubber handle */}
+        {(currentTime >= zoomOffset && currentTime <= zoomOffset + visibleDuration) && (
+            <div
+                className="timeline-scrubber"
+                style={{ left: `${getLeftPercent(currentTime)}%` }}
+            />
+        )}
       </div>
 
       <div className="timeline-controls">
@@ -189,6 +268,22 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
           <span className="time-sep">/</span>
           <span className="time-total">{formatTime(duration)}</span>
         </div>
+
+        {/* Zoom controls */}
+        <div className="zoom-display">
+             <button
+                className="zoom-btn"
+                onClick={() => setZoomLevel(Math.max(1, zoomLevel - 0.5))}
+                disabled={zoomLevel <= 1}
+             >-</button>
+             <span className="zoom-level">{Math.round(zoomLevel * 100)}%</span>
+             <button
+                className="zoom-btn"
+                onClick={() => setZoomLevel(Math.min(20, zoomLevel + 0.5))}
+                disabled={zoomLevel >= 20}
+             >+</button>
+        </div>
+
         <div className="frame-display">
           Frame: {currentFrame} / {totalFrames}
         </div>
