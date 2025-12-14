@@ -1,15 +1,17 @@
 import React from 'react';
 import './PerformanceStats.css';
 import { RenderStatistics } from '@/src/types/renderStatistics';
+import { PerformanceGraph } from './PerformanceGraph';
 
 interface PerformanceStatsProps {
     fps: number;
     minFps?: number;
     maxFps?: number;
     stats: RenderStatistics | null;
+    history?: { fps: number; frameTime: number }[];
 }
 
-export const PerformanceStats: React.FC<PerformanceStatsProps> = ({ fps, minFps, maxFps, stats }) => {
+export const PerformanceStats: React.FC<PerformanceStatsProps> = ({ fps, minFps, maxFps, stats, history }) => {
     const fpsColor = fps >= 55 ? '#4ade80' : fps >= 30 ? '#facc15' : '#ef4444';
 
     const formatBytes = (bytes: number) => {
@@ -34,6 +36,8 @@ export const PerformanceStats: React.FC<PerformanceStatsProps> = ({ fps, minFps,
                     </div>
                 )}
             </div>
+
+            {history && <PerformanceGraph history={history} />}
 
             {stats && (
                 <>
