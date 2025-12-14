@@ -80,6 +80,10 @@ export class Dm2Adapter implements ViewerAdapter {
   pause() { this.controller?.pause(); this.isPlayingState = false; }
   isPlaying() { return this.isPlayingState; }
 
+  getDuration() { return this.controller?.getDuration() || 0; }
+  getCurrentTime() { return this.controller?.getCurrentTime() || 0; }
+  getDemoController() { return this.controller; }
+
   hasCameraControl() { return true; }
   getCameraUpdate() {
       return { position: this.cameraPosition, angles: this.cameraAngles };
