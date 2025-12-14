@@ -8,9 +8,10 @@ export interface ToolbarProps {
   fileCount: number;
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
+  onOpenEntityDatabase?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -82,6 +83,16 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
           />
           Group by PAK
         </label>
+        {onOpenEntityDatabase && (
+          <button
+            className="toolbar-button"
+            onClick={onOpenEntityDatabase}
+            data-testid="open-entity-db-button"
+            disabled={pakCount === 0}
+          >
+            Entity Database
+          </button>
+        )}
         <button
           className={`toolbar-button ${isRecording ? 'recording' : ''}`}
           onClick={handleRecordToggle}

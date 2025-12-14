@@ -5,7 +5,7 @@ import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from 'qua
 import { PakService } from '../../src/services/pakService';
 
 describe('PAK File Integration Tests', () => {
-  const pakPath = path.join(__dirname, '..', '..', 'pak.pak');
+  const pakPath = path.join(__dirname, '..', '..', 'public', 'pak.pak');
   let pakBuffer: ArrayBuffer;
   let pakArchive: PakArchive;
   let vfs: VirtualFileSystem;

@@ -5,7 +5,7 @@ import { PakArchive, VirtualFileSystem } from 'quake2ts/engine';
 import { parseSprite } from '../../src/utils/sp2Parser';
 
 describe('SP2 File Integration Tests', () => {
-  const pakPath = path.join(__dirname, '..', '..', 'pak.pak');
+  const pakPath = path.join(__dirname, '..', '..', 'public', 'pak.pak');
   let pakBuffer: ArrayBuffer;
   let pakArchive: PakArchive;
   let vfs: VirtualFileSystem;
