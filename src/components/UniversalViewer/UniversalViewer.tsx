@@ -9,8 +9,10 @@ import { BspAdapter } from './adapters/BspAdapter';
 import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { DemoTimeline } from '../DemoTimeline';
+import { DemoBookmarks } from '../DemoBookmarks';
 import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
+import { Bookmark, bookmarkService } from '@/src/services/bookmarkService';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { CameraMode } from '@/src/types/cameraMode';
@@ -78,6 +80,15 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+
+  useEffect(() => {
+    if (filePath) {
+        setBookmarks(bookmarkService.getBookmarks(filePath));
+    } else {
+        setBookmarks([]);
+    }
+  }, [filePath]);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -794,7 +805,22 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (
-          <DemoTimeline controller={adapter.getDemoController()!} />
+          <>
+            <div style={{ position: 'absolute', bottom: 60, right: 10, zIndex: 50 }}>
+                <DemoBookmarks
+                    controller={adapter.getDemoController()!}
+                    demoId={filePath || 'unknown-demo'}
+                    onBookmarksChange={setBookmarks}
+                />
+            </div>
+            <DemoTimeline
+                controller={adapter.getDemoController()!}
+                bookmarks={bookmarks}
+                onBookmarkClick={(frame) => {
+                    adapter.getDemoController()!.seekToFrame(frame);
+                }}
+            />
+          </>
        )}
      </div>
   );

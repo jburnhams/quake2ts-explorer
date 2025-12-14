@@ -1,12 +1,15 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { DemoPlaybackController, DemoEvent, DemoEventType } from 'quake2ts/engine';
+import { Bookmark } from '@/src/services/bookmarkService';
 import './DemoTimeline.css';
 
 interface DemoTimelineProps {
   controller: DemoPlaybackController;
+  bookmarks: Bookmark[]; // Add bookmarks prop
+  onBookmarkClick?: (frame: number) => void;
 }
 
-export function DemoTimeline({ controller }: DemoTimelineProps) {
+export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: DemoTimelineProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
@@ -234,14 +237,14 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
                 }}
             />
 
-          {/* Markers */}
+          {/* Event Markers */}
           {events.map((event, index) => {
               const left = getLeftPercent(event.time);
               if (left < 0 || left > 100) return null;
 
               return (
                   <div
-                      key={index}
+                      key={`evt-${index}`}
                       className="timeline-marker"
                       style={{
                           left: `${left}%`,
@@ -250,6 +253,34 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
                       title={`${event.description} (${formatTime(event.time)})`}
                   />
               );
+          })}
+
+          {/* Bookmark Markers */}
+          {bookmarks.map((bookmark, index) => {
+             const left = getLeftPercent(bookmark.timeSeconds);
+             if (left < 0 || left > 100) return null;
+
+             return (
+               <div
+                  key={`bm-${bookmark.id}`}
+                  className="timeline-marker timeline-marker-bookmark"
+                  style={{
+                    left: `${left}%`,
+                    backgroundColor: '#4CAF50', // Green for bookmarks
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    top: '-4px', // Sit slightly above track
+                    cursor: 'pointer',
+                    zIndex: 5
+                  }}
+                  title={`Bookmark: ${bookmark.name} (${formatTime(bookmark.timeSeconds)})`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (onBookmarkClick) onBookmarkClick(bookmark.frame);
+                  }}
+               />
+             );
           })}
         </div>
 
