@@ -70,4 +70,19 @@ describe('PreviewPanel Component', () => {
     expect(screen.getByTestId('texture-atlas')).toBeInTheDocument();
     expect(screen.getByText('Mip levels:')).toBeInTheDocument();
   });
+
+  it('renders SpriteViewer for sp2 file', () => {
+    const parsedSprite: ParsedFile = {
+      type: 'sp2',
+      model: { numFrames: 0, frames: [] } as any
+    };
+    const { container } = render(
+      <PreviewPanel
+        parsedFile={parsedSprite}
+        filePath="model.sp2"
+        pakService={mockPakService}
+      />
+    );
+    expect(container.querySelector('.sprite-viewer')).toBeInTheDocument();
+  });
 });
