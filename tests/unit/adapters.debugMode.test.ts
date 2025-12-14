@@ -43,6 +43,7 @@ jest.mock('quake2ts/engine', () => ({
     walToRgba: jest.fn(),
     resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
     applySurfaceState: jest.fn(),
+    findLeafForPoint: jest.fn().mockReturnValue(0),
 }));
 
 describe('Adapter Debug Modes', () => {
@@ -111,6 +112,30 @@ describe('Adapter Debug Modes', () => {
             adapter.render(mockGl, { projectionMatrix: mat4.create() } as any, mat4.create());
 
             expect(mockDebugRendererInstance.render).not.toHaveBeenCalled();
+        });
+
+        it('renders PVS cluster box in DebugMode.PVSClusters', async () => {
+             const adapter = new BspAdapter();
+             const map = {
+                 entities: { entities: [], getUniqueClassnames: jest.fn() },
+                 models: [],
+                 faces: [],
+                 planes: [],
+                 leafs: [{ cluster: 0, mins: [0,0,0], maxs: [10,10,10] }]
+             };
+             const file = { type: 'bsp', map: map } as any;
+
+             await adapter.load(mockGl, file, mockPakService, 'test.bsp');
+             adapter.setDebugMode(DebugMode.PVSClusters);
+
+             const camera = {
+                 projectionMatrix: mat4.create(),
+                 position: new Float32Array([0,0,0])
+             } as any;
+
+             adapter.render(mockGl, camera, mat4.create());
+
+             expect(mockDebugRendererInstance.addBox).toHaveBeenCalled();
         });
     });
 

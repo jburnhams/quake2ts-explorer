@@ -1,4 +1,4 @@
-import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity } from 'quake2ts/engine';
+import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity, findLeafForPoint } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter, Ray } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
@@ -186,29 +186,46 @@ export class BspAdapter implements ViewerAdapter {
 
         if (this.debugMode === DebugMode.Normals) {
              this.surfaces.forEach(surface => {
-                 if (surface.plane) {
-                     // Approximate face center
-                     // This requires vertex access which we don't easily have here without reprocessing
-                     // For BSP, we can use the plane normal and distance to visualize plane normals
-                     // Or iterate edges
+                 const face = this.map?.faces[surface.faceIndex];
+                 if (face && this.map) {
+                     const plane = this.map.planes[face.planeIndex];
+                     // Visualize plane normal
+                     // Since we don't have a center point readily available without calculating from vertices,
+                     // we can just skip for now or try to compute a center from the first 3 vertices if available.
+                     // The requirement is to show normals, but without vertex processing here it's hard.
+                     // However, BspSurfaceInput has 'vertices' array (x,y,z flat).
+                     if (surface.vertices && surface.vertices.length >= 3) {
+                         const x = surface.vertices[0];
+                         const y = surface.vertices[1];
+                         const z = surface.vertices[2];
+                         const start = vec3.fromValues(x, y, z);
+                         const normal = vec3.fromValues(plane.normal[0], plane.normal[1], plane.normal[2]);
+                         const end = vec3.create();
+                         vec3.scaleAndAdd(end, start, normal, 10);
+                         this.debugRenderer?.addLine(start, end, vec4.fromValues(0, 1, 1, 1));
+                     }
                  }
              });
         }
 
-        if (this.debugMode === DebugMode.PVS) {
+        if (this.debugMode === DebugMode.PVSClusters) {
             // Visualize visible clusters from camera position
             const camPos = camera.position;
-            const leaf = this.map.findLeaf(camPos as any);
-            if (leaf && leaf.cluster !== -1) {
-                const pvs = this.map.pvs[leaf.cluster];
-                 // Iterate clusters and draw boxes for leaves in visible clusters
-                 // This is expensive, so simplified visualization:
-                 // Draw the current leaf box
-                 this.debugRenderer.addBox(leaf.min, leaf.max, vec4.fromValues(1, 1, 0, 1));
+            if (camPos) {
+                 const leafIndex = findLeafForPoint(this.map, camPos as any);
+                 if (leafIndex >= 0 && leafIndex < this.map.leafs.length) {
+                     const leaf = this.map.leafs[leafIndex];
+                     if (leaf && leaf.cluster !== -1) {
+                         // Draw the current leaf box
+                         const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                         const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                         this.debugRenderer.addBox(min, max, vec4.fromValues(1, 1, 0, 1));
+                     }
+                 }
             }
         }
 
-         if (this.debugMode === DebugMode.Collision) {
+         if (this.debugMode === DebugMode.CollisionHulls) {
             // Draw collision hulls (head nodes)
             // Simplified: Draw head node boxes
          }
