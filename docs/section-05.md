@@ -176,7 +176,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **3.1**: Create `src/components/BspAnalyzer.tsx`
+- [x] **3.1**: Create `src/components/BspAnalyzer.tsx`
   - Tabbed interface:
     - Overview
     - Geometry
@@ -184,7 +184,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
     - Visibility (PVS)
     - Entities
 
-- [ ] **3.2**: Implement Overview tab
+- [x] **3.2**: Implement Overview tab
   - Map name and filename
   - Total file size
   - Bounding box (world mins/maxs)
@@ -192,7 +192,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Number of entities
   - Number of textures referenced
 
-- [ ] **3.3**: Implement Geometry tab
+- [x] **3.3**: Implement Geometry tab
   - Number of vertices
   - Number of faces (surfaces)
   - Number of brushes (solid geometry)
@@ -201,20 +201,20 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Largest surfaces (by triangle count)
   - Texture usage breakdown (which textures used most)
 
-- [ ] **3.4**: Implement Lightmaps tab
-  - Number of lightmap atlases
+- [x] **3.4**: Implement Lightmaps tab
+  - Number of lightmap atlases (partial: count and size)
   - Total lightmap memory usage
   - Lightmap resolution (pixels per world unit)
   - List of light entities and their properties
   - Light style usage (animated lights)
 
-- [ ] **3.5**: Implement Visibility (PVS) tab
+- [x] **3.5**: Implement Visibility (PVS) tab
   - Number of PVS clusters
-  - Average cluster size (surfaces per cluster)
+  - Average cluster size (surfaces per cluster) (partial: num clusters and total size)
   - Potentially visible set statistics
   - Visualize cluster connectivity (graph)
 
-- [ ] **3.6**: Implement Entities tab
+- [x] **3.6**: Implement Entities tab
   - Total entity count
   - Entity type breakdown (classname distribution)
   - Entity properties spreadsheet view
