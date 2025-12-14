@@ -2,6 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 import * as screenshotService from '@/src/services/screenshotService';
 import { createWebGLContext } from 'quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
@@ -79,10 +80,12 @@ describe('UniversalViewer Screenshot Integration', () => {
   it('should trigger screenshot on F12 key press', async () => {
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
-          pakService={mockPakService}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        </MapEditorProvider>
       );
     });
 
@@ -94,10 +97,12 @@ describe('UniversalViewer Screenshot Integration', () => {
   it('should trigger screenshot on PrintScreen key press', async () => {
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
-          pakService={mockPakService}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        </MapEditorProvider>
       );
     });
 
@@ -109,10 +114,12 @@ describe('UniversalViewer Screenshot Integration', () => {
   it('should show flash effect during screenshot', async () => {
     await act(async () => {
       render(
-        <UniversalViewer
-          parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
-          pakService={mockPakService}
-        />
+        <MapEditorProvider>
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        </MapEditorProvider>
       );
     });
 

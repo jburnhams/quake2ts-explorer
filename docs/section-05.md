@@ -315,19 +315,19 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [x] **5.1**: Create `src/components/LightmapInspector.tsx`
+- [ ] **5.1**: Create `src/components/LightmapInspector.tsx`
   - Grid view of all lightmaps in current BSP
   - Click lightmap to view full-size
   - Show lightmap index and dimensions
 
-- [x] **5.2**: Display lightmap metadata
+- [ ] **5.2**: Display lightmap metadata
   - For selected lightmap:
     - Width x height
     - Format (RGB or grayscale)
     - Number of surfaces using this lightmap
     - Memory usage
 
-- [x] **5.3**: Implement lightmap visualization modes
+- [ ] **5.3**: Implement lightmap visualization modes
   - Normal (RGB)
   - Grayscale (luminance only)
   - Heatmap (show brightness distribution)

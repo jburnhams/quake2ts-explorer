@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { BspMap } from 'quake2ts/engine';
 import { PakService } from '../services/pakService';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
-import { LightmapInspector } from './LightmapInspector';
-import { ViewerAdapter } from './UniversalViewer/adapters/types';
 import './BspAnalyzer.css';
 
 export interface BspAnalyzerProps {
@@ -139,13 +137,8 @@ function getVisibilityStats(map: BspMap): VisibilityStats {
 
 export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hiddenClassnames, onEntitySelected }: BspAnalyzerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
-  const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
 
   const stats = React.useMemo(() => getGeometryStats(map), [map]);
-
-  const handleAdapterReady = React.useCallback((newAdapter: ViewerAdapter) => {
-      setAdapter(newAdapter);
-  }, []);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -250,10 +243,21 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
           </div>
         );
       case 'lightmaps':
+        const lmStats = getLightmapStats(map);
         return (
-            <div className="bsp-analyzer-tab-content" style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
-                <h3>Lightmap Inspector</h3>
-                <LightmapInspector map={map} adapter={adapter} />
+            <div className="bsp-analyzer-tab-content">
+                <h3>Lightmap Statistics</h3>
+                <div className="bsp-analyzer-stats-grid">
+                    <div className="bsp-stat-item">
+                        <label>Lightmaps (Count)</label>
+                        <span>{lmStats.count || 'N/A'}</span>
+                    </div>
+                    <div className="bsp-stat-item">
+                        <label>Total Size</label>
+                        <span>{(lmStats.totalSize / 1024).toFixed(1)} KB</span>
+                    </div>
+                </div>
+                <p style={{marginTop: 20, color: '#888'}}>Detailed lightmap inspection coming soon.</p>
             </div>
         );
       case 'visibility':
@@ -410,7 +414,6 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
              hiddenClassnames={hiddenClassnames}
              onEntitySelected={onEntitySelected}
              showControls={true}
-             onAdapterReady={handleAdapterReady}
            />
         </div>
         <div className="bsp-analyzer-panel">

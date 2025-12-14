@@ -267,14 +267,14 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [x] **5.1**: Implement camera mode enum
+- [ ] **5.1**: Implement camera mode enum
   - `FirstPerson` - Player's view (default)
   - `ThirdPerson` - Follow behind player
   - `FreeCam` - User-controlled free camera
   - `Cinematic` - Scripted camera path
   - `Orbital` - Orbit around player
 
-- [x] **5.2**: Modify `Dm2Adapter` for camera override
+- [ ] **5.2**: Modify `Dm2Adapter` for camera override
   - Already supports `hasCameraControl()` and `getCameraUpdate()`
   - Implement each camera mode:
     - **FirstPerson**: Use player's viewangles from PlayerState
@@ -283,7 +283,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - **Orbital**: Rotate around player at fixed distance
     - **Cinematic**: Interpolate along predefined path
 
-- [x] **5.3**: Add camera mode selector UI
+- [ ] **5.3**: Add camera mode selector UI
   - Dropdown or button group in ViewerControls
   - Keyboard shortcuts:
     - C: Cycle camera modes
@@ -291,7 +291,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - 2: Third-person
     - 3: Free cam
 
-- [x] **5.4**: Implement third-person camera
+- [ ] **5.4**: Implement third-person camera
   - Position camera behind player at configurable distance (default: 100 units)
   - Collision detection: Don't place camera inside walls
   - Smooth camera following (lag slightly for cinematic feel)

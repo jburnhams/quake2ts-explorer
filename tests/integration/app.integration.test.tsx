@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as fs from 'fs';
 import * as path from 'path';
 import App from '@/src/App';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 
 // Helper to create a minimal valid PAK file
 function createMinimalPakFile(): ArrayBuffer {
@@ -76,68 +77,70 @@ describe('Quake2TS Explorer Integration Tests', () => {
     });
   });
 
+  const renderApp = () => render(<MapEditorProvider><App /></MapEditorProvider>);
+
   describe('App initial state', () => {
     it('renders the app with toolbar', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('toolbar')).toBeInTheDocument();
       expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
     });
 
     it('shows Add PAK Files button', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('add-pak-button')).toBeInTheDocument();
     });
 
     it('shows no PAKs loaded initially', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByText('No PAK files loaded')).toBeInTheDocument();
     });
 
     it('shows empty file tree', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('file-tree')).toBeInTheDocument();
       expect(screen.getByText('No files loaded')).toBeInTheDocument();
     });
 
     it('shows empty preview panel', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('preview-panel')).toBeInTheDocument();
       expect(screen.getByText('Select a file to preview')).toBeInTheDocument();
     });
 
     it('shows empty metadata panel', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('metadata-panel')).toBeInTheDocument();
       expect(screen.getByText('Select a file to view details')).toBeInTheDocument();
     });
 
     it('has drop zone for drag and drop', () => {
-      render(<App />);
+      renderApp();
       expect(screen.getByTestId('drop-zone')).toBeInTheDocument();
     });
   });
 
   describe('App 3-panel layout', () => {
     it('has file tree on the left', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const fileTree = container.querySelector('.file-tree');
       expect(fileTree).toBeInTheDocument();
     });
 
     it('has preview panel in the center', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const preview = container.querySelector('.preview-panel');
       expect(preview).toBeInTheDocument();
     });
 
     it('has metadata panel on the right', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const metadata = container.querySelector('.metadata-panel');
       expect(metadata).toBeInTheDocument();
     });
 
     it('renders correct CSS classes for layout', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       expect(container.querySelector('.app')).toBeInTheDocument();
       expect(container.querySelector('.toolbar')).toBeInTheDocument();
       expect(container.querySelector('.main-content')).toBeInTheDocument();
@@ -146,20 +149,20 @@ describe('Quake2TS Explorer Integration Tests', () => {
 
   describe('File input interaction', () => {
     it('has hidden file input', () => {
-      render(<App />);
+      renderApp();
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       expect(input).toBeInTheDocument();
       expect(input.type).toBe('file');
     });
 
     it('file input accepts .pak files', () => {
-      render(<App />);
+      renderApp();
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       expect(input.accept).toBe('.pak');
     });
 
     it('file input allows multiple files', () => {
-      render(<App />);
+      renderApp();
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       expect(input.multiple).toBe(true);
     });
@@ -167,25 +170,25 @@ describe('Quake2TS Explorer Integration Tests', () => {
 
   describe('App accessibility', () => {
     it('toolbar has proper role', () => {
-      render(<App />);
+      renderApp();
       const toolbar = screen.getByTestId('toolbar');
       expect(toolbar.tagName).toBe('HEADER');
     });
 
     it('preview panel has proper role', () => {
-      render(<App />);
+      renderApp();
       const preview = screen.getByTestId('preview-panel');
       expect(preview.tagName).toBe('MAIN');
     });
 
     it('metadata panel has proper role', () => {
-      render(<App />);
+      renderApp();
       const metadata = screen.getByTestId('metadata-panel');
       expect(metadata.tagName).toBe('ASIDE');
     });
 
     it('file tree has tree role', () => {
-      render(<App />);
+      renderApp();
       // Tree role is only added when there are files
       const fileTree = screen.getByTestId('file-tree');
       expect(fileTree).toBeInTheDocument();
@@ -216,19 +219,19 @@ describe('Quake2TS Explorer Integration Tests', () => {
 
   describe('CSS styles', () => {
     it('applies dark theme background', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const app = container.querySelector('.app');
       expect(app).toBeInTheDocument();
     });
 
     it('applies toolbar styles', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const toolbar = container.querySelector('.toolbar');
       expect(toolbar).toBeInTheDocument();
     });
 
     it('has drop-zone-container wrapper', () => {
-      const { container } = render(<App />);
+      const { container } = renderApp();
       const dropZone = container.querySelector('.drop-zone-container');
       expect(dropZone).toBeInTheDocument();
     });

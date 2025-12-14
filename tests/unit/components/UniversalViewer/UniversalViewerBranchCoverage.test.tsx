@@ -3,6 +3,7 @@ import { render, fireEvent, act, screen, waitFor } from '@testing-library/react'
 import { UniversalViewer } from '../../../../src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '../../../../src/services/pakService';
 import { Md2Adapter } from '../../../../src/components/UniversalViewer/adapters/Md2Adapter';
+import { MapEditorProvider } from '../../../../src/context/MapEditorContext';
 import * as screenshotService from '../../../../src/services/screenshotService';
 import { performanceService } from '../../../../src/services/performanceService';
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
@@ -57,7 +58,11 @@ describe('UniversalViewer Branch Coverage', () => {
     });
 
     it('handles resize events', () => {
-        render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />);
+        render(
+            <MapEditorProvider>
+                <UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />
+            </MapEditorProvider>
+        );
 
         act(() => {
             global.innerWidth = 1000;
@@ -70,7 +75,11 @@ describe('UniversalViewer Branch Coverage', () => {
         const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
         (screenshotService.captureScreenshot as jest.Mock).mockRejectedValue(new Error('Capture failed'));
 
-        render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />);
+        render(
+            <MapEditorProvider>
+                <UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />
+            </MapEditorProvider>
+        );
 
         fireEvent.keyDown(window, { code: 'F12' });
 
@@ -107,7 +116,11 @@ describe('UniversalViewer Branch Coverage', () => {
 
          (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapter);
 
-         render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />);
+         render(
+            <MapEditorProvider>
+                <UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />
+            </MapEditorProvider>
+         );
 
          await waitFor(() => expect(mockAdapter.load).toHaveBeenCalled());
 
@@ -150,7 +163,11 @@ describe('UniversalViewer Branch Coverage', () => {
          let capturedAdapter: any;
          const onAdapterReady = (adapter: any) => { capturedAdapter = adapter; };
 
-         render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} onAdapterReady={onAdapterReady} />);
+         render(
+            <MapEditorProvider>
+                <UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} onAdapterReady={onAdapterReady} />
+            </MapEditorProvider>
+         );
          await waitFor(() => expect(capturedAdapter).toBeDefined());
          expect(capturedAdapter).toBe(mockAdapterInstance);
 
@@ -195,7 +212,11 @@ describe('UniversalViewer Branch Coverage', () => {
          };
          (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapter);
 
-         render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />);
+         render(
+            <MapEditorProvider>
+                <UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />
+            </MapEditorProvider>
+         );
          await waitFor(() => expect(mockAdapter.load).toHaveBeenCalled());
 
          const statsLabel = screen.getByText('Show Performance Stats');

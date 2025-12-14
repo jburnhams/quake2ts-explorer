@@ -15,9 +15,7 @@ import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { useMapEditor } from '@/src/context/MapEditorContext';
 import { GizmoController, GizmoAxis } from './GizmoController';
-import { CameraMode } from '@/src/types/cameraMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
-import { videoRecorderService } from '@/src/services/videoRecorder';
 import { PerformanceStats } from '../PerformanceStats';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
@@ -48,7 +46,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
-  const [demoCameraMode, setDemoCameraMode] = useState<CameraMode>(CameraMode.FirstPerson);
   const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random'>('textured');
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
   const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
@@ -81,30 +78,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [speed, setSpeed] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
-  const [recordingDuration, setRecordingDuration] = useState(0);
-
-  useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRecording && recordingStartTime) {
-      interval = setInterval(() => {
-        setRecordingDuration((Date.now() - recordingStartTime) / 1000);
-      }, 100);
-    } else {
-      setRecordingDuration(0);
-    }
-    return () => clearInterval(interval);
-  }, [isRecording, recordingStartTime]);
-
-  // Cleanup recording on unmount
-  useEffect(() => {
-    return () => {
-      if (videoRecorderService.isRecording()) {
-        videoRecorderService.stopRecording().catch(() => {});
-      }
-    };
-  }, []);
 
   const handleScreenshot = async () => {
     if (!canvasRef.current) return;
@@ -119,37 +92,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     } catch (e) {
         console.error("Screenshot failed:", e);
         setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  };
-
-  const handleStartRecording = () => {
-    if (!canvasRef.current) return;
-    try {
-      videoRecorderService.startRecording(canvasRef.current);
-      setIsRecording(true);
-      setRecordingStartTime(Date.now());
-    } catch (e) {
-      console.error("Recording failed:", e);
-      setError(`Recording failed: ${e instanceof Error ? e.message : String(e)}`);
-    }
-  };
-
-  const handleStopRecording = async () => {
-    try {
-      const blob = await videoRecorderService.stopRecording();
-      setIsRecording(false);
-      setRecordingStartTime(null);
-      const filename = generateScreenshotFilename('quake2ts_recording').replace('.png', '.webm');
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error("Stop recording failed:", e);
-      setError(`Stop recording failed: ${e instanceof Error ? e.message : String(e)}`);
-      setIsRecording(false);
     }
   };
 
@@ -316,9 +258,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              if (newAdapter) {
                  await newAdapter.load(gl, parsedFile, pakService, filePath);
                  setAdapter(newAdapter);
-                 if (onAdapterReady) {
-                     onAdapterReady(newAdapter);
-                 }
+                 onAdapterReady?.(newAdapter);
 
                  if ((newAdapter as any).getUniqueClassnames) {
                     const classnames = (newAdapter as any).getUniqueClassnames();
@@ -396,52 +336,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   }, [adapter, debugMode]);
 
   useEffect(() => {
-    if (adapter && adapter.setCameraMode) {
-        // If we are switching TO free or orbital mode, we should sync the local camera state
-        // to the current camera position so there is no jump.
-        if (demoCameraMode === CameraMode.Free || demoCameraMode === CameraMode.Orbital) {
-            if (camera) {
-                // Sync Free Camera
-                if (camera.position) {
-                    vec3.copy(freeCameraRef.current.position, camera.position);
-                    setFreeCamera(prev => ({ ...prev, position: vec3.clone(camera.position) }));
-                }
-
-                // For rotation, we need to extract from view matrix or angles.
-                // Camera object usually has 'angles' in degrees if updated by adapter.
-                if (camera.angles) {
-                    // Convert degrees to radians for FreeCameraState
-                    const radX = camera.angles[0] * (Math.PI / 180);
-                    const radY = camera.angles[1] * (Math.PI / 180);
-                    const radZ = camera.angles[2] * (Math.PI / 180);
-
-                    freeCameraRef.current.rotation = [radX, radY, radZ];
-                    setFreeCamera(prev => ({ ...prev, rotation: [radX, radY, radZ] }));
-                }
-
-                // Sync Orbital Camera target
-                if (camera.position) {
-                    // Set target to slightly ahead of camera?
-                    // Or set target to camera position and radius to something small?
-                    // Actually, usually orbital mode is around a target.
-                    // If we switch to orbital, we probably want to orbit the *player* or the current view center.
-                    // For now, let's just default to keeping the radius but centering on current pos
-                    vec3.copy(orbitRef.current.target, camera.position);
-                    // Adjust radius to see the target
-                    setOrbit(prev => ({ ...prev, target: vec3.clone(camera.position), radius: 200 }));
-                }
-            }
-
-            // Explicitly switch the main UI mode to Free or Orbit so inputs are processed
-            if (demoCameraMode === CameraMode.Free) setCameraMode('free');
-            else if (demoCameraMode === CameraMode.Orbital) setCameraMode('orbit');
-        }
-
-        adapter.setCameraMode(demoCameraMode);
-    }
-  }, [adapter, demoCameraMode]);
-
-  useEffect(() => {
     if (adapter && adapter.setHiddenClasses && hiddenClassnames) {
       adapter.setHiddenClasses(hiddenClassnames);
     }
@@ -515,7 +409,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
                  // Calculate new position
                  const id = Array.from(selectedEntityIds)[0];
-                 const entity = adapter?.map?.entities.entities[id];
+                 const bspAdapter = adapter as any;
+                 const entity = bspAdapter.map?.entities.entities[id];
                  if (entity) {
                      const parts = entity.properties.origin.split(' ').map(parseFloat);
                      const override = (adapter as any).entityPositions?.get(id);
@@ -562,8 +457,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         const result = adapter.pickEntity!(pickRay);
         const entity = result ? result.entity : null;
 
-        if (isEditorActive && adapter.map && entity) {
-             const index = (adapter.map.entities.entities as any[]).indexOf(entity);
+        // Cast adapter to access map property if it exists
+        const bspAdapter = adapter as any;
+        const map = bspAdapter.map;
+
+        if (isEditorActive && map && entity) {
+             const index = (map.entities.entities as any[]).indexOf(entity);
              if (index !== -1) {
                  setHoveredEntityId(index);
              } else {
@@ -595,9 +494,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         const result = adapter.pickEntity!(pickRay);
         const entity = result ? result.entity : null;
 
+        const bspAdapter = adapter as any;
+        const map = bspAdapter.map;
+
         if (isEditorActive) {
-             if (entity && adapter.map) {
-                 const index = (adapter.map.entities.entities as any[]).indexOf(entity);
+             if (entity && map) {
+                 const index = (map.entities.entities as any[]).indexOf(entity);
                  if (index !== -1) {
                      selectEntity(index, e.ctrlKey || e.metaKey);
                  }
@@ -612,14 +514,14 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     };
 
     canvas.addEventListener('mousedown', handleMouseDown);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('click', handleClick);
 
     return () => {
         canvas.removeEventListener('mousedown', handleMouseDown);
-        canvas.removeEventListener('mousemove', handleMouseMove);
-        canvas.removeEventListener('mouseup', handleMouseUp);
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
         canvas.removeEventListener('click', handleClick);
     };
   }, [adapter, camera, cameraMode, onEntitySelected, isEditorActive, selectedEntityIds, selectEntity]);
@@ -735,7 +637,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
               if (debugRenderer) {
                   const id = Array.from(selectedEntityIds)[0];
                   // Update gizmo position
-                  const entity = adapter.map?.entities.entities[id];
+                  const bspAdapter = adapter as any;
+                  const entity = bspAdapter.map?.entities.entities[id];
                   if (entity && entity.properties && entity.properties.origin) {
                       const parts = entity.properties.origin.split(' ').map(parseFloat);
                       // Check override
@@ -880,8 +783,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}
             cameraMode={cameraMode}
             setCameraMode={setCameraMode}
-            demoCameraMode={demoCameraMode}
-            setDemoCameraMode={(adapter?.setCameraMode) ? setDemoCameraMode : undefined}
             renderMode={renderMode}
             setRenderMode={setRenderMode}
             renderColor={renderColor}
@@ -891,10 +792,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             onScreenshot={handleScreenshot}
             showStats={showStats}
             setShowStats={setShowStats}
-            onStartRecording={handleStartRecording}
-            onStopRecording={handleStopRecording}
-            isRecording={isRecording}
-            recordingTime={recordingDuration}
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (

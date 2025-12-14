@@ -27,8 +27,8 @@ describe('GizmoController', () => {
   it('intersects X axis', () => {
     // Ray parallel to X axis, slightly offset but within threshold
     const ray = {
-      origin: { x: 0, y: 100, z: 100 },
-      direction: { x: 1, y: 0, z: 0 }
+      origin: vec3.fromValues(0, 100, 100),
+      direction: vec3.fromValues(1, 0, 0)
     };
 
     // Position is at 100,100,100. Ray goes through 0,100,100 -> 1,0,0. passes through 100,100,100.
@@ -44,8 +44,8 @@ describe('GizmoController', () => {
       // Origin at 150, 100, 200 (camera)
       // Direction towards 150, 100, 100 (target)
       const ray = {
-          origin: { x: 150, y: 100, z: 200 },
-          direction: { x: 0, y: 0, z: -1 }
+          origin: vec3.fromValues(150, 100, 200),
+          direction: vec3.fromValues(0, 0, -1)
       };
 
       const newPos = gizmo.getNewPosition('x', startPos, ray, cameraForward);

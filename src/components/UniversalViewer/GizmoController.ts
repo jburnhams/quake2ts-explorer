@@ -1,6 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { DebugRenderer } from '../adapters/DebugRenderer';
-import { Ray } from '../adapters/types';
+import { DebugRenderer } from './adapters/DebugRenderer';
+import { Ray } from './adapters/types';
 import { distRaySegment, intersectRayPlane } from '@/src/utils/math/rayIntersections';
 
 export type GizmoAxis = 'x' | 'y' | 'z';
@@ -41,8 +41,8 @@ export class GizmoController {
     intersect(ray: Ray): GizmoAxis | null {
         const threshold = 2.0; // Distance tolerance
 
-        const origin = vec3.fromValues(ray.origin.x, ray.origin.y, ray.origin.z);
-        const dir = vec3.fromValues(ray.direction.x, ray.direction.y, ray.direction.z);
+        const origin = vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]);
+        const dir = vec3.fromValues(ray.direction[0], ray.direction[1], ray.direction[2]);
         vec3.normalize(dir, dir);
 
         const xEnd = vec3.create();
@@ -72,8 +72,8 @@ export class GizmoController {
         cameraForward: vec3
     ): vec3 {
         // Project ray onto a plane defined by the axis and camera direction
-        const rayOrigin = vec3.fromValues(ray.origin.x, ray.origin.y, ray.origin.z);
-        const rayDir = vec3.fromValues(ray.direction.x, ray.direction.y, ray.direction.z);
+        const rayOrigin = vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]);
+        const rayDir = vec3.fromValues(ray.direction[0], ray.direction[1], ray.direction[2]);
         vec3.normalize(rayDir, rayDir);
 
         // Determine plane normal based on axis.

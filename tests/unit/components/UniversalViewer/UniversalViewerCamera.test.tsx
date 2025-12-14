@@ -2,6 +2,7 @@ import React from 'react';
 import { render, fireEvent, act } from '@testing-library/react';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { ViewerControls } from '@/src/components/UniversalViewer/ViewerControls';
+import { MapEditorProvider } from '@/src/context/MapEditorContext';
 import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { OrbitState } from '../../../src/utils/cameraUtils';
 
@@ -119,7 +120,11 @@ describe('UniversalViewer Camera Integration', () => {
         const parsedFile: ParsedFile = { name: 'test.bsp', type: 'bsp', data: new ArrayBuffer(0) };
 
         await act(async () => {
-            render(<UniversalViewer parsedFile={parsedFile} pakService={pakService} />);
+            render(
+                <MapEditorProvider>
+                    <UniversalViewer parsedFile={parsedFile} pakService={pakService} />
+                </MapEditorProvider>
+            );
         });
 
         // Check if ViewerControls received 'free' mode

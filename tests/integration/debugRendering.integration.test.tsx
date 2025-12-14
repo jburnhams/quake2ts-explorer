@@ -3,6 +3,7 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '../../src/services/pakService';
 import { DebugMode } from '../../src/types/debugMode';
+import { MapEditorProvider } from '../../src/context/MapEditorContext';
 import '@testing-library/jest-dom';
 
 // Mocks
@@ -132,11 +133,13 @@ describe('Debug Rendering Integration', () => {
 
         await act(async () => {
             render(
+                <MapEditorProvider>
                 <UniversalViewer
                     parsedFile={parsedFile}
                     pakService={mockPakService}
                     showControls={true}
                 />
+                </MapEditorProvider>
             );
         });
 
