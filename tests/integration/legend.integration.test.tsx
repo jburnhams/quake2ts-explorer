@@ -8,6 +8,17 @@ jest.mock('../../src/hooks/usePakExplorer');
 
 // Mock quake2ts/engine parts used by BspAdapter
 jest.mock('quake2ts/engine', () => ({
+    VirtualFileSystem: jest.fn().mockImplementation(() => ({
+        readFile: jest.fn(),
+        stat: jest.fn(),
+        list: jest.fn(),
+        mountPak: jest.fn(),
+        hasFile: jest.fn(),
+        findByExtension: jest.fn().mockReturnValue([]),
+    })),
+    PakArchive: {
+        fromArrayBuffer: jest.fn(),
+    },
     createWebGLContext: jest.fn().mockReturnValue({
         gl: {
             getExtension: jest.fn(),
