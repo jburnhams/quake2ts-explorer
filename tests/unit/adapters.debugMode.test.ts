@@ -155,7 +155,7 @@ describe('Adapter Debug Modes', () => {
     describe('Md3Adapter', () => {
         it('renders bounding boxes in DebugMode.BoundingBoxes', async () => {
              const adapter = new Md3Adapter();
-             const file = { type: 'md3', model: { surfaces: [{ name: 's1', shaders: [] }] } } as any;
+             const file = { type: 'md3', model: { header: { numFrames: 10 }, surfaces: [{ name: 's1', shaders: [] }] } } as any;
              await adapter.load(mockGl, file, mockPakService, 'test.md3');
              adapter.setDebugMode(DebugMode.BoundingBoxes);
              adapter.render(mockGl, { projectionMatrix: mat4.create() } as any, mat4.create());

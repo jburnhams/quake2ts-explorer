@@ -13,10 +13,14 @@ describe('BspAnalyzer', () => {
   const mockMap = {
     models: [{ firstFace: 0, numFaces: 10 }],
     entities: [{ classname: 'worldspawn' }, { classname: 'info_player_start' }],
-    surfaces: [
-       { textureInfo: { textureName: 'wall1' } },
-       { textureInfo: { textureName: 'wall1' } },
-       { textureInfo: { textureName: 'floor' } }
+    faces: [
+       { texInfo: 0, numEdges: 4 },
+       { texInfo: 0, numEdges: 4 },
+       { texInfo: 1, numEdges: 4 }
+    ],
+    texInfo: [
+       { texture: 'wall1' },
+       { texture: 'floor' }
     ]
   } as unknown as BspMap;
 

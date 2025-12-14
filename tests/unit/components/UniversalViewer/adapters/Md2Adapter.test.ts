@@ -46,6 +46,14 @@ describe('Md2Adapter', () => {
         drawElements: jest.fn(),
         activeTexture: jest.fn(),
         generateMipmap: jest.fn(),
+        createShader: jest.fn(),
+        createProgram: jest.fn(),
+        createBuffer: jest.fn(),
+        createVertexArray: jest.fn(),
+        bindVertexArray: jest.fn(),
+        bindBuffer: jest.fn(),
+        enableVertexAttribArray: jest.fn(),
+        vertexAttribPointer: jest.fn(),
     } as unknown as WebGL2RenderingContext;
     mockPakService = {
         hasFile: jest.fn(),

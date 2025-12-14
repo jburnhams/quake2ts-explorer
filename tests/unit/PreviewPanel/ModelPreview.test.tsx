@@ -57,7 +57,7 @@ describe('Model Preview', () => {
   it('renders UniversalViewer for BSP', () => {
     const parsedBsp: ParsedFile = {
       type: 'bsp',
-      map: { models: [] } as any,
+      map: { models: [], entities: [] } as any,
     };
     render(
       <PreviewPanel
