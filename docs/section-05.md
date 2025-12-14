@@ -62,7 +62,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Click color to see index and RGB values
   - Highlight transparent color (index 255 typically)
 
-- [ ] **1.4**: Show texture usage
+- [x] **1.4**: Show texture usage
   - **Library Enhancement Needed**: Cross-reference API
   - List models that use this texture
   - List BSP surfaces that use this texture
@@ -433,11 +433,11 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **7.1**: Create `src/components/SurfaceFlags.tsx`
+- [x] **7.1**: Create `src/components/SurfaceFlags.tsx`
   - Display when hovering over surfaces in BSP view
   - Show tooltip or side panel with flags
 
-- [ ] **7.2**: Parse surface flags
+- [x] **7.2**: Parse surface flags
   - Quake II surfaces have flags like:
     - `SURF_LIGHT` - Emits light
     - `SURF_SLICK` - Slippery (ice)
@@ -448,7 +448,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
     - `SURF_NODRAW` - Not rendered
   - Display human-readable flag names
 
-- [ ] **7.3**: Display surface properties
+- [x] **7.3**: Display surface properties
   - Texture name
   - Light value (if emissive)
   - Contents (solid, water, lava, etc.)

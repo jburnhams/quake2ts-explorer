@@ -1,0 +1,66 @@
+.surface-flags {
+  padding: 10px;
+  background-color: rgba(0, 0, 0, 0.8);
+  color: #eee;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 12px;
+  max-width: 250px;
+  pointer-events: none; /* Let clicks pass through */
+}
+
+.surface-flags-empty {
+  padding: 10px;
+  color: #888;
+  font-style: italic;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.surface-flags-header {
+  font-weight: bold;
+  border-bottom: 1px solid #444;
+  margin-bottom: 6px;
+  padding-bottom: 2px;
+  color: #fff;
+}
+
+.surface-property-row {
+  display: flex;
+  margin-bottom: 4px;
+}
+
+.surface-property-label {
+  color: #aaa;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.surface-property-value {
+  color: #fff;
+  word-break: break-all;
+}
+
+.surface-flags-list {
+  margin-top: 6px;
+}
+
+.surface-flags-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.surface-flag-tag {
+  background: #444;
+  color: #fff;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 10px;
+}
+
+.surface-flags-none {
+  color: #666;
+  font-style: italic;
+}

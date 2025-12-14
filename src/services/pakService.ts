@@ -498,6 +498,8 @@ export function getPakService(): PakService {
   return pakServiceInstance;
 }
 
+export const pakService = getPakService();
+
 export function resetPakService(): void {
   pakServiceInstance = null;
 }
