@@ -184,7 +184,8 @@ describe('UniversalViewer Screenshot Integration', () => {
     fireEvent.click(screenshotButton);
 
     // Change resolution multiplier to 2x
-    const multiplierSelect = screen.getByLabelText('Resolution Multiplier:');
+    // Use getByRole for better robustness
+    const multiplierSelect = screen.getByRole('combobox', { name: /Resolution Multiplier/i });
     fireEvent.change(multiplierSelect, { target: { value: '2' } });
 
     // Capture

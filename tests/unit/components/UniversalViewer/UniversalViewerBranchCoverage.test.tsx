@@ -9,6 +9,7 @@ import { ViewerControls } from '../../../../src/components/UniversalViewer/Viewe
 
 jest.mock('../../../../src/services/pakService');
 jest.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: jest.fn(),
   createWebGLContext: jest.fn().mockReturnValue({ gl: {
       viewport: jest.fn(),
       clearColor: jest.fn(),
@@ -72,9 +73,17 @@ describe('UniversalViewer Branch Coverage', () => {
 
         render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />);
 
-        fireEvent.keyDown(window, { code: 'F12' });
+        // Wait for useEffect to initialize GL context
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        await act(async () => {
+            fireEvent.keyDown(window, { code: 'F12' });
+        });
 
         await waitFor(() => {
+             expect(screenshotService.captureScreenshot).toHaveBeenCalled();
              expect(screen.getByText('Error: Screenshot failed: Capture failed')).toBeInTheDocument();
         });
 

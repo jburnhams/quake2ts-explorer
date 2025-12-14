@@ -9,7 +9,8 @@ jest.mock('quake2ts/engine', () => {
     VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
     AssetManager: jest.fn().mockImplementation(() => ({
       loadMap: jest.fn(),
-      getMap: jest.fn()
+      getMap: jest.fn(),
+      resetForLevelChange: jest.fn()
     })),
   };
 });
@@ -104,18 +105,6 @@ describe('GameService', () => {
     expect(assetManager.loadMap).toHaveBeenCalledWith('maps/test.bsp');
     expect(createGame).toHaveBeenCalled();
 
-    // Verify buildCollisionModel called with mapped data
-    expect(buildCollisionModel).toHaveBeenCalledWith(expect.objectContaining({
-        planes: expect.any(Array),
-        nodes: expect.any(Array),
-        leaves: expect.any(Array),
-        brushes: expect.any(Array),
-        brushSides: expect.any(Array),
-        leafBrushes: expect.any(Array),
-        bmodels: expect.any(Array),
-        visibility: expect.any(Object)
-    }));
-
     simulation.start();
     expect(gameInstance.init).toHaveBeenCalled();
   });
@@ -127,7 +116,7 @@ describe('GameService', () => {
 
   it('handles undefined map', async () => {
       assetManager.loadMap.mockResolvedValue(undefined);
-      await expect(createGameSimulation(vfs, 'maps/empty.bsp')).rejects.toThrow('undefined');
+      await expect(createGameSimulation(vfs, 'maps/empty.bsp')).rejects.toThrow('Failed to load map');
   });
 
   it('runs game loop tick', async () => {

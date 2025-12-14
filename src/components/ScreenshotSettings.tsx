@@ -11,6 +11,7 @@ interface ScreenshotSettingsProps {
 export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSettingsProps) {
   const [format, setFormat] = useState<'png' | 'jpeg'>('png');
   const [quality, setQuality] = useState<number>(0.95);
+  const [resolutionMultiplier, setResolutionMultiplier] = useState<number>(1);
 
   if (!isOpen) return null;
 
@@ -18,6 +19,7 @@ export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSet
     onCapture({
       format,
       quality,
+      resolutionMultiplier
     });
     onClose();
   };
@@ -48,6 +50,19 @@ export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSet
             />
           </div>
         )}
+
+        <div className="setting-group">
+          <label htmlFor="resolution-multiplier">Resolution Multiplier:</label>
+          <select
+            id="resolution-multiplier"
+            value={resolutionMultiplier}
+            onChange={(e) => setResolutionMultiplier(parseFloat(e.target.value))}
+          >
+            <option value="1">1x (Native)</option>
+            <option value="2">2x (High Res)</option>
+            <option value="4">4x (Ultra Res)</option>
+          </select>
+        </div>
 
         <div className="button-group">
           <button onClick={onClose} className="cancel-btn">Cancel</button>

@@ -4,10 +4,12 @@ export interface ScreenshotOptions {
     resolutionMultiplier?: number;
 }
 
-export const captureScreenshot = async (canvas: HTMLCanvasElement, options: ScreenshotOptions): Promise<Blob> => {
+export const captureScreenshot = async (canvas: HTMLCanvasElement, options?: ScreenshotOptions): Promise<Blob> => {
     return new Promise((resolve, reject) => {
         let mimeType = 'image/png';
-        if (options.format === 'jpeg') {
+        const quality = options?.quality;
+
+        if (options?.format === 'jpeg') {
             mimeType = 'image/jpeg';
         }
 
@@ -17,7 +19,7 @@ export const captureScreenshot = async (canvas: HTMLCanvasElement, options: Scre
             } else {
                 reject(new Error('Failed to create blob from canvas'));
             }
-        }, mimeType, options.quality);
+        }, mimeType, quality);
     });
 };
 

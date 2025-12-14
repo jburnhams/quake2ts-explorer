@@ -78,10 +78,12 @@ class GameServiceImpl implements GameSimulation, GameImports {
     // 1. Load the map
     this.currentMap = await this.assetManager.loadMap(this.mapName);
 
-    // Convert to CollisionModel for physics
-    if (this.currentMap) {
-        this.collisionModel = createCollisionModel(this.currentMap);
+    if (!this.currentMap) {
+      throw new Error(`Failed to load map: ${this.mapName}`);
     }
+
+    // Convert to CollisionModel for physics
+    this.collisionModel = createCollisionModel(this.currentMap);
 
     // 2. Initialize the game instance
     const engineHost: GameEngine = {
