@@ -5,6 +5,7 @@ import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
 import { OrbitState, FreeCameraState } from '../../utils/cameraUtils';
 import { DebugMode } from '../../types/debugMode';
 import '../../styles/md2Viewer.css';
+import '../../styles/animations.css';
 
 interface ViewerControlsProps {
   isPlaying: boolean;
@@ -30,6 +31,10 @@ interface ViewerControlsProps {
   onScreenshot?: () => void;
   showStats?: boolean;
   setShowStats?: (show: boolean) => void;
+  onStartRecording?: () => void;
+  onStopRecording?: () => void;
+  isRecording?: boolean;
+  recordingTime?: number;
 }
 
 export function ViewerControls({
@@ -55,8 +60,18 @@ export function ViewerControls({
   setDebugMode,
   onScreenshot,
   showStats,
-  setShowStats
+  setShowStats,
+  onStartRecording,
+  onStopRecording,
+  isRecording,
+  recordingTime = 0
 }: ViewerControlsProps) {
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
     if (cameraMode === 'orbit') {
@@ -231,10 +246,34 @@ export function ViewerControls({
        )}
 
       {onScreenshot && (
-          <div className="screenshot-controls" style={{ marginBottom: '10px' }}>
-              <button onClick={onScreenshot} style={{ width: '100%' }} title="Take Screenshot">
-                  📷 Screenshot
+          <div className="screenshot-controls" style={{ marginBottom: '10px', display: 'flex', gap: '5px' }}>
+              <button onClick={onScreenshot} style={{ flex: 1 }} title="Take Screenshot">
+                  📷 Screen
               </button>
+              {onStartRecording && onStopRecording && (
+                <button
+                  onClick={isRecording ? onStopRecording : onStartRecording}
+                  style={{
+                    flex: 1,
+                    backgroundColor: isRecording ? '#cc0000' : undefined,
+                    animation: isRecording ? 'pulse-red 2s infinite' : 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '4px'
+                  }}
+                  title={isRecording ? "Stop Recording" : "Record Video"}
+                >
+                  {isRecording ? (
+                    <>
+                      <span>■</span>
+                      <span style={{ fontSize: '0.9em', minWidth: '35px' }}>{formatTime(recordingTime)}</span>
+                    </>
+                  ) : (
+                    '● Rec'
+                  )}
+                </button>
+              )}
           </div>
       )}
 

@@ -241,19 +241,19 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **4.1**: Create `src/services/videoRecorder.ts`
+- [x] **4.1**: Create `src/services/videoRecorder.ts`
   - Import `MediaRecorder` API
   - Export `startRecording(canvas: HTMLCanvasElement, options: RecordOptions): void`
   - Export `stopRecording(): Promise<Blob>`
   - Export `isRecording(): boolean`
 
-- [ ] **4.2**: Implement video recording
+- [x] **4.2**: Implement video recording
   - Use `canvas.captureStream(fps)` to get MediaStream
   - Create `MediaRecorder` with WebM codec
   - Collect data chunks in array
   - On stop, create Blob from chunks
 
-- [ ] **4.3**: Add recording UI
+- [x] **4.3**: Add recording UI
   - Add record button to ViewerControls (red circle icon)
   - Show recording indicator (flashing red dot + elapsed time)
   - Stop button saves video
@@ -264,7 +264,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Resolution (match canvas or custom)
   - Audio recording toggle (if audio context available)
 
-- [ ] **4.5**: Handle download
+- [x] **4.5**: Handle download
   - Same pattern as screenshot
   - Filename: `quake2ts_recording_YYYY-MM-DD_HH-MM-SS.webm`
   - Show file size before download
