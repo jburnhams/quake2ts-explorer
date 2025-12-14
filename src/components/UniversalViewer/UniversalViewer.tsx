@@ -14,6 +14,7 @@ import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, c
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
+import { videoRecorderService } from '@/src/services/videoRecorder';
 import { PerformanceStats } from '../PerformanceStats';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
@@ -72,6 +73,30 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [speed, setSpeed] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording && recordingStartTime) {
+      interval = setInterval(() => {
+        setRecordingDuration((Date.now() - recordingStartTime) / 1000);
+      }, 100);
+    } else {
+      setRecordingDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording, recordingStartTime]);
+
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRecorderService.isRecording()) {
+        videoRecorderService.stopRecording().catch(() => {});
+      }
+    };
+  }, []);
 
   const handleScreenshot = async () => {
     if (!canvasRef.current) return;
@@ -86,6 +111,37 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     } catch (e) {
         console.error("Screenshot failed:", e);
         setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  const handleStartRecording = () => {
+    if (!canvasRef.current) return;
+    try {
+      videoRecorderService.startRecording(canvasRef.current);
+      setIsRecording(true);
+      setRecordingStartTime(Date.now());
+    } catch (e) {
+      console.error("Recording failed:", e);
+      setError(`Recording failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
+
+  const handleStopRecording = async () => {
+    try {
+      const blob = await videoRecorderService.stopRecording();
+      setIsRecording(false);
+      setRecordingStartTime(null);
+      const filename = generateScreenshotFilename('quake2ts_recording').replace('.png', '.webm');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Stop recording failed:", e);
+      setError(`Stop recording failed: ${e instanceof Error ? e.message : String(e)}`);
+      setIsRecording(false);
     }
   };
 
@@ -679,6 +735,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             onScreenshot={handleScreenshot}
             showStats={showStats}
             setShowStats={setShowStats}
+            onStartRecording={handleStartRecording}
+            onStopRecording={handleStopRecording}
+            isRecording={isRecording}
+            recordingTime={recordingDuration}
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (
