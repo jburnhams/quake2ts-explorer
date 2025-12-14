@@ -320,4 +320,23 @@ describe('ViewerControls', () => {
       expect(values).toContain(DebugMode.Lightmaps);
     });
   });
+
+  describe('Screenshot Controls', () => {
+    it('renders screenshot button when onScreenshot is provided', () => {
+      render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} />);
+      expect(screen.getByText('📷 Screenshot')).toBeInTheDocument();
+    });
+
+    it('does not render screenshot button when onScreenshot is not provided', () => {
+      render(<ViewerControls {...defaultProps} onScreenshot={undefined} />);
+      expect(screen.queryByText('📷 Screenshot')).not.toBeInTheDocument();
+    });
+
+    it('calls onScreenshot when button is clicked', () => {
+      const mockOnScreenshot = jest.fn();
+      render(<ViewerControls {...defaultProps} onScreenshot={mockOnScreenshot} />);
+      fireEvent.click(screen.getByText('📷 Screenshot'));
+      expect(mockOnScreenshot).toHaveBeenCalledTimes(1);
+    });
+  });
 });
