@@ -330,20 +330,20 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **6.1**: Create `src/services/bookmarkService.ts`
+- [x] **6.1**: Create `src/services/bookmarkService.ts`
   - Export `addBookmark(name: string, frame: number): void`
   - Export `getBookmarks(): Bookmark[]`
   - Export `deleteBookmark(id: string): void`
   - Export `exportClip(startFrame: number, endFrame: number): Uint8Array`
   - Store bookmarks in localStorage per demo file
 
-- [ ] **6.2**: Implement bookmark UI
+- [x] **6.2**: Implement bookmark UI
   - Add "Bookmark" button to demo controls
   - Shows bookmark creation dialog (name, optional notes)
   - Display bookmarks on timeline as icons
   - Click bookmark to jump to frame
 
-- [ ] **6.3**: Create bookmark list panel
+- [x] **6.3**: Create bookmark list panel
   - Show all bookmarks for current demo
   - Click to jump
   - Edit name/notes
