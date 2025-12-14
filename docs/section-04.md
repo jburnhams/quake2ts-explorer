@@ -45,7 +45,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **1.1**: Implement bounding box visualization
+- [x] **1.1**: Implement bounding box visualization
   - Modify adapters (`BspAdapter.ts`, `Md2Adapter.ts`, `Md3Adapter.ts`)
   - Add method `setDebugMode(mode: DebugMode): void`
   - For `DebugMode.BoundingBoxes`:
@@ -81,7 +81,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
     - Useful for analyzing light quality
     - Show light styles and dynamic lights
 
-- [ ] **1.6**: Add debug mode selector UI
+- [x] **1.6**: Add debug mode selector UI
   - Modify `ViewerControls.tsx`
   - Add dropdown: "Debug Mode"
     - None (default)
