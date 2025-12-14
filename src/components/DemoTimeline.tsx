@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController, DemoEvent, DemoEventType } from 'quake2ts/engine';
 import './DemoTimeline.css';
 
 interface DemoTimelineProps {
@@ -13,6 +13,7 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
   const [totalFrames, setTotalFrames] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [events, setEvents] = useState<DemoEvent[]>([]);
 
   const trackRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
@@ -31,6 +32,10 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
     // Initial state
     setDuration(controller.getDuration());
     setTotalFrames(controller.getFrameCount());
+
+    if (controller.getDemoEvents) {
+        setEvents(controller.getDemoEvents());
+    }
 
     const update = () => {
       if (!isDragging) {
@@ -112,10 +117,37 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
       setHoverTime(null);
   };
 
+  const getMarkerColor = (type: DemoEventType) => {
+    switch (type) {
+      case DemoEventType.Death: return '#ff4444';
+      case DemoEventType.WeaponFire: return '#ffaa00';
+      case DemoEventType.Pickup: return '#44ff44';
+      case DemoEventType.Spawn: return '#4444ff';
+      case DemoEventType.DamageDealt: return '#ff8800';
+      case DemoEventType.DamageReceived: return '#ff0000';
+      default: return '#cccccc';
+    }
+  };
+
   const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
 
   return (
     <div className="demo-timeline">
+      {/* Thumbnails placeholder - shown when hovering */}
+      {hoverTime !== null && (
+          <div
+             className="timeline-thumbnail-preview"
+             style={{
+                 left: `${(hoverTime / duration) * 100}%`,
+                 transform: 'translate(-50%, -10px)'
+             }}
+          >
+              <div className="thumbnail-content">
+                  <span className="thumbnail-time">{formatTime(hoverTime)}</span>
+              </div>
+          </div>
+      )}
+
       <div
         className="timeline-track-container"
         ref={trackRef}
@@ -129,6 +161,21 @@ export function DemoTimeline({ controller }: DemoTimelineProps) {
             className="timeline-progress"
             style={{ width: `${progressPercent}%` }}
           />
+          {/* Markers */}
+          {events.map((event, index) => {
+              const left = (event.time / duration) * 100;
+              return (
+                  <div
+                      key={index}
+                      className="timeline-marker"
+                      style={{
+                          left: `${left}%`,
+                          backgroundColor: getMarkerColor(event.type)
+                      }}
+                      title={`${event.description} (${formatTime(event.time)})`}
+                  />
+              );
+          })}
         </div>
         <div
             className="timeline-scrubber"

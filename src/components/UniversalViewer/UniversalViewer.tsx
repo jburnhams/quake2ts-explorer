@@ -9,6 +9,7 @@ import { BspAdapter } from './adapters/BspAdapter';
 import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { DemoTimeline } from '../DemoTimeline';
+import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
@@ -43,6 +44,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
   const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
   const [hoveredEntity, setHoveredEntity] = useState<any | null>(null);
+  const [showFrameInfo, setShowFrameInfo] = useState(false);
 
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
@@ -71,10 +73,74 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       hasMoved: false
   });
 
+  const handleStepForward = (frames: number = 1) => {
+      if (adapter && adapter.getDemoController) {
+          const controller = adapter.getDemoController();
+          if (controller) {
+              if (frames > 1 && (controller as any).seekToFrame) {
+                  // Fallback if stepForward(n) isn't supported but seekToFrame is
+                  const current = controller.getCurrentFrame();
+                  controller.seekToFrame(current + frames);
+              } else {
+                  controller.stepForward();
+              }
+              setIsPlaying(false); // Auto-pause when stepping
+          }
+      }
+  };
+
+  const handleStepBackward = (frames: number = 1) => {
+      if (adapter && adapter.getDemoController) {
+          const controller = adapter.getDemoController();
+          if (controller) {
+              if (frames > 1 && (controller as any).seekToFrame) {
+                  const current = controller.getCurrentFrame();
+                  controller.seekToFrame(Math.max(0, current - frames));
+              } else {
+                  controller.stepBackward();
+              }
+              setIsPlaying(false); // Auto-pause when stepping
+          }
+      }
+  };
+
   // Handle Inputs
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
         keysPressed.current[e.code] = true;
+
+        if (e.code === 'KeyF') {
+            setShowFrameInfo(prev => !prev);
+        }
+
+        // Frame Stepping Shortcuts
+        if (adapter && adapter.getDemoController && adapter.hasCameraControl && adapter.hasCameraControl()) {
+            const controller = adapter.getDemoController();
+
+            if (e.code === 'ArrowRight' && !isPlaying) {
+                 if (e.shiftKey) {
+                    handleStepForward(10);
+                 } else {
+                    handleStepForward(1);
+                 }
+            } else if (e.code === 'ArrowLeft' && !isPlaying) {
+                 if (e.shiftKey) {
+                    handleStepBackward(10);
+                 } else {
+                    handleStepBackward(1);
+                 }
+            } else if (e.code === 'Home') {
+                 if (controller) {
+                     controller.seekToTime(0);
+                     setIsPlaying(false);
+                 }
+            } else if (e.code === 'End') {
+                 if (controller) {
+                     controller.seekToTime(controller.getDuration());
+                     setIsPlaying(false);
+                 }
+            }
+        }
     };
     const handleKeyUp = (e: KeyboardEvent) => {
         keysPressed.current[e.code] = false;
@@ -87,7 +153,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         window.removeEventListener('keydown', handleKeyDown);
         window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [adapter, isPlaying]); // Depend on adapter/isPlaying to capture current state for shortcuts
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -457,6 +523,9 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             Error: {error}
          </div>
        )}
+       {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
+          <FrameInfo controller={adapter.getDemoController()!} />
+       )}
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
        </div>
@@ -469,6 +538,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             freeCamera={freeCamera}
             setFreeCamera={setFreeCamera}
             hasPlayback={adapter?.play !== undefined}
+            onStepForward={() => adapter?.getDemoController && handleStepForward()}
+            onStepBackward={() => adapter?.getDemoController && handleStepBackward()}
             speed={speed}
             setSpeed={setSpeed}
             showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}

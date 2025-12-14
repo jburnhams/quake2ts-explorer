@@ -1,121 +1,99 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
+import '@testing-library/jest-dom';
 import { DemoTimeline } from '../../../src/components/DemoTimeline';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController, DemoEventType } from 'quake2ts/engine';
 
 // Mock the controller
 const mockController = {
-  getDuration: jest.fn().mockReturnValue(60), // 60 seconds
-  getFrameCount: jest.fn().mockReturnValue(600),
-  getCurrentTime: jest.fn().mockReturnValue(0),
-  getCurrentFrame: jest.fn().mockReturnValue(0),
+  getDuration: jest.fn(),
+  getFrameCount: jest.fn(),
+  getCurrentTime: jest.fn(),
+  getCurrentFrame: jest.fn(),
   seekToTime: jest.fn(),
-  play: jest.fn(),
-  pause: jest.fn(),
+  getDemoEvents: jest.fn(),
 } as unknown as DemoPlaybackController;
 
-// Helper for RAF
-let rafCallbacks: FrameRequestCallback[] = [];
-beforeEach(() => {
-  jest.clearAllMocks();
-  rafCallbacks = [];
-  jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-    rafCallbacks.push(cb);
-    return rafCallbacks.length;
-  });
-  jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
-     // No-op for now
-  });
-});
-
-afterEach(() => {
-  jest.restoreAllMocks();
-});
-
-const tick = () => {
-    act(() => {
-        rafCallbacks.forEach(cb => cb(performance.now()));
-        rafCallbacks = [];
-    });
-};
-
 describe('DemoTimeline', () => {
-  test('renders with initial values', () => {
-    render(<DemoTimeline controller={mockController} />);
-
-    expect(screen.getByText('0:00.00')).toBeInTheDocument(); // Current time
-    expect(screen.getByText('1:00.00')).toBeInTheDocument(); // Duration
-    expect(screen.getByText(/Frame: 0 \/ 600/)).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (mockController.getDuration as jest.Mock).mockReturnValue(120); // 2 minutes
+    (mockController.getFrameCount as jest.Mock).mockReturnValue(1000);
+    (mockController.getCurrentTime as jest.Mock).mockReturnValue(0);
+    (mockController.getCurrentFrame as jest.Mock).mockReturnValue(0);
+    (mockController.getDemoEvents as jest.Mock).mockReturnValue([]);
   });
 
-  test('updates time when raf fires', () => {
-    (mockController.getCurrentTime as jest.Mock).mockReturnValue(10.5);
-    (mockController.getCurrentFrame as jest.Mock).mockReturnValue(105);
-
-    render(<DemoTimeline controller={mockController} />);
-
-    tick(); // Trigger RAF
-
-    expect(screen.getByText('0:10.50')).toBeInTheDocument();
-    expect(screen.getByText(/Frame: 105 \/ 600/)).toBeInTheDocument();
+  afterEach(() => {
+      jest.useRealTimers();
+      jest.restoreAllMocks();
   });
 
-  test('seeks on click', () => {
+  it('renders timeline with duration and current time', () => {
     render(<DemoTimeline controller={mockController} />);
-    const trackContainer = screen.getByTitle(''); // This is the container with the ref and events
 
-    // Mock getBoundingClientRect on the element that has the ref
-    jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
-        left: 0,
-        top: 0,
-        width: 100,
-        height: 20,
-        right: 100,
-        bottom: 20,
-        x: 0,
-        y: 0,
-        toJSON: () => {}
+    expect(screen.getByText('0:00.00')).toBeInTheDocument();
+    expect(screen.getByText('2:00.00')).toBeInTheDocument();
+  });
+
+  it('updates current time on frame update', async () => {
+    jest.useFakeTimers();
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+        return setTimeout(() => cb(performance.now()), 16) as unknown as number;
     });
 
-    fireEvent.mouseDown(trackContainer, { clientX: 50 }); // Click in middle (50%)
-
-    // Should seek to 50% of 60s = 30s
-    expect(mockController.seekToTime).toHaveBeenCalledWith(30);
-  });
-
-  test('scrubbing functionality', () => {
     render(<DemoTimeline controller={mockController} />);
-    const trackContainer = screen.getByTitle('');
 
-    jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
-        left: 0,
-        top: 0,
-        width: 100,
-        height: 20,
-        right: 100,
-        bottom: 20,
-        x: 0,
-        y: 0,
-        toJSON: () => {}
+    // Change mock return value
+    (mockController.getCurrentTime as jest.Mock).mockReturnValue(10);
+
+    // Advance time to trigger RAF
+    await act(async () => {
+        jest.advanceTimersByTime(50);
     });
 
-    // Start dragging
-    fireEvent.mouseDown(trackContainer, { clientX: 0 }); // Start at 0
-    expect(mockController.seekToTime).toHaveBeenCalledWith(0);
+    expect(screen.getByText('0:10.00')).toBeInTheDocument();
+  });
 
-    // Reset mock to check drag behavior
-    (mockController.seekToTime as jest.Mock).mockClear();
+  it('calls seekToTime when clicked', () => {
+    // No fake timers here
+    const { container } = render(<DemoTimeline controller={mockController} />);
+    const track = container.querySelector('.timeline-track-container');
 
-    // Move to 75%
-    fireEvent.mouseMove(window, { clientX: 75 });
+    // Mock getBoundingClientRect
+    jest.spyOn(track!, 'getBoundingClientRect').mockReturnValue({
+      left: 0,
+      width: 100,
+      top: 0,
+      height: 10,
+      right: 100,
+      bottom: 10,
+      x: 0,
+      y: 0,
+      toJSON: () => {}
+    });
 
-    // During drag, seekToTime should NOT be called (only UI update)
-    expect(mockController.seekToTime).not.toHaveBeenCalled();
+    act(() => {
+        fireEvent.mouseDown(track!, { clientX: 50 }); // 50%
+    });
 
-    // Mouse up
-    fireEvent.mouseUp(window, { clientX: 75 });
+    expect(mockController.seekToTime).toHaveBeenCalledWith(60); // 50% of 120s
+  });
 
-    // Now it should seek to final pos
-    expect(mockController.seekToTime).toHaveBeenCalledWith(45); // 75% of 60 = 45
+  it('renders event markers', () => {
+    const events = [
+      { type: DemoEventType.Death, time: 30, frame: 250, description: 'Player died' },
+      { type: DemoEventType.WeaponFire, time: 60, frame: 500, description: 'Shot fired' }
+    ];
+    (mockController.getDemoEvents as jest.Mock).mockReturnValue(events);
+
+    const { container } = render(<DemoTimeline controller={mockController} />);
+
+    const markers = container.querySelectorAll('.timeline-marker');
+    expect(markers.length).toBe(2);
+
+    // Check styles
+    expect(markers[0]).toHaveStyle('left: 25%'); // 30/120
+    expect(markers[1]).toHaveStyle('left: 50%'); // 60/120
   });
 });

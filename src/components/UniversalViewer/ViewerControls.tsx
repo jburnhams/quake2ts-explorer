@@ -14,6 +14,8 @@ interface ViewerControlsProps {
   freeCamera: FreeCameraState;
   setFreeCamera: React.Dispatch<React.SetStateAction<FreeCameraState>>;
   hasPlayback: boolean;
+  onStepForward?: () => void;
+  onStepBackward?: () => void;
   speed: number;
   setSpeed: (speed: number) => void;
   showCameraControls: boolean;
@@ -35,6 +37,8 @@ export function ViewerControls({
   freeCamera,
   setFreeCamera,
   hasPlayback,
+  onStepForward,
+  onStepBackward,
   speed,
   setSpeed,
   showCameraControls,
@@ -204,9 +208,21 @@ export function ViewerControls({
        )}
       {hasPlayback && (
         <div className="md2-anim-controls">
-             <button onClick={onPlayPause}>
-                {isPlaying ? 'Pause' : 'Play'}
-             </button>
+             <div className="playback-buttons" style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
+                 {onStepBackward && (
+                     <button onClick={onStepBackward} title="Step Backward (Left Arrow)" disabled={isPlaying}>
+                         ◄◄
+                     </button>
+                 )}
+                 <button onClick={onPlayPause} style={{ flex: 1 }}>
+                    {isPlaying ? 'Pause' : 'Play'}
+                 </button>
+                 {onStepForward && (
+                     <button onClick={onStepForward} title="Step Forward (Right Arrow)" disabled={isPlaying}>
+                         ►►
+                     </button>
+                 )}
+             </div>
              <div className="speed-control">
                 <span>Speed: {speed.toFixed(1)}x</span>
                 <input
