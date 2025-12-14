@@ -15,12 +15,18 @@ export class Md3Adapter implements ViewerAdapter {
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
 
+  private currentFrame = 0;
+  private isPlayingState = true;
+  private animSpeed = 1.0;
+  private totalFrames = 0;
+
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type !== 'md3') throw new Error('Invalid file type for Md3Adapter');
 
     this.pipeline = new Md3Pipeline(gl);
     this.debugRenderer = new DebugRenderer(gl);
     this.model = file.model;
+    this.totalFrames = this.model.header.numFrames;
 
     this.model.surfaces.forEach(surface => {
       this.surfaces.set(surface.name, {
@@ -62,7 +68,24 @@ export class Md3Adapter implements ViewerAdapter {
   }
 
   update(deltaTime: number): void {
-    // Update model mesh animation state
+    if (this.isPlayingState && this.totalFrames > 0) {
+      this.currentFrame += deltaTime * 30 * this.animSpeed;
+      while (this.currentFrame >= this.totalFrames) {
+        this.currentFrame -= this.totalFrames;
+      }
+    }
+
+    const frame0 = Math.floor(this.currentFrame);
+    const frame1 = (frame0 + 1) % this.totalFrames;
+    const lerp = this.currentFrame - frame0;
+    const blend = { frame0, frame1, lerp };
+
+    for (const [name, data] of this.surfaces) {
+      const surface = this.model?.surfaces.find(s => s.name === name);
+      if (surface) {
+        data.mesh.update(surface, blend);
+      }
+    }
   }
 
   setDebugMode(mode: DebugMode) {
@@ -115,5 +138,36 @@ export class Md3Adapter implements ViewerAdapter {
 
   setRenderOptions(options: RenderOptions) {
     this.renderOptions = options;
+  }
+
+  play() { this.isPlayingState = true; }
+  pause() { this.isPlayingState = false; }
+  isPlaying() { return this.isPlayingState; }
+  setSpeed(speed: number) { this.animSpeed = speed; }
+
+  getAnimations(): AnimationInfo[] {
+    return [{
+      name: 'All Frames',
+      firstFrame: 0,
+      lastFrame: this.totalFrames - 1,
+      fps: 30
+    }];
+  }
+
+  setAnimation(name: string): void {
+    this.currentFrame = 0;
+    this.isPlayingState = true;
+  }
+
+  getFrameInfo(): FrameInfo {
+    return {
+      currentFrame: Math.floor(this.currentFrame),
+      totalFrames: this.totalFrames,
+      interpolatedFrame: this.currentFrame
+    };
+  }
+
+  seekFrame(frame: number): void {
+    this.currentFrame = Math.max(0, Math.min(this.totalFrames - 0.001, frame));
   }
 }

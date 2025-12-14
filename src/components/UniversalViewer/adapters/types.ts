@@ -13,6 +13,19 @@ export interface Ray {
   direction: [number, number, number];
 }
 
+export interface AnimationInfo {
+  name: string;
+  firstFrame: number;
+  lastFrame: number;
+  fps: number;
+}
+
+export interface FrameInfo {
+  currentFrame: number;
+  totalFrames: number;
+  interpolatedFrame: number;
+}
+
 export interface ViewerAdapter {
   load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void>;
   update(deltaTime: number): void;
@@ -30,6 +43,12 @@ export interface ViewerAdapter {
   getDuration?(): number;
   getCurrentTime?(): number;
   setSpeed?(speed: number): void;
+
+  // Animation support
+  getAnimations?(): AnimationInfo[];
+  setAnimation?(name: string): void;
+  getFrameInfo?(): FrameInfo;
+  seekFrame?(frame: number): void;
 
   // Returns true if the adapter wants to control the camera (e.g. demo playback)
   hasCameraControl?(): boolean;

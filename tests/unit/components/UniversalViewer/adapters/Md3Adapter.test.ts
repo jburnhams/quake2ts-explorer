@@ -71,7 +71,7 @@ describe('Md3Adapter', () => {
   it('loads md3 model', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { surfaces: [{ name: 'surface1', shaders: [] }] }
+        model: { surfaces: [{ name: 'surface1', shaders: [] }], header: { numFrames: 10 } }
     } as any;
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
@@ -88,7 +88,7 @@ describe('Md3Adapter', () => {
   it('renders if loaded', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { surfaces: [] }
+        model: { surfaces: [], header: { numFrames: 10 } }
     } as any;
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
 
@@ -119,7 +119,8 @@ describe('Md3Adapter', () => {
     const file: ParsedFile = {
         type: 'md3',
         model: {
-            surfaces: [{ name: 'surface1', shaders: [{ name: 'models/players/model/skin.pcx' }] }]
+            surfaces: [{ name: 'surface1', shaders: [{ name: 'models/players/model/skin.pcx' }] }],
+            header: { numFrames: 10 }
         }
     } as any;
 
@@ -138,7 +139,7 @@ describe('Md3Adapter', () => {
   it('sets render options and uses them during render', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { surfaces: [{ name: 'surface1', shaders: [] }] }
+        model: { surfaces: [{ name: 'surface1', shaders: [] }], header: { numFrames: 10 } }
     } as any;
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
@@ -175,7 +176,7 @@ describe('Md3Adapter', () => {
   it('binds skin texture during render', async () => {
     const file: ParsedFile = {
         type: 'md3',
-        model: { surfaces: [{ name: 'surface1', shaders: [{ name: 'someskin.pcx' }] }] }
+        model: { surfaces: [{ name: 'surface1', shaders: [{ name: 'someskin.pcx' }] }], header: { numFrames: 10 } }
     } as any;
 
     mockPakService.hasFile.mockReturnValue(true);
@@ -193,5 +194,39 @@ describe('Md3Adapter', () => {
     expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE0);
     const textureInstance = (Texture2D as jest.Mock).mock.results[0].value;
     expect(textureInstance.bind).toHaveBeenCalled();
+  });
+
+  it('supports animation controls', async () => {
+    const file: ParsedFile = {
+        type: 'md3',
+        model: { surfaces: [], header: { numFrames: 10 } }
+    } as any;
+    await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
+
+    // Get animations
+    expect(adapter.getAnimations()).toEqual([{
+      name: 'All Frames',
+      firstFrame: 0,
+      lastFrame: 9,
+      fps: 30
+    }]);
+
+    // Seek
+    if (adapter.seekFrame) adapter.seekFrame(5.5);
+    const info = adapter.getFrameInfo ? adapter.getFrameInfo() : { interpolatedFrame: 0, currentFrame: 0 };
+    expect(info.interpolatedFrame).toBe(5.5);
+    expect(info.currentFrame).toBe(5);
+
+    // Play/Pause
+    if (adapter.pause) adapter.pause();
+    expect(adapter.isPlaying ? adapter.isPlaying() : true).toBe(false);
+
+    // Set animation (resets to 0)
+    if (adapter.seekFrame) adapter.seekFrame(5);
+    if (adapter.setAnimation) adapter.setAnimation('Any');
+
+    const info2 = adapter.getFrameInfo ? adapter.getFrameInfo() : { interpolatedFrame: -1 };
+    expect(info2.interpolatedFrame).toBe(0);
+    expect(adapter.isPlaying ? adapter.isPlaying() : false).toBe(true);
   });
 });

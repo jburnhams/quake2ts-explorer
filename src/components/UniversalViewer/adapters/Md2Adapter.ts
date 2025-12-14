@@ -141,4 +141,61 @@ export class Md2Adapter implements ViewerAdapter {
   pause() { this.isPlayingState = false; }
   isPlaying() { return this.isPlayingState; }
   setSpeed(speed: number) { this.animSpeed = speed; }
+
+  getAnimations(): AnimationInfo[] {
+    if (!this.animations) return [];
+    return this.animations.map(a => ({
+      name: a.name,
+      firstFrame: a.firstFrame,
+      lastFrame: a.lastFrame,
+      fps: 9
+    }));
+  }
+
+  setAnimation(name: string): void {
+    const anim = this.animations.find(a => a.name === name);
+    if (anim) {
+      const sequence: AnimationSequence = {
+        name: anim.name,
+        start: anim.firstFrame,
+        end: anim.lastFrame,
+        fps: 9,
+        loop: true
+      };
+      this.animState = createAnimationState(sequence);
+      this.isPlayingState = true;
+    }
+  }
+
+  getFrameInfo(): FrameInfo {
+    if (!this.model) return { currentFrame: 0, totalFrames: 0, interpolatedFrame: 0 };
+
+    if (this.animState) {
+      const blend = computeFrameBlend(this.animState);
+      return {
+        currentFrame: blend.frame0,
+        totalFrames: this.model.header.numFrames,
+        interpolatedFrame: blend.frame0 + blend.lerp
+      };
+    }
+
+    return {
+      currentFrame: 0,
+      totalFrames: this.model.header.numFrames,
+      interpolatedFrame: 0
+    };
+  }
+
+  seekFrame(frame: number): void {
+    if (!this.animState) return;
+
+    const seq = this.animState.sequence;
+    const targetFrame = Math.max(seq.start, Math.min(seq.end, frame));
+    const time = (targetFrame - seq.start) / seq.fps;
+
+    this.animState = {
+      sequence: seq,
+      time: time
+    };
+  }
 }

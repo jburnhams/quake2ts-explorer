@@ -42,13 +42,13 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **1.1**: Create `src/components/TextureAtlas.tsx`
+- [x] **1.1**: Create `src/components/TextureAtlas.tsx`
   - Replace/extend `ImagePreview` for selected textures
   - Display texture at multiple zoom levels (25%, 50%, 100%, 200%, 400%)
   - Pixel grid overlay at high zoom
   - Pan and zoom controls
 
-- [ ] **1.2**: Display texture metadata
+- [x] **1.2**: Display texture metadata
   - Dimensions (width x height)
   - Format (PCX, WAL, TGA)
   - Color depth (8-bit indexed, 24-bit RGB, 32-bit RGBA)
@@ -56,7 +56,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Mipmap levels (if applicable)
   - Palette information (for 8-bit textures)
 
-- [ ] **1.3**: Implement palette viewer
+- [x] **1.3**: Implement palette viewer
   - For 8-bit textures, show palette as color swatches
   - Display 256 colors in grid
   - Click color to see index and RGB values
@@ -75,7 +75,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Highlight unused areas
   - Detect UV seams and overlaps
 
-- [ ] **1.6**: Add texture export
+- [x] **1.6**: Add texture export
   - Export as PNG (with palette applied for 8-bit)
   - Export palette separately (GPL, ACT formats)
   - Export all mipmaps
@@ -105,27 +105,27 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/components/ModelInspector.tsx`
+- [x] **2.1**: Create `src/components/ModelInspector.tsx`
   - Replace/extend UniversalViewer for selected models
   - Left panel: Animation list
   - Center: 3D model view
   - Right panel: Frame details and skeleton
   - Bottom: Animation timeline
 
-- [ ] **2.2**: Implement animation list
+- [x] **2.2**: Implement animation list
   - Parse MD2/MD3 animations using `groupMd2Animations()` from library
   - Display animation names (walk, run, attack, etc.)
   - Show frame range for each animation
   - Select animation to play or scrub
 
-- [ ] **2.3**: Add animation timeline
+- [x] **2.3**: Add animation timeline
   - Horizontal scrubber showing all frames
   - Current frame indicator
   - Playback controls (play, pause, loop)
   - Frame rate adjustment
   - Step forward/backward frame buttons
 
-- [ ] **2.4**: Display frame metadata
+- [x] **2.4**: Display frame metadata
   - For current frame:
     - Frame number
     - Bounding box (mins, maxs)
@@ -139,7 +139,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Show tag names and positions
   - Highlight tag transformations during animation
 
-- [ ] **2.6**: Add vertex/triangle statistics
+- [x] **2.6**: Add vertex/triangle statistics
   - Total vertex count
   - Total triangle count
   - Per-surface breakdown (MD3)

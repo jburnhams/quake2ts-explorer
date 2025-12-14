@@ -1,10 +1,14 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
   PakService,
   type TreeNode,
   type FileMetadata,
   type ParsedFile,
 } from '../services/pakService';
+import { createGameLoop, GameLoop } from '../utils/gameLoop';
+import { createGameSimulation, GameSimulationWrapper } from '../services/gameService';
+
+export type GameMode = 'browser' | 'game';
 
 export interface UsePakExplorerResult {
   pakService: PakService;
@@ -16,11 +20,19 @@ export interface UsePakExplorerResult {
   fileCount: number;
   loading: boolean;
   error: string | null;
+  gameMode: GameMode;
+  isPaused: boolean;
+  gameStateSnapshot: any | null;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
   hasFile: (path: string) => boolean;
   dismissError: () => void;
   loadFromUrl: (url: string) => Promise<void>;
+  startGameMode: (mapName: string) => Promise<void>;
+  stopGameMode: () => void;
+  togglePause: () => void;
+  pauseGame: () => void;
+  resumeGame: () => void;
 }
 
 export function usePakExplorer(): UsePakExplorerResult {
@@ -34,6 +46,22 @@ export function usePakExplorer(): UsePakExplorerResult {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+
+  // Game state
+  const [gameMode, setGameMode] = useState<GameMode>('browser');
+  const [isPaused, setIsPaused] = useState(false);
+  // We use a ref for snapshot to avoid re-render on every frame if we used state directly
+  // without care, but we actually need to trigger re-render for UI.
+  // However, for high-frequency updates (60fps), usually we use refs and direct canvas updates
+  // or a requestAnimationFrame loop in the component.
+  // Since UniversalViewer is a React component, we'll expose the snapshot via state
+  // but maybe throttle it or just let it rip? React 18 is good at batching.
+  // But wait, the task implies UniversalViewer handles rendering.
+  // We should pass the snapshot to it.
+  const [gameStateSnapshot, setGameStateSnapshot] = useState<any | null>(null);
+
+  const gameSimulationRef = useRef<GameSimulationWrapper | null>(null);
+  const gameLoopRef = useRef<GameLoop | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
     const tree = pakService.buildFileTree();
@@ -138,6 +166,117 @@ export function usePakExplorer(): UsePakExplorerResult {
     [pakService]
   );
 
+  const stopGameMode = useCallback(() => {
+    // Invalidate any pending start requests
+    activeGameRequestRef.current++;
+
+    if (gameLoopRef.current) {
+      gameLoopRef.current.stop();
+      gameLoopRef.current = null;
+    }
+    if (gameSimulationRef.current) {
+      gameSimulationRef.current.shutdown();
+      gameSimulationRef.current = null;
+    }
+    setGameMode('browser');
+    setIsPaused(false);
+  }, []);
+
+  const isPausedRef = useRef(isPaused);
+  useEffect(() => {
+      isPausedRef.current = isPaused;
+  }, [isPaused]);
+
+  const activeGameRequestRef = useRef<number>(0);
+
+  const startGameMode = useCallback(async (mapName: string) => {
+    // Increment request ID to invalidate previous pending requests
+    const requestId = ++activeGameRequestRef.current;
+
+    try {
+      setLoading(true);
+
+      // Stop existing game if any
+      stopGameMode();
+
+      const simulation = await createGameSimulation(pakService.vfs, mapName);
+
+      // Check if this request is still the active one
+      if (requestId !== activeGameRequestRef.current) {
+         simulation.shutdown();
+         return;
+      }
+
+      gameSimulationRef.current = simulation;
+      simulation.start();
+
+      const loop = createGameLoop(
+        (deltaMs) => {
+            if (gameSimulationRef.current && !isPausedRef.current) {
+                // TODO: Generate UserCommand from input service
+                const cmd = {
+                    sequence: 0,
+                    msec: deltaMs,
+                    buttons: 0,
+                    angles: { x: 0, y: 0, z: 0 },
+                    forwardmove: 0,
+                    sidemove: 0,
+                    upmove: 0,
+                    impulse: 0,
+                    lightlevel: 0
+                };
+                gameSimulationRef.current.tick(deltaMs, cmd);
+            }
+        },
+        (alpha) => {
+             // Render handled by UniversalViewer via shared state or context?
+             if (gameSimulationRef.current) {
+                 const snapshot = gameSimulationRef.current.getSnapshot();
+                 if (snapshot) {
+                     // We update state to trigger re-render of consumers
+                     setGameStateSnapshot(snapshot);
+                 }
+             }
+        }
+      );
+
+      gameLoopRef.current = loop;
+      loop.start();
+
+      setGameMode('game');
+    } catch (err) {
+      // Only handle error if this request is still active
+      if (requestId === activeGameRequestRef.current) {
+          console.error("Failed to start game mode:", err);
+          setError(err instanceof Error ? err.message : 'Failed to start game mode');
+          stopGameMode();
+      }
+    } finally {
+      if (requestId === activeGameRequestRef.current) {
+        setLoading(false);
+      }
+    }
+  }, [pakService, stopGameMode]);
+
+  const togglePause = useCallback(() => {
+    setIsPaused(prev => !prev);
+  }, []);
+
+  const pauseGame = useCallback(() => {
+    setIsPaused(true);
+  }, []);
+
+  const resumeGame = useCallback(() => {
+    setIsPaused(false);
+  }, []);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      stopGameMode();
+    };
+  }, [stopGameMode]);
+
   return {
     pakService,
     fileTree,
@@ -148,10 +287,18 @@ export function usePakExplorer(): UsePakExplorerResult {
     fileCount,
     loading,
     error,
+    gameMode,
+    isPaused,
+    gameStateSnapshot,
     handleFileSelect,
     handleTreeSelect,
     hasFile,
     dismissError,
     loadFromUrl,
+    startGameMode,
+    stopGameMode,
+    togglePause,
+    pauseGame,
+    resumeGame,
   };
 }

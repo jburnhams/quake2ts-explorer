@@ -38,4 +38,21 @@ describe('Hex Preview', () => {
     );
     expect(screen.getByText(/Showing first 512 of 1024 bytes/)).toBeInTheDocument();
   });
+
+  it('shows error message if present', () => {
+    const parsedUnknown: ParsedFile = {
+      type: 'unknown',
+      data: new Uint8Array(10),
+      error: 'Failed to parse file',
+    };
+    render(
+      <PreviewPanel
+        parsedFile={parsedUnknown}
+        filePath="error.bin"
+        pakService={mockPakService}
+      />
+    );
+    expect(screen.getByTestId('parse-error')).toBeInTheDocument();
+    expect(screen.getByText(/Failed to parse file/)).toBeInTheDocument();
+  });
 });
