@@ -64,7 +64,7 @@ describe('BspAnalyzer', () => {
     expect(screen.getByText('Geometry Analysis')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText(/^Lightmaps$/));
-    expect(screen.getByText('Lightmap Statistics')).toBeInTheDocument();
+    expect(screen.getByText('Lightmap Inspector')).toBeInTheDocument();
 
     fireEvent.click(screen.getByText(/^Visibility$/));
     expect(screen.getByText('Visibility (PVS) Statistics')).toBeInTheDocument();
