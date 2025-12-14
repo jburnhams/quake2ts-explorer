@@ -24,6 +24,7 @@ import { VideoSettings } from '../VideoSettings';
 import { LightingControls, LightingOptions } from '../LightingControls';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
+import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
 import '../../styles/md2Viewer.css';
 
@@ -57,6 +58,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
   const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
   const [hoveredEntity, setHoveredEntity] = useState<any | null>(null);
+  const [hoveredSurfaceProps, setHoveredSurfaceProps] = useState<any | null>(null);
   const [showFrameInfo, setShowFrameInfo] = useState(false);
   const [showStats, setShowStats] = useState(false);
   const [stats, setStats] = useState<RenderStatistics | null>(null);
@@ -634,6 +636,19 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
         const result = adapter.pickEntity!(pickRay);
         setHoveredEntity(result ? result.entity : null);
+
+        // Task 7: Surface properties
+        if (result && adapter instanceof BspAdapter) {
+            // Need to check if result includes face index
+            if (result.faceIndex !== undefined) {
+                 const props = (adapter as BspAdapter).getSurfaceProperties(result.faceIndex);
+                 setHoveredSurfaceProps(props);
+            } else {
+                 setHoveredSurfaceProps(null);
+            }
+        } else {
+             setHoveredSurfaceProps(null);
+        }
     };
 
     const handleClick = (e: MouseEvent) => {
@@ -866,6 +881,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        )}
        {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
           <FrameInfo controller={adapter.getDemoController()!} />
+       )}
+       {hoveredSurfaceProps && (
+           <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 50 }}>
+               <SurfaceFlags properties={hoveredSurfaceProps} />
+           </div>
        )}
        {showStats && (
           <PerformanceStats

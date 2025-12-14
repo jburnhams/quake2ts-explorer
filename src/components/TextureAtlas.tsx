@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TextureAtlas.css';
+import { AssetCrossRefService, AssetUsage } from '../services/assetCrossRefService';
+import { pakService } from '../services/pakService';
 
 export interface TextureAtlasProps {
   rgba: Uint8Array;
@@ -14,13 +16,20 @@ export interface TextureAtlasProps {
 export function TextureAtlas({ rgba, width, height, format, name, palette, mipmaps }: TextureAtlasProps) {
   const [zoom, setZoom] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
+  const [assetUsages, setAssetUsages] = useState<AssetUsage[]>([]);
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanComplete, setScanComplete] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const serviceRef = useRef<AssetCrossRefService | null>(null);
 
   useEffect(() => {
-    // Reset zoom when image changes
+    // Reset state when image changes
     setZoom(1);
     setSelectedColorIndex(null);
-  }, [rgba, width, height]);
+    setAssetUsages([]);
+    setScanComplete(false);
+    setIsScanning(false);
+  }, [rgba, width, height, name]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -132,6 +141,27 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
     }
   };
 
+  const handleScanUsage = async () => {
+    if (isScanning) return;
+
+    setIsScanning(true);
+    setScanComplete(false);
+
+    if (!serviceRef.current) {
+        serviceRef.current = new AssetCrossRefService(pakService.getVfs());
+    }
+
+    try {
+        const usages = await serviceRef.current.findTextureUsage(name);
+        setAssetUsages(usages);
+    } catch (e) {
+        console.error("Scan failed", e);
+    } finally {
+        setIsScanning(false);
+        setScanComplete(true);
+    }
+  };
+
   return (
     <div className="texture-atlas" data-testid="texture-atlas">
       <div className="texture-atlas-toolbar">
@@ -149,6 +179,12 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
         {mipmaps && mipmaps.length > 0 && (
           <button onClick={handleExportMipmaps} title="Export All Mipmaps">Export Mipmaps</button>
         )}
+
+        <div className="texture-atlas-separator" style={{ width: 1, height: 20, background: '#555', margin: '0 8px' }} />
+
+        <button onClick={handleScanUsage} disabled={isScanning}>
+            {isScanning ? 'Scanning...' : 'Find Usage'}
+        </button>
 
         <div style={{ flex: 1 }} />
         <span>{width} x {height}</span>
@@ -173,43 +209,61 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
           </div>
         </div>
 
-        {palette && (
-          <div className="texture-atlas-sidebar">
-            <div className="texture-atlas-palette">
-              <h3>Palette</h3>
-              <div className="palette-grid" data-testid="palette-grid">
-                {Array.from({ length: 256 }).map((_, i) => {
-                  const color = getPaletteColor(i);
-                  if (!color) return null;
-                  const isTransparent = i === 255; // Quake 2 transparency index
-                  return (
-                    <div
-                      key={i}
-                      className={`palette-swatch ${selectedColorIndex === i ? 'selected' : ''} ${isTransparent ? 'transparent' : ''}`}
-                      style={{ backgroundColor: isTransparent ? 'transparent' : `rgb(${color.r},${color.g},${color.b})` }}
-                      onClick={() => setSelectedColorIndex(i)}
-                      title={`Index ${i}: ${color.r}, ${color.g}, ${color.b}`}
-                      data-testid={`swatch-${i}`}
-                    />
-                  );
-                })}
-              </div>
-              {selectedColorIndex !== null && selectedColor && (
-                <div className="palette-info" data-testid="palette-info">
-                  <div
-                    className="color-preview"
-                    style={{ backgroundColor: `rgb(${selectedColor.r},${selectedColor.g},${selectedColor.b})` }}
-                  />
-                  <div>Index: {selectedColorIndex}</div>
-                  <div>R: {selectedColor.r}</div>
-                  <div>G: {selectedColor.g}</div>
-                  <div>B: {selectedColor.b}</div>
-                  <div>Hex: #{selectedColor.r.toString(16).padStart(2, '0')}{selectedColor.g.toString(16).padStart(2, '0')}{selectedColor.b.toString(16).padStart(2, '0')}</div>
+        <div className="texture-atlas-sidebar-container">
+            {palette && (
+              <div className="texture-atlas-sidebar">
+                <div className="texture-atlas-palette">
+                  <h3>Palette</h3>
+                  <div className="palette-grid" data-testid="palette-grid">
+                    {Array.from({ length: 256 }).map((_, i) => {
+                      const color = getPaletteColor(i);
+                      if (!color) return null;
+                      const isTransparent = i === 255; // Quake 2 transparency index
+                      return (
+                        <div
+                          key={i}
+                          className={`palette-swatch ${selectedColorIndex === i ? 'selected' : ''} ${isTransparent ? 'transparent' : ''}`}
+                          style={{ backgroundColor: isTransparent ? 'transparent' : `rgb(${color.r},${color.g},${color.b})` }}
+                          onClick={() => setSelectedColorIndex(i)}
+                          title={`Index ${i}: ${color.r}, ${color.g}, ${color.b}`}
+                          data-testid={`swatch-${i}`}
+                        />
+                      );
+                    })}
+                  </div>
+                  {selectedColorIndex !== null && selectedColor && (
+                    <div className="palette-info" data-testid="palette-info">
+                      <div
+                        className="color-preview"
+                        style={{ backgroundColor: `rgb(${selectedColor.r},${selectedColor.g},${selectedColor.b})` }}
+                      />
+                      <div>Index: {selectedColorIndex}</div>
+                      <div>R: {selectedColor.r}</div>
+                      <div>G: {selectedColor.g}</div>
+                      <div>B: {selectedColor.b}</div>
+                      <div>Hex: #{selectedColor.r.toString(16).padStart(2, '0')}{selectedColor.g.toString(16).padStart(2, '0')}{selectedColor.b.toString(16).padStart(2, '0')}</div>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
-          </div>
-        )}
+              </div>
+            )}
+
+            {(assetUsages.length > 0 || scanComplete) && (
+              <div className="texture-atlas-usage">
+                <h3>Usage References ({assetUsages.length})</h3>
+                <div className="usage-list" data-testid="usage-list">
+                    {assetUsages.length === 0 && scanComplete && <div className="usage-empty">No references found.</div>}
+                    {assetUsages.map((usage, i) => (
+                        <div key={i} className="usage-item">
+                            <span className={`usage-tag ${usage.type}`}>{usage.type.toUpperCase()}</span>
+                            <span className="usage-path" title={usage.path}>{usage.path}</span>
+                            {usage.details && <div className="usage-details">{usage.details}</div>}
+                        </div>
+                    ))}
+                </div>
+              </div>
+            )}
+        </div>
       </div>
 
       <div className="texture-atlas-info">

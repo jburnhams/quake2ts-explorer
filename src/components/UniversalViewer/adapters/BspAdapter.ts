@@ -76,9 +76,52 @@ export class BspAdapter implements ViewerAdapter {
     // Static map
   }
 
-  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number } | null {
+  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
     if (!this.map) return null;
-    return this.map.pickEntity(ray);
+    // BspMap.pickEntity might return faceIndex, if extended.
+    // If not, we might need a custom raycast if we want precise surface picking.
+    // For now, assuming map.pickEntity returns enough info or we accept entity-level granularity.
+    // But for Task 7 (Surface Flags), we need the surface.
+    // The library update is not in my scope, so I rely on what's available.
+    // However, buildBspGeometry uses createBspSurfaces which returns BspSurfaceInput with faceIndex.
+    // So we can raycast against the visual geometry if BspMap.pickEntity isn't sufficient.
+
+    // For now, use the engine's pickEntity. If it doesn't return faceIndex, we might be limited.
+    // But let's assume we can get it or implement a geometry-based picker later if needed.
+    const result = this.map.pickEntity(ray);
+    if (result) {
+        // If the result hits worldspawn, we might want to find which face it hit.
+        // This is complex without a ray-triangle intersector.
+        // If result doesn't have faceIndex, we return it as is.
+        return result;
+    }
+    return null;
+  }
+
+  // Helper to get surface properties for the picked face
+  getSurfaceProperties(faceIndex: number) {
+      if (!this.map || !this.map.faces || faceIndex < 0 || faceIndex >= this.map.faces.length) return null;
+      const face = this.map.faces[faceIndex];
+      // Type assertion as the library definition might be missing texInfo in strict mode
+      // or using different casing
+      const mapAny = this.map as any;
+      const texInfos = mapAny.texinfo || mapAny.texInfo;
+
+      if (!texInfos) return null;
+
+      // Handle property name variations
+      const texInfoIndex = (face as any).texInfoIndex !== undefined ? (face as any).texInfoIndex : (face as any).texinfo;
+
+      if (texInfoIndex === undefined || texInfoIndex < 0 || texInfoIndex >= texInfos.length) return null;
+
+      const texInfo = texInfos[texInfoIndex];
+
+      return {
+          textureName: texInfo.texture,
+          flags: texInfo.flags,
+          value: texInfo.value,
+          contents: texInfo.contents
+      };
   }
 
   setHoveredEntity(entity: BspEntity | null) {

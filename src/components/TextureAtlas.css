@@ -95,18 +95,24 @@
   min-width: 80px;
 }
 
+.texture-atlas-sidebar-container {
+    width: 280px;
+    border-left: 1px solid #333;
+    background: #222;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .texture-atlas-sidebar {
-  width: 250px;
-  border-left: 1px solid #333;
-  background: #222;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  border-bottom: 1px solid #333;
 }
 
 .texture-atlas-palette {
   padding: 10px;
-  overflow-y: auto;
 }
 
 .palette-grid {
@@ -156,4 +162,70 @@
   height: 30px;
   border: 1px solid #555;
   margin-bottom: 5px;
+}
+
+.texture-atlas-usage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.texture-atlas-usage h3 {
+    padding: 10px;
+    margin: 0;
+    background: #2a2a2a;
+    font-size: 14px;
+    border-bottom: 1px solid #333;
+}
+
+.usage-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.usage-item {
+    margin-bottom: 8px;
+    padding: 4px;
+    background: #333;
+    border-radius: 4px;
+}
+
+.usage-tag {
+    display: inline-block;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 10px;
+    font-weight: bold;
+    margin-right: 6px;
+}
+
+.usage-tag.model {
+    background: #4a9;
+    color: #000;
+}
+
+.usage-tag.map {
+    background: #94a;
+    color: #000;
+}
+
+.usage-path {
+    font-size: 12px;
+    word-break: break-all;
+}
+
+.usage-details {
+    margin-top: 2px;
+    font-size: 10px;
+    color: #aaa;
+    margin-left: 42px; /* align with text after tag */
+}
+
+.usage-empty {
+    padding: 20px;
+    text-align: center;
+    color: #777;
+    font-style: italic;
 }
