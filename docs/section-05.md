@@ -24,7 +24,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 - Basic asset preview in `src/components/PreviewPanel.tsx`:
   - Images (PCX, WAL, TGA) via `ImagePreview.tsx`
   - Models (MD2, MD3) via `UniversalViewer`
-  - Audio (WAV) via `AudioPreview.tsx`
+  - Audio (WAV) via `SoundAnalyzer.tsx` (replaces basic AudioPreview)
   - BSP maps via `BspAdapter`
 - File metadata display in `src/components/MetadataPanel.tsx`
 
@@ -370,25 +370,25 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **6.1**: Create `src/components/SoundAnalyzer.tsx`
+- [x] **6.1**: Create `src/components/SoundAnalyzer.tsx`
   - Replace/extend `AudioPreview` for selected sounds
   - Top: Waveform display
   - Middle: Playback controls
   - Bottom: Frequency spectrum
 
-- [ ] **6.2**: Implement waveform rendering
+- [x] **6.2**: Implement waveform rendering
   - Use Web Audio API `getChannelData()` to get samples
   - Render waveform on canvas
   - Zoom and scroll controls
   - Current playback position indicator
 
-- [ ] **6.3**: Add frequency spectrum analyzer
+- [x] **6.3**: Add frequency spectrum analyzer
   - Use Web Audio API `AnalyserNode`
   - Real-time FFT during playback
   - Display as bar graph or spectrogram
   - Identify dominant frequencies
 
-- [ ] **6.4**: Display audio metadata
+- [x] **6.4**: Display audio metadata
   - File format (WAV, OGG)
   - Sample rate (Hz)
   - Bit depth (8-bit, 16-bit)
@@ -415,13 +415,13 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 - Modify: `src/components/PreviewPanel.tsx` (use SoundAnalyzer)
 
 **Test Requirements**:
-- Unit: `tests/unit/SoundAnalyzer.test.tsx`
+- Unit: `tests/unit/components/SoundAnalyzer.test.tsx`
   - Render with mock audio buffer
   - Test playback controls
-- Unit: `tests/unit/WaveformCanvas.test.tsx`
+- Unit: `tests/unit/components/WaveformCanvas.test.tsx`
   - Test waveform rendering
   - Mock canvas context
-- Integration: `tests/integration/soundAnalyzer.integration.test.tsx`
+- Integration: `tests/integration/SoundAnalyzer.integration.test.tsx`
   - Load real sound, verify metadata
   - Test FFT spectrum
 

@@ -5,6 +5,7 @@ import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 import { ModelInspector } from './ModelInspector';
 import { TextureAtlas } from './TextureAtlas';
 import { BspAnalyzer } from './BspAnalyzer';
+import { SoundAnalyzer } from './SoundAnalyzer';
 
 export interface PreviewPanelProps {
   parsedFile: ParsedFile | null;
@@ -13,81 +14,6 @@ export interface PreviewPanelProps {
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
   onEntitySelected?: (entity: any) => void;
-}
-
-interface AudioPreviewProps {
-  audio: {
-    channels: number;
-    sampleRate: number;
-    bitsPerSample: number;
-    samples: Int16Array | Float32Array;
-  };
-}
-
-function AudioPreview({ audio }: AudioPreviewProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
-  const [sourceNode, setSourceNode] = useState<AudioBufferSourceNode | null>(null);
-
-  const handlePlay = () => {
-    if (isPlaying && sourceNode) {
-      sourceNode.stop();
-      setSourceNode(null);
-      setIsPlaying(false);
-      return;
-    }
-
-    const ctx = audioContext || new AudioContext();
-    if (!audioContext) setAudioContext(ctx);
-
-    const buffer = ctx.createBuffer(
-      audio.channels,
-      audio.samples.length / audio.channels,
-      audio.sampleRate
-    );
-
-    // Convert samples to float32 (-1 to 1 range)
-    for (let channel = 0; channel < audio.channels; channel++) {
-      const channelData = buffer.getChannelData(channel);
-      for (let i = 0; i < channelData.length; i++) {
-        const sampleIndex = i * audio.channels + channel;
-        if (audio.samples instanceof Int16Array) {
-          channelData[i] = audio.samples[sampleIndex] / 32768;
-        } else {
-          channelData[i] = audio.samples[sampleIndex];
-        }
-      }
-    }
-
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(ctx.destination);
-    source.onended = () => {
-      setIsPlaying(false);
-      setSourceNode(null);
-    };
-    source.start();
-    setSourceNode(source);
-    setIsPlaying(true);
-  };
-
-  const duration = audio.samples.length / audio.channels / audio.sampleRate;
-
-  return (
-    <div className="preview-audio" data-testid="audio-preview">
-      <div className="preview-audio-icon">{'\uD83D\uDD0A'}</div>
-      <button
-        className="preview-audio-button"
-        onClick={handlePlay}
-        data-testid="audio-play-button"
-      >
-        {isPlaying ? 'Stop' : 'Play'}
-      </button>
-      <div className="preview-audio-info">
-        {audio.sampleRate} Hz, {audio.channels} channel{audio.channels > 1 ? 's' : ''}, {duration.toFixed(2)}s
-      </div>
-    </div>
-  );
 }
 
 interface TextPreviewProps {
@@ -230,7 +156,12 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
           />
         );
       case 'wav':
-        return <AudioPreview audio={parsedFile.audio} />;
+        return (
+          <SoundAnalyzer
+            audio={parsedFile.audio}
+            fileName={filePath.split('/').pop() || 'unknown'}
+          />
+        );
       case 'txt':
         return <TextPreview content={parsedFile.content} />;
       case 'unknown':
