@@ -3,6 +3,7 @@ import { vec3 } from 'gl-matrix';
 import Colorful from '@uiw/react-color-colorful';
 import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
 import { OrbitState, FreeCameraState } from '../../utils/cameraUtils';
+import { DebugMode } from '../../types/debugMode';
 import '../../styles/md2Viewer.css';
 
 interface ViewerControlsProps {
@@ -22,6 +23,8 @@ interface ViewerControlsProps {
   setRenderMode: (mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random') => void;
   renderColor: [number, number, number];
   setRenderColor: (color: [number, number, number]) => void;
+  debugMode: DebugMode;
+  setDebugMode: (mode: DebugMode) => void;
 }
 
 export function ViewerControls({
@@ -40,7 +43,9 @@ export function ViewerControls({
   renderMode,
   setRenderMode,
   renderColor,
-  setRenderColor
+  setRenderColor,
+  debugMode,
+  setDebugMode
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -171,6 +176,22 @@ export function ViewerControls({
          <button onClick={() => setRenderMode('solid')} disabled={renderMode === 'solid'}>Solid</button>
          <button onClick={() => setRenderMode('solid-faceted')} disabled={renderMode === 'solid-faceted'}>Faceted</button>
          <button onClick={() => setRenderMode('random')} disabled={renderMode === 'random'}>Random</button>
+       </div>
+       <div className="debug-mode-controls" style={{ marginBottom: '10px' }}>
+         <label htmlFor="debug-mode-select" style={{ display: 'block', marginBottom: '5px', fontSize: '12px' }}>Debug Mode:</label>
+         <select
+           id="debug-mode-select"
+           value={debugMode}
+           onChange={(e) => setDebugMode(e.target.value as DebugMode)}
+           style={{ width: '100%', padding: '5px', fontSize: '12px' }}
+         >
+           <option value={DebugMode.None}>None</option>
+           <option value={DebugMode.BoundingBoxes}>Bounding Boxes</option>
+           <option value={DebugMode.Normals}>Normals</option>
+           <option value={DebugMode.PVSClusters}>PVS Clusters</option>
+           <option value={DebugMode.CollisionHulls}>Collision Hulls</option>
+           <option value={DebugMode.Lightmaps}>Lightmaps</option>
+         </select>
        </div>
        {renderMode !== 'textured' && (
         <div className="color-controls" style={{ marginBottom: '10px' }}>

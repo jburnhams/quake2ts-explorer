@@ -3,11 +3,11 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
 import { OrbitState } from '../../../../src/utils/cameraUtils';
 import { vec3 } from 'gl-matrix';
+import { DebugMode } from '../../../../src/types/debugMode';
 import '@testing-library/jest-dom';
 
-// Mock the external dependencies
 jest.mock('@uiw/react-color-colorful', () => {
-  const Colorful = ({ color, onChange }: { color: any, onChange: (color: any) => void }) => (
+  const Colorful = ({ onChange }: { onChange: (color: any) => void }) => (
     <div data-testid="colorful-picker" onClick={() => onChange({ hsva: { h: 240, s: 100, v: 100, a: 1 } })}>
       Mock Colorful
     </div>
@@ -24,6 +24,7 @@ describe('ViewerControls', () => {
   const mockOnPlayPause = jest.fn();
   const mockSetRenderColor = jest.fn();
   const mockSetRenderMode = jest.fn();
+  const mockSetDebugMode = jest.fn();
 
   const defaultOrbit: OrbitState = {
     radius: 100,
@@ -54,6 +55,8 @@ describe('ViewerControls', () => {
     setRenderMode: mockSetRenderMode,
     renderColor: [1, 1, 1] as [number, number, number],
     setRenderColor: mockSetRenderColor,
+    debugMode: DebugMode.None,
+    setDebugMode: mockSetDebugMode,
   };
 
   beforeEach(() => {
@@ -297,6 +300,33 @@ describe('ViewerControls', () => {
       const colorPicker = getByTestId('colorful-picker');
       fireEvent.click(colorPicker);
       expect(mockSetRenderColor).toHaveBeenCalledWith([0, 0, 1]);
+    });
+  });
+
+  describe('Debug Mode Controls', () => {
+    it('renders debug mode selector', () => {
+      render(<ViewerControls {...defaultProps} />);
+      expect(screen.getByLabelText('Debug Mode:')).toBeInTheDocument();
+      expect(screen.getByRole('combobox', { name: 'Debug Mode:' })).toBeInTheDocument();
+    });
+
+    it('calls setDebugMode when changed', () => {
+      render(<ViewerControls {...defaultProps} />);
+      const select = screen.getByRole('combobox', { name: 'Debug Mode:' });
+      fireEvent.change(select, { target: { value: DebugMode.BoundingBoxes } });
+      expect(mockSetDebugMode).toHaveBeenCalledWith(DebugMode.BoundingBoxes);
+    });
+
+    it('shows all debug options', () => {
+      render(<ViewerControls {...defaultProps} />);
+      const options = screen.getAllByRole('option');
+      const values = options.map(opt => (opt as HTMLOptionElement).value);
+      expect(values).toContain(DebugMode.None);
+      expect(values).toContain(DebugMode.BoundingBoxes);
+      expect(values).toContain(DebugMode.Normals);
+      expect(values).toContain(DebugMode.PVSClusters);
+      expect(values).toContain(DebugMode.CollisionHulls);
+      expect(values).toContain(DebugMode.Lightmaps);
     });
   });
 });

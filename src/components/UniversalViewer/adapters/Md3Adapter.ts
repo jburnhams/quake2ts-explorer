@@ -1,8 +1,10 @@
 import { Camera, Md3Model, Md3ModelMesh, Md3Pipeline, parsePcx, pcxToRgba, Texture2D, Md3Surface, Md3SurfaceMesh } from 'quake2ts/engine';
 
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter, AnimationInfo, FrameInfo } from './types';
-import { mat4 } from 'gl-matrix';
+import { RenderOptions, ViewerAdapter } from './types';
+import { mat4, vec3, vec4 } from 'gl-matrix';
+import { DebugMode } from '@/src/types/debugMode';
+import { DebugRenderer } from './DebugRenderer';
 
 export class Md3Adapter implements ViewerAdapter {
   private pipeline: Md3Pipeline | null = null;
@@ -10,6 +12,8 @@ export class Md3Adapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private skinTextures: Map<string, Texture2D> = new Map();
   private model: Md3Model | null = null;
+  private debugMode: DebugMode = DebugMode.None;
+  private debugRenderer: DebugRenderer | null = null;
 
   private currentFrame = 0;
   private isPlayingState = true;
@@ -20,6 +24,7 @@ export class Md3Adapter implements ViewerAdapter {
     if (file.type !== 'md3') throw new Error('Invalid file type for Md3Adapter');
 
     this.pipeline = new Md3Pipeline(gl);
+    this.debugRenderer = new DebugRenderer(gl);
     this.model = file.model;
     this.totalFrames = this.model.header.numFrames;
 
@@ -83,6 +88,10 @@ export class Md3Adapter implements ViewerAdapter {
     }
   }
 
+  setDebugMode(mode: DebugMode) {
+      this.debugMode = mode;
+  }
+
   render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
     if (!this.pipeline || this.surfaces.size === 0) return;
 
@@ -110,6 +119,17 @@ export class Md3Adapter implements ViewerAdapter {
           generateRandomColor: this.renderOptions.generateRandomColor,
         }
       });
+    }
+
+    // Debug Rendering
+    if (this.debugMode !== DebugMode.None && this.debugRenderer) {
+        this.debugRenderer.clear();
+
+        if (this.debugMode === DebugMode.BoundingBoxes) {
+            this.debugRenderer.addBox(vec3.fromValues(-20, -20, 0), vec3.fromValues(20, 20, 60), vec4.fromValues(0, 1, 0, 1));
+        }
+
+        this.debugRenderer.render(mvp);
     }
   }
 

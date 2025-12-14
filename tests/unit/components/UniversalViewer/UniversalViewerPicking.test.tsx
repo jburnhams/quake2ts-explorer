@@ -7,6 +7,19 @@ import React from 'react';
 // Mock gl-matrix (use actual for math logic in picking)
 jest.mock('gl-matrix', () => jest.requireActual('gl-matrix'));
 
+// Mock DebugRenderer
+jest.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+    return {
+        DebugRenderer: jest.fn().mockImplementation(() => ({
+            clear: jest.fn(),
+            addBox: jest.fn(),
+            addLine: jest.fn(),
+            render: jest.fn(),
+            init: jest.fn()
+        }))
+    };
+});
+
 // Mock quake2ts/engine
 jest.mock('quake2ts/engine', () => {
     return {

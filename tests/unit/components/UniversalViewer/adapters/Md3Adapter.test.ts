@@ -4,6 +4,19 @@ import { PakService, ParsedFile } from '../../../../../src/services/pakService';
 import { Md3SurfaceMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 
+// Mock DebugRenderer
+jest.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+    return {
+        DebugRenderer: jest.fn().mockImplementation(() => ({
+            clear: jest.fn(),
+            addBox: jest.fn(),
+            addLine: jest.fn(),
+            render: jest.fn(),
+            init: jest.fn()
+        }))
+    };
+});
+
 // Mock dependencies
 jest.mock('quake2ts/engine', () => {
   return {
