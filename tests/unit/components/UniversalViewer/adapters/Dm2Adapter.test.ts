@@ -15,6 +15,17 @@ jest.mock('quake2ts/engine', () => {
       stop: jest.fn(),
       update: jest.fn(),
       getState: jest.fn(),
+      getDuration: jest.fn().mockReturnValue(100),
+      getCurrentTime: jest.fn().mockReturnValue(10),
+      getCurrentFrame: jest.fn().mockReturnValue(100),
+      getFrameCount: jest.fn().mockReturnValue(1000),
+      getFrameData: jest.fn().mockReturnValue({
+          playerState: {
+              origin: [10, 20, 30],
+              viewangles: [0, 90, 0]
+          }
+      }),
+      seekToTime: jest.fn(),
     })),
   };
 });
@@ -131,9 +142,14 @@ describe('Dm2Adapter', () => {
     await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
 
     const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
-    controllerInstance.getState.mockReturnValue({
-        origin: [10, 20, 30],
-        viewangles: [0, 90, 0]
+
+    // Setup initial mocks (already done in jest.mock but explicit here)
+    controllerInstance.getCurrentFrame.mockReturnValue(100);
+    controllerInstance.getFrameData.mockReturnValue({
+        playerState: {
+             origin: [10, 20, 30],
+             viewangles: [0, 90, 0]
+        }
     });
 
     adapter.update(16);
@@ -200,5 +216,39 @@ describe('Dm2Adapter', () => {
   it('returns true for hasCameraControl and useZUp', () => {
       expect(adapter.hasCameraControl()).toBe(true);
       expect(adapter.useZUp()).toBe(true);
+  });
+
+  it('implements smooth stepping logic', async () => {
+      const file: ParsedFile = {
+        type: 'dm2',
+        data: new Uint8Array(100)
+      } as any;
+      mockPakService.hasFile.mockReturnValue(false);
+      await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+      const controller = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+
+      // Step forward
+      controller.getCurrentTime.mockReturnValue(10);
+      controller.getDuration.mockReturnValue(100);
+      controller.getFrameCount.mockReturnValue(1000); // 10s / 1000f = 0.01s per frame? No 100s / 1000f = 0.1s
+
+      adapter.stepForward(1);
+
+      expect(controller.pause).toHaveBeenCalled();
+
+      // Update with time delta
+      // Total step time is 0.2s.
+      // Target time should be 10 + 0.1 = 10.1
+
+      adapter.update(0.1); // Halfway
+      // Should have called seekToTime with something between 10 and 10.1
+      expect(controller.seekToTime).toHaveBeenCalled();
+      const seekCall = controller.seekToTime.mock.calls[0][0];
+      expect(seekCall).toBeGreaterThan(10);
+      expect(seekCall).toBeLessThan(10.1);
+
+      // Finish step
+      adapter.update(0.15); // Overshoot duration
+      expect(controller.seekToTime).toHaveBeenLastCalledWith(10.1);
   });
 });

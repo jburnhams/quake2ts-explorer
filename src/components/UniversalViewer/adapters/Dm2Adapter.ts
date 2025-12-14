@@ -11,6 +11,13 @@ export class Dm2Adapter implements ViewerAdapter {
   private cameraPosition = vec3.create();
   private cameraAngles = vec3.create();
 
+  // Smooth stepping
+  private isStepping = false;
+  private stepTargetTime = 0;
+  private stepStartFrameTime = 0; // The time at start of step
+  private stepProgress = 0;
+  private stepDuration = 0.2; // 200ms animation for step
+
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type !== 'dm2') throw new Error('Invalid file type for Dm2Adapter');
 
@@ -19,7 +26,6 @@ export class Dm2Adapter implements ViewerAdapter {
     this.controller.loadDemo(buffer);
 
     // Attempt to load map
-    // Heuristic: Use same name as demo file
     let mapPath = 'maps/demo1.bsp';
     const parts = filePath.split('/');
     const filename = parts[parts.length - 1];
@@ -51,15 +57,34 @@ export class Dm2Adapter implements ViewerAdapter {
   }
 
   update(deltaTime: number): void {
-    if (this.controller && this.isPlayingState) {
-        this.controller.update(deltaTime);
-        const state = this.controller.getState() as any;
-        if (state) {
-            if (state.origin) vec3.copy(this.cameraPosition, state.origin);
-            if (state.viewangles) vec3.copy(this.cameraAngles, state.viewangles);
-            else if (state.angles) vec3.copy(this.cameraAngles, state.angles);
+    if (!this.controller) return;
+
+    if (this.isStepping) {
+        this.stepProgress += deltaTime;
+        if (this.stepProgress >= this.stepDuration) {
+            this.stepProgress = this.stepDuration;
+            this.isStepping = false;
+            this.controller.seekToTime(this.stepTargetTime);
+        } else {
+            const t = this.stepProgress / this.stepDuration;
+            // Ease out cubic
+            const ease = 1 - Math.pow(1 - t, 3);
+            const currentTime = this.stepStartFrameTime + (this.stepTargetTime - this.stepStartFrameTime) * ease;
+            this.controller.seekToTime(currentTime);
         }
+    } else if (this.isPlayingState) {
+        this.controller.update(deltaTime);
     }
+
+    // Always update camera state from controller
+    const frameIdx = this.controller.getCurrentFrame();
+    const frameData = this.controller.getFrameData(frameIdx);
+
+    if (frameData && frameData.playerState) {
+         if (frameData.playerState.origin) vec3.copy(this.cameraPosition, frameData.playerState.origin as any);
+         if (frameData.playerState.viewangles) vec3.copy(this.cameraAngles, frameData.playerState.viewangles as any);
+    }
+
     if (this.bspAdapter) {
         this.bspAdapter.update(deltaTime);
     }
@@ -76,8 +101,18 @@ export class Dm2Adapter implements ViewerAdapter {
       this.controller?.stop();
   }
 
-  play() { this.controller?.play(); this.isPlayingState = true; }
-  pause() { this.controller?.pause(); this.isPlayingState = false; }
+  play() {
+      this.isStepping = false;
+      this.controller?.play();
+      this.isPlayingState = true;
+  }
+
+  pause() {
+      this.isStepping = false;
+      this.controller?.pause();
+      this.isPlayingState = false;
+  }
+
   isPlaying() { return this.isPlayingState; }
 
   getDuration() { return this.controller?.getDuration() || 0; }
@@ -90,4 +125,36 @@ export class Dm2Adapter implements ViewerAdapter {
   }
 
   useZUp() { return true; }
+
+  stepForward(frames: number = 1) {
+      if (!this.controller) return;
+
+      this.pause();
+
+      const current = this.controller.getCurrentTime();
+      const totalFrames = this.controller.getFrameCount();
+      const duration = this.controller.getDuration();
+      const avgFrameTime = totalFrames > 0 ? duration / totalFrames : 0.1;
+
+      this.stepStartFrameTime = current;
+      this.stepTargetTime = Math.min(duration, current + (frames * avgFrameTime));
+      this.stepProgress = 0;
+      this.isStepping = true;
+  }
+
+  stepBackward(frames: number = 1) {
+      if (!this.controller) return;
+
+      this.pause();
+
+      const current = this.controller.getCurrentTime();
+      const totalFrames = this.controller.getFrameCount();
+      const duration = this.controller.getDuration();
+      const avgFrameTime = totalFrames > 0 ? duration / totalFrames : 0.1;
+
+      this.stepStartFrameTime = current;
+      this.stepTargetTime = Math.max(0, current - (frames * avgFrameTime));
+      this.stepProgress = 0;
+      this.isStepping = true;
+  }
 }

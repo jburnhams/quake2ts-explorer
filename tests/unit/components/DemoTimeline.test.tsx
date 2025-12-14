@@ -1,99 +1,156 @@
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
-import '@testing-library/jest-dom';
-import { DemoTimeline } from '../../../src/components/DemoTimeline';
+import { DemoTimeline } from '@/src/components/DemoTimeline';
 import { DemoPlaybackController, DemoEventType } from 'quake2ts/engine';
 
-// Mock the controller
-const mockController = {
-  getDuration: jest.fn(),
-  getFrameCount: jest.fn(),
-  getCurrentTime: jest.fn(),
-  getCurrentFrame: jest.fn(),
-  seekToTime: jest.fn(),
-  getDemoEvents: jest.fn(),
-} as unknown as DemoPlaybackController;
-
 describe('DemoTimeline', () => {
+  let mockController: jest.Mocked<DemoPlaybackController>;
+  let rafCallback: FrameRequestCallback;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    (mockController.getDuration as jest.Mock).mockReturnValue(120); // 2 minutes
-    (mockController.getFrameCount as jest.Mock).mockReturnValue(1000);
-    (mockController.getCurrentTime as jest.Mock).mockReturnValue(0);
-    (mockController.getCurrentFrame as jest.Mock).mockReturnValue(0);
-    (mockController.getDemoEvents as jest.Mock).mockReturnValue([]);
+    // Mock requestAnimationFrame
+    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+      rafCallback = cb;
+      return 1;
+    });
+    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+
+    mockController = {
+      play: jest.fn(),
+      pause: jest.fn(),
+      stop: jest.fn(),
+      stepForward: jest.fn(),
+      stepBackward: jest.fn(),
+      seekToFrame: jest.fn(),
+      seekToTime: jest.fn(),
+      setSpeed: jest.fn(),
+      getSpeed: jest.fn().mockReturnValue(1),
+      getCurrentFrame: jest.fn().mockReturnValue(0),
+      getFrameCount: jest.fn().mockReturnValue(100),
+      getCurrentTime: jest.fn().mockReturnValue(0),
+      getDuration: jest.fn().mockReturnValue(10),
+      getState: jest.fn(),
+      isPlaying: jest.fn().mockReturnValue(false),
+      isPaused: jest.fn().mockReturnValue(true),
+      getDemoEvents: jest.fn().mockReturnValue([]),
+    } as unknown as jest.Mocked<DemoPlaybackController>;
   });
 
   afterEach(() => {
-      jest.useRealTimers();
-      jest.restoreAllMocks();
+    jest.clearAllMocks();
   });
 
-  it('renders timeline with duration and current time', () => {
+  it('renders correctly with initial state', () => {
     render(<DemoTimeline controller={mockController} />);
 
-    expect(screen.getByText('0:00.00')).toBeInTheDocument();
-    expect(screen.getByText('2:00.00')).toBeInTheDocument();
+    expect(screen.getByText('Frame: 0 / 100')).toBeInTheDocument();
+    expect(screen.getByText('0:00.00')).toBeInTheDocument(); // Current time
+    expect(screen.getByText('0:10.00')).toBeInTheDocument(); // Duration
+    expect(screen.getByText('100%')).toBeInTheDocument(); // Zoom level
   });
 
-  it('updates current time on frame update', async () => {
-    jest.useFakeTimers();
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-        return setTimeout(() => cb(performance.now()), 16) as unknown as number;
-    });
-
+  it('updates time and frame when animation frame triggers', () => {
     render(<DemoTimeline controller={mockController} />);
 
-    // Change mock return value
-    (mockController.getCurrentTime as jest.Mock).mockReturnValue(10);
+    // Update mock return values
+    mockController.getCurrentTime.mockReturnValue(5);
+    mockController.getCurrentFrame.mockReturnValue(50);
 
-    // Advance time to trigger RAF
-    await act(async () => {
-        jest.advanceTimersByTime(50);
+    // Trigger update loop
+    act(() => {
+      rafCallback(performance.now());
     });
 
-    expect(screen.getByText('0:10.00')).toBeInTheDocument();
+    expect(screen.getByText('Frame: 50 / 100')).toBeInTheDocument();
+    expect(screen.getByText('0:05.00')).toBeInTheDocument();
   });
 
-  it('calls seekToTime when clicked', () => {
-    // No fake timers here
-    const { container } = render(<DemoTimeline controller={mockController} />);
-    const track = container.querySelector('.timeline-track-container');
+  it('calls seekToTime when clicking on track', () => {
+    render(<DemoTimeline controller={mockController} />);
+
+    const trackContainer = screen.getByTitle(''); // Title is empty initially
 
     // Mock getBoundingClientRect
-    jest.spyOn(track!, 'getBoundingClientRect').mockReturnValue({
+    jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       width: 100,
       top: 0,
-      height: 10,
+      height: 20,
+      bottom: 20,
       right: 100,
-      bottom: 10,
       x: 0,
       y: 0,
       toJSON: () => {}
     });
 
-    act(() => {
-        fireEvent.mouseDown(track!, { clientX: 50 }); // 50%
-    });
+    fireEvent.mouseDown(trackContainer, { button: 0, clientX: 50 });
 
-    expect(mockController.seekToTime).toHaveBeenCalledWith(60); // 50% of 120s
+    // Should seek to 50% of 10s = 5s
+    expect(mockController.seekToTime).toHaveBeenCalledWith(5);
   });
 
-  it('renders event markers', () => {
-    const events = [
-      { type: DemoEventType.Death, time: 30, frame: 250, description: 'Player died' },
-      { type: DemoEventType.WeaponFire, time: 60, frame: 500, description: 'Shot fired' }
-    ];
-    (mockController.getDemoEvents as jest.Mock).mockReturnValue(events);
+  it('shows event markers', () => {
+    mockController.getDemoEvents.mockReturnValue([
+      { type: DemoEventType.Death, time: 2.5, description: 'Player died' },
+      { type: DemoEventType.Pickup, time: 7.5, description: 'Got item' }
+    ]);
 
-    const { container } = render(<DemoTimeline controller={mockController} />);
+    render(<DemoTimeline controller={mockController} />);
 
-    const markers = container.querySelectorAll('.timeline-marker');
-    expect(markers.length).toBe(2);
+    const markers = document.querySelectorAll('.timeline-marker');
+    expect(markers).toHaveLength(2);
 
-    // Check styles
-    expect(markers[0]).toHaveStyle('left: 25%'); // 30/120
-    expect(markers[1]).toHaveStyle('left: 50%'); // 60/120
+    // Check titles/tooltips
+    expect(markers[0]).toHaveAttribute('title', 'Player died (0:02.50)');
+    expect(markers[1]).toHaveAttribute('title', 'Got item (0:07.50)');
+  });
+
+  it('handles zoom interaction', () => {
+    render(<DemoTimeline controller={mockController} />);
+
+    // Initial zoom: 100%
+    expect(screen.getByText('100%')).toBeInTheDocument();
+
+    // Click zoom in button
+    const zoomInBtn = screen.getByText('+');
+    fireEvent.click(zoomInBtn);
+
+    expect(screen.getByText('150%')).toBeInTheDocument();
+
+    // Click zoom out button
+    const zoomOutBtn = screen.getByText('-');
+    fireEvent.click(zoomOutBtn);
+
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
+
+  it('adjusts view when zoomed and scrubbing', () => {
+      render(<DemoTimeline controller={mockController} />);
+
+      const zoomInBtn = screen.getByText('+');
+      // Zoom to 200% (two clicks of +0.5 from 1.0)
+      fireEvent.click(zoomInBtn);
+      fireEvent.click(zoomInBtn);
+
+      expect(screen.getByText('200%')).toBeInTheDocument();
+      // Visible duration is now 5s (10s / 2)
+
+      const trackContainer = screen.getByTitle('');
+       jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        width: 100,
+        top: 0,
+        height: 20,
+        bottom: 20,
+        right: 100,
+        x: 0,
+        y: 0,
+        toJSON: () => {}
+      });
+
+      // Click at 50% (middle of view)
+      // View is 0-5s. Middle is 2.5s.
+      fireEvent.mouseDown(trackContainer, { button: 0, clientX: 50 });
+      expect(mockController.seekToTime).toHaveBeenCalledWith(2.5);
   });
 });
