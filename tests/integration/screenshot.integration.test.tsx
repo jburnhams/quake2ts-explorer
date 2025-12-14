@@ -101,6 +101,21 @@ describe('Screenshot Integration', () => {
         fireEvent.click(screenshotBtn);
     });
 
+    // Now that the modal is open, we need to click the capture button in the modal
+    // However, since we are mocking ViewerControls, the modal opening logic in UniversalViewer might not be triggered
+    // if ViewerControls just calls onScreenshot prop directly.
+    // In UniversalViewer, onScreenshot sets showScreenshotSettings(true).
+    // The ScreenshotSettings component is rendered by UniversalViewer, NOT ViewerControls.
+    // So we need to interact with ScreenshotSettings.
+
+    // ScreenshotSettings is rendered by UniversalViewer when showScreenshotSettings is true.
+    // We need to verify that ScreenshotSettings appears.
+
+    const captureBtn = await screen.findByText('Capture');
+    await act(async () => {
+        fireEvent.click(captureBtn);
+    });
+
     await waitFor(() => {
         expect(screenshotService.captureScreenshot).toHaveBeenCalled();
         expect(screenshotService.generateScreenshotFilename).toHaveBeenCalled();
@@ -125,6 +140,11 @@ describe('Screenshot Integration', () => {
 
     await act(async () => {
         fireEvent.click(screenshotBtn);
+    });
+
+    const captureBtn = await screen.findByText('Capture');
+    await act(async () => {
+        fireEvent.click(captureBtn);
     });
 
     await waitFor(() => {

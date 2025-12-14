@@ -209,10 +209,10 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Generate filename: `quake2ts_screenshot_YYYY-MM-DD_HH-MM-SS.png`
 
 - [ ] **3.5**: Add screenshot settings
-  - Resolution multiplier (1x, 2x, 4x for high-res captures)
-  - Format selection (PNG/JPEG)
-  - JPEG quality slider
-  - Include HUD toggle (capture with or without UI overlays)
+  - [x] Format selection (PNG/JPEG)
+  - [x] JPEG quality slider
+  - [ ] Resolution multiplier (1x, 2x, 4x for high-res captures)
+  - [ ] Include HUD toggle (capture with or without UI overlays)
 
 - [ ] **3.6**: Implement burst mode (optional)
   - Capture multiple screenshots rapidly

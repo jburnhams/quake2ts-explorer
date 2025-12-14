@@ -88,7 +88,7 @@ describe('UniversalViewer Screenshot Integration', () => {
 
     fireEvent.keyDown(window, { code: 'F12' });
 
-    expect(screenshotService.captureScreenshot).toHaveBeenCalled();
+    expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png' });
   });
 
   it('should trigger screenshot on PrintScreen key press', async () => {
@@ -103,7 +103,7 @@ describe('UniversalViewer Screenshot Integration', () => {
 
     fireEvent.keyDown(window, { code: 'PrintScreen' });
 
-    expect(screenshotService.captureScreenshot).toHaveBeenCalled();
+    expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png' });
   });
 
   it('should show flash effect during screenshot', async () => {
@@ -134,5 +134,32 @@ describe('UniversalViewer Screenshot Integration', () => {
 
     // Flash should be gone
     expect(screen.queryByTestId('screenshot-flash')).not.toBeInTheDocument();
+  });
+
+  it('should open settings when screenshot button is clicked', async () => {
+    await act(async () => {
+        render(
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        );
+      });
+
+      // Find and click the screenshot button
+      const screenshotButton = screen.getByTitle('Take Screenshot');
+      fireEvent.click(screenshotButton);
+
+      // Settings modal should appear
+      expect(screen.getByText('Screenshot Settings')).toBeInTheDocument();
+
+      // Click capture in settings
+      const captureButton = screen.getByText('Capture');
+      await act(async () => {
+        fireEvent.click(captureButton);
+      });
+
+      // Should capture with default settings
+      expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95 });
   });
 });
