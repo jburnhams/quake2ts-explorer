@@ -4,7 +4,7 @@
   left: 0;
   width: 100%;
   height: 48px;
-  background: rgba(20, 20, 20, 0.9);
+  background: rgba(20, 20, 20, 0.95);
   display: flex;
   flex-direction: column;
   color: #eee;
@@ -21,6 +21,7 @@
   margin: 0 10px;
   display: flex;
   align-items: center;
+  overflow: hidden; /* Important for zooming to clip content */
 }
 
 .timeline-track {
@@ -29,15 +30,14 @@
   background: #333;
   border-radius: 3px;
   position: relative;
-  /* overflow: hidden; Removed to allow markers to overflow if needed, but progress should be contained */
 }
 
 .timeline-progress {
   height: 100%;
   background: #d32f2f;
-  width: 0%;
+  width: 0%; /* Dynamic */
   pointer-events: none;
-  position: absolute; /* Keep it absolute relative to track */
+  position: absolute;
   top: 0;
   left: 0;
   border-radius: 3px;
@@ -64,7 +64,7 @@
     border-radius: 50%;
     transform: translate(-50%, -50%);
     z-index: 2;
-    pointer-events: auto; /* Allow hovering for title */
+    pointer-events: auto;
 }
 
 .timeline-marker:hover {
@@ -84,6 +84,7 @@
 .time-display {
   display: flex;
   gap: 8px;
+  min-width: 100px;
 }
 
 .time-current {
@@ -97,6 +98,43 @@
 
 .frame-display {
   color: #666;
+  min-width: 100px;
+  text-align: right;
+}
+
+.zoom-display {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.zoom-btn {
+    background: #444;
+    border: none;
+    color: white;
+    width: 16px;
+    height: 16px;
+    line-height: 14px;
+    text-align: center;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+}
+
+.zoom-btn:hover {
+    background: #555;
+}
+
+.zoom-btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.zoom-level {
+    color: #888;
+    min-width: 40px;
+    text-align: center;
 }
 
 .timeline-thumbnail-preview {

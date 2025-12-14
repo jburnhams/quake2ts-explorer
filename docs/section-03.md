@@ -69,12 +69,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Click marker to jump to event
   - Show event details on hover
 
-- [ ] **1.5**: Add zoom controls
+- [x] **1.5**: Add zoom controls
   - Zoom in/out on timeline to show more detail
   - Pan when zoomed (drag timeline)
   - Reset zoom button
 
-- [ ] **1.6**: Style timeline
+- [x] **1.6**: Style timeline
   - Match dark theme from `src/App.css`
   - Semi-transparent background
   - Smooth animations
@@ -125,7 +125,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Show server tick count (if available)
   - Toggle with F key or button
 
-- [ ] **2.4**: Implement smooth frame interpolation
+- [x] **2.4**: Implement smooth frame interpolation
   - When stepping, smoothly interpolate to next frame
   - Avoid jarring camera jumps
   - Render intermediate positions if possible
