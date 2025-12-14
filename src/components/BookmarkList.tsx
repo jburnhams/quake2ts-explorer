@@ -5,7 +5,7 @@ export interface BookmarkListProps {
   bookmarks: Bookmark[];
   onJumpTo: (frame: number) => void;
   onDelete: (id: string) => void;
-  onEdit?: (id: string, updates: Partial<Bookmark>) => void;
+  onEdit: (bookmark: Bookmark) => void;
 }
 
 export const BookmarkList: React.FC<BookmarkListProps> = ({
@@ -31,8 +31,15 @@ export const BookmarkList: React.FC<BookmarkListProps> = ({
           </div>
           <div style={styles.actions}>
              <button
+              onClick={() => onEdit(b)}
+              style={styles.actionBtn}
+              title="Edit bookmark"
+            >
+              ✎
+            </button>
+             <button
               onClick={() => onDelete(b.id)}
-              style={styles.deleteBtn}
+              style={styles.actionBtn}
               title="Delete bookmark"
             >
               ×
@@ -97,13 +104,15 @@ const styles = {
     marginTop: '4px'
   },
   actions: {
-    marginLeft: '10px'
+    marginLeft: '10px',
+    display: 'flex',
+    gap: '5px'
   },
-  deleteBtn: {
+  actionBtn: {
     background: 'transparent',
     border: 'none',
     color: '#aaa',
-    fontSize: '18px',
+    fontSize: '16px',
     cursor: 'pointer',
     padding: '0 5px'
   }

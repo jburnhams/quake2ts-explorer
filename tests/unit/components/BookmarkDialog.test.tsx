@@ -27,7 +27,8 @@ describe('BookmarkDialog', () => {
   it('should render correct frame and time info', () => {
     render(<BookmarkDialog {...defaultProps} />);
     expect(screen.getByText(/Frame: 123/)).toBeInTheDocument();
-    expect(screen.getByText(/Time: 12.35s/)).toBeInTheDocument(); // 12.345 rounded to 2 decimals
+    expect(screen.getByText(/Time: 12.35s/)).toBeInTheDocument();
+    expect(screen.getByText('Add Bookmark')).toBeInTheDocument();
   });
 
   it('should handle cancel button click', () => {
@@ -57,8 +58,16 @@ describe('BookmarkDialog', () => {
     const saveBtn = screen.getByText('Save Bookmark');
     fireEvent.click(saveBtn); // Triggers form submission
 
-    // Since input is required, browser validation prevents submission usually.
-    // In JSDOM, we can check if onSave was called.
     expect(mockOnSave).not.toHaveBeenCalled();
+  });
+
+  it('should render in edit mode with initial values', () => {
+    render(<BookmarkDialog {...defaultProps} isEditing={true} initialName="Existing" initialDescription="Desc" />);
+
+    expect(screen.getByText('Edit Bookmark')).toBeInTheDocument();
+    expect(screen.getByText('Save Changes')).toBeInTheDocument();
+
+    expect(screen.getByDisplayValue('Existing')).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Desc')).toBeInTheDocument();
   });
 });

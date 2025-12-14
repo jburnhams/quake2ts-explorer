@@ -3,20 +3,38 @@ import React, { useState } from 'react';
 export interface BookmarkDialogProps {
   currentFrame: number;
   currentTime: number;
+  initialName?: string;
+  initialDescription?: string;
   isOpen: boolean;
   onClose: () => void;
   onSave: (name: string, description: string) => void;
+  isEditing?: boolean;
 }
 
 export const BookmarkDialog: React.FC<BookmarkDialogProps> = ({
   currentFrame,
   currentTime,
+  initialName = '',
+  initialDescription = '',
   isOpen,
   onClose,
-  onSave
+  onSave,
+  isEditing = false
 }) => {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
+  // Use explicit key or effect to reset state when opening for new item vs edit
+  // Better: lift state up or use effect on open.
+  // We'll use a key on the component instance in parent to force reset, or useEffect here.
+
+  const [name, setName] = useState(initialName);
+  const [description, setDescription] = useState(initialDescription);
+
+  // Reset state when props change (e.g. opening for a different bookmark)
+  React.useEffect(() => {
+    if (isOpen) {
+      setName(initialName);
+      setDescription(initialDescription);
+    }
+  }, [isOpen, initialName, initialDescription]);
 
   if (!isOpen) return null;
 
@@ -24,8 +42,7 @@ export const BookmarkDialog: React.FC<BookmarkDialogProps> = ({
     e.preventDefault();
     if (name.trim()) {
       onSave(name.trim(), description.trim());
-      setName('');
-      setDescription('');
+      // Don't clear here, rely on close/re-open or let parent handle
       onClose();
     }
   };
@@ -33,7 +50,7 @@ export const BookmarkDialog: React.FC<BookmarkDialogProps> = ({
   return (
     <div className="bookmark-dialog-overlay" style={styles.overlay}>
       <div className="bookmark-dialog" style={styles.dialog}>
-        <h3>Add Bookmark</h3>
+        <h3>{isEditing ? 'Edit Bookmark' : 'Add Bookmark'}</h3>
         <p>Frame: {currentFrame} | Time: {currentTime.toFixed(2)}s</p>
 
         <form onSubmit={handleSubmit}>
@@ -64,7 +81,7 @@ export const BookmarkDialog: React.FC<BookmarkDialogProps> = ({
 
           <div style={styles.buttons}>
             <button type="button" onClick={onClose} style={styles.cancelBtn}>Cancel</button>
-            <button type="submit" style={styles.saveBtn}>Save Bookmark</button>
+            <button type="submit" style={styles.saveBtn}>{isEditing ? 'Save Changes' : 'Save Bookmark'}</button>
           </div>
         </form>
       </div>

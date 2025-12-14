@@ -6,6 +6,7 @@ import { BookmarkList } from '@/src/components/BookmarkList';
 describe('BookmarkList', () => {
   const mockOnJumpTo = jest.fn();
   const mockOnDelete = jest.fn();
+  const mockOnEdit = jest.fn();
 
   const mockBookmarks = [
     { id: '1', name: 'Start', frame: 0, timeSeconds: 0, createdAt: 123 },
@@ -17,12 +18,12 @@ describe('BookmarkList', () => {
   });
 
   it('should render empty state', () => {
-    render(<BookmarkList bookmarks={[]} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} />);
+    render(<BookmarkList bookmarks={[]} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} onEdit={mockOnEdit} />);
     expect(screen.getByText('No bookmarks yet.')).toBeInTheDocument();
   });
 
   it('should render bookmarks', () => {
-    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} />);
+    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} onEdit={mockOnEdit} />);
 
     expect(screen.getByText('Start')).toBeInTheDocument();
     expect(screen.getByText('0:00')).toBeInTheDocument();
@@ -33,7 +34,7 @@ describe('BookmarkList', () => {
   });
 
   it('should handle jump to bookmark', () => {
-    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} />);
+    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} onEdit={mockOnEdit} />);
 
     fireEvent.click(screen.getByText('Start'));
     expect(mockOnJumpTo).toHaveBeenCalledWith(0);
@@ -43,10 +44,18 @@ describe('BookmarkList', () => {
   });
 
   it('should handle delete bookmark', () => {
-    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} />);
+    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} onEdit={mockOnEdit} />);
 
     const deleteButtons = screen.getAllByTitle('Delete bookmark');
     fireEvent.click(deleteButtons[0]);
     expect(mockOnDelete).toHaveBeenCalledWith('1');
+  });
+
+  it('should handle edit bookmark', () => {
+    render(<BookmarkList bookmarks={mockBookmarks} onJumpTo={mockOnJumpTo} onDelete={mockOnDelete} onEdit={mockOnEdit} />);
+
+    const editButtons = screen.getAllByTitle('Edit bookmark');
+    fireEvent.click(editButtons[0]);
+    expect(mockOnEdit).toHaveBeenCalledWith(mockBookmarks[0]);
   });
 });

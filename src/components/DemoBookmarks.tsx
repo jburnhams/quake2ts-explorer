@@ -16,6 +16,7 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
   const [showList, setShowList] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
+  const [editingBookmark, setEditingBookmark] = useState<Bookmark | null>(null);
 
   const loadBookmarks = () => {
     const loaded = bookmarkService.getBookmarks(demoId);
@@ -29,35 +30,51 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
     loadBookmarks();
   }, [demoId]);
 
-  // Update time for dialog
+  // Update time for dialog (only when adding new)
   useEffect(() => {
     const update = () => {
-       if (showDialog) {
+       if (showDialog && !editingBookmark) {
          setCurrentTime(controller.getCurrentTime());
          setCurrentFrame(controller.getCurrentFrame());
        }
     };
-    // Only poll when dialog is open or about to open
     const interval = setInterval(update, 100);
     return () => clearInterval(interval);
-  }, [controller, showDialog]);
+  }, [controller, showDialog, editingBookmark]);
 
   const handleAddClick = () => {
     controller.pause();
+    setEditingBookmark(null);
     setCurrentTime(controller.getCurrentTime());
     setCurrentFrame(controller.getCurrentFrame());
     setShowDialog(true);
   };
 
+  const handleEdit = (bookmark: Bookmark) => {
+      setEditingBookmark(bookmark);
+      // For editing, we keep the original frame/time
+      setCurrentFrame(bookmark.frame);
+      setCurrentTime(bookmark.timeSeconds);
+      setShowDialog(true);
+  };
+
   const handleSave = (name: string, description: string) => {
-    bookmarkService.addBookmark(demoId, {
-      name,
-      description,
-      frame: currentFrame,
-      timeSeconds: currentTime
-    });
+    if (editingBookmark) {
+        bookmarkService.updateBookmark(demoId, editingBookmark.id, {
+            name,
+            description
+        });
+    } else {
+        bookmarkService.addBookmark(demoId, {
+            name,
+            description,
+            frame: currentFrame,
+            timeSeconds: currentTime
+        });
+    }
     loadBookmarks();
     setShowDialog(false);
+    setEditingBookmark(null);
   };
 
   const handleJumpTo = (frame: number) => {
@@ -94,6 +111,7 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
              bookmarks={bookmarks}
              onJumpTo={handleJumpTo}
              onDelete={handleDelete}
+             onEdit={handleEdit}
            />
         </div>
       )}
@@ -102,7 +120,10 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
         isOpen={showDialog}
         currentFrame={currentFrame}
         currentTime={currentTime}
-        onClose={() => setShowDialog(false)}
+        initialName={editingBookmark?.name}
+        initialDescription={editingBookmark?.description}
+        isEditing={!!editingBookmark}
+        onClose={() => { setShowDialog(false); setEditingBookmark(null); }}
         onSave={handleSave}
       />
     </div>

@@ -817,7 +817,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
                 controller={adapter.getDemoController()!}
                 bookmarks={bookmarks}
                 onBookmarkClick={(frame) => {
-                    adapter.getDemoController()!.seekToFrame(frame);
+                    const controller = adapter?.getDemoController?.();
+                    if (controller) {
+                        controller.seekToFrame(frame);
+                    }
                 }}
             />
           </>

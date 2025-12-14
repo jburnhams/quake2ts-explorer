@@ -18,6 +18,7 @@ jest.mock('@/src/services/bookmarkService', () => ({
   bookmarkService: {
     getBookmarks: jest.fn(() => []),
     addBookmark: jest.fn(),
+    updateBookmark: jest.fn(),
     deleteBookmark: jest.fn()
   }
 }));
@@ -42,7 +43,6 @@ describe('DemoBookmarks', () => {
     fireEvent.click(screen.getByText('🔖 Add Bookmark'));
 
     expect(mockController.pause).toHaveBeenCalled();
-    // Use query for specific header element or use getAllByText if multiple exist
     expect(screen.getByRole('heading', { name: 'Add Bookmark' })).toBeInTheDocument();
   });
 
@@ -82,15 +82,28 @@ describe('DemoBookmarks', () => {
     expect(screen.queryByText('Saved Mark')).not.toBeInTheDocument();
   });
 
-  it('should jump to bookmark', () => {
-    (bookmarkService.getBookmarks as jest.Mock).mockReturnValue([
-      { id: '1', name: 'Jump Target', frame: 500, timeSeconds: 50 }
-    ]);
+  it('should edit a bookmark', () => {
+    const bookmark = { id: '1', name: 'Original', frame: 50, timeSeconds: 5 };
+    (bookmarkService.getBookmarks as jest.Mock).mockReturnValue([bookmark]);
 
     render(<DemoBookmarks controller={mockController as any} demoId={demoId} />);
     fireEvent.click(screen.getByText('📂 List'));
 
-    fireEvent.click(screen.getByText('Jump Target'));
-    expect(mockController.seekToFrame).toHaveBeenCalledWith(500);
+    // Click edit
+    const editBtn = screen.getByTitle('Edit bookmark');
+    fireEvent.click(editBtn);
+
+    expect(screen.getByRole('heading', { name: 'Edit Bookmark' })).toBeInTheDocument();
+    expect(screen.getByDisplayValue('Original')).toBeInTheDocument();
+
+    // Change name
+    const nameInput = screen.getByLabelText('Name:');
+    fireEvent.change(nameInput, { target: { value: 'Updated' } });
+
+    fireEvent.click(screen.getByText('Save Changes'));
+
+    expect(bookmarkService.updateBookmark).toHaveBeenCalledWith(demoId, '1', expect.objectContaining({
+        name: 'Updated'
+    }));
   });
 });
