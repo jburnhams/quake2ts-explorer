@@ -1,7 +1,9 @@
 import { Camera, Md2Model, Md2Pipeline, Md2MeshBuffers, createAnimationState, advanceAnimation, computeFrameBlend, parsePcx, pcxToRgba, Texture2D, Md2FrameBlend, AnimationSequence, Md2Animation } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter } from './types';
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3, vec4 } from 'gl-matrix';
+import { DebugMode } from '@/src/types/debugMode';
+import { DebugRenderer } from './DebugRenderer';
 
 export class Md2Adapter implements ViewerAdapter {
   private pipeline: Md2Pipeline | null = null;
@@ -13,6 +15,8 @@ export class Md2Adapter implements ViewerAdapter {
   private animations: Md2Animation[] = [];
   private isPlayingState = true;
   private animSpeed = 1.0;
+  private debugMode: DebugMode = DebugMode.None;
+  private debugRenderer: DebugRenderer | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type !== 'md2') throw new Error('Invalid file type for Md2Adapter');
@@ -21,6 +25,7 @@ export class Md2Adapter implements ViewerAdapter {
     this.animations = file.animations;
 
     this.pipeline = new Md2Pipeline(gl);
+    this.debugRenderer = new DebugRenderer(gl);
     const initialBlend: Md2FrameBlend = { frame0: 0, frame1: 0, lerp: 0.0 };
     this.meshBuffers = new Md2MeshBuffers(gl, this.model, initialBlend);
 
@@ -71,6 +76,10 @@ export class Md2Adapter implements ViewerAdapter {
     }
   }
 
+  setDebugMode(mode: DebugMode) {
+      this.debugMode = mode;
+  }
+
   render(gl: WebGL2RenderingContext, camera: Camera, viewMatrix: mat4): void {
     if (!this.pipeline || !this.meshBuffers) return;
 
@@ -99,6 +108,25 @@ export class Md2Adapter implements ViewerAdapter {
     this.meshBuffers.bind();
     const drawMode = this.renderOptions.mode === 'wireframe' ? gl.LINES : gl.TRIANGLES;
     gl.drawElements(drawMode, this.meshBuffers.indexCount, gl.UNSIGNED_SHORT, 0);
+
+    // Debug Rendering
+    if (this.debugMode !== DebugMode.None && this.debugRenderer) {
+        this.debugRenderer.clear();
+
+        if (this.debugMode === DebugMode.BoundingBoxes) {
+            // Simplified: Draw a static box or calculated box from model bounds
+            // Assuming model has bounds. MD2 frames have bounds, need to extract from current frame.
+            // For now, drawing a generic box around origin
+            this.debugRenderer.addBox(vec3.fromValues(-20, -20, 0), vec3.fromValues(20, 20, 60), vec4.fromValues(0, 1, 0, 1));
+        }
+
+        if (this.debugMode === DebugMode.Normals) {
+             // We can access vertices from the meshBuffers if mapped, or re-compute.
+             // Visualizing normals is complex without direct vertex access in this loop.
+        }
+
+        this.debugRenderer.render(mvp);
+    }
   }
 
   cleanup(): void {

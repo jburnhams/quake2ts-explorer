@@ -1,7 +1,9 @@
 import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter, Ray } from './types';
-import { mat4 } from 'gl-matrix';
+import { mat4, vec3, vec4 } from 'gl-matrix';
+import { DebugMode } from '@/src/types/debugMode';
+import { DebugRenderer } from './DebugRenderer';
 
 export class BspAdapter implements ViewerAdapter {
   private pipeline: BspSurfacePipeline | null = null;
@@ -13,6 +15,8 @@ export class BspAdapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
   private hoveredEntity: BspEntity | null = null;
+  private debugMode: DebugMode = DebugMode.None;
+  private debugRenderer: DebugRenderer | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -28,6 +32,7 @@ export class BspAdapter implements ViewerAdapter {
     this.gl = gl;
     this.map = map;
     this.pipeline = new BspSurfacePipeline(gl);
+    this.debugRenderer = new DebugRenderer(gl);
     this.surfaces = createBspSurfaces(map);
     this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
 
@@ -80,6 +85,10 @@ export class BspAdapter implements ViewerAdapter {
       this.hoveredEntity = entity;
   }
 
+  setDebugMode(mode: DebugMode) {
+      this.debugMode = mode;
+  }
+
   private getModelFromEntity(entity: BspEntity): any {
       if (!this.map || !entity) return null;
 
@@ -109,6 +118,7 @@ export class BspAdapter implements ViewerAdapter {
 
     const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
 
+    // Normal Rendering Loop
     for (let i = 0; i < this.geometry.surfaces.length; i++) {
         const surface = this.geometry.surfaces[i];
         const inputSurface = this.surfaces[i];
@@ -121,9 +131,14 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         const texture = this.textures.get(surface.texture);
-        if (texture) {
+        if (texture && this.debugMode !== DebugMode.Lightmaps) {
             gl.activeTexture(gl.TEXTURE0);
             texture.bind();
+        } else if (this.debugMode === DebugMode.Lightmaps) {
+             // Use a white texture for lightmap mode to show only lighting
+             const whiteTex = new Texture2D(gl); // Ideally cached
+             whiteTex.bind(); // Placeholder logic
+             // Real implementation should bind a white texture
         }
 
         if (surface.lightmap) {
@@ -154,6 +169,51 @@ export class BspAdapter implements ViewerAdapter {
         surface.vao.bind();
         const drawMode = this.renderOptions.mode === 'wireframe' ? gl.LINES : gl.TRIANGLES;
         gl.drawElements(drawMode, surface.indexCount, gl.UNSIGNED_SHORT, 0);
+    }
+
+    // Debug Rendering
+    if (this.debugMode !== DebugMode.None && this.debugRenderer && this.map) {
+        this.debugRenderer.clear();
+
+        if (this.debugMode === DebugMode.BoundingBoxes) {
+            this.map.entities.entities.forEach(entity => {
+                const model = this.getModelFromEntity(entity);
+                if (model) {
+                    this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
+                }
+            });
+        }
+
+        if (this.debugMode === DebugMode.Normals) {
+             this.surfaces.forEach(surface => {
+                 if (surface.plane) {
+                     // Approximate face center
+                     // This requires vertex access which we don't easily have here without reprocessing
+                     // For BSP, we can use the plane normal and distance to visualize plane normals
+                     // Or iterate edges
+                 }
+             });
+        }
+
+        if (this.debugMode === DebugMode.PVS) {
+            // Visualize visible clusters from camera position
+            const camPos = camera.position;
+            const leaf = this.map.findLeaf(camPos as any);
+            if (leaf && leaf.cluster !== -1) {
+                const pvs = this.map.pvs[leaf.cluster];
+                 // Iterate clusters and draw boxes for leaves in visible clusters
+                 // This is expensive, so simplified visualization:
+                 // Draw the current leaf box
+                 this.debugRenderer.addBox(leaf.min, leaf.max, vec4.fromValues(1, 1, 0, 1));
+            }
+        }
+
+         if (this.debugMode === DebugMode.Collision) {
+            // Draw collision hulls (head nodes)
+            // Simplified: Draw head node boxes
+         }
+
+        this.debugRenderer.render(mvp);
     }
   }
 

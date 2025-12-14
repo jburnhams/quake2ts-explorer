@@ -10,6 +10,7 @@ import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
+import { DebugMode } from '@/src/types/debugMode';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -37,6 +38,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
   const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random'>('textured');
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
+  const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
   const [hoveredEntity, setHoveredEntity] = useState<any | null>(null);
 
   const [orbit, setOrbit] = useState<OrbitState>({
@@ -238,6 +240,12 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       }
     }
   }, [adapter, renderMode, renderColor]);
+
+  useEffect(() => {
+    if (adapter && (adapter as any).setDebugMode) {
+        (adapter as any).setDebugMode(debugMode);
+    }
+  }, [adapter, debugMode]);
 
   useEffect(() => {
     if (adapter && adapter.setHiddenClasses && hiddenClassnames) {
@@ -465,6 +473,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           setRenderMode={setRenderMode}
           renderColor={renderColor}
           setRenderColor={setRenderColor}
+          debugMode={debugMode}
+          setDebugMode={setDebugMode}
        />
      </div>
   );
