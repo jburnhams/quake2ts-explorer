@@ -15,9 +15,11 @@ import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { CameraMode } from '@/src/types/cameraMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
-import { videoRecorderService } from '@/src/services/videoRecorder';
+import { videoRecorderService, VideoRecordOptions } from '@/src/services/videoRecorder';
 import { PerformanceStats } from '../PerformanceStats';
 import { ScreenshotSettings } from '../ScreenshotSettings';
+import { VideoSettings } from '../VideoSettings';
+import { LightingControls, LightingOptions } from '../LightingControls';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
@@ -80,13 +82,29 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingBitrate, setRecordingBitrate] = useState<number>(0);
   const [showScreenshotSettings, setShowScreenshotSettings] = useState(false);
+  const [showVideoSettings, setShowVideoSettings] = useState(false);
+  const [showLightingControls, setShowLightingControls] = useState(false);
+  const [lightingOptions, setLightingOptions] = useState<LightingOptions>({
+      brightness: 1.0,
+      gamma: 1.0,
+      ambient: 0.1,
+      fullbright: false
+  });
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isRecording && recordingStartTime) {
       interval = setInterval(() => {
-        setRecordingDuration((Date.now() - recordingStartTime) / 1000);
+        const duration = (Date.now() - recordingStartTime) / 1000;
+        setRecordingDuration(duration);
+
+        // Auto-stop after 5 minutes (300 seconds)
+        if (duration > 300) {
+             handleStopRecording();
+             setError("Recording stopped automatically (limit reached).");
+        }
       }, 100);
     } else {
       setRecordingDuration(0);
@@ -104,28 +122,103 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   }, []);
 
   const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !glContext || !camera) return;
 
     setShowFlash(true);
     setTimeout(() => setShowFlash(false), 150);
 
+    const canvas = canvasRef.current;
+    const { gl } = glContext;
+    const originalWidth = canvas.width;
+    const originalHeight = canvas.height;
+    const multiplier = options.resolutionMultiplier || 1;
+
     try {
-        const blob = await captureScreenshot(canvasRef.current, options);
+        if (multiplier > 1) {
+             // Temporarily resize
+             const newWidth = canvas.clientWidth * window.devicePixelRatio * multiplier;
+             const newHeight = canvas.clientHeight * window.devicePixelRatio * multiplier;
+             canvas.width = newWidth;
+             canvas.height = newHeight;
+             gl.viewport(0, 0, newWidth, newHeight);
+
+             // Update camera matrices
+             camera.aspect = newWidth / newHeight;
+             if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+
+             // Render high-res frame
+             const viewMatrix = mat4.create();
+             if (adapter && (adapter.hasCameraControl && adapter.hasCameraControl())) {
+                 const update = adapter.getCameraUpdate ? adapter.getCameraUpdate() : null;
+                 if (update && camera.viewMatrix) {
+                     mat4.copy(viewMatrix, camera.viewMatrix as mat4);
+                 }
+             } else {
+                 const useZUp = adapter?.useZUp ? adapter.useZUp() : false;
+                 if (cameraMode === 'free') {
+                     computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
+                 } else {
+                     const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
+                     const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+                     mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
+                 }
+             }
+
+             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+             if (adapter) {
+                adapter.render(gl, camera, viewMatrix);
+             }
+        }
+
+        const blob = await captureScreenshot(canvas, options);
         const ext = options.format === 'jpeg' ? 'jpg' : 'png';
         const filename = generateScreenshotFilename().replace('.png', `.${ext}`);
         downloadScreenshot(blob, filename);
+
     } catch (e) {
         console.error("Screenshot failed:", e);
         setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+        // Restore original size
+        if (multiplier > 1) {
+            canvas.width = originalWidth;
+            canvas.height = originalHeight;
+            gl.viewport(0, 0, originalWidth, originalHeight);
+            camera.aspect = originalWidth / originalHeight;
+            if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+
+             // Re-render one frame to restore view immediately
+             const viewMatrix = mat4.create();
+             if (adapter && adapter.hasCameraControl && adapter.hasCameraControl() && camera.viewMatrix) {
+                 mat4.copy(viewMatrix, camera.viewMatrix as mat4);
+             } else {
+                 const useZUp = adapter?.useZUp ? adapter.useZUp() : false;
+                 if (cameraMode === 'free') {
+                     computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
+                 } else {
+                     const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
+                     const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+                     mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
+                 }
+             }
+             if (adapter) {
+                 adapter.render(gl, camera, viewMatrix);
+             }
+        }
     }
   };
 
   const handleStartRecording = () => {
+    setShowVideoSettings(true);
+  };
+
+  const handleStartRecordingWithOptions = (options: VideoRecordOptions) => {
     if (!canvasRef.current) return;
     try {
-      videoRecorderService.startRecording(canvasRef.current);
+      videoRecorderService.startRecording(canvasRef.current, options);
       setIsRecording(true);
       setRecordingStartTime(Date.now());
+      setRecordingBitrate(options.videoBitsPerSecond || 2500000); // Track bitrate for size estimation
     } catch (e) {
       console.error("Recording failed:", e);
       setError(`Recording failed: ${e instanceof Error ? e.message : String(e)}`);
@@ -413,13 +506,26 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
   useEffect(() => {
     if (adapter && adapter.setRenderOptions) {
-      if (renderMode === 'random') {
-        adapter.setRenderOptions({ mode: 'solid', color: renderColor, generateRandomColor: true });
-      } else {
-        adapter.setRenderOptions({ mode: renderMode as 'textured' | 'wireframe' | 'solid' | 'solid-faceted', color: renderColor });
+      // Merge render mode and lighting options if adapter supports it
+      const options: any = {
+          mode: renderMode === 'random' ? 'solid' : renderMode,
+          color: renderColor,
+          generateRandomColor: renderMode === 'random',
+          // Pass lighting options as extension to RenderModeConfig
+          brightness: lightingOptions.brightness,
+          gamma: lightingOptions.gamma,
+          ambient: lightingOptions.ambient,
+          fullbright: lightingOptions.fullbright
+      };
+
+      // Also try to call setLightingOptions if it exists (hypothetical API)
+      if ((adapter as any).setLightingOptions) {
+          (adapter as any).setLightingOptions(lightingOptions);
       }
+
+      adapter.setRenderOptions(options);
     }
-  }, [adapter, renderMode, renderColor]);
+  }, [adapter, renderMode, renderColor, lightingOptions]);
 
   useEffect(() => {
     if (adapter && (adapter as any).setDebugMode) {
@@ -579,7 +685,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           if (isPlaying && adapter.play && !adapter.isPlaying?.()) adapter.play();
           else if (!isPlaying && adapter.pause && adapter.isPlaying?.()) adapter.pause();
 
+          const simStart = performance.now();
           adapter.update(delta);
+          const simEnd = performance.now();
+          const simTime = simEnd - simStart;
 
           // Camera Logic
           const viewMatrix = mat4.create();
@@ -648,9 +757,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           gl.enable(gl.DEPTH_TEST);
           gl.enable(gl.CULL_FACE);
 
-          const cpuStart = performance.now();
+          const renderStart = performance.now();
           adapter.render(gl, camera, viewMatrix);
-          const cpuEnd = performance.now();
+          const renderEnd = performance.now();
+          const renderTime = renderEnd - renderStart;
 
           // Collect stats if enabled
           if (showStats && currentTime - lastStatsUpdate > statsUpdateInterval) {
@@ -665,7 +775,9 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              // If adapter doesn't provide full stats, create basic ones
              if (!renderStats) {
                  renderStats = {
-                     cpuFrameTimeMs: cpuEnd - cpuStart,
+                     cpuFrameTimeMs: simTime + renderTime,
+                     simulationTimeMs: simTime,
+                     renderTimeMs: renderTime,
                      drawCalls: 0,
                      triangles: 0,
                      vertices: 0,
@@ -675,7 +787,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              } else {
                  // Ensure CPU time is captured if not provided
                  if (!renderStats.cpuFrameTimeMs) {
-                     renderStats.cpuFrameTimeMs = cpuEnd - cpuStart;
+                     renderStats.cpuFrameTimeMs = simTime + renderTime;
+                 }
+                 if (!renderStats.simulationTimeMs) {
+                     renderStats.simulationTimeMs = simTime;
+                 }
+                 if (!renderStats.renderTimeMs) {
+                     renderStats.renderTimeMs = renderTime;
                  }
              }
 
@@ -752,6 +870,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
            onClose={() => setShowScreenshotSettings(false)}
            onCapture={handleScreenshot}
        />
+       <VideoSettings
+            isOpen={showVideoSettings}
+            onClose={() => setShowVideoSettings(false)}
+            onStart={handleStartRecordingWithOptions}
+       />
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
               position: 'absolute',
@@ -800,8 +923,16 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             onStopRecording={handleStopRecording}
             isRecording={isRecording}
             recordingTime={recordingDuration}
+            recordingSizeEstimate={isRecording ? (recordingDuration * recordingBitrate) / 8 : undefined}
+            onLightingSettings={() => setShowLightingControls(true)}
          />
        )}
+       <LightingControls
+            isOpen={showLightingControls}
+            onClose={() => setShowLightingControls(false)}
+            options={lightingOptions}
+            onChange={setLightingOptions}
+       />
        {adapter && adapter.getDemoController && adapter.getDemoController() && (
           <DemoTimeline controller={adapter.getDemoController()!} />
        )}

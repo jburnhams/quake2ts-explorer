@@ -1,4 +1,4 @@
-export interface RecordOptions {
+export interface VideoRecordOptions {
   mimeType?: string;
   fps?: number;
   videoBitsPerSecond?: number;
@@ -9,22 +9,30 @@ export class VideoRecorderService {
   private chunks: Blob[] = [];
   private isRecordingState: boolean = false;
 
-  public startRecording(canvas: HTMLCanvasElement, options: RecordOptions = {}): void {
+  public startRecording(canvas: HTMLCanvasElement, options: VideoRecordOptions = {}): void {
     if (this.isRecordingState) {
       console.warn('Already recording');
       return;
     }
 
+    // Default options
     const mimeType = options.mimeType || 'video/webm;codecs=vp9';
-    const fps = options.fps || 60;
-    const videoBitsPerSecond = options.videoBitsPerSecond || 5000000; // 5 Mbps default
+    const fps = options.fps || 30;
+    const videoBitsPerSecond = options.videoBitsPerSecond || 2500000; // 2.5 Mbps default
 
     try {
       // Use captureStream if available
       const stream = canvas.captureStream(fps);
 
+      // Check if mimeType is supported
+      let selectedMimeType = mimeType;
+      if (!MediaRecorder.isTypeSupported(mimeType)) {
+          console.warn(`Mime type ${mimeType} not supported, falling back to video/webm`);
+          selectedMimeType = 'video/webm';
+      }
+
       this.mediaRecorder = new MediaRecorder(stream, {
-        mimeType,
+        mimeType: selectedMimeType,
         videoBitsPerSecond
       });
 
@@ -35,7 +43,7 @@ export class VideoRecorderService {
         }
       };
 
-      this.mediaRecorder.start();
+      this.mediaRecorder.start(100); // Request data every 100ms for smoother saving
       this.isRecordingState = true;
     } catch (error) {
       console.error('Failed to start recording:', error);

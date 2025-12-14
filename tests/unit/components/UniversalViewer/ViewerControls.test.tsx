@@ -374,5 +374,21 @@ describe('ViewerControls', () => {
         render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} onStartRecording={jest.fn()} onStopRecording={jest.fn()} isRecording={true} recordingTime={65} />);
         expect(screen.getByText('1:05')).toBeInTheDocument();
     });
+
+    it('displays estimated size when recording', () => {
+        render(
+          <ViewerControls
+            {...defaultProps}
+            onScreenshot={jest.fn()}
+            onStartRecording={jest.fn()}
+            onStopRecording={jest.fn()}
+            isRecording={true}
+            recordingTime={10}
+            recordingSizeEstimate={5 * 1024 * 1024} // 5 MB
+          />
+        );
+
+        expect(screen.getByText('5.0 MB')).toBeInTheDocument();
+    });
   });
 });

@@ -160,6 +160,48 @@ describe('UniversalViewer Screenshot Integration', () => {
       });
 
       // Should capture with default settings
-      expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95 });
+      expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 1 });
+  });
+
+  it('should handle resolution multiplier correctly', async () => {
+    // Mock canvas client dimensions
+    Object.defineProperty(HTMLCanvasElement.prototype, 'clientWidth', { configurable: true, value: 800 });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'clientHeight', { configurable: true, value: 600 });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'width', { configurable: true, value: 800, writable: true });
+    Object.defineProperty(HTMLCanvasElement.prototype, 'height', { configurable: true, value: 600, writable: true });
+
+    await act(async () => {
+        render(
+          <UniversalViewer
+            parsedFile={{ type: 'md2', name: 'tris.md2', data: new ArrayBuffer(0) }}
+            pakService={mockPakService}
+          />
+        );
+    });
+
+    // Open settings
+    const screenshotButton = screen.getByTitle('Take Screenshot');
+    fireEvent.click(screenshotButton);
+
+    // Change resolution multiplier to 2x
+    const multiplierSelect = screen.getByLabelText('Resolution Multiplier:');
+    fireEvent.change(multiplierSelect, { target: { value: '2' } });
+
+    // Capture
+    const captureButton = screen.getByText('Capture');
+    await act(async () => {
+        fireEvent.click(captureButton);
+    });
+
+    // We can't easily inspect the transient state of canvas.width inside the function due to async nature,
+    // but we can verify that gl.viewport was called with scaled dimensions.
+    // 800 * 2 = 1600, 600 * 2 = 1200
+    // Note: The mockGlContext.gl.viewport might need to be spyable.
+    expect(mockGlContext.gl.viewport).toHaveBeenCalledWith(0, 0, 1600, 1200);
+
+    // And verify it was restored (last call should be original size or close to it if resize handler fired)
+    // Actually, finally block restores it.
+    // Let's check capture options
+    expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 2 });
   });
 });

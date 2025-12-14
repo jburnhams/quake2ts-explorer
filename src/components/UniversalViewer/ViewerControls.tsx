@@ -38,6 +38,7 @@ interface ViewerControlsProps {
   onStopRecording?: () => void;
   isRecording?: boolean;
   recordingTime?: number;
+  recordingSizeEstimate?: number;
 }
 
 export function ViewerControls({
@@ -69,13 +70,22 @@ export function ViewerControls({
   onStartRecording,
   onStopRecording,
   isRecording,
-  recordingTime = 0
-}: ViewerControlsProps) {
+  recordingTime = 0,
+  recordingSizeEstimate,
+  onLightingSettings
+}: ViewerControlsProps & { onLightingSettings?: () => void }) {
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = Math.floor(seconds % 60);
     return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatSize = (bytes: number) => {
+    if (bytes === 0) return '';
+    const mb = bytes / (1024 * 1024);
+    if (mb < 1) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${mb.toFixed(1)} MB`;
   };
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -251,10 +261,15 @@ export function ViewerControls({
        )}
 
       {onScreenshot && (
-          <div className="screenshot-controls" style={{ marginBottom: '10px', display: 'flex', gap: '5px' }}>
-              <button onClick={onScreenshot} style={{ flex: 1 }} title="Take Screenshot">
+          <div className="screenshot-controls" style={{ marginBottom: '10px', display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+              <button onClick={onScreenshot} style={{ flex: '1 1 40%' }} title="Take Screenshot">
                   📷 Screen
               </button>
+              {onLightingSettings && (
+                  <button onClick={onLightingSettings} style={{ flex: '1 1 40%' }} title="Lighting Settings">
+                      💡 Light
+                  </button>
+              )}
               {onStartRecording && onStopRecording && (
                 <button
                   onClick={isRecording ? onStopRecording : onStartRecording}
@@ -272,7 +287,12 @@ export function ViewerControls({
                   {isRecording ? (
                     <>
                       <span>■</span>
-                      <span style={{ fontSize: '0.9em', minWidth: '35px' }}>{formatTime(recordingTime)}</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1', marginLeft: '2px' }}>
+                        <span style={{ fontSize: '0.9em' }}>{formatTime(recordingTime)}</span>
+                        {recordingSizeEstimate !== undefined && (
+                             <span style={{ fontSize: '0.7em', opacity: 0.8 }}>{formatSize(recordingSizeEstimate)}</span>
+                        )}
+                      </div>
                     </>
                   ) : (
                     '● Rec'

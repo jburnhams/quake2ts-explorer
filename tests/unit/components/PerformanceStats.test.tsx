@@ -16,6 +16,8 @@ describe('PerformanceStats', () => {
         culledSurfaces: 50,
         textureMemoryBytes: 1024 * 1024 * 10, // 10 MB
         bufferMemoryBytes: 1024 * 1024 * 5,   // 5 MB
+        simulationTimeMs: 4.5,
+        renderTimeMs: 12.1
     };
 
     it('renders FPS correctly', () => {
@@ -53,6 +55,12 @@ describe('PerformanceStats', () => {
         // Timing
         expect(screen.getByText('16.60 ms')).toBeInTheDocument();
         expect(screen.getByText('10.50 ms')).toBeInTheDocument();
+
+        // Simulation/Rendering breakdown
+        expect(screen.getByText('Simulation')).toBeInTheDocument();
+        expect(screen.getByText(/4.50 ms/)).toBeInTheDocument();
+        expect(screen.getAllByText('Rendering').length).toBeGreaterThan(0);
+        expect(screen.getByText(/12.10 ms/)).toBeInTheDocument();
     });
 
     it('renders min/max fps when provided', () => {

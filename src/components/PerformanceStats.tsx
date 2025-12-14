@@ -70,9 +70,27 @@ export const PerformanceStats: React.FC<PerformanceStatsProps> = ({ fps, minFps,
                     <div className="stats-section">
                         <div className="stats-header">Timing</div>
                         <div className="stats-row">
-                            <span className="label">CPU Frame</span>
+                            <span className="label">Total CPU</span>
                             <span className="value">{stats.cpuFrameTimeMs.toFixed(2)} ms</span>
                         </div>
+                        {stats.simulationTimeMs !== undefined && (
+                            <div className="stats-row sub-row">
+                                <span className="label">Simulation</span>
+                                <span className="value">
+                                    {stats.simulationTimeMs.toFixed(2)} ms
+                                    <span className="dim-text"> ({Math.round((stats.simulationTimeMs / stats.cpuFrameTimeMs) * 100)}%)</span>
+                                </span>
+                            </div>
+                        )}
+                        {stats.renderTimeMs !== undefined && (
+                            <div className="stats-row sub-row">
+                                <span className="label">Rendering</span>
+                                <span className="value">
+                                    {stats.renderTimeMs.toFixed(2)} ms
+                                    <span className="dim-text"> ({Math.round((stats.renderTimeMs / stats.cpuFrameTimeMs) * 100)}%)</span>
+                                </span>
+                            </div>
+                        )}
                         {stats.gpuTimeMs !== undefined && (
                             <div className="stats-row">
                                 <span className="label">GPU Frame</span>

@@ -46,6 +46,7 @@ class MockMediaRecorder {
 }
 
 global.MediaRecorder = MockMediaRecorder as any;
+(global.MediaRecorder as any).isTypeSupported = jest.fn().mockReturnValue(true);
 
 describe('VideoRecorderService', () => {
   let mockCanvas: HTMLCanvasElement;
