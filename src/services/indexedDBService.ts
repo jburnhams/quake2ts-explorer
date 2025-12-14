@@ -54,7 +54,7 @@ export class IndexedDBService {
       checkRequest.onsuccess = () => {
         const existingRecord = checkRequest.result as StoredPak | undefined;
 
-        let id = crypto.randomUUID();
+        let id: string = crypto.randomUUID();
         if (existingRecord) {
           id = existingRecord.id; // Reuse ID if updating
         }

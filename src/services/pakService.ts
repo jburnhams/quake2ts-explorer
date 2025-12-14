@@ -483,7 +483,6 @@ export class PakService {
   }
 
   clear(): void {
-    this.archives = [];
     this.paks.clear();
     this.palette = null;
     this.vfs = new VirtualFileSystem();
