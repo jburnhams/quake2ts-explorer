@@ -7,6 +7,7 @@ import {
 } from '../services/pakService';
 import { createGameLoop, GameLoop } from '../utils/gameLoop';
 import { createGameSimulation, GameSimulationWrapper } from '../services/gameService';
+import { initInputController, cleanupInputController, generateUserCommand } from '../services/inputService';
 
 export type GameMode = 'browser' | 'game';
 
@@ -170,6 +171,8 @@ export function usePakExplorer(): UsePakExplorerResult {
     // Invalidate any pending start requests
     activeGameRequestRef.current++;
 
+    cleanupInputController();
+
     if (gameLoopRef.current) {
       gameLoopRef.current.stop();
       gameLoopRef.current = null;
@@ -210,21 +213,13 @@ export function usePakExplorer(): UsePakExplorerResult {
       gameSimulationRef.current = simulation;
       simulation.start();
 
+      // Initialize input controller
+      initInputController();
+
       const loop = createGameLoop(
         (deltaMs) => {
             if (gameSimulationRef.current && !isPausedRef.current) {
-                // TODO: Generate UserCommand from input service
-                const cmd = {
-                    sequence: 0,
-                    msec: deltaMs,
-                    buttons: 0,
-                    angles: { x: 0, y: 0, z: 0 },
-                    forwardmove: 0,
-                    sidemove: 0,
-                    upmove: 0,
-                    impulse: 0,
-                    lightlevel: 0
-                };
+                const cmd = generateUserCommand(deltaMs);
                 gameSimulationRef.current.tick(deltaMs, cmd);
             }
         },
