@@ -4,9 +4,10 @@ export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
   pakCount: number;
   fileCount: number;
+  onOpenEntityDatabase?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, onOpenEntityDatabase }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenClick = () => {
@@ -32,6 +33,16 @@ export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
         >
           Open PAK File
         </button>
+        {onOpenEntityDatabase && (
+          <button
+            className="toolbar-button"
+            onClick={onOpenEntityDatabase}
+            data-testid="open-entity-db-button"
+            disabled={pakCount === 0}
+          >
+            Entity Database
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"

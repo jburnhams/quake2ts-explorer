@@ -7,6 +7,7 @@ import { DropZone } from './components/DropZone';
 import { ResizablePanel } from './components/ResizablePanel';
 import { EntityLegend } from './components/EntityLegend';
 import { EntityMetadata } from './components/EntityMetadata';
+import { EntityDatabase } from './components/EntityDatabase';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import './App.css';
 
@@ -33,6 +34,7 @@ function App() {
   const [entityClassnames, setEntityClassnames] = useState<string[]>([]);
   const [hiddenClassnames, setHiddenClassnames] = useState<Set<string>>(new Set());
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
+  const [showEntityDb, setShowEntityDb] = useState(false);
 
   // Reset when file changes
   useEffect(() => {
@@ -66,6 +68,7 @@ function App() {
           onFileSelect={handleFileSelect}
           pakCount={pakCount}
           fileCount={fileCount}
+          onOpenEntityDatabase={() => setShowEntityDb(true)}
         />
         {error && (
           <div className="error-banner" data-testid="error-banner">
@@ -79,9 +82,21 @@ function App() {
           </div>
         )}
         <div className="main-content">
-          <ResizablePanel
-            defaultWidth={280}
-            minWidth={180}
+          {showEntityDb ? (
+            <div className="entity-db-overlay">
+              <div className="entity-db-overlay-header">
+                <h2>Entity Database</h2>
+                <button onClick={() => setShowEntityDb(false)}>Close</button>
+              </div>
+              <div className="entity-db-overlay-content">
+                <EntityDatabase pakService={pakService} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <ResizablePanel
+                defaultWidth={280}
+                minWidth={180}
             maxWidth={500}
             position="left"
             collapsed={leftCollapsed}
@@ -126,6 +141,8 @@ function App() {
               onToggle={handleToggleEntity}
             />
           </ResizablePanel>
+            </>
+          )}
         </div>
       </div>
     </DropZone>
