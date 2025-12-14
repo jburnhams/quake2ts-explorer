@@ -21,11 +21,13 @@ function App() {
     fileCount,
     loading,
     error,
+    viewMode,
     handleFileSelect,
     handleTreeSelect,
     hasFile,
     dismissError,
-    loadFromUrl,
+    removePak,
+    setViewMode,
   } = usePakExplorer();
 
   const [leftCollapsed, setLeftCollapsed] = useState(false);
@@ -55,10 +57,6 @@ function App() {
     setHiddenClassnames(newHidden);
   };
 
-  useEffect(() => {
-    loadFromUrl('pak.pak');
-  }, [loadFromUrl]);
-
   return (
     <DropZone onDrop={handleFileSelect}>
       <div className="app" data-testid="app">
@@ -66,6 +64,8 @@ function App() {
           onFileSelect={handleFileSelect}
           pakCount={pakCount}
           fileCount={fileCount}
+          viewMode={viewMode}
+          onViewModeChange={setViewMode}
         />
         {error && (
           <div className="error-banner" data-testid="error-banner">
@@ -75,7 +75,7 @@ function App() {
         )}
         {loading && (
           <div className="loading-banner" data-testid="loading-banner">
-            Loading PAK file...
+            Loading...
           </div>
         )}
         <div className="main-content">
@@ -93,6 +93,7 @@ function App() {
               root={fileTree}
               selectedPath={selectedPath}
               onSelect={handleTreeSelect}
+              onRemovePak={removePak}
             />
           </ResizablePanel>
           <PreviewPanel

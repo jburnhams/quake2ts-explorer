@@ -1,12 +1,15 @@
 import React, { useRef } from 'react';
+import type { ViewMode } from '../services/pakService';
 
 export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
   pakCount: number;
   fileCount: number;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleOpenClick = () => {
@@ -28,10 +31,20 @@ export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
         <button
           className="toolbar-button"
           onClick={handleOpenClick}
-          data-testid="open-pak-button"
+          data-testid="add-pak-button"
         >
-          Open PAK File
+          Add PAK Files
         </button>
+        <div className="toolbar-separator" style={{ width: '1px', height: '20px', background: '#444', margin: '0 10px' }} />
+        <label className="toolbar-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={viewMode === 'by-pak'}
+            onChange={(e) => onViewModeChange(e.target.checked ? 'by-pak' : 'merged')}
+            data-testid="view-mode-toggle"
+          />
+          Group by PAK
+        </label>
         <input
           ref={fileInputRef}
           type="file"

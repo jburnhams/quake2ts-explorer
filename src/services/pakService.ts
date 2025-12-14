@@ -130,9 +130,21 @@ export interface TreeNode {
   name: string;
   path: string;
   isDirectory: boolean;
+  isPakRoot?: boolean;
+  pakId?: string;
+  isUserPak?: boolean;
   children?: TreeNode[];
   file?: VirtualFileHandle;
 }
+
+export interface MountedPak {
+  id: string;
+  name: string;
+  archive: PakArchive;
+  isUser: boolean;
+}
+
+export type ViewMode = 'merged' | 'by-pak';
 
 // Use helper function
 function getFileType(path: string): FileType {
@@ -141,29 +153,50 @@ function getFileType(path: string): FileType {
 
 export class PakService {
   public vfs: VirtualFileSystem;
-  private archives: PakArchive[] = [];
+  private paks: Map<string, MountedPak> = new Map();
   private palette: Uint8Array | null = null;
 
   constructor(vfs?: VirtualFileSystem) {
     this.vfs = vfs ?? new VirtualFileSystem();
   }
 
-  async loadPakFile(file: File): Promise<PakArchive> {
+  async loadPakFile(file: File, id?: string, isUser: boolean = true): Promise<PakArchive> {
     const buffer = await file.arrayBuffer();
-    const archive = PakArchive.fromArrayBuffer(file.name, buffer);
-    this.archives.push(archive);
-    this.vfs.mountPak(archive);
-    // Try to load palette from colormap
-    await this.tryLoadPalette();
+    const pakId = id || crypto.randomUUID();
+    // Use ID as internal name for VFS uniqueness, but store original name in metadata
+    const archive = PakArchive.fromArrayBuffer(pakId, buffer);
+    this.mountPak(archive, pakId, file.name, isUser);
     return archive;
   }
 
-  async loadPakFromBuffer(name: string, buffer: ArrayBuffer): Promise<PakArchive> {
-    const archive = PakArchive.fromArrayBuffer(name, buffer);
-    this.archives.push(archive);
-    this.vfs.mountPak(archive);
-    await this.tryLoadPalette();
+  async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false): Promise<PakArchive> {
+    const pakId = id || crypto.randomUUID();
+    const archive = PakArchive.fromArrayBuffer(pakId, buffer);
+    this.mountPak(archive, pakId, name, isUser);
     return archive;
+  }
+
+  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean) {
+    this.paks.set(id, { id, name, archive, isUser });
+    this.vfs.mountPak(archive);
+    this.tryLoadPalette();
+  }
+
+  unloadPak(id: string): void {
+    const pak = this.paks.get(id);
+    if (pak) {
+        this.paks.delete(id);
+        this.rebuildVfs();
+    }
+  }
+
+  private rebuildVfs() {
+    this.vfs = new VirtualFileSystem();
+    this.palette = null;
+    for (const pak of this.paks.values()) {
+        this.vfs.mountPak(pak.archive);
+    }
+    this.tryLoadPalette();
   }
 
   private async tryLoadPalette(): Promise<void> {
@@ -193,8 +226,8 @@ export class PakService {
     return this.vfs;
   }
 
-  getMountedPaks(): readonly PakArchive[] {
-    return this.archives;
+  getMountedPaks(): MountedPak[] {
+    return Array.from(this.paks.values());
   }
 
   listDirectory(path?: string): DirectoryListing {
@@ -208,11 +241,16 @@ export class PakService {
   getFileMetadata(path: string): FileMetadata | undefined {
     const handle = this.vfs.stat(path);
     if (!handle) return undefined;
+
+    // Resolve user-friendly PAK name from sourcePak (which is UUID)
+    const pakInfo = this.paks.get(handle.sourcePak);
+    const sourcePakName = pakInfo ? pakInfo.name : handle.sourcePak;
+
     return {
       path: handle.path,
       name: getFileName(handle.path),
       size: handle.size,
-      sourcePak: handle.sourcePak,
+      sourcePak: sourcePakName,
       extension: getExtension(handle.path),
       fileType: getFileType(handle.path),
     };
@@ -306,7 +344,7 @@ export class PakService {
     }
   }
 
-  buildFileTree(): TreeNode {
+  buildFileTree(mode: ViewMode = 'merged'): TreeNode {
     const root: TreeNode = {
       name: 'root',
       path: '',
@@ -314,80 +352,130 @@ export class PakService {
       children: [],
     };
 
-    // Recursively gather all files from VFS
-    const allFiles: VirtualFileHandle[] = [];
-    const gatherFiles = (dirPath?: string) => {
-      const listing = this.listDirectory(dirPath);
-      allFiles.push(...listing.files);
-      for (const subDir of listing.directories) {
-        const fullPath = dirPath ? `${dirPath}/${subDir}` : subDir;
-        gatherFiles(fullPath);
-      }
-    };
-    gatherFiles();
+    if (mode === 'by-pak') {
+        for (const pak of this.paks.values()) {
+            const pakRoot: TreeNode = {
+                name: pak.name,
+                path: pak.id,
+                isDirectory: true,
+                isPakRoot: true,
+                pakId: pak.id,
+                isUserPak: pak.isUser,
+                children: []
+            };
 
-    const nodeMap = new Map<string, TreeNode>();
-    nodeMap.set('', root);
+            const pakFiles: VirtualFileHandle[] = [];
+            const gatherFiles = (dirPath?: string) => {
+                const listing = this.vfs.list(dirPath);
+                for (const file of listing.files) {
+                    if (file.sourcePak === pak.id) {
+                        pakFiles.push(file);
+                    }
+                }
+                for (const subDir of listing.directories) {
+                    const fullPath = dirPath ? `${dirPath}/${subDir}` : subDir;
+                    gatherFiles(fullPath);
+                }
+            };
+            gatherFiles();
 
-    // Create directory nodes
-    const allDirs = new Set<string>();
-    for (const file of allFiles) {
-      const parts = file.path.split('/');
-      let currentPath = '';
-      for (let i = 0; i < parts.length - 1; i++) {
-        currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
-        allDirs.add(currentPath);
-      }
+            this.buildSubTree(pakRoot, pakFiles);
+            root.children!.push(pakRoot);
+        }
+
+    } else {
+        const allFiles: VirtualFileHandle[] = [];
+        const gatherFiles = (dirPath?: string) => {
+            const listing = this.listDirectory(dirPath);
+            allFiles.push(...listing.files);
+            for (const subDir of listing.directories) {
+                const fullPath = dirPath ? `${dirPath}/${subDir}` : subDir;
+                gatherFiles(fullPath);
+            }
+        };
+        gatherFiles();
+
+        this.buildSubTree(root, allFiles);
     }
 
-    // Sort directories so parents come first
-    const sortedDirs = Array.from(allDirs).sort();
-    for (const dirPath of sortedDirs) {
-      const parts = dirPath.split('/');
-      const name = parts.pop()!;
-      const parentPath = parts.join('/');
-      const parent = nodeMap.get(parentPath) || root;
+    this.sortTree(root);
+    return root;
+  }
 
-      const dirNode: TreeNode = {
-        name,
-        path: dirPath,
-        isDirectory: true,
-        children: [],
-      };
-      nodeMap.set(dirPath, dirNode);
-      parent.children!.push(dirNode);
-    }
+  private buildSubTree(root: TreeNode, files: VirtualFileHandle[]) {
+     const nodeMap = new Map<string, TreeNode>();
+     nodeMap.set('', root);
 
-    // Add file nodes
-    for (const file of allFiles) {
-      const parts = file.path.split('/');
-      const name = parts.pop()!;
-      const parentPath = parts.join('/');
-      const parent = nodeMap.get(parentPath) || root;
+     const allDirs = new Set<string>();
+     for (const file of files) {
+       const parts = file.path.split('/');
+       let currentPath = '';
+       for (let i = 0; i < parts.length - 1; i++) {
+         currentPath = currentPath ? `${currentPath}/${parts[i]}` : parts[i];
+         allDirs.add(currentPath);
+       }
+     }
 
-      const fileNode: TreeNode = {
-        name,
-        path: file.path,
-        isDirectory: false,
-        file,
-      };
-      parent.children!.push(fileNode);
-    }
+     const sortedDirs = Array.from(allDirs).sort();
+     for (const dirPath of sortedDirs) {
+       const parts = dirPath.split('/');
+       const name = parts.pop()!;
+       const parentPath = parts.join('/');
+       const parent = nodeMap.get(parentPath) || root;
 
-    // Sort children: directories first, then files, alphabetically
-    const sortChildren = (node: TreeNode) => {
+       const dirNode: TreeNode = {
+         name,
+         path: dirPath,
+         isDirectory: true,
+         children: [],
+       };
+
+       const nodePath = root.pakId ? `${root.pakId}:${dirPath}` : dirPath;
+
+       const displayNode: TreeNode = {
+           ...dirNode,
+           path: nodePath
+       };
+
+       nodeMap.set(dirPath, displayNode);
+       parent.children!.push(displayNode);
+     }
+
+     for (const file of files) {
+       const parts = file.path.split('/');
+       const name = parts.pop()!;
+       const parentPath = parts.join('/');
+       const parent = nodeMap.get(parentPath) || root;
+
+       const nodePath = root.pakId ? `${root.pakId}:${file.path}` : file.path;
+
+       const fileNode: TreeNode = {
+         name,
+         path: nodePath,
+         isDirectory: false,
+         file,
+       };
+       parent.children!.push(fileNode);
+     }
+  }
+
+  private sortTree(node: TreeNode) {
       if (node.children) {
         node.children.sort((a, b) => {
           if (a.isDirectory && !b.isDirectory) return -1;
           if (!a.isDirectory && b.isDirectory) return 1;
           return a.name.localeCompare(b.name);
         });
-        node.children.forEach(sortChildren);
+        node.children.forEach(child => this.sortTree(child));
       }
-    };
-    sortChildren(root);
+  }
 
-    return root;
+  static getVfsPath(treePath: string): string {
+      if (treePath.includes(':')) {
+          const parts = treePath.split(':');
+          return parts.slice(1).join(':');
+      }
+      return treePath;
   }
 
   findByExtension(extension: string): VirtualFileHandle[] {
@@ -396,12 +484,12 @@ export class PakService {
 
   clear(): void {
     this.archives = [];
+    this.paks.clear();
     this.palette = null;
     this.vfs = new VirtualFileSystem();
   }
 }
 
-// Singleton instance for app-wide use
 let pakServiceInstance: PakService | null = null;
 
 export function getPakService(): PakService {

@@ -7,6 +7,28 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
+// Mock crypto.randomUUID
+if (!global.crypto) {
+    // @ts-ignore
+    global.crypto = {};
+}
+if (!global.crypto.randomUUID) {
+    global.crypto.randomUUID = () => {
+        return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, c =>
+            (parseInt(c) ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> parseInt(c) / 4).toString(16)
+        );
+    };
+}
+// crypto.getRandomValues must exist for the above polyfill, or we just mock a simple UUID
+if (!global.crypto.getRandomValues) {
+    global.crypto.getRandomValues = (arr: Uint8Array) => {
+        for (let i = 0; i < arr.length; i++) {
+            arr[i] = Math.floor(Math.random() * 256);
+        }
+        return arr;
+    };
+}
+
 // Mock DataTransfer for drag-and-drop tests
 class MockDataTransfer {
   private _files: File[] = [];

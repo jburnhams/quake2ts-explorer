@@ -5,6 +5,7 @@ export interface FileTreeProps {
   root: TreeNode | null;
   selectedPath: string | null;
   onSelect: (path: string) => void;
+  onRemovePak?: (pakId: string) => void;
 }
 
 interface TreeNodeItemProps {
@@ -14,6 +15,7 @@ interface TreeNodeItemProps {
   expandedPaths: Set<string>;
   onSelect: (path: string) => void;
   onToggle: (path: string) => void;
+  onRemovePak?: (pakId: string) => void;
 }
 
 function getFileIcon(name: string, isDirectory: boolean): string {
@@ -45,11 +47,13 @@ function TreeNodeItem({
   expandedPaths,
   onSelect,
   onToggle,
+  onRemovePak
 }: TreeNodeItemProps) {
   const isExpanded = expandedPaths.has(node.path);
   const isSelected = selectedPath === node.path;
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (node.isDirectory) {
       onToggle(node.path);
     } else {
@@ -60,7 +64,19 @@ function TreeNodeItem({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
-      handleClick();
+      // Simulate click
+      if (node.isDirectory) {
+        onToggle(node.path);
+      } else {
+        onSelect(node.path);
+      }
+    }
+  };
+
+  const handleRemoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (node.pakId && onRemovePak) {
+      onRemovePak(node.pakId);
     }
   };
 
@@ -86,6 +102,26 @@ function TreeNodeItem({
         )}
         <span className="tree-icon">{getFileIcon(node.name, node.isDirectory)}</span>
         <span className="tree-name">{node.name}</span>
+
+        {node.isPakRoot && node.isUserPak && (
+          <button
+            className="tree-node-remove"
+            onClick={handleRemoveClick}
+            title="Remove PAK"
+            style={{
+              marginLeft: 'auto',
+              border: 'none',
+              background: 'transparent',
+              color: '#ff4444',
+              cursor: 'pointer',
+              fontWeight: 'bold',
+              padding: '0 8px'
+            }}
+            data-testid={`remove-pak-${node.pakId}`}
+          >
+            ✕
+          </button>
+        )}
       </div>
       {node.isDirectory && isExpanded && node.children && (
         <div className="tree-children" role="group">
@@ -98,6 +134,7 @@ function TreeNodeItem({
               expandedPaths={expandedPaths}
               onSelect={onSelect}
               onToggle={onToggle}
+              onRemovePak={onRemovePak}
             />
           ))}
         </div>
@@ -106,7 +143,7 @@ function TreeNodeItem({
   );
 }
 
-export function FileTree({ root, selectedPath, onSelect }: FileTreeProps) {
+export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['']));
 
   const handleToggle = useCallback((path: string) => {
@@ -125,7 +162,7 @@ export function FileTree({ root, selectedPath, onSelect }: FileTreeProps) {
     return (
       <div className="file-tree file-tree-empty" data-testid="file-tree">
         <p>No files loaded</p>
-        <p>Open a PAK file to browse its contents</p>
+        <p>Add a PAK file to browse its contents</p>
       </div>
     );
   }
@@ -141,6 +178,7 @@ export function FileTree({ root, selectedPath, onSelect }: FileTreeProps) {
           expandedPaths={expandedPaths}
           onSelect={onSelect}
           onToggle={handleToggle}
+          onRemovePak={onRemovePak}
         />
       ))}
     </div>

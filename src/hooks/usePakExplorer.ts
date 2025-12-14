@@ -4,7 +4,9 @@ import {
   type TreeNode,
   type FileMetadata,
   type ParsedFile,
+  type ViewMode,
 } from '../services/pakService';
+import { indexedDBService } from '../services/indexedDBService';
 import { createGameLoop, GameLoop } from '../utils/gameLoop';
 import { createGameSimulation, GameSimulationWrapper } from '../services/gameService';
 import { initInputController, cleanupInputController, generateUserCommand } from '../services/inputService';
@@ -24,6 +26,7 @@ export interface UsePakExplorerResult {
   gameMode: GameMode;
   isPaused: boolean;
   gameStateSnapshot: any | null;
+  viewMode: ViewMode;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
   hasFile: (path: string) => boolean;
@@ -34,6 +37,8 @@ export interface UsePakExplorerResult {
   togglePause: () => void;
   pauseGame: () => void;
   resumeGame: () => void;
+  removePak: (pakId: string) => Promise<void>;
+  setViewMode: (mode: ViewMode) => void;
 }
 
 export function usePakExplorer(): UsePakExplorerResult {
@@ -46,44 +51,42 @@ export function usePakExplorer(): UsePakExplorerResult {
   const [fileCount, setFileCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ViewMode>('merged');
   const abortControllerRef = useRef<AbortController | null>(null);
 
   // Game state
   const [gameMode, setGameMode] = useState<GameMode>('browser');
   const [isPaused, setIsPaused] = useState(false);
-  // We use a ref for snapshot to avoid re-render on every frame if we used state directly
-  // without care, but we actually need to trigger re-render for UI.
-  // However, for high-frequency updates (60fps), usually we use refs and direct canvas updates
-  // or a requestAnimationFrame loop in the component.
-  // Since UniversalViewer is a React component, we'll expose the snapshot via state
-  // but maybe throttle it or just let it rip? React 18 is good at batching.
-  // But wait, the task implies UniversalViewer handles rendering.
-  // We should pass the snapshot to it.
   const [gameStateSnapshot, setGameStateSnapshot] = useState<any | null>(null);
 
   const gameSimulationRef = useRef<GameSimulationWrapper | null>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
-    const tree = pakService.buildFileTree();
+    const tree = pakService.buildFileTree(viewMode);
     setFileTree(tree);
     setPakCount(pakService.getMountedPaks().length);
     const listing = pakService.listDirectory();
     setFileCount(listing.files.length);
-  }, [pakService]);
+  }, [pakService, viewMode]);
+
+  // Handle View Mode change
+  useEffect(() => {
+    updateTreeAndCounts();
+  }, [viewMode, updateTreeAndCounts]);
 
   const handleFileSelect = useCallback(
     async (files: FileList) => {
       setLoading(true);
       setError(null);
 
-      // Clear existing PAKs to replace them
-      pakService.clear();
-
       try {
         for (const file of Array.from(files)) {
           if (file.name.toLowerCase().endsWith('.pak')) {
-            await pakService.loadPakFile(file);
+            // Save to IndexedDB
+            const id = await indexedDBService.savePak(file);
+            // Load into memory
+            await pakService.loadPakFile(file, id, true);
           }
         }
         updateTreeAndCounts();
@@ -96,8 +99,107 @@ export function usePakExplorer(): UsePakExplorerResult {
     [pakService, updateTreeAndCounts]
   );
 
+  const removePak = useCallback(async (pakId: string) => {
+    try {
+        await indexedDBService.deletePak(pakId);
+        pakService.unloadPak(pakId);
+        updateTreeAndCounts();
+    } catch (err) {
+        console.error("Failed to remove pak:", err);
+        setError(err instanceof Error ? err.message : 'Failed to remove PAK');
+    }
+  }, [pakService, updateTreeAndCounts]);
+
+  // Helper to load standard PAKs
+  const loadBuiltInPaks = useCallback(async (signal: AbortSignal) => {
+    const paksToLoad: { name: string, url: string }[] = [];
+
+    // Always check pak.pak
+    paksToLoad.push({ name: 'pak.pak', url: 'pak.pak' });
+
+    // Check numbered PAKs
+    let pakIndex = 0;
+    while (true) {
+        const pakName = `pak${pakIndex}.pak`;
+        const url = pakName;
+        try {
+            const headRes = await fetch(url, { method: 'HEAD', signal });
+            if (headRes.ok) {
+                paksToLoad.push({ name: pakName, url });
+                pakIndex++;
+            } else {
+                break;
+            }
+        } catch (e) {
+            break;
+        }
+        // Safety break
+        if (pakIndex > 20) break;
+    }
+
+    for (const pak of paksToLoad) {
+        try {
+            const res = await fetch(pak.url, { signal });
+            if (res.ok) {
+                const buffer = await res.arrayBuffer();
+                await pakService.loadPakFromBuffer(pak.name, buffer, undefined, false);
+            }
+        } catch (e) {
+            console.warn(`Failed to load built-in ${pak.name}`, e);
+        }
+    }
+  }, [pakService]);
+
+  // Initial Load
+  useEffect(() => {
+      const controller = new AbortController();
+
+      const init = async () => {
+          setLoading(true);
+          try {
+              // 1. Load Built-ins
+              await loadBuiltInPaks(controller.signal);
+
+              // 2. Load User PAKs from IDB
+              const storedPaks = await indexedDBService.getPaks();
+              for (const pak of storedPaks) {
+                  // Reconstruct File object from Blob if necessary, or just use blob
+                  // Since `loadPakFile` expects File, and storedPak has blob (which is File or Blob),
+                  // we can cast or create File.
+                  let file: File;
+                  if (pak.blob instanceof File) {
+                      file = pak.blob;
+                  } else {
+                      file = new File([pak.blob], pak.name);
+                  }
+                  await pakService.loadPakFile(file, pak.id, true);
+              }
+
+              updateTreeAndCounts();
+          } catch (err) {
+               if (err instanceof Error && err.name === 'AbortError') return;
+               console.error("Initialization error:", err);
+               setError("Failed to initialize application data");
+          } finally {
+               if (!controller.signal.aborted) {
+                   setLoading(false);
+               }
+          }
+      };
+
+      init();
+
+      return () => controller.abort();
+  }, [loadBuiltInPaks, pakService, updateTreeAndCounts]);
+
+  // Wrapper for loadFromUrl to support legacy/testing calls or explicit loads
   const loadFromUrl = useCallback(
     async (url: string) => {
+      // This implementation might conflict with the new multi-pak approach if used externally.
+      // But typically it's used for initial load in App.tsx.
+      // Since we moved initial load to the useEffect above, we might deprecate this or
+      // adapt it to just add a file.
+
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
@@ -107,8 +209,10 @@ export function usePakExplorer(): UsePakExplorerResult {
       setLoading(true);
       setError(null);
 
-      // Clear existing PAKs to replace them
-      pakService.clear();
+      // We DO NOT clear existing PAKs anymore in the new model, unless explicitly requested?
+      // The requirement "Replace the Open Pak File button with an Add Pak Files" implies additive behavior.
+      // But `loadFromUrl` was "replace all".
+      // Let's keep it additive or simply rely on the new init logic.
 
       try {
         const response = await fetch(url, { signal: controller.signal });
@@ -120,7 +224,9 @@ export function usePakExplorer(): UsePakExplorerResult {
 
         if (controller.signal.aborted) return;
 
-        await pakService.loadPakFromBuffer(name, buffer);
+        await pakService.loadPakFromBuffer(name, buffer, undefined, false); // Treat as non-user/built-in? Or maybe user?
+        // If loaded via URL manually, maybe treat as session-only non-user?
+
         updateTreeAndCounts();
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') {
@@ -139,13 +245,19 @@ export function usePakExplorer(): UsePakExplorerResult {
 
   const handleTreeSelect = useCallback(
     async (path: string) => {
-      setSelectedPath(path);
-      const meta = pakService.getFileMetadata(path);
+      // If path contains prefix (PAK ID), we need to handle it.
+      // PakService usually handles VFS paths.
+      // `FileTree` now returns prefixed paths in 'by-pak' mode.
+      const vfsPath = PakService.getVfsPath(path);
+
+      setSelectedPath(path); // Keep tree selection state as is (prefixed)
+
+      const meta = pakService.getFileMetadata(vfsPath);
       setMetadata(meta ?? null);
 
       if (meta) {
         try {
-          const parsed = await pakService.parseFile(path);
+          const parsed = await pakService.parseFile(vfsPath);
           setParsedFile(parsed);
         } catch (err) {
           console.error('Failed to parse file:', err);
@@ -163,7 +275,7 @@ export function usePakExplorer(): UsePakExplorerResult {
   }, []);
 
   const hasFile = useCallback(
-    (path: string) => pakService.hasFile(path),
+    (path: string) => pakService.hasFile(PakService.getVfsPath(path)),
     [pakService]
   );
 
@@ -224,11 +336,9 @@ export function usePakExplorer(): UsePakExplorerResult {
             }
         },
         (alpha) => {
-             // Render handled by UniversalViewer via shared state or context?
              if (gameSimulationRef.current) {
                  const snapshot = gameSimulationRef.current.getSnapshot();
                  if (snapshot) {
-                     // We update state to trigger re-render of consumers
                      setGameStateSnapshot(snapshot);
                  }
              }
@@ -285,6 +395,7 @@ export function usePakExplorer(): UsePakExplorerResult {
     gameMode,
     isPaused,
     gameStateSnapshot,
+    viewMode,
     handleFileSelect,
     handleTreeSelect,
     hasFile,
@@ -295,5 +406,7 @@ export function usePakExplorer(): UsePakExplorerResult {
     togglePause,
     pauseGame,
     resumeGame,
+    removePak,
+    setViewMode
   };
 }
