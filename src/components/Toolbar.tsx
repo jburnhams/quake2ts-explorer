@@ -40,7 +40,8 @@ export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
         const data = demoRecorderService.stopRecording();
         if (data) {
             // Prompt download
-            const blob = new Blob([data], { type: 'application/octet-stream' });
+            // Cast data to any or ensure it is treated as a BlobPart (Uint8Array is valid in browser but Typescript might be picky about SharedArrayBuffer)
+            const blob = new Blob([data as unknown as BlobPart], { type: 'application/octet-stream' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

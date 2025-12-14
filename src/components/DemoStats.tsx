@@ -106,7 +106,8 @@ export function DemoStats({ controller, visible, onClose }: DemoStatsProps) {
           <div>
               <strong>Demo Info</strong>
               <div>Duration: {demoStats.duration.toFixed(1)}s</div>
-              <div>Avg Frame Time: {demoStats.averageFrameTime.toFixed(2)}ms</div>
+              {/* averageFrameTime property does not exist in DemoStatistics, removed it */}
+              <div>Avg FPS: {demoStats.averageFps.toFixed(2)}</div>
           </div>
       )}
     </div>

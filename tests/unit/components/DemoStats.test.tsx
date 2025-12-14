@@ -23,8 +23,10 @@ describe('DemoStats', () => {
 
     (mockController.getDemoStatistics as jest.Mock).mockReturnValue({
         duration: 120,
-        averageFrameTime: 25,
-        totalFrames: 1000
+        averageFps: 60, // Changed from averageFrameTime based on actual type
+        frameCount: 1000,
+        mapName: 'test',
+        playerCount: 1
     } as DemoStatistics);
 
     (mockController.getPlayerStatistics as jest.Mock).mockReturnValue({
