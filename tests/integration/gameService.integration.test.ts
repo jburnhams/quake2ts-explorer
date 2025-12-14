@@ -6,9 +6,9 @@ import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
 // Real game simulation test
 describe('GameService Integration', () => {
     it('loads demo1.bsp and runs game simulation', async () => {
-        const pakPath = path.resolve(process.cwd(), 'pak.pak');
+        const pakPath = path.resolve(process.cwd(), 'public', 'pak.pak');
         if (!fs.existsSync(pakPath)) {
-            console.warn('pak.pak not found, skipping integration test');
+            console.warn('public/pak.pak not found, skipping integration test');
             return;
         }
         const buffer = fs.readFileSync(pakPath);

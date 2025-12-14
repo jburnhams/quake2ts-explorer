@@ -8,7 +8,7 @@ describe('PakService with real PAK file', () => {
   let pakBuffer: ArrayBuffer;
 
   beforeAll(() => {
-    const pakPath = path.join(__dirname, '..', '..', 'pak.pak');
+    const pakPath = path.join(__dirname, '..', '..', 'public', 'pak.pak');
     const fileBuffer = fs.readFileSync(pakPath);
     pakBuffer = fileBuffer.buffer.slice(
       fileBuffer.byteOffset,

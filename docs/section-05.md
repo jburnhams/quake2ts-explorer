@@ -254,7 +254,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 
 #### Subtasks
 
-- [ ] **4.1**: Create `src/components/EntityDatabase.tsx`
+- [x] **4.1**: Create `src/components/EntityDatabase.tsx`
   - Table view with columns:
     - Classname
     - Targetname
@@ -264,13 +264,13 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Sortable columns
   - Pagination (if many entities)
 
-- [ ] **4.2**: Implement entity search
+- [x] **4.2**: Implement entity search
   - Search by classname (e.g., "weapon_", "item_", "monster_")
   - Search by property key or value
   - Filter by map
   - Regex support for advanced queries
 
-- [ ] **4.3**: Implement entity inspector
+- [x] **4.3**: Implement entity inspector
   - Click entity row to open details panel
   - Display all properties as key-value pairs
   - Editable (for map editor integration, Section 06)
@@ -281,7 +281,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Show expected properties and their meanings
   - Link to Quake II modding wiki or docs
 
-- [ ] **4.5**: Implement entity statistics
+- [x] **4.5**: Implement entity statistics
   - Count entities by type
   - Show distribution chart (bar graph)
   - Identify most common entity types

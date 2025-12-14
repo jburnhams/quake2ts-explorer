@@ -1,0 +1,60 @@
+
+import React from 'react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { EntityDatabase } from '@/src/components/EntityDatabase';
+import { PakService } from '@/src/services/pakService';
+import { VirtualFileSystem } from 'quake2ts/engine';
+
+// Mock engine dependencies
+jest.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: jest.fn().mockImplementation(() => ({
+    findByExtension: jest.fn().mockReturnValue(['maps/test.bsp']),
+    readFile: jest.fn().mockResolvedValue(new Uint8Array(100)), // Dummy buffer
+    mountPak: jest.fn(),
+  })),
+  parseBsp: jest.fn().mockReturnValue({
+    entities: {
+      entities: [
+        { classname: 'worldspawn', properties: { message: 'Integration Test Map' } },
+        { classname: 'info_player_start', properties: { origin: '100 0 0' } }
+      ]
+    }
+  }),
+}));
+
+describe('EntityDatabase Integration', () => {
+  let pakService: PakService;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    pakService = new PakService();
+  });
+
+  it('loads entities from mock PAK and displays them', async () => {
+    await act(async () => {
+      render(<EntityDatabase pakService={pakService} />);
+    });
+
+    // Should see loading or entities eventually
+    await waitFor(() => {
+      const worldspawns = screen.getAllByText('worldspawn');
+      expect(worldspawns.length).toBeGreaterThan(0);
+      const playerStarts = screen.getAllByText('info_player_start');
+      expect(playerStarts.length).toBeGreaterThan(0);
+    });
+
+    // Inspect
+    const row = screen.getAllByText('info_player_start').find(el => el.classList.contains('cell-classname'));
+    if (!row) throw new Error('Row not found');
+    fireEvent.click(row);
+
+    // Wait for inspector to update
+    await waitFor(() => {
+        expect(screen.getByText('info_player_start', { selector: '.inspector-header' })).toBeInTheDocument();
+    });
+
+    // Check properties
+    expect(screen.getByText('origin')).toBeInTheDocument();
+    expect(screen.getByText('100 0 0')).toBeInTheDocument();
+  });
+});

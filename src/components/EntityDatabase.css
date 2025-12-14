@@ -1,0 +1,220 @@
+
+.entity-database-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  background-color: #1e1e1e;
+  color: #ccc;
+  overflow: hidden;
+}
+
+.entity-database-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  background-color: #252526;
+  border-bottom: 1px solid #333;
+  align-items: center;
+}
+
+.entity-database-search {
+  flex: 1;
+  padding: 6px;
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+}
+
+.entity-database-search:focus {
+  outline: none;
+  border-color: #007acc;
+}
+
+.entity-database-filter {
+  padding: 6px;
+  background-color: #3c3c3c;
+  border: 1px solid #555;
+  color: #fff;
+  border-radius: 4px;
+  min-width: 150px;
+}
+
+.entity-database-content {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.entity-database-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #333;
+  overflow: hidden;
+}
+
+.entity-table-header {
+  display: flex;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #333;
+  font-weight: bold;
+  user-select: none;
+}
+
+.entity-table-header-cell {
+  padding: 8px 10px;
+  text-align: left;
+  cursor: pointer;
+  position: relative;
+}
+
+.entity-table-header-cell:hover {
+  background-color: #3a3a3a;
+}
+
+.entity-table-header-cell.sort-asc::after {
+  content: ' ▲';
+  font-size: 0.8em;
+}
+
+.entity-table-header-cell.sort-desc::after {
+  content: ' ▼';
+  font-size: 0.8em;
+}
+
+.entity-table-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.entity-row {
+  display: flex;
+  border-bottom: 1px solid #333;
+  cursor: pointer;
+}
+
+.entity-row:hover {
+  background-color: #2a2d2e;
+}
+
+.entity-row.selected {
+  background-color: #37373d;
+  color: #fff;
+}
+
+.entity-cell {
+  padding: 8px 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-classname { flex: 2; }
+.cell-targetname { flex: 2; }
+.cell-origin { flex: 1.5; font-family: monospace; }
+.cell-map { flex: 1.5; }
+
+.entity-database-status {
+  padding: 5px 10px;
+  background-color: #007acc;
+  color: #fff;
+  font-size: 0.9em;
+}
+
+.entity-loading-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 100;
+}
+
+.entity-inspector-panel {
+  width: 350px;
+  background-color: #252526;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.inspector-header {
+  padding: 10px;
+  background-color: #2d2d2d;
+  border-bottom: 1px solid #333;
+  font-weight: bold;
+}
+
+.inspector-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+}
+
+.property-group {
+  margin-bottom: 15px;
+}
+
+.property-row {
+  display: flex;
+  padding: 4px 0;
+  border-bottom: 1px solid #333;
+}
+
+.property-key {
+  flex: 1;
+  color: #9cdcfe;
+  font-family: monospace;
+}
+
+.property-value {
+  flex: 2;
+  color: #ce9178;
+  font-family: monospace;
+  word-break: break-all;
+}
+
+.inspector-actions {
+  padding: 10px;
+  border-top: 1px solid #333;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.inspector-btn {
+  padding: 6px 12px;
+  background-color: #0e639c;
+  color: white;
+  border: none;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.inspector-btn:hover {
+  background-color: #1177bb;
+}
+
+/* Empty state */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #888;
+  padding: 20px;
+  text-align: center;
+}
+
+.empty-state-icon {
+  font-size: 48px;
+  margin-bottom: 15px;
+  opacity: 0.5;
+}
