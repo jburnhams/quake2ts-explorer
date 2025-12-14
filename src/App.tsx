@@ -9,6 +9,7 @@ import { EntityLegend } from './components/EntityLegend';
 import { EntityMetadata } from './components/EntityMetadata';
 import { EntityDatabase } from './components/EntityDatabase';
 import { usePakExplorer } from './hooks/usePakExplorer';
+import { MapEditorProvider } from './context/MapEditorContext';
 import './App.css';
 
 function App() {
@@ -60,6 +61,7 @@ function App() {
   };
 
   return (
+    <MapEditorProvider>
     <DropZone onDrop={handleFileSelect}>
       <div className="app" data-testid="app">
         <Toolbar
@@ -147,6 +149,7 @@ function App() {
         </div>
       </div>
     </DropZone>
+    </MapEditorProvider>
   );
 }
 

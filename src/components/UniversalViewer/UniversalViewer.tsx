@@ -13,6 +13,8 @@ import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
+import { useMapEditor } from '@/src/context/MapEditorContext';
+import { GizmoController, GizmoAxis } from './GizmoController';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
 import { PerformanceStats } from '../PerformanceStats';
 import { RenderStatistics } from '@/src/types/renderStatistics';
@@ -56,6 +58,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [maxFps, setMaxFps] = useState(0);
   const [perfHistory, setPerfHistory] = useState<{ fps: number; frameTime: number }[]>([]);
 
+  const { isEditorActive, selectEntity, selectedEntityIds, hoveredEntityId, setHoveredEntityId } = useMapEditor();
+  const gizmoController = useRef<GizmoController>(new GizmoController());
+  const [activeGizmoAxis, setActiveGizmoAxis] = useState<GizmoAxis | null>(null);
+
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
     theta: 0,
@@ -93,6 +99,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const keysPressed = useRef<{ [key: string]: boolean }>({});
   const mouseState = useRef({
       isDragging: false,
+      isDraggingGizmo: false,
       lastX: 0,
       lastY: 0,
       deltaX: 0,
@@ -205,42 +212,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const handleMouseDown = (e: MouseEvent) => {
-        if (e.button === 0) { // Left click
-            mouseState.current.isDragging = true;
-            mouseState.current.lastX = e.clientX;
-            mouseState.current.lastY = e.clientY;
-            mouseState.current.hasMoved = false;
-        }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-        if (mouseState.current.isDragging) {
-            const dx = e.clientX - mouseState.current.lastX;
-            const dy = e.clientY - mouseState.current.lastY;
-            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
-                mouseState.current.hasMoved = true;
-            }
-            mouseState.current.deltaX += dx;
-            mouseState.current.deltaY += dy;
-            mouseState.current.lastX = e.clientX;
-            mouseState.current.lastY = e.clientY;
-        }
-    };
-
-    const handleMouseUp = () => {
-        mouseState.current.isDragging = false;
-    };
-
-    canvas.addEventListener('mousedown', handleMouseDown);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-        canvas.removeEventListener('mousedown', handleMouseDown);
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-    };
+    // This block moved to useEffect [adapter, camera, cameraMode, onEntitySelected] to capture state correctly
   }, []);
 
   // Initialize GL and Camera
@@ -369,7 +341,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     }
   }, [adapter, hiddenClassnames]);
 
-  // Picking Logic
+  useEffect(() => {
+      if (adapter && (adapter as any).setSelectedEntities) {
+          (adapter as any).setSelectedEntities(selectedEntityIds);
+      }
+  }, [adapter, selectedEntityIds]);
+
+  // Picking and Input Logic
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas || !adapter || !adapter.pickEntity || !camera) return;
@@ -379,7 +357,6 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         const useZUp = adapter.useZUp ? adapter.useZUp() : false;
 
         if (adapter.hasCameraControl && adapter.hasCameraControl()) {
-            // Picking generally not supported in demo/playback mode or if adapter controls camera rigidly
             return null;
         }
 
@@ -393,48 +370,153 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         return viewMatrix;
     };
 
-    const handleMouseMove = (e: MouseEvent) => {
-        if (mouseState.current.isDragging) return;
+    const handleMouseDown = (e: MouseEvent) => {
+        if (e.button === 0) { // Left click
+            mouseState.current.hasMoved = false;
+            mouseState.current.lastX = e.clientX;
+            mouseState.current.lastY = e.clientY;
 
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
+            // Check gizmo intersection
+            if (isEditorActive && selectedEntityIds.size === 1 && camera) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                const viewMatrix = getCurrentViewMatrix();
+                if (viewMatrix) {
+                    const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+                    const axis = gizmoController.current.intersect(pickRay);
+                    if (axis) {
+                        mouseState.current.isDraggingGizmo = true;
+                        setActiveGizmoAxis(axis);
+                        return; // Don't start camera drag
+                    }
+                }
+            }
 
-        const viewMatrix = getCurrentViewMatrix();
-        if (!viewMatrix) return;
-
-        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
-
-        const result = adapter.pickEntity!(pickRay);
-        setHoveredEntity(result ? result.entity : null);
-    };
-
-    const handleClick = (e: MouseEvent) => {
-        if (mouseState.current.isDragging || mouseState.current.hasMoved) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const viewMatrix = getCurrentViewMatrix();
-        if (!viewMatrix) return;
-
-        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
-
-        const result = adapter.pickEntity!(pickRay);
-        if (onEntitySelected) {
-            onEntitySelected(result ? result.entity : null);
+            mouseState.current.isDragging = true;
         }
     };
 
+    const handleMouseMove = (e: MouseEvent) => {
+        const rect = canvas.getBoundingClientRect();
+
+        if (mouseState.current.isDraggingGizmo && activeGizmoAxis && camera) {
+             const x = e.clientX - rect.left;
+             const y = e.clientY - rect.top;
+             const viewMatrix = getCurrentViewMatrix();
+             if (viewMatrix) {
+                 const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+
+                 // Calculate new position
+                 const id = Array.from(selectedEntityIds)[0];
+                 const entity = adapter?.map?.entities.entities[id];
+                 if (entity) {
+                     const parts = entity.properties.origin.split(' ').map(parseFloat);
+                     const override = (adapter as any).entityPositions?.get(id);
+                     const startPos = override || vec3.fromValues(parts[0], parts[1], parts[2]);
+
+                     // Helper to get camera forward vector
+                     const invView = mat4.create();
+                     mat4.invert(invView, viewMatrix);
+                     const forward = vec3.fromValues(invView[8], invView[9], invView[10]); // Column 2 is Z axis (local forward)
+                     vec3.normalize(forward, forward);
+                     vec3.scale(forward, forward, -1); // OpenGL camera looks down -Z
+
+                     const newPos = gizmoController.current.getNewPosition(activeGizmoAxis, startPos, pickRay, forward);
+
+                     if (adapter && (adapter as any).setEntityPosition) {
+                         (adapter as any).setEntityPosition(id, newPos);
+                     }
+                 }
+             }
+             return;
+        }
+
+        if (mouseState.current.isDragging) {
+            const dx = e.clientX - mouseState.current.lastX;
+            const dy = e.clientY - mouseState.current.lastY;
+            if (Math.abs(dx) > 1 || Math.abs(dy) > 1) {
+                mouseState.current.hasMoved = true;
+            }
+            mouseState.current.deltaX += dx;
+            mouseState.current.deltaY += dy;
+            mouseState.current.lastX = e.clientX;
+            mouseState.current.lastY = e.clientY;
+            return;
+        }
+
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const viewMatrix = getCurrentViewMatrix();
+        if (!viewMatrix) return;
+
+        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+
+        const result = adapter.pickEntity!(pickRay);
+        const entity = result ? result.entity : null;
+
+        if (isEditorActive && adapter.map && entity) {
+             const index = (adapter.map.entities.entities as any[]).indexOf(entity);
+             if (index !== -1) {
+                 setHoveredEntityId(index);
+             } else {
+                 setHoveredEntityId(null);
+             }
+        } else {
+             setHoveredEntity(entity);
+        }
+    };
+
+    const handleMouseUp = () => {
+        mouseState.current.isDragging = false;
+        mouseState.current.isDraggingGizmo = false;
+        setActiveGizmoAxis(null);
+    };
+
+    const handleClick = (e: MouseEvent) => {
+        if (mouseState.current.isDragging || mouseState.current.hasMoved || mouseState.current.isDraggingGizmo) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const viewMatrix = getCurrentViewMatrix();
+        if (!viewMatrix) return;
+
+        const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+
+        const result = adapter.pickEntity!(pickRay);
+        const entity = result ? result.entity : null;
+
+        if (isEditorActive) {
+             if (entity && adapter.map) {
+                 const index = (adapter.map.entities.entities as any[]).indexOf(entity);
+                 if (index !== -1) {
+                     selectEntity(index, e.ctrlKey || e.metaKey);
+                 }
+             } else {
+                 // Deselect if clicking empty space?
+             }
+        }
+
+        if (onEntitySelected) {
+            onEntitySelected(entity);
+        }
+    };
+
+    canvas.addEventListener('mousedown', handleMouseDown);
     canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseup', handleMouseUp);
     canvas.addEventListener('click', handleClick);
 
     return () => {
+        canvas.removeEventListener('mousedown', handleMouseDown);
         canvas.removeEventListener('mousemove', handleMouseMove);
+        canvas.removeEventListener('mouseup', handleMouseUp);
         canvas.removeEventListener('click', handleClick);
     };
-  }, [adapter, camera, cameraMode, onEntitySelected]);
+  }, [adapter, camera, cameraMode, onEntitySelected, isEditorActive, selectedEntityIds, selectEntity]);
 
   useEffect(() => {
       if (adapter && adapter.setHoveredEntity) {
@@ -540,6 +622,28 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
           const cpuStart = performance.now();
           adapter.render(gl, camera, viewMatrix);
+
+          // Render Gizmo if active
+          if (isEditorActive && selectedEntityIds.size === 1 && (adapter as any).getDebugRenderer) {
+              const debugRenderer = (adapter as any).getDebugRenderer();
+              if (debugRenderer) {
+                  const id = Array.from(selectedEntityIds)[0];
+                  // Update gizmo position
+                  const entity = adapter.map?.entities.entities[id];
+                  if (entity && entity.properties && entity.properties.origin) {
+                      const parts = entity.properties.origin.split(' ').map(parseFloat);
+                      // Check override
+                      const override = (adapter as any).entityPositions?.get(id);
+                      const pos = override || vec3.fromValues(parts[0], parts[1], parts[2]);
+                      gizmoController.current.setPosition(pos);
+                      gizmoController.current.render(debugRenderer);
+
+                      // Flush DebugRenderer again for the gizmo
+                      debugRenderer.render(mat4.multiply(mat4.create(), camera.projectionMatrix as mat4, viewMatrix));
+                  }
+              }
+          }
+
           const cpuEnd = performance.now();
 
           // Collect stats if enabled
@@ -596,7 +700,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           running = false;
           cancelAnimationFrame(frameId);
       };
-  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode]);
+  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode, isEditorActive, selectedEntityIds]);
 
   // Resize Handler
   useEffect(() => {

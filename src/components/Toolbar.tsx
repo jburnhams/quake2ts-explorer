@@ -1,6 +1,7 @@
 import type { ViewMode } from '../services/pakService';
 import React, { useRef, useState, useEffect } from 'react';
 import { demoRecorderService } from '../services/demoRecorder';
+import { useMapEditor } from '@/src/context/MapEditorContext';
 
 export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
@@ -14,6 +15,7 @@ export interface ToolbarProps {
 export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const { isEditorActive, setEditorActive, selectedEntityIds } = useMapEditor();
 
   useEffect(() => {
     // Check initial state
@@ -101,6 +103,25 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
         >
           {isRecording ? "🔴 Stop Rec" : "⚪ Rec Demo"}
         </button>
+
+        <button
+          className={`toolbar-button ${isEditorActive ? 'active' : ''}`}
+          onClick={() => setEditorActive(!isEditorActive)}
+          data-testid="toggle-editor-button"
+          title="Toggle Map Editor Mode"
+          style={{ background: isEditorActive ? '#d35400' : '' }}
+        >
+           {isEditorActive ? 'Editing Map' : 'Edit Map'}
+        </button>
+
+        {isEditorActive && (
+          <div className="editor-controls" style={{ marginLeft: 10, display: 'flex', gap: 5 }}>
+             <span style={{ fontSize: '12px', color: '#aaa', alignSelf: 'center' }}>
+                {selectedEntityIds.size} selected
+             </span>
+          </div>
+        )}
+
         <input
           ref={fileInputRef}
           type="file"

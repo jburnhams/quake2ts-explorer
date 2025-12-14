@@ -3,6 +3,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { Toolbar } from '../../../src/components/Toolbar';
 import { demoRecorderService } from '../../../src/services/demoRecorder';
+import { MapEditorProvider } from '../../../src/context/MapEditorContext';
 
 // Mock the demoRecorderService
 jest.mock('../../../src/services/demoRecorder', () => ({
@@ -25,14 +26,18 @@ describe('Toolbar', () => {
     (demoRecorderService.isRecording as jest.Mock).mockReturnValue(false);
   });
 
+  const renderWithContext = (ui: React.ReactElement) => {
+    return render(<MapEditorProvider>{ui}</MapEditorProvider>);
+  };
+
   it('renders correctly', () => {
-    render(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} />);
+    renderWithContext(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} viewMode="by-pak" onViewModeChange={() => {}} />);
     expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
     expect(screen.getByText('Add PAK Files')).toBeInTheDocument();
   });
 
   it('handles file selection', () => {
-    render(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} />);
+    renderWithContext(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} viewMode="by-pak" onViewModeChange={() => {}} />);
     const fileInput = screen.getByTestId('file-input');
     const file = new File(['dummy content'], 'test.pak', { type: 'application/octet-stream' });
 
@@ -41,31 +46,33 @@ describe('Toolbar', () => {
   });
 
   it('toggles recording', () => {
-    render(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} />);
+    renderWithContext(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} viewMode="by-pak" onViewModeChange={() => {}} />);
     const recordBtn = screen.getByText('⚪ Rec Demo');
 
     // Start recording
     fireEvent.click(recordBtn);
     expect(demoRecorderService.startRecording).toHaveBeenCalled();
-
-    // Mock state change
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
-
-    // Rerender to reflect state (simulated since polling is async)
-    // Actually, in the real component, polling updates state. In test, we need to trigger update or use mocked state initially.
-    // For simplicity, let's just verifying call.
   });
 
   it('stops recording and triggers download', () => {
       (demoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
       (demoRecorderService.stopRecording as jest.Mock).mockReturnValue(new Uint8Array([1, 2, 3]));
 
-      render(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} />);
+      renderWithContext(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} viewMode="by-pak" onViewModeChange={() => {}} />);
       const stopBtn = screen.getByText('🔴 Stop Rec');
 
       fireEvent.click(stopBtn);
 
       expect(demoRecorderService.stopRecording).toHaveBeenCalled();
       expect(global.URL.createObjectURL).toHaveBeenCalled();
+  });
+
+  it('toggles editor mode', () => {
+     renderWithContext(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} viewMode="by-pak" onViewModeChange={() => {}} />);
+     const editBtn = screen.getByTestId('toggle-editor-button');
+
+     expect(editBtn).toHaveTextContent('Edit Map');
+     fireEvent.click(editBtn);
+     expect(editBtn).toHaveTextContent('Editing Map');
   });
 });
