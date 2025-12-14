@@ -17,8 +17,10 @@ import { CameraMode } from '@/src/types/cameraMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
 import { videoRecorderService } from '@/src/services/videoRecorder';
 import { PerformanceStats } from '../PerformanceStats';
+import { ScreenshotSettings } from '../ScreenshotSettings';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
+import { ScreenshotOptions } from '@/src/services/screenshotService';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -78,6 +80,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [isRecording, setIsRecording] = useState(false);
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
+  const [showScreenshotSettings, setShowScreenshotSettings] = useState(false);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -100,15 +103,16 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     };
   }, []);
 
-  const handleScreenshot = async () => {
+  const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
     if (!canvasRef.current) return;
 
     setShowFlash(true);
     setTimeout(() => setShowFlash(false), 150);
 
     try {
-        const blob = await captureScreenshot(canvasRef.current, { format: 'png' });
-        const filename = generateScreenshotFilename();
+        const blob = await captureScreenshot(canvasRef.current, options);
+        const ext = options.format === 'jpeg' ? 'jpg' : 'png';
+        const filename = generateScreenshotFilename().replace('.png', `.${ext}`);
         downloadScreenshot(blob, filename);
     } catch (e) {
         console.error("Screenshot failed:", e);
@@ -214,7 +218,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
         if (e.code === 'F12' || e.code === 'PrintScreen') {
             e.preventDefault(); // Prevent browser dev tools or system screenshot
-            handleScreenshot();
+            handleScreenshot(); // Default settings (PNG)
         }
 
         // Frame Stepping Shortcuts
@@ -743,6 +747,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
               history={perfHistory}
           />
        )}
+       <ScreenshotSettings
+           isOpen={showScreenshotSettings}
+           onClose={() => setShowScreenshotSettings(false)}
+           onCapture={handleScreenshot}
+       />
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
               position: 'absolute',
@@ -784,7 +793,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             setRenderColor={setRenderColor}
             debugMode={debugMode}
             setDebugMode={setDebugMode}
-            onScreenshot={handleScreenshot}
+            onScreenshot={() => setShowScreenshotSettings(true)}
             showStats={showStats}
             setShowStats={setShowStats}
             onStartRecording={handleStartRecording}
