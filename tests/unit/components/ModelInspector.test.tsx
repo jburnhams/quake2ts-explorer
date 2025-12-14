@@ -46,7 +46,11 @@ describe('ModelInspector', () => {
   });
 
   it('renders and initializes adapter', () => {
-    const parsedFile: ParsedFile = { type: 'md2', model: {} as any, animations: [] };
+    const parsedFile: ParsedFile = {
+        type: 'md2',
+        model: { header: { numVertices: 100, numTriangles: 50, numSkins: 1 } } as any,
+        animations: []
+    };
     render(<ModelInspector parsedFile={parsedFile} pakService={pakServiceMock} filePath="test.md2" />);
 
     expect(screen.getByTestId('universal-viewer')).toBeInTheDocument();
@@ -65,7 +69,11 @@ describe('ModelInspector', () => {
   });
 
   it('selects animation', () => {
-    const parsedFile: ParsedFile = { type: 'md2', model: {} as any, animations: [] };
+    const parsedFile: ParsedFile = {
+        type: 'md2',
+        model: { header: { numVertices: 100, numTriangles: 50, numSkins: 1 } } as any,
+        animations: []
+    };
     render(<ModelInspector parsedFile={parsedFile} pakService={pakServiceMock} filePath="test.md2" />);
 
     act(() => {
@@ -79,7 +87,11 @@ describe('ModelInspector', () => {
   });
 
   it('scrubs timeline', () => {
-    const parsedFile: ParsedFile = { type: 'md2', model: {} as any, animations: [] };
+    const parsedFile: ParsedFile = {
+        type: 'md2',
+        model: { header: { numVertices: 100, numTriangles: 50, numSkins: 1 } } as any,
+        animations: []
+    };
     render(<ModelInspector parsedFile={parsedFile} pakService={pakServiceMock} filePath="test.md2" />);
 
     act(() => {
@@ -96,7 +108,11 @@ describe('ModelInspector', () => {
   });
 
   it('toggles play/pause', () => {
-      const parsedFile: ParsedFile = { type: 'md2', model: {} as any, animations: [] };
+      const parsedFile: ParsedFile = {
+          type: 'md2',
+          model: { header: { numVertices: 100, numTriangles: 50, numSkins: 1 } } as any,
+          animations: []
+      };
       render(<ModelInspector parsedFile={parsedFile} pakService={pakServiceMock} filePath="test.md2" />);
 
       act(() => {
