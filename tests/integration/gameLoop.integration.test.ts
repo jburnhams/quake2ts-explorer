@@ -56,8 +56,11 @@ describe('GameLoop Integration', () => {
     }
 
     // We expect SOME calls.
-    // expect(simulate).toHaveBeenCalled();
-    // expect(render).toHaveBeenCalled();
+    expect(simulate).toHaveBeenCalled();
+    // Render might not be called if time step is small or interpolation factor is 0?
+    // But usually render is called every frame.
+    // FixedTimestepLoop calls render(alpha) every frame.
+    expect(render).toHaveBeenCalled();
 
     loop.stop();
   });

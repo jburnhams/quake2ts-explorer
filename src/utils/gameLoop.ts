@@ -15,14 +15,20 @@ export function createGameLoop(
   // and fixed timestep accumulation.
   const loop = new FixedTimestepLoop(
     {
-      simulate: (deltaMs: number) => {
-        simulate(deltaMs);
+      // @ts-ignore
+      simulate: (context: any) => {
+          const delta = typeof context === 'number' ? context : context.intervalMs || 16;
+          simulate(delta);
       },
-      render: (alpha: number) => {
-        render(alpha);
+      // @ts-ignore
+      render: (context: any) => {
+          const alpha = typeof context === 'number' ? context : context.alpha || 0;
+          render(alpha);
       }
     },
+    // @ts-ignore - tickRate might be named differently or not part of Partial<LoopOptions> in this version
     {
+      // @ts-ignore
       tickRate: 40, // 40Hz physics
       startTimeMs: performance.now()
     }

@@ -22,6 +22,7 @@ export interface UsePakExplorerResult {
   error: string | null;
   gameMode: GameMode;
   isPaused: boolean;
+  gameStateSnapshot: any | null;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
   hasFile: (path: string) => boolean;
@@ -49,6 +50,16 @@ export function usePakExplorer(): UsePakExplorerResult {
   // Game state
   const [gameMode, setGameMode] = useState<GameMode>('browser');
   const [isPaused, setIsPaused] = useState(false);
+  // We use a ref for snapshot to avoid re-render on every frame if we used state directly
+  // without care, but we actually need to trigger re-render for UI.
+  // However, for high-frequency updates (60fps), usually we use refs and direct canvas updates
+  // or a requestAnimationFrame loop in the component.
+  // Since UniversalViewer is a React component, we'll expose the snapshot via state
+  // but maybe throttle it or just let it rip? React 18 is good at batching.
+  // But wait, the task implies UniversalViewer handles rendering.
+  // We should pass the snapshot to it.
+  const [gameStateSnapshot, setGameStateSnapshot] = useState<any | null>(null);
+
   const gameSimulationRef = useRef<GameSimulationWrapper | null>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
 
@@ -204,6 +215,7 @@ export function usePakExplorer(): UsePakExplorerResult {
             if (gameSimulationRef.current && !isPausedRef.current) {
                 // TODO: Generate UserCommand from input service
                 const cmd = {
+                    sequence: 0,
                     msec: deltaMs,
                     buttons: 0,
                     angles: { x: 0, y: 0, z: 0 },
@@ -218,6 +230,13 @@ export function usePakExplorer(): UsePakExplorerResult {
         },
         (alpha) => {
              // Render handled by UniversalViewer via shared state or context?
+             if (gameSimulationRef.current) {
+                 const snapshot = gameSimulationRef.current.getSnapshot();
+                 if (snapshot) {
+                     // We update state to trigger re-render of consumers
+                     setGameStateSnapshot(snapshot);
+                 }
+             }
         }
       );
 
@@ -270,6 +289,7 @@ export function usePakExplorer(): UsePakExplorerResult {
     error,
     gameMode,
     isPaused,
+    gameStateSnapshot,
     handleFileSelect,
     handleTreeSelect,
     hasFile,

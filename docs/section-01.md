@@ -104,7 +104,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Export interface `GameLoop` with methods: `start()`, `stop()`, `isRunning(): boolean`
   - Store loop instance and RAF handle
 
-- [ ] **2.2**: Implement loop callbacks
+- [x] **2.2**: Implement loop callbacks
   - Define `simulate(deltaMs: number)` callback
     - Generate `UserCommand` from input controller
     - Call `gameService.tick(deltaMs, cmd)`

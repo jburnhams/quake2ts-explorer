@@ -139,7 +139,7 @@ function getFileType(path: string): FileType {
 }
 
 export class PakService {
-  private vfs: VirtualFileSystem;
+  public vfs: VirtualFileSystem;
   private archives: PakArchive[] = [];
   private palette: Uint8Array | null = null;
 
