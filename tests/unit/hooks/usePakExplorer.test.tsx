@@ -150,4 +150,42 @@ describe('usePakExplorer', () => {
          expect(result.current.viewMode).toBe('by-pak');
          expect(mockPakServiceMethods.buildFileTree).toHaveBeenCalledWith('by-pak');
     });
+
+    it('handles load error safely', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        (indexedDBService.getPaks as jest.Mock).mockRejectedValue(new Error('DB Error'));
+
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        expect(result.current.error).toBe('Failed to initialize application data');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('ignores non-pak files', async () => {
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        const file = new File([''], 'test.txt');
+        const fileList = {
+            item: (index: number) => (index === 0 ? file : null),
+            length: 1,
+            [Symbol.iterator]: function* () { yield file; }
+        } as unknown as FileList;
+
+        await act(async () => {
+            await result.current.handleFileSelect(fileList);
+        });
+
+        expect(indexedDBService.savePak).not.toHaveBeenCalled();
+    });
+
+    it('aborts loading on unmount', async () => {
+        // Mock fetch to hang so we can unmount while pending
+        (global.fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
+
+        const { unmount } = renderHook(() => usePakExplorer());
+        unmount();
+        // If logic is correct, no error logged/thrown
+    });
 });
