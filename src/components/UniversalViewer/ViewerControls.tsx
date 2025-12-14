@@ -28,6 +28,8 @@ interface ViewerControlsProps {
   debugMode?: DebugMode;
   setDebugMode?: (mode: DebugMode) => void;
   onScreenshot?: () => void;
+  showStats?: boolean;
+  setShowStats?: (show: boolean) => void;
 }
 
 export function ViewerControls({
@@ -51,7 +53,9 @@ export function ViewerControls({
   setRenderColor,
   debugMode,
   setDebugMode,
-  onScreenshot
+  onScreenshot,
+  showStats,
+  setShowStats
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -201,6 +205,21 @@ export function ViewerControls({
          </select>
        </div>
        )}
+
+       {setShowStats && (
+            <div className="stats-control" style={{ marginBottom: '10px' }}>
+                <label style={{ fontSize: '12px', display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                    <input
+                        type="checkbox"
+                        checked={showStats}
+                        onChange={(e) => setShowStats(e.target.checked)}
+                        style={{ marginRight: '5px' }}
+                    />
+                    Show Performance Stats
+                </label>
+            </div>
+       )}
+
        {renderMode !== 'textured' && (
         <div className="color-controls" style={{ marginBottom: '10px' }}>
           <Colorful

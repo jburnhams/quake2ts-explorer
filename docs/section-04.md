@@ -54,14 +54,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
     - **Library Enhancement Needed**: Expose entity bounds from library
   - Draw in separate render pass after main rendering
 
-- [ ] **1.2**: Implement normal visualization
+- [x] **1.2**: Implement normal visualization
   - For `DebugMode.Normals`:
     - Render short lines from vertices in direction of normals
     - Useful for diagnosing lighting issues
     - **Library Enhancement Needed**: Access to vertex normals from library
   - Use bright colors (cyan for face normals, yellow for vertex normals)
 
-- [ ] **1.3**: Implement PVS cluster visualization (BSP only)
+- [x] **1.3**: Implement PVS cluster visualization (BSP only)
   - For `DebugMode.PVSClusters`:
     - Color each BSP leaf by cluster ID
     - Show current cluster player is in (highlighted)
@@ -69,13 +69,13 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
     - **Library Enhancement Needed**: Expose PVS cluster data
   - Useful for understanding visibility culling
 
-- [ ] **1.4**: Implement collision hull visualization
+- [x] **1.4**: Implement collision hull visualization
   - For `DebugMode.CollisionHulls`:
     - Render collision geometry (simplified hulls)
     - Different colors for different content types (solid, water, lava, etc.)
     - Show player bounding box interacting with world
 
-- [ ] **1.5**: Implement lightmap visualization
+- [x] **1.5**: Implement lightmap visualization
   - For `DebugMode.Lightmaps`:
     - Render surfaces with only lightmap (no textures)
     - Useful for analyzing light quality
@@ -115,18 +115,18 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/components/PerformanceStats.tsx`
+- [x] **2.1**: Create `src/components/PerformanceStats.tsx`
   - Toggleable overlay (F key or button)
   - Display in top-right corner
   - Semi-transparent dark background
 
-- [ ] **2.2**: Implement FPS counter
+- [x] **2.2**: Implement FPS counter
   - Track frame times over rolling window (last 100 frames)
   - Calculate average, minimum, maximum FPS
   - Display prominently
   - Color-code: green (>55 FPS), yellow (30-55), red (<30)
 
-- [ ] **2.3**: Expose renderer statistics
+- [x] **2.3**: Expose renderer statistics
   - **Library Enhancement Needed**: `Renderer.getStatistics(): RenderStatistics`
     - Draw calls per frame
     - Triangles rendered
@@ -136,14 +136,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
     - Culled surfaces
   - Poll statistics each frame and display
 
-- [ ] **2.4**: Display memory usage
+- [x] **2.4**: Display memory usage
   - Track WebGL buffer memory usage
     - **Library Enhancement Needed**: Memory tracking API
   - Track texture memory
   - Track total heap size (if available via `performance.memory`)
   - Display in MB
 
-- [ ] **2.5**: Add GPU timing queries
+- [x] **2.5**: Add GPU timing queries
   - Use WebGL `EXT_disjoint_timer_query` extension
   - Measure GPU frame time
   - Display GPU vs CPU time breakdown
