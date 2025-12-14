@@ -25,10 +25,10 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 - Play/pause controls in `src/components/UniversalViewer/ViewerControls.tsx`
 - Speed adjustment (playback rate slider)
 - Demo rendering via `Dm2Adapter` in `src/components/UniversalViewer/adapters/Dm2Adapter.ts`
+- **Partial**: Timeline UI (scrubber, markers, placeholders for thumbnails)
+- **Partial**: Frame-by-frame navigation (buttons, shortcuts, overlay)
 
 **Missing**:
-- Visual timeline with scrubbing
-- Frame-by-frame stepping
 - Recording from gameplay
 - Statistics overlay
 - Advanced camera controls
@@ -43,25 +43,26 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **1.1**: Create `src/components/DemoTimeline.tsx`
+- [x] **1.1**: Create `src/components/DemoTimeline.tsx`
   - Render as horizontal bar at bottom of screen when demo active
   - Display playback position indicator (draggable)
   - Show total duration and current time
   - Mark current frame number and total frames
 
-- [ ] **1.2**: Implement scrubber interaction
+- [x] **1.2**: Implement scrubber interaction
   - Click anywhere on timeline to seek
   - Drag playhead to scrub through demo
   - Display time tooltip while hovering/dragging
   - Call `controller.seekToTime(seconds)` on release
 
-- [ ] **1.3**: Add frame thumbnails
+- [x] **1.3**: Add frame thumbnails
   - Generate thumbnails at regular intervals (every 100 frames or 10 seconds)
   - Display mini thumbnails along timeline
   - Show larger preview on hover
   - Cache thumbnails for performance
+  - *Note: Implemented as metadata preview placeholder due to performance constraints of headless generation.*
 
-- [ ] **1.4**: Implement event markers
+- [x] **1.4**: Implement event markers
   - Parse demo events (kills, deaths, pickups, objectives)
   - **Library Enhancement Needed**: `DemoPlaybackController.getEvents(): DemoEvent[]`
   - Display markers on timeline (colored dots/icons)
@@ -104,13 +105,13 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **2.1**: Modify `src/components/UniversalViewer/ViewerControls.tsx`
+- [x] **2.1**: Modify `src/components/UniversalViewer/ViewerControls.tsx`
   - Add "Step Backward" button (◄◄ icon)
   - Add "Step Forward" button (►►  icon)
   - Disable when demo not paused
   - Call `controller.stepForward(1)` and `controller.stepBackward(1)`
 
-- [ ] **2.2**: Implement keyboard shortcuts
+- [x] **2.2**: Implement keyboard shortcuts
   - Left arrow: Step backward 1 frame
   - Right arrow: Step forward 1 frame
   - Shift+Left: Step backward 10 frames
@@ -118,7 +119,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Home: Jump to beginning
   - End: Jump to end
 
-- [ ] **2.3**: Display frame info overlay
+- [x] **2.3**: Display frame info overlay
   - Show current frame number prominently
   - Show frame time (milliseconds into demo)
   - Show server tick count (if available)
@@ -197,7 +198,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Test start/stop recording
   - Test frame data capture
   - Mock DemoRecorder from library
-- Integration: `tests/integration/demoRecording.integration.test.ts`
+- Integration: `tests/integration/demoRecording.integration.test.tsx`
   - Record short gameplay session
   - Stop recording, verify output
   - Play back recorded demo, verify matches
