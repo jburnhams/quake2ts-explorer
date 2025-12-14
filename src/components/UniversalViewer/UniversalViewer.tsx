@@ -9,16 +9,20 @@ import { BspAdapter } from './adapters/BspAdapter';
 import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { DemoTimeline } from '../DemoTimeline';
+import { DemoBookmarks } from '../DemoBookmarks';
 import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
+import { Bookmark, bookmarkService } from '@/src/services/bookmarkService';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
 import { useMapEditor } from '@/src/context/MapEditorContext';
 import { GizmoController, GizmoAxis } from './GizmoController';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
 import { PerformanceStats } from '../PerformanceStats';
+import { ScreenshotSettings } from '../ScreenshotSettings';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
+import { ScreenshotOptions } from '@/src/services/screenshotService';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -78,16 +82,51 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [speed, setSpeed] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
   const [showFlash, setShowFlash] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
-  const handleScreenshot = async () => {
+  useEffect(() => {
+    if (filePath) {
+        setBookmarks(bookmarkService.getBookmarks(filePath));
+    } else {
+        setBookmarks([]);
+    }
+  }, [filePath]);
+  const [showScreenshotSettings, setShowScreenshotSettings] = useState(false);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isRecording && recordingStartTime) {
+      interval = setInterval(() => {
+        setRecordingDuration((Date.now() - recordingStartTime) / 1000);
+      }, 100);
+    } else {
+      setRecordingDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording, recordingStartTime]);
+
+  // Cleanup recording on unmount
+  useEffect(() => {
+    return () => {
+      if (videoRecorderService.isRecording()) {
+        videoRecorderService.stopRecording().catch(() => {});
+      }
+    };
+  }, []);
+
+  const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
     if (!canvasRef.current) return;
 
     setShowFlash(true);
     setTimeout(() => setShowFlash(false), 150);
 
     try {
-        const blob = await captureScreenshot(canvasRef.current, { format: 'png' });
-        const filename = generateScreenshotFilename();
+        const blob = await captureScreenshot(canvasRef.current, options);
+        const ext = options.format === 'jpeg' ? 'jpg' : 'png';
+        const filename = generateScreenshotFilename().replace('.png', `.${ext}`);
         downloadScreenshot(blob, filename);
     } catch (e) {
         console.error("Screenshot failed:", e);
@@ -163,7 +202,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
         if (e.code === 'F12' || e.code === 'PrintScreen') {
             e.preventDefault(); // Prevent browser dev tools or system screenshot
-            handleScreenshot();
+            handleScreenshot(); // Default settings (PNG)
         }
 
         // Frame Stepping Shortcuts
@@ -750,6 +789,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
               history={perfHistory}
           />
        )}
+       <ScreenshotSettings
+           isOpen={showScreenshotSettings}
+           onClose={() => setShowScreenshotSettings(false)}
+           onCapture={handleScreenshot}
+       />
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
               position: 'absolute',
@@ -789,13 +833,31 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             setRenderColor={setRenderColor}
             debugMode={debugMode}
             setDebugMode={setDebugMode}
-            onScreenshot={handleScreenshot}
+            onScreenshot={() => setShowScreenshotSettings(true)}
             showStats={showStats}
             setShowStats={setShowStats}
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (
-          <DemoTimeline controller={adapter.getDemoController()!} />
+          <>
+            <div style={{ position: 'absolute', bottom: 60, right: 10, zIndex: 50 }}>
+                <DemoBookmarks
+                    controller={adapter.getDemoController()!}
+                    demoId={filePath || 'unknown-demo'}
+                    onBookmarksChange={setBookmarks}
+                />
+            </div>
+            <DemoTimeline
+                controller={adapter.getDemoController()!}
+                bookmarks={bookmarks}
+                onBookmarkClick={(frame) => {
+                    const controller = adapter?.getDemoController?.();
+                    if (controller) {
+                        controller.seekToFrame(frame);
+                    }
+                }}
+            />
+          </>
        )}
      </div>
   );
