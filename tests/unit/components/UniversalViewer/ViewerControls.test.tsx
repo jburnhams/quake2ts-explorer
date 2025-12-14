@@ -121,9 +121,6 @@ describe('ViewerControls', () => {
 
     expect(mockSetOrbit).toHaveBeenCalled();
     const updater = mockSetOrbit.mock.calls[0][0];
-    // In React setState, it can be a value or a function. In this case, it's a value (object).
-    // Wait, let's check ViewerControls implementation of resetCamera.
-    // It calls setOrbit({...}) directly.
     expect(updater).toEqual({
       radius: 100,
       theta: 0,
@@ -136,15 +133,13 @@ describe('ViewerControls', () => {
     it('handles forward movement (zoom in)', () => {
       render(<ViewerControls {...defaultProps} />);
 
-      const buttons = screen.getAllByText('▲'); // There are two up buttons (Move and Rotate)
-      // The first one is in "Move / Zoom" section because of order in JSX
+      const buttons = screen.getAllByText('▲');
       fireEvent.click(buttons[0]);
 
       expect(mockSetOrbit).toHaveBeenCalled();
       const updater = mockSetOrbit.mock.calls[0][0];
-      // It passes a function
       const newState = updater(defaultOrbit);
-      expect(newState.radius).toBe(95); // 100 - 5
+      expect(newState.radius).toBe(95);
     });
 
     it('handles backward movement (zoom out)', () => {
@@ -156,7 +151,7 @@ describe('ViewerControls', () => {
       expect(mockSetOrbit).toHaveBeenCalled();
       const updater = mockSetOrbit.mock.calls[0][0];
       const newState = updater(defaultOrbit);
-      expect(newState.radius).toBe(105); // 100 + 5
+      expect(newState.radius).toBe(105);
     });
 
     it('handles left movement (pan left)', () => {
@@ -168,10 +163,6 @@ describe('ViewerControls', () => {
       expect(mockSetOrbit).toHaveBeenCalled();
       const updater = mockSetOrbit.mock.calls[0][0];
       const newState = updater(defaultOrbit);
-      // We need to check if target changed.
-      // With theta=0, phi=PI/4:
-      // eyeX = 0, eyeY = R*cos(PI/4), eyeZ = R*sin(PI/4) (approx)
-      // Actually let's just check target is not [0,0,0]
       expect(newState.target).not.toEqual([0, 0, 0]);
     });
 
@@ -193,12 +184,12 @@ describe('ViewerControls', () => {
       render(<ViewerControls {...defaultProps} />);
 
       const buttons = screen.getAllByText('◀');
-      fireEvent.click(buttons[1]); // Second one is Rotate
+      fireEvent.click(buttons[1]);
 
       expect(mockSetOrbit).toHaveBeenCalled();
       const updater = mockSetOrbit.mock.calls[0][0];
       const newState = updater(defaultOrbit);
-      expect(newState.theta).toBeLessThan(defaultOrbit.theta); // Decreases theta
+      expect(newState.theta).toBeLessThan(defaultOrbit.theta);
     });
 
     it('handles right rotation', () => {
@@ -255,7 +246,7 @@ describe('ViewerControls', () => {
       expect(setFreeCamera).toHaveBeenCalled();
       const updater = setFreeCamera.mock.calls[0][0];
       const newState = updater(defaultFreeCamera);
-      expect(newState.position[0]).not.toBe(0); // Should move forward/backward on x-axis initially
+      expect(newState.position[0]).not.toBe(0);
     });
   });
 
@@ -327,6 +318,25 @@ describe('ViewerControls', () => {
       expect(values).toContain(DebugMode.PVSClusters);
       expect(values).toContain(DebugMode.CollisionHulls);
       expect(values).toContain(DebugMode.Lightmaps);
+    });
+  });
+
+  describe('Screenshot Controls', () => {
+    it('renders screenshot button when onScreenshot is provided', () => {
+      render(<ViewerControls {...defaultProps} onScreenshot={jest.fn()} />);
+      expect(screen.getByText('📷 Screenshot')).toBeInTheDocument();
+    });
+
+    it('does not render screenshot button when onScreenshot is not provided', () => {
+      render(<ViewerControls {...defaultProps} onScreenshot={undefined} />);
+      expect(screen.queryByText('📷 Screenshot')).not.toBeInTheDocument();
+    });
+
+    it('calls onScreenshot when button is clicked', () => {
+      const mockOnScreenshot = jest.fn();
+      render(<ViewerControls {...defaultProps} onScreenshot={mockOnScreenshot} />);
+      fireEvent.click(screen.getByText('📷 Screenshot'));
+      expect(mockOnScreenshot).toHaveBeenCalledTimes(1);
     });
   });
 });

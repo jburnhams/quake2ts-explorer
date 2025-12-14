@@ -25,8 +25,9 @@ interface ViewerControlsProps {
   setRenderMode: (mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random') => void;
   renderColor: [number, number, number];
   setRenderColor: (color: [number, number, number]) => void;
-  debugMode: DebugMode;
-  setDebugMode: (mode: DebugMode) => void;
+  debugMode?: DebugMode;
+  setDebugMode?: (mode: DebugMode) => void;
+  onScreenshot?: () => void;
 }
 
 export function ViewerControls({
@@ -49,7 +50,8 @@ export function ViewerControls({
   renderColor,
   setRenderColor,
   debugMode,
-  setDebugMode
+  setDebugMode,
+  onScreenshot
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -181,11 +183,12 @@ export function ViewerControls({
          <button onClick={() => setRenderMode('solid-faceted')} disabled={renderMode === 'solid-faceted'}>Faceted</button>
          <button onClick={() => setRenderMode('random')} disabled={renderMode === 'random'}>Random</button>
        </div>
+       {setDebugMode && (
        <div className="debug-mode-controls" style={{ marginBottom: '10px' }}>
          <label htmlFor="debug-mode-select" style={{ display: 'block', marginBottom: '5px', fontSize: '12px' }}>Debug Mode:</label>
          <select
            id="debug-mode-select"
-           value={debugMode}
+           value={debugMode || DebugMode.None}
            onChange={(e) => setDebugMode(e.target.value as DebugMode)}
            style={{ width: '100%', padding: '5px', fontSize: '12px' }}
          >
@@ -197,6 +200,7 @@ export function ViewerControls({
            <option value={DebugMode.Lightmaps}>Lightmaps</option>
          </select>
        </div>
+       )}
        {renderMode !== 'textured' && (
         <div className="color-controls" style={{ marginBottom: '10px' }}>
           <Colorful
@@ -206,6 +210,15 @@ export function ViewerControls({
           />
         </div>
        )}
+
+      {onScreenshot && (
+          <div className="screenshot-controls" style={{ marginBottom: '10px' }}>
+              <button onClick={onScreenshot} style={{ width: '100%' }} title="Take Screenshot">
+                  📷 Screenshot
+              </button>
+          </div>
+      )}
+
       {hasPlayback && (
         <div className="md2-anim-controls">
              <div className="playback-buttons" style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>

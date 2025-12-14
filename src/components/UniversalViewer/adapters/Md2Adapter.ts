@@ -115,9 +115,14 @@ export class Md2Adapter implements ViewerAdapter {
 
         if (this.debugMode === DebugMode.BoundingBoxes) {
             // Simplified: Draw a static box or calculated box from model bounds
-            // Assuming model has bounds. MD2 frames have bounds, need to extract from current frame.
-            // For now, drawing a generic box around origin
-            this.debugRenderer.addBox(vec3.fromValues(-20, -20, 0), vec3.fromValues(20, 20, 60), vec4.fromValues(0, 1, 0, 1));
+            // MD2 frames have explicit translate and scale which define the bounds relative to the compressed vertices.
+            // However, getting the exact AABB for the current interpolated frame requires iterating vertices.
+            // We can approximate or use the frame's stored bounds if available (unlikely in parsed structure directly exposed).
+            // Better to just draw a box that encompasses typical player size for now,
+            // or if we had access to the frame header info.
+
+            // NOTE: Ideally we would calculate min/max from vertices here.
+            this.debugRenderer.addBox(vec3.fromValues(-24, -24, -24), vec3.fromValues(24, 24, 60), vec4.fromValues(0, 1, 0, 1));
         }
 
         if (this.debugMode === DebugMode.Normals) {
