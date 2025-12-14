@@ -128,7 +128,7 @@ export class Md3Adapter implements ViewerAdapter {
         if (this.debugMode === DebugMode.BoundingBoxes) {
             // MD3 frames have bounds. We can use the current frame's bounds.
             const frameIndex = Math.floor(this.currentFrame);
-            if (this.model && frameIndex >= 0 && frameIndex < this.model.frames.length) {
+            if (this.model && this.model.frames && frameIndex >= 0 && frameIndex < this.model.frames.length) {
                 const frame = this.model.frames[frameIndex];
                 // Frame bounds are min/max.
                 const min = vec3.fromValues(frame.minBounds[0], frame.minBounds[1], frame.minBounds[2]);
