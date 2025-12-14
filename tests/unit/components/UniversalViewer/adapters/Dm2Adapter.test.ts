@@ -156,7 +156,8 @@ describe('Dm2Adapter', () => {
 
     expect(controllerInstance.update).toHaveBeenCalledWith(16);
     const cameraUpdate = adapter.getCameraUpdate();
-    expect(cameraUpdate.position).toEqual(vec3.fromValues(10, 20, 30));
+    // Default mode is FirstPerson, which adds 22 units to Z for eye height
+    expect(cameraUpdate.position).toEqual(vec3.fromValues(10, 20, 52));
     expect(cameraUpdate.angles).toEqual(vec3.fromValues(0, 90, 0));
   });
 
@@ -284,7 +285,8 @@ describe('Dm2Adapter', () => {
     });
     adapter.update(16);
     const cameraUpdate = adapter.getCameraUpdate();
-    expect(cameraUpdate.position).toEqual(vec3.fromValues(1, 2, 3));
+    // Adds 22 for eye height
+    expect(cameraUpdate.position).toEqual(vec3.fromValues(1, 2, 25));
 
     // Check viewangles didn't change (still default 0,0,0 or previous)
     expect(cameraUpdate.angles).toEqual(vec3.fromValues(0, 0, 0));
