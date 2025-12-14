@@ -179,7 +179,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
               format="wal"
               name={filePath.split('/').pop() || 'unknown'}
               palette={pakService.getPalette() || undefined}
-              mipmaps={4}
+              mipmaps={parsedFile.mipmaps}
             />
           );
         }

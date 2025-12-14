@@ -1,7 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { TextureAtlas, TextureAtlasProps } from '../../src/components/TextureAtlas';
+
+// Mock URL.createObjectURL and revokeObjectURL
+global.URL.createObjectURL = jest.fn(() => 'mock-url');
+global.URL.revokeObjectURL = jest.fn();
 
 describe('TextureAtlas', () => {
   const mockRgba = new Uint8Array(64 * 64 * 4).fill(255); // White 64x64 texture
@@ -14,17 +18,23 @@ describe('TextureAtlas', () => {
   };
 
   beforeEach(() => {
-    // Mock canvasgetContext
+    // Mock canvas functions
     jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue({
       createImageData: () => ({
         data: new Uint8ClampedArray(64 * 64 * 4),
       }),
       putImageData: jest.fn(),
     } as any);
+
+    jest.spyOn(HTMLCanvasElement.prototype, 'toBlob').mockImplementation((callback) => {
+      callback(new Blob(['mock-blob'], { type: 'image/png' }));
+    });
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
+    (global.URL.createObjectURL as jest.Mock).mockClear();
+    (global.URL.revokeObjectURL as jest.Mock).mockClear();
   });
 
   it('renders correctly', () => {
@@ -37,7 +47,13 @@ describe('TextureAtlas', () => {
   });
 
   it('renders mipmap levels when provided', () => {
-    render(<TextureAtlas {...defaultProps} mipmaps={4} />);
+    const mipmaps = [
+      { width: 64, height: 64, rgba: new Uint8Array(0) },
+      { width: 32, height: 32, rgba: new Uint8Array(0) },
+      { width: 16, height: 16, rgba: new Uint8Array(0) },
+      { width: 8, height: 8, rgba: new Uint8Array(0) },
+    ];
+    render(<TextureAtlas {...defaultProps} mipmaps={mipmaps} />);
     expect(screen.getByText('Mip levels:')).toBeInTheDocument();
     expect(screen.getByText('4')).toBeInTheDocument();
   });
@@ -94,5 +110,47 @@ describe('TextureAtlas', () => {
     expect(screen.getByTestId('palette-info')).toBeInTheDocument();
     expect(screen.getByText('Index: 0')).toBeInTheDocument();
     expect(screen.getByText('R: 255')).toBeInTheDocument();
+  });
+
+  it('exports PNG', async () => {
+    render(<TextureAtlas {...defaultProps} />);
+    const exportBtn = screen.getByText('Export PNG');
+    fireEvent.click(exportBtn);
+
+    await waitFor(() => {
+      expect(HTMLCanvasElement.prototype.toBlob).toHaveBeenCalled();
+      expect(global.URL.createObjectURL).toHaveBeenCalled();
+    });
+  });
+
+  it('exports Palette', async () => {
+    const palette = new Uint8Array(768).fill(128);
+    render(<TextureAtlas {...defaultProps} palette={palette} />);
+
+    const exportBtn = screen.getByText('Export Palette');
+    fireEvent.click(exportBtn);
+
+    await waitFor(() => {
+      expect(global.URL.createObjectURL).toHaveBeenCalled();
+    });
+  });
+
+  it('exports Mipmaps', async () => {
+    const mipmaps = [
+      { width: 64, height: 64, rgba: new Uint8Array(16384) }, // 64*64*4
+      { width: 32, height: 32, rgba: new Uint8Array(4096) },
+    ];
+    render(<TextureAtlas {...defaultProps} mipmaps={mipmaps} />);
+
+    const exportBtn = screen.getByText('Export Mipmaps');
+    fireEvent.click(exportBtn);
+
+    await waitFor(() => {
+      // It should create 2 canvases and call toBlob on them
+      // Since we mocked HTMLCanvasElement.prototype.toBlob globally, it should be called.
+      // But notice we create new canvas elements in handleExportMipmaps using document.createElement('canvas')
+      // JSDOM should handle this.
+      expect(global.URL.createObjectURL).toHaveBeenCalledTimes(2);
+    });
   });
 });

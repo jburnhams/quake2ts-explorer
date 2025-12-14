@@ -8,7 +8,7 @@ export interface TextureAtlasProps {
   format: 'pcx' | 'wal' | 'tga' | 'unknown';
   name: string;
   palette?: Uint8Array; // For 8-bit textures
-  mipmaps?: number;
+  mipmaps?: { width: number; height: number; rgba: Uint8Array }[];
 }
 
 export function TextureAtlas({ rgba, width, height, format, name, palette, mipmaps }: TextureAtlasProps) {
@@ -66,6 +66,72 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
 
   const selectedColor = selectedColorIndex !== null ? getPaletteColor(selectedColorIndex) : null;
 
+  const downloadBlob = (blob: Blob, filename: string) => {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleExportPng = () => {
+    if (!canvasRef.current) return;
+    // We want to export the original image, not the potentially zoomed one
+    // But the canvas currently holds the image data at 1:1 scale (width/height attributes)
+    // and CSS scales it. So canvas.toBlob should work fine.
+    canvasRef.current.toBlob((blob) => {
+      if (blob) {
+        downloadBlob(blob, `${name}.png`);
+      }
+    }, 'image/png');
+  };
+
+  const handleExportPalette = () => {
+    if (!palette) return;
+
+    // Create GIMP Palette (GPL) format
+    let content = 'GIMP Palette\nName: Quake 2 Palette\nColumns: 16\n#\n';
+
+    for (let i = 0; i < 256; i++) {
+      const r = palette[i * 3];
+      const g = palette[i * 3 + 1];
+      const b = palette[i * 3 + 2];
+      content += `${r.toString().padStart(3)} ${g.toString().padStart(3)} ${b.toString().padStart(3)}\tIndex ${i}\n`;
+    }
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    downloadBlob(blob, `${name.split('.')[0]}.gpl`);
+  };
+
+  const handleExportMipmaps = async () => {
+    if (!mipmaps || mipmaps.length === 0) return;
+
+    for (let i = 0; i < mipmaps.length; i++) {
+      const level = mipmaps[i];
+      const canvas = document.createElement('canvas');
+      canvas.width = level.width;
+      canvas.height = level.height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) continue;
+
+      const imageData = ctx.createImageData(level.width, level.height);
+      imageData.data.set(level.rgba);
+      ctx.putImageData(imageData, 0, 0);
+
+      await new Promise<void>((resolve) => {
+        canvas.toBlob((blob) => {
+          if (blob) {
+            downloadBlob(blob, `${name}_mip${i}.png`);
+          }
+          resolve();
+        }, 'image/png');
+      });
+    }
+  };
+
   return (
     <div className="texture-atlas" data-testid="texture-atlas">
       <div className="texture-atlas-toolbar">
@@ -73,6 +139,17 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
         <span>{Math.round(zoom * 100)}%</span>
         <button onClick={handleZoomIn} disabled={zoom >= 16} aria-label="Zoom In">+</button>
         <button onClick={handleZoomReset}>1:1</button>
+
+        <div className="texture-atlas-separator" style={{ width: 1, height: 20, background: '#555', margin: '0 8px' }} />
+
+        <button onClick={handleExportPng} title="Export as PNG">Export PNG</button>
+        {palette && (
+          <button onClick={handleExportPalette} title="Export Palette (GPL)">Export Palette</button>
+        )}
+        {mipmaps && mipmaps.length > 0 && (
+          <button onClick={handleExportMipmaps} title="Export All Mipmaps">Export Mipmaps</button>
+        )}
+
         <div style={{ flex: 1 }} />
         <span>{width} x {height}</span>
       </div>
@@ -155,10 +232,10 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
             <span className="texture-atlas-metadata-label">Size:</span>
             <span>{Math.round(rgba.length / 1024)} KB (Uncompressed)</span>
           </div>
-          {mipmaps !== undefined && (
+          {mipmaps && mipmaps.length > 0 && (
             <div className="texture-atlas-metadata-item">
               <span className="texture-atlas-metadata-label">Mip levels:</span>
-              <span>{mipmaps}</span>
+              <span>{mipmaps.length}</span>
             </div>
           )}
         </div>

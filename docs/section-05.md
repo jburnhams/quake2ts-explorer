@@ -75,7 +75,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Highlight unused areas
   - Detect UV seams and overlaps
 
-- [ ] **1.6**: Add texture export
+- [x] **1.6**: Add texture export
   - Export as PNG (with palette applied for 8-bit)
   - Export palette separately (GPL, ACT formats)
   - Export all mipmaps

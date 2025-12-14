@@ -69,6 +69,7 @@ export interface ParsedWal {
   rgba: Uint8Array | null; // null if no palette loaded
   width: number;
   height: number;
+  mipmaps?: { width: number; height: number; rgba: Uint8Array }[];
 }
 
 export interface ParsedTga {
@@ -235,11 +236,14 @@ export class PakService {
       case 'wal': {
         const texture = parseWal(buffer);
         let rgba: Uint8Array | null = null;
+        let mipmaps: { width: number; height: number; rgba: Uint8Array }[] = [];
         if (this.palette) {
           const prepared = walToRgba(texture, this.palette);
           rgba = prepared.levels[0]?.rgba ?? null;
+          // @ts-ignore - The library type definition might be slightly different but runtime has it
+          mipmaps = prepared.levels;
         }
-        return { type: 'wal', texture, rgba, width: texture.width, height: texture.height };
+        return { type: 'wal', texture, rgba, width: texture.width, height: texture.height, mipmaps };
       }
       case 'tga': {
         const image = parseTga(buffer);

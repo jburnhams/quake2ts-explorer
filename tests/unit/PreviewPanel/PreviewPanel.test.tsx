@@ -7,6 +7,7 @@ describe('PreviewPanel Component', () => {
   const mockPakService = {
     hasFile: jest.fn(),
     readFile: jest.fn(),
+    getPalette: jest.fn().mockReturnValue(null),
   } as unknown as PakService;
 
   it('shows empty state when no file selected', () => {
@@ -48,5 +49,25 @@ describe('PreviewPanel Component', () => {
       />
     );
     expect(screen.getByTestId('texture-atlas')).toBeInTheDocument();
+  });
+
+  it('renders WAL texture preview with mipmaps', () => {
+    const parsedWal: ParsedFile = {
+      type: 'wal',
+      texture: {} as any,
+      rgba: new Uint8Array(4),
+      width: 1,
+      height: 1,
+      mipmaps: [{ width: 1, height: 1, rgba: new Uint8Array(4) }]
+    };
+    render(
+      <PreviewPanel
+        parsedFile={parsedWal}
+        filePath="test.wal"
+        pakService={mockPakService}
+      />
+    );
+    expect(screen.getByTestId('texture-atlas')).toBeInTheDocument();
+    expect(screen.getByText('Mip levels:')).toBeInTheDocument();
   });
 });
