@@ -41,11 +41,10 @@ jest.mock('quake2ts/game', () => {
 
 jest.mock('quake2ts/shared', () => {
   return {
-    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: {x:0,y:0,z:0}, allsolid: false, startsolid: false }),
+    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: {x:0,y:0,z:0}, allsolid: false, startsolid: false, surfaceFlags: 0 }),
     pointContents: jest.fn().mockReturnValue(0),
     Vec3: jest.fn(),
     CollisionEntityIndex: jest.fn().mockImplementation(() => {
-        // Return a mock instance with spyable methods
         return {
             link: jest.fn(),
             unlink: jest.fn(),
@@ -77,7 +76,6 @@ describe('GameService', () => {
     expect(createGame).toHaveBeenCalled();
     expect(game).toBeDefined();
     expect(getGameService()).toBe(game);
-    // Verify collision model creation
     expect(createCollisionModel).toHaveBeenCalled();
   });
 
@@ -110,7 +108,6 @@ describe('GameService', () => {
   });
 
   it('should perform trace using collision model', async () => {
-      // We need to capture the GameImports passed to createGame
       let capturedImports: any;
       (createGame as jest.Mock).mockImplementation((imports, engine, options) => {
           capturedImports = imports;
@@ -129,7 +126,6 @@ describe('GameService', () => {
       const mins = { x: -10, y: -10, z: -10 };
       const maxs = { x: 10, y: 10, z: 10 };
 
-      // Call trace on the implementation
       const result = capturedImports.trace(start, mins, maxs, end, null, 0);
 
       expect(traceBox).toHaveBeenCalledWith(expect.objectContaining({
@@ -157,10 +153,6 @@ describe('GameService', () => {
 
       await createGameSimulation(vfsMock, 'maps/demo1.bsp');
 
-      // Access the mock instance returned by CollisionEntityIndex constructor
-      // Since jest.mock implementation returns an object, we need to grab THAT object or ensure it's the one used.
-      // The implementation in jest.mock above returns a NEW object every time.
-      // We can grab it from mock.results of the constructor spy.
       const mockIndexInstance = (CollisionEntityIndex as jest.Mock).mock.results[0].value;
 
       mockIndexInstance.trace.mockReturnValue({
@@ -171,7 +163,7 @@ describe('GameService', () => {
           startsolid: false
       });
 
-      mockEntitySystem.find.mockReturnValue({ id: 99, classname: 'target' });
+      mockEntitySystem.find.mockReturnValue({ index: 99, classname: 'target' });
 
       const start = { x: 0, y: 0, z: 0 };
       const end = { x: 100, y: 0, z: 0 };
@@ -181,6 +173,85 @@ describe('GameService', () => {
       expect(mockIndexInstance.trace).toHaveBeenCalled();
       expect(result.fraction).toBe(0.5);
       expect(result.ent).toBeDefined();
-      expect(result.ent.id).toBe(99);
+      expect(result.ent.index).toBe(99);
+  });
+
+  it('should implement pointcontents callback', async () => {
+      let capturedImports: any;
+      (createGame as jest.Mock).mockImplementation((imports) => {
+          capturedImports = imports;
+          return {
+              init: jest.fn().mockReturnValue({ state: {} }),
+              shutdown: jest.fn(),
+              frame: jest.fn().mockReturnValue({ state: {} }),
+              entities: { find: jest.fn() }
+          };
+      });
+
+      await createGameSimulation(vfsMock, 'maps/demo1.bsp');
+
+      (pointContents as jest.Mock).mockReturnValue(42);
+      const result = capturedImports.pointcontents({x:0,y:0,z:0});
+      expect(result).toBe(42);
+      expect(pointContents).toHaveBeenCalled();
+  });
+
+  it('should implement linkentity callback for solid entities', async () => {
+      let capturedImports: any;
+      (createGame as jest.Mock).mockImplementation((imports) => {
+          capturedImports = imports;
+          return {
+              init: jest.fn().mockReturnValue({ state: {} }),
+              shutdown: jest.fn(),
+              frame: jest.fn().mockReturnValue({ state: {} }),
+              entities: { find: jest.fn() }
+          };
+      });
+
+      await createGameSimulation(vfsMock, 'maps/demo1.bsp');
+      const mockIndexInstance = (CollisionEntityIndex as jest.Mock).mock.results[0].value;
+
+      const entity = {
+          index: 1,
+          origin: {x:0,y:0,z:0},
+          mins: {x:-10,y:-10,z:-10},
+          maxs: {x:10,y:10,z:10},
+          solid: 1, // Solid
+          clipmask: 1
+      };
+
+      capturedImports.linkentity(entity);
+      expect(mockIndexInstance.link).toHaveBeenCalledWith(expect.objectContaining({
+          id: 1,
+          contents: 1
+      }));
+  });
+
+  it('should skip linkentity if not solid', async () => {
+      let capturedImports: any;
+      (createGame as jest.Mock).mockImplementation((imports) => {
+          capturedImports = imports;
+          return {
+              init: jest.fn().mockReturnValue({ state: {} }),
+              shutdown: jest.fn(),
+              frame: jest.fn().mockReturnValue({ state: {} }),
+              entities: { find: jest.fn() }
+          };
+      });
+
+      await createGameSimulation(vfsMock, 'maps/demo1.bsp');
+      const mockIndexInstance = (CollisionEntityIndex as jest.Mock).mock.results[0].value;
+
+      const entity = {
+          index: 1,
+          origin: {x:0,y:0,z:0},
+          mins: {x:-10,y:-10,z:-10},
+          maxs: {x:10,y:10,z:10},
+          solid: 0, // Not solid
+          clipmask: 0
+      };
+
+      capturedImports.linkentity(entity);
+      expect(mockIndexInstance.link).not.toHaveBeenCalled();
   });
 });
