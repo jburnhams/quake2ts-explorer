@@ -13,9 +13,21 @@ import {
   type GameCreateOptions,
   type GameStateSnapshot,
   type Entity,
-  type GameTraceResult,
-  type MulticastType
+  type MulticastType,
+  type GameEngine
 } from 'quake2ts/game';
+
+// Import GameTraceResult from where it is defined (likely imports module inside quake2ts/game)
+// It is not exported from 'quake2ts/game' root index.d.ts?
+// Wait, index.d.ts imports it from './imports.js' but doesn't export it?
+// "export type { GameImports };" in index.d.ts
+// But GameImports uses GameTraceResult.
+// If it's not exported, we can't import it easily unless we use subpath imports if available.
+// Or we redefine it matching the interface.
+// `imports.d.ts` has `export interface GameTraceResult`.
+// But `index.d.ts` doesn't export it directly.
+// Let's try to import from `quake2ts/game/dist/types/imports` if possible, but package.json likely blocks it.
+// Or just define it locally matching the interface.
 
 import {
   Vec3,
@@ -25,10 +37,23 @@ import {
   type CollisionModel,
   type CollisionTraceParams,
   CollisionEntityIndex,
-  type CollisionEntityLink
+  type CollisionEntityLink,
+  type CollisionPlane
 } from 'quake2ts/shared';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
+
+// Re-define GameTraceResult since it's not exported from main entry point
+interface GameTraceResult {
+    allsolid: boolean;
+    startsolid: boolean;
+    fraction: number;
+    endpos: Vec3;
+    plane: CollisionPlane | null;
+    surfaceFlags: number;
+    contents: number;
+    ent: Entity | null;
+}
 
 // Re-export types
 export type { GameSimulation, GameStateSnapshot };
@@ -71,9 +96,25 @@ class GameServiceImpl implements GameSimulation, GameImports {
     }
 
     // 2. Initialize the game instance
-    const engineHost = {
-      vfs: this.vfs,
-      assetManager: this.assetManager
+    const engineHost: GameEngine = {
+      trace: (start: Vec3, end: Vec3): unknown => {
+          if (!this.collisionModel) return null;
+          return traceBox({
+              model: this.collisionModel,
+              start,
+              end,
+              headnode: 0
+          });
+      },
+      sound: (entity, channel, sound, volume, attenuation, timeofs) => {
+          // Stub for audio
+      },
+      soundIndex: (sound) => this.soundIndex(sound),
+      modelIndex: (model) => this.modelIndex(model),
+      multicast: (origin, type, event, ...args) => this.multicast(origin, type, event, ...args),
+      unicast: (ent, reliable, event, ...args) => this.unicast(ent, reliable, event, ...args),
+      configstring: (index, value) => this.configstring(index, value),
+      serverCommand: (cmd) => this.serverCommand(cmd)
     };
 
     const imports: Partial<GameImports> = {
@@ -83,17 +124,17 @@ class GameServiceImpl implements GameSimulation, GameImports {
       unicast: this.unicast.bind(this),
       configstring: this.configstring.bind(this),
       serverCommand: this.serverCommand.bind(this),
-      soundIndex: this.soundIndex.bind(this),
-      modelIndex: this.modelIndex.bind(this),
-      imageIndex: this.imageIndex.bind(this),
       linkentity: this.linkentity.bind(this),
-      unlinkentity: this.unlinkentity.bind(this),
+      areaEdicts: this.areaEdicts.bind(this),
+      setLagCompensation: this.setLagCompensation.bind(this)
     };
 
     this.gameExports = createGame(imports, engineHost, options);
-    const initialFrame = this.gameExports.init(performance.now());
-    if (initialFrame) {
-      this.latestFrameResult = initialFrame;
+    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+
+    const initialFrame = sim.init(performance.now());
+    if (initialFrame && typeof initialFrame === 'object') {
+        this.latestFrameResult = initialFrame as GameFrameResult<GameStateSnapshot>;
     }
 
     // 3. Initialize level logic (spawn entities)
@@ -112,18 +153,19 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   shutdown(): void {
     if (this.gameExports) {
-      this.gameExports.shutdown();
+      const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+      sim.shutdown();
       this.gameExports = null;
     }
     this.assetManager.resetForLevelChange();
     this.currentMap = null;
     this.collisionModel = null;
-    // Reset entity index? It's specific to this instance, GC will handle it.
   }
 
   tick(step: FixedStepContext, cmd: UserCommand): void {
     if (!this.gameExports) return;
-    this.latestFrameResult = this.gameExports.frame(step, cmd);
+    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+    this.latestFrameResult = sim.frame(step, cmd);
   }
 
   getSnapshot(): GameStateSnapshot {
@@ -140,7 +182,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   // --- GameImports Implementations ---
 
-  trace(start: Vec3, mins: Vec3, maxs: Vec3, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
+  trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
     const nullTrace = {
         allsolid: false,
         startsolid: false,
@@ -149,7 +191,8 @@ class GameServiceImpl implements GameSimulation, GameImports {
         plane: { normal: { x: 0, y: 1, z: 0 }, dist: 0, type: 0, signbits: 0 },
         surface: { name: "default", flags: 0, value: 0 },
         contents: 0,
-        ent: null
+        ent: null,
+        surfaceFlags: 0
     };
 
     if (!this.collisionModel) {
@@ -170,14 +213,12 @@ class GameServiceImpl implements GameSimulation, GameImports {
     const worldResult = traceBox(traceParams);
 
     // 2. Trace against entities
-    // passId is the entity ID to ignore (self)
     const entityResult = this.entityIndex.trace({
         ...traceParams,
-        passId: passent ? passent.id : -1
+        passId: passent ? passent.index : -1 // Entity uses 'index', not 'id'
     });
 
     // 3. Combine results (take nearest)
-    // If entity collision is closer (smaller fraction), use it.
     let finalResult = worldResult;
     let hitEntity: number | null = null;
 
@@ -186,23 +227,9 @@ class GameServiceImpl implements GameSimulation, GameImports {
         hitEntity = entityResult.entityId;
     }
 
-    // If startsolid, we might need to handle differently, but usually physics engine handles it.
-
-    // Map back to GameTraceResult
-    // We need to resolve hitEntity ID to an Entity object.
-    // GameExports.entities.find(e => e.id === hitEntity)
-    // But GameImports doesn't have direct access to GameExports.entities usually,
-    // but we are inside GameServiceImpl which holds gameExports.
-
     let ent: Entity | null = null;
     if (hitEntity !== null && this.gameExports) {
-        // Assuming we can access entities from gameExports
-        // GameExports.entities is EntitySystem
-        // EntitySystem has find/get methods?
-        // EntitySystem definition: find(predicate), findAll, etc.
-        // It doesn't seem to have getById(id).
-        // But we can use find(e => e.id === hitEntity).
-        ent = this.gameExports.entities.find(e => e.id === hitEntity);
+        ent = this.gameExports.entities.find(e => e.index === hitEntity) || null;
     }
 
     return {
@@ -210,8 +237,8 @@ class GameServiceImpl implements GameSimulation, GameImports {
         startsolid: finalResult.startsolid,
         fraction: finalResult.fraction,
         endpos: finalResult.endpos,
-        plane: finalResult.plane || { normal: { x: 0, y: 0, z: 1 }, dist: 0, type: 0, signbits: 0 },
-        surface: { name: "unknown", flags: finalResult.surfaceFlags || 0, value: 0 },
+        plane: finalResult.plane || null, // GameTraceResult allows null plane?
+        surfaceFlags: finalResult.surfaceFlags || 0,
         contents: finalResult.contents || 0,
         ent
     };
@@ -262,22 +289,36 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   linkentity(entity: Entity): void {
     // Only link if solid
-    if (entity.solid === 0) return; // NOT_SOLID (SolidType.NOT is 0 usually)
+    if (entity.solid === 0) return; // NOT_SOLID
 
+    // CollisionEntityLink requires { id, origin, mins, maxs, contents }
     const link: CollisionEntityLink = {
-        id: entity.id,
+        id: entity.index, // Use index as id
         origin: entity.origin,
         mins: entity.mins,
         maxs: entity.maxs,
-        contents: entity.clipmask || 1, // Default to 1 if no mask? Or use solid type mapping?
-        // entity.solid type enum: NOT, TRIGGER, BBOX, BSP.
-        // We probably only link BBOX and BSP.
+        contents: entity.clipmask || 1,
+        surfaceFlags: 0 // Optional
     };
     this.entityIndex.link(link);
   }
 
-  unlinkentity(entity: Entity): void {
-    this.entityIndex.unlink(entity.id);
+  unlinkentity(entity: Entity | undefined): void {
+    if (entity) {
+        this.entityIndex.unlink(entity.index);
+    }
+  }
+
+  areaEdicts(mins: Vec3, maxs: Vec3): number[] | null {
+      return this.entityIndex.gatherTriggerTouches(
+          { x: (mins.x + maxs.x)/2, y: (mins.y + maxs.y)/2, z: (mins.z + maxs.z)/2 },
+          mins,
+          maxs
+      );
+  }
+
+  setLagCompensation(active: boolean, client?: Entity, lagMs?: number): void {
+      // Stub
   }
 }
 
@@ -287,21 +328,24 @@ let gameServiceInstance: GameServiceImpl | null = null;
 export async function createGameSimulation(
   vfs: VirtualFileSystem,
   mapName: string,
-  options: GameCreateOptions = {
-    maxClients: 1,
-    deathmatch: false,
-    coop: false,
-    skill: 1,
-    gravity: { x: 0, y: 0, z: -800 }
-  }
+  options: Partial<GameCreateOptions> = {} // Allow partial options
 ): Promise<GameSimulation> {
   // If exists, shutdown previous
   if (gameServiceInstance) {
     gameServiceInstance.shutdown();
   }
 
+  // Fill defaults
+  const fullOptions: GameCreateOptions = {
+      gravity: { x: 0, y: 0, z: -800 },
+      deathmatch: false,
+      coop: false,
+      skill: 1,
+      ...options
+  };
+
   const service = new GameServiceImpl(vfs, mapName);
-  await service.init(options);
+  await service.init(fullOptions);
 
   gameServiceInstance = service;
   return service;
