@@ -74,4 +74,7 @@ export interface ViewerAdapter {
 
   // Demo Playback
   getDemoController?(): DemoPlaybackController | null;
+
+  // Lightmap info (BSP specific, but useful to expose optionally)
+  getLightmapInfo?(atlasIndex: number): { width: number; height: number; surfaceCount: number };
 }

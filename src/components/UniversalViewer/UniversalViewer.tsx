@@ -344,7 +344,9 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              if (newAdapter) {
                  await newAdapter.load(gl, parsedFile, pakService, filePath);
                  setAdapter(newAdapter);
-                 onAdapterReady?.(newAdapter);
+                 if (onAdapterReady) {
+                     onAdapterReady(newAdapter);
+                 }
 
                  if ((newAdapter as any).getUniqueClassnames) {
                     const classnames = (newAdapter as any).getUniqueClassnames();

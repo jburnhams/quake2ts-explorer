@@ -260,6 +260,32 @@ export class BspAdapter implements ViewerAdapter {
     return this.map?.entities.getUniqueClassnames() ?? [];
   }
 
+  getLightmaps(): Texture2D[] {
+      return this.geometry ? this.geometry.lightmaps.map(l => l.texture) : [];
+  }
+
+  getLightmapInfo(atlasIndex: number): { width: number; height: number; surfaceCount: number } {
+      if (!this.geometry || !this.geometry.lightmaps[atlasIndex]) {
+          return { width: 0, height: 0, surfaceCount: 0 };
+      }
+
+      // Quake 2 engine lightmaps are typically packed into 128x128 pages.
+      // We assume standard size if not exposed, but ideally Texture2D would expose it.
+      // Since we can't inspect Texture2D easily here, we use the known constant.
+      // However, we can count surfaces.
+      const width = 128;
+      const height = 128;
+
+      let surfaceCount = 0;
+      for (const surface of this.geometry.surfaces) {
+          if (surface.lightmap && surface.lightmap.atlasIndex === atlasIndex) {
+              surfaceCount++;
+          }
+      }
+
+      return { width, height, surfaceCount };
+  }
+
   useZUp() { return true; }
 
   setRenderOptions(options: RenderOptions) {
