@@ -17,18 +17,6 @@ import {
   type GameEngine
 } from 'quake2ts/game';
 
-// Import GameTraceResult from where it is defined (likely imports module inside quake2ts/game)
-// It is not exported from 'quake2ts/game' root index.d.ts?
-// Wait, index.d.ts imports it from './imports.js' but doesn't export it?
-// "export type { GameImports };" in index.d.ts
-// But GameImports uses GameTraceResult.
-// If it's not exported, we can't import it easily unless we use subpath imports if available.
-// Or we redefine it matching the interface.
-// `imports.d.ts` has `export interface GameTraceResult`.
-// But `index.d.ts` doesn't export it directly.
-// Let's try to import from `quake2ts/game/dist/types/imports` if possible, but package.json likely blocks it.
-// Or just define it locally matching the interface.
-
 import {
   Vec3,
   type UserCommand,
@@ -183,16 +171,15 @@ class GameServiceImpl implements GameSimulation, GameImports {
   // --- GameImports Implementations ---
 
   trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
-    const nullTrace = {
+    const nullTrace: GameTraceResult = {
         allsolid: false,
         startsolid: false,
         fraction: 1.0,
         endpos: end,
         plane: { normal: { x: 0, y: 1, z: 0 }, dist: 0, type: 0, signbits: 0 },
-        surface: { name: "default", flags: 0, value: 0 },
+        surfaceFlags: 0,
         contents: 0,
-        ent: null,
-        surfaceFlags: 0
+        ent: null
     };
 
     if (!this.collisionModel) {
@@ -237,7 +224,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
         startsolid: finalResult.startsolid,
         fraction: finalResult.fraction,
         endpos: finalResult.endpos,
-        plane: finalResult.plane || null, // GameTraceResult allows null plane?
+        plane: finalResult.plane || null,
         surfaceFlags: finalResult.surfaceFlags || 0,
         contents: finalResult.contents || 0,
         ent
