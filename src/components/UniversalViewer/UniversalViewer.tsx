@@ -13,6 +13,7 @@ import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
+import { CameraMode } from '@/src/types/cameraMode';
 import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
 import { PerformanceStats } from '../PerformanceStats';
 import { RenderStatistics } from '@/src/types/renderStatistics';
@@ -44,6 +45,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
   const [camera, setCamera] = useState<Camera | null>(null);
   const [cameraMode, setCameraMode] = useState<'orbit' | 'free'>('orbit');
+  const [demoCameraMode, setDemoCameraMode] = useState<CameraMode>(CameraMode.FirstPerson);
   const [renderMode, setRenderMode] = useState<'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random'>('textured');
   const [renderColor, setRenderColor] = useState<[number, number, number]>([1, 1, 1]);
   const [debugMode, setDebugMode] = useState<DebugMode>(DebugMode.None);
@@ -364,6 +366,52 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   }, [adapter, debugMode]);
 
   useEffect(() => {
+    if (adapter && adapter.setCameraMode) {
+        // If we are switching TO free or orbital mode, we should sync the local camera state
+        // to the current camera position so there is no jump.
+        if (demoCameraMode === CameraMode.Free || demoCameraMode === CameraMode.Orbital) {
+            if (camera) {
+                // Sync Free Camera
+                if (camera.position) {
+                    vec3.copy(freeCameraRef.current.position, camera.position);
+                    setFreeCamera(prev => ({ ...prev, position: vec3.clone(camera.position) }));
+                }
+
+                // For rotation, we need to extract from view matrix or angles.
+                // Camera object usually has 'angles' in degrees if updated by adapter.
+                if (camera.angles) {
+                    // Convert degrees to radians for FreeCameraState
+                    const radX = camera.angles[0] * (Math.PI / 180);
+                    const radY = camera.angles[1] * (Math.PI / 180);
+                    const radZ = camera.angles[2] * (Math.PI / 180);
+
+                    freeCameraRef.current.rotation = [radX, radY, radZ];
+                    setFreeCamera(prev => ({ ...prev, rotation: [radX, radY, radZ] }));
+                }
+
+                // Sync Orbital Camera target
+                if (camera.position) {
+                    // Set target to slightly ahead of camera?
+                    // Or set target to camera position and radius to something small?
+                    // Actually, usually orbital mode is around a target.
+                    // If we switch to orbital, we probably want to orbit the *player* or the current view center.
+                    // For now, let's just default to keeping the radius but centering on current pos
+                    vec3.copy(orbitRef.current.target, camera.position);
+                    // Adjust radius to see the target
+                    setOrbit(prev => ({ ...prev, target: vec3.clone(camera.position), radius: 200 }));
+                }
+            }
+
+            // Explicitly switch the main UI mode to Free or Orbit so inputs are processed
+            if (demoCameraMode === CameraMode.Free) setCameraMode('free');
+            else if (demoCameraMode === CameraMode.Orbital) setCameraMode('orbit');
+        }
+
+        adapter.setCameraMode(demoCameraMode);
+    }
+  }, [adapter, demoCameraMode]);
+
+  useEffect(() => {
     if (adapter && adapter.setHiddenClasses && hiddenClassnames) {
       adapter.setHiddenClasses(hiddenClassnames);
     }
@@ -670,6 +718,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             showCameraControls={!(adapter?.hasCameraControl && adapter?.hasCameraControl())}
             cameraMode={cameraMode}
             setCameraMode={setCameraMode}
+            demoCameraMode={demoCameraMode}
+            setDemoCameraMode={(adapter?.setCameraMode) ? setDemoCameraMode : undefined}
             renderMode={renderMode}
             setRenderMode={setRenderMode}
             renderColor={renderColor}

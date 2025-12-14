@@ -4,6 +4,7 @@ import Colorful from '@uiw/react-color-colorful';
 import { hsvaToRgba, rgbaToHsva } from '@uiw/color-convert';
 import { OrbitState, FreeCameraState } from '../../utils/cameraUtils';
 import { DebugMode } from '../../types/debugMode';
+import { CameraMode } from '@/src/types/cameraMode';
 import '../../styles/md2Viewer.css';
 
 interface ViewerControlsProps {
@@ -21,6 +22,8 @@ interface ViewerControlsProps {
   showCameraControls: boolean;
   cameraMode: 'orbit' | 'free';
   setCameraMode: (mode: 'orbit' | 'free') => void;
+  demoCameraMode?: CameraMode;
+  setDemoCameraMode?: (mode: CameraMode) => void;
   renderMode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random';
   setRenderMode: (mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted' | 'random') => void;
   renderColor: [number, number, number];
@@ -47,6 +50,8 @@ export function ViewerControls({
   showCameraControls,
   cameraMode,
   setCameraMode,
+  demoCameraMode,
+  setDemoCameraMode,
   renderMode,
   setRenderMode,
   renderColor,
@@ -267,6 +272,23 @@ export function ViewerControls({
                 />
              </div>
         </div>
+      )}
+
+      {setDemoCameraMode && (
+          <div className="demo-camera-controls" style={{ marginBottom: '10px' }}>
+              <label htmlFor="demo-camera-select" style={{ display: 'block', marginBottom: '5px', fontSize: '12px' }}>Camera Mode:</label>
+              <select
+                  id="demo-camera-select"
+                  value={demoCameraMode || CameraMode.FirstPerson}
+                  onChange={(e) => setDemoCameraMode(e.target.value as CameraMode)}
+                  style={{ width: '100%', padding: '5px', fontSize: '12px' }}
+              >
+                  <option value={CameraMode.FirstPerson}>First Person</option>
+                  <option value={CameraMode.ThirdPerson}>Third Person</option>
+                  <option value={CameraMode.Free}>Free Cam</option>
+                  <option value={CameraMode.Orbital}>Orbital</option>
+              </select>
+          </div>
       )}
 
       {showCameraControls && (

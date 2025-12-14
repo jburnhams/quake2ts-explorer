@@ -2,6 +2,7 @@ import { Camera, DemoPlaybackController } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
+import { CameraMode } from '@/src/types/cameraMode';
 
 export interface RenderOptions {
   mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted';
@@ -55,6 +56,8 @@ export interface ViewerAdapter {
   hasCameraControl?(): boolean;
   // Get the camera position/angles from the adapter if it controls the camera
   getCameraUpdate?(): { position: vec3; angles: vec3 };
+  // Set the camera mode for the adapter
+  setCameraMode?(mode: CameraMode): void;
 
   // Returns true if the adapter requires Z-up coordinate system (e.g. BSP/DM2)
   useZUp?(): boolean;
