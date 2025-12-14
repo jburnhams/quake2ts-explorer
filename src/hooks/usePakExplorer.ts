@@ -8,7 +8,7 @@ import {
 } from '../services/pakService';
 import { indexedDBService } from '../services/indexedDBService';
 import { createGameLoop, GameLoop } from '../utils/gameLoop';
-import { createGameSimulation, GameSimulationWrapper } from '../services/gameService';
+import { createGameSimulation, GameSimulation } from '../services/gameService';
 import { initInputController, cleanupInputController, generateUserCommand } from '../services/inputService';
 
 export type GameMode = 'browser' | 'game';
@@ -59,7 +59,7 @@ export function usePakExplorer(): UsePakExplorerResult {
   const [isPaused, setIsPaused] = useState(false);
   const [gameStateSnapshot, setGameStateSnapshot] = useState<any | null>(null);
 
-  const gameSimulationRef = useRef<GameSimulationWrapper | null>(null);
+  const gameSimulationRef = useRef<GameSimulation | null>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
@@ -329,10 +329,10 @@ export function usePakExplorer(): UsePakExplorerResult {
       initInputController();
 
       const loop = createGameLoop(
-        (deltaMs) => {
+        (step) => {
             if (gameSimulationRef.current && !isPausedRef.current) {
-                const cmd = generateUserCommand(deltaMs);
-                gameSimulationRef.current.tick(deltaMs, cmd);
+                const cmd = generateUserCommand(step.deltaMs);
+                gameSimulationRef.current.tick(step, cmd);
             }
         },
         (alpha) => {

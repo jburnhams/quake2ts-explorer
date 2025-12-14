@@ -1,51 +1,38 @@
 import {
-  createGame,
-  GameImports,
-  GameExports,
-  GameCreateOptions,
-  Entity,
-  GameStateSnapshot,
-  MulticastType
-} from 'quake2ts/game';
-import {
-  VirtualFileSystem,
   AssetManager,
-  BspMap,
-  BspPlane,
-  BspNode,
-  BspLeaf,
-  BspModel,
+  VirtualFileSystem,
+  type BspMap,
+  type FixedStepContext,
+  type GameFrameResult
 } from 'quake2ts/engine';
+
+import {
+  createGame,
+  type GameImports,
+  type GameExports,
+  type GameCreateOptions,
+  type GameStateSnapshot,
+  type Entity,
+  type MulticastType,
+  type GameEngine
+} from 'quake2ts/game';
+
 import {
   Vec3,
-  UserCommand,
-  buildCollisionModel,
-  CollisionLumpData,
-  CollisionModel,
-  CollisionEntityIndex,
+  type UserCommand,
   traceBox,
-  CollisionTraceParams,
-  CollisionEntityTraceParams,
-  CollisionEntityTraceResult,
-  CollisionTraceResult,
-  CollisionPlane,
   pointContents,
-  CollisionEntityLink
+  type CollisionModel,
+  type CollisionTraceParams,
+  CollisionEntityIndex,
+  type CollisionEntityLink,
+  type CollisionPlane
 } from 'quake2ts/shared';
 
-// Type aliases for types not exported from engine
-type BspBrush = BspMap['brushes'][number];
-type BspBrushSide = BspMap['brushSides'][number];
+import { createCollisionModel } from '../utils/collisionAdapter';
 
-export interface GameSimulationWrapper {
-  start(): void;
-  stop(): void;
-  tick(deltaMs: number, cmd: UserCommand): void;
-  getSnapshot(): GameStateSnapshot | null;
-  shutdown(): void;
-}
-
-export interface GameTraceResult {
+// Re-define GameTraceResult since it's not exported from main entry point
+interface GameTraceResult {
     allsolid: boolean;
     startsolid: boolean;
     fraction: number;
@@ -56,248 +43,308 @@ export interface GameTraceResult {
     ent: Entity | null;
 }
 
-// Helper to convert tuple to shared Vec3
-function toVec3(v: [number, number, number]): Vec3 {
-  // Construct an object that satisfies Vec3 interface (array-like with x,y,z)
-  const res: any = [v[0], v[1], v[2]];
-  res.x = v[0];
-  res.y = v[1];
-  res.z = v[2];
-  return res as Vec3;
+// Re-export types
+export type { GameSimulation, GameStateSnapshot };
+
+interface GameSimulation {
+  start(): void;
+  stop(): void;
+  tick(step: FixedStepContext, cmd: UserCommand): void;
+  getSnapshot(): GameStateSnapshot;
+  shutdown(): void;
 }
 
-function createVec3(x: number, y: number, z: number): Vec3 {
-  return toVec3([x, y, z]);
-}
+class GameServiceImpl implements GameSimulation, GameImports {
+  private gameExports: GameExports | null = null;
+  private assetManager: AssetManager;
+  private currentMap: BspMap | null = null;
+  private collisionModel: CollisionModel | null = null;
+  private entityIndex: CollisionEntityIndex;
+  private configStrings = new Map<number, string>();
+  private soundIndices = new Map<string, number>();
+  private modelIndices = new Map<string, number>();
+  private imageIndices = new Map<string, number>();
+  private latestFrameResult: GameFrameResult<GameStateSnapshot> | null = null;
 
-function bspToCollisionLump(map: BspMap): CollisionLumpData {
-  const planes = map.planes.map(p => ({
-    normal: toVec3(p.normal),
-    dist: p.dist,
-    type: p.type
-  }));
+  constructor(
+    private vfs: VirtualFileSystem,
+    private mapName: string
+  ) {
+    this.assetManager = new AssetManager(vfs);
+    this.entityIndex = new CollisionEntityIndex();
+  }
 
-  const nodes = map.nodes.map(n => ({
-    planenum: n.planeIndex,
-    children: n.children
-  }));
+  async init(options: GameCreateOptions): Promise<void> {
+    // 1. Load the map
+    this.currentMap = await this.assetManager.loadMap(this.mapName);
 
-  const leaves = map.leafs.map(l => ({
-    contents: l.contents,
-    cluster: l.cluster,
-    area: l.area,
-    firstLeafBrush: l.firstLeafBrush,
-    numLeafBrushes: l.numLeafBrushes
-  }));
+    // Convert to CollisionModel for physics
+    if (this.currentMap) {
+        this.collisionModel = createCollisionModel(this.currentMap);
+    }
 
-  const brushes = map.brushes.map(b => ({
-    firstSide: b.firstSide,
-    numSides: b.numSides,
-    contents: b.contents
-  }));
-
-  const resolvedBrushSides = map.brushSides.map(bs => {
-    const texInfo = map.texInfo[bs.texInfo];
-    return {
-      planenum: bs.planeIndex,
-      surfaceFlags: texInfo ? texInfo.flags : 0
+    // 2. Initialize the game instance
+    const engineHost: GameEngine = {
+      trace: (start: Vec3, end: Vec3): unknown => {
+          if (!this.collisionModel) return null;
+          return traceBox({
+              model: this.collisionModel,
+              start,
+              end,
+              headnode: 0
+          });
+      },
+      sound: (entity, channel, sound, volume, attenuation, timeofs) => {
+          // Stub for audio
+      },
+      soundIndex: (sound) => this.soundIndex(sound),
+      modelIndex: (model) => this.modelIndex(model),
+      multicast: (origin, type, event, ...args) => this.multicast(origin, type, event, ...args),
+      unicast: (ent, reliable, event, ...args) => this.unicast(ent, reliable, event, ...args),
+      configstring: (index, value) => this.configstring(index, value),
+      serverCommand: (cmd) => this.serverCommand(cmd)
     };
-  });
 
-  const newLeafBrushes: number[] = [];
-  const newLeaves = leaves.map((l, i) => {
-     const leafBrushList = map.leafLists.leafBrushes[i];
-     const first = newLeafBrushes.length;
-     if (leafBrushList) {
-       newLeafBrushes.push(...leafBrushList);
-     }
-     return {
-       ...l,
-       firstLeafBrush: first,
-       numLeafBrushes: leafBrushList ? leafBrushList.length : 0
-     };
-  });
-
-  const bmodels = map.models.map(m => ({
-    mins: toVec3(m.mins),
-    maxs: toVec3(m.maxs),
-    origin: toVec3(m.origin),
-    headnode: m.headNode
-  }));
-
-  let visibility = undefined;
-  if (map.visibility) {
-    visibility = {
-      numClusters: map.visibility.numClusters,
-      clusters: map.visibility.clusters.map(c => ({
-        pvs: c.pvs,
-        phs: c.phs
-      }))
+    const imports: Partial<GameImports> = {
+      trace: this.trace.bind(this),
+      pointcontents: this.pointcontents.bind(this),
+      multicast: this.multicast.bind(this),
+      unicast: this.unicast.bind(this),
+      configstring: this.configstring.bind(this),
+      serverCommand: this.serverCommand.bind(this),
+      linkentity: this.linkentity.bind(this),
+      areaEdicts: this.areaEdicts.bind(this),
+      setLagCompensation: this.setLagCompensation.bind(this)
     };
+
+    this.gameExports = createGame(imports, engineHost, options);
+    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+
+    const initialFrame = sim.init(performance.now());
+    if (initialFrame && typeof initialFrame === 'object') {
+        this.latestFrameResult = initialFrame as GameFrameResult<GameStateSnapshot>;
+    }
+
+    // 3. Initialize level logic (spawn entities)
+    if (this.currentMap && this.currentMap.entities) {
+       // TODO: Parse entities string and spawn them
+    }
   }
 
-  return {
-    planes,
-    nodes,
-    leaves: newLeaves,
-    brushes,
-    brushSides: resolvedBrushSides,
-    leafBrushes: newLeafBrushes,
-    bmodels,
-    visibility
-  };
-}
-
-export async function createGameSimulation(vfs: VirtualFileSystem, mapName: string): Promise<GameSimulationWrapper> {
-  const assetManager = new AssetManager(vfs);
-  let map: BspMap | undefined;
-  try {
-    map = await assetManager.loadMap(mapName);
-  } catch (e) {
-    console.error(`Failed to load map ${mapName}`, e);
-    throw e;
+  start(): void {
+    // Game starts ticking via external loop calling tick()
   }
 
-  if (!map) {
-      throw new Error(`Map ${mapName} loaded but is undefined`);
+  stop(): void {
+    // Stop logic
   }
 
-  const collisionLumps = bspToCollisionLump(map);
-  const collisionModel = buildCollisionModel(collisionLumps);
-  const entityIndex = new CollisionEntityIndex();
+  shutdown(): void {
+    if (this.gameExports) {
+      const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+      sim.shutdown();
+      this.gameExports = null;
+    }
+    this.assetManager.resetForLevelChange();
+    this.currentMap = null;
+    this.collisionModel = null;
+  }
 
-  let gameRef: GameExports | null = null;
+  tick(step: FixedStepContext, cmd: UserCommand): void {
+    if (!this.gameExports) return;
+    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
+    this.latestFrameResult = sim.frame(step, cmd);
+  }
 
-  const traceFunc = (start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult => {
-      const actualMins = mins || createVec3(0, 0, 0);
-      const actualMaxs = maxs || createVec3(0, 0, 0);
+  getSnapshot(): GameStateSnapshot {
+    if (!this.gameExports) {
+      throw new Error("Game not initialized");
+    }
 
-      const traceParams: CollisionTraceParams = {
-        model: collisionModel,
+    if (this.latestFrameResult && this.latestFrameResult.state) {
+        return this.latestFrameResult.state;
+    }
+
+    throw new Error("No game snapshot available");
+  }
+
+  // --- GameImports Implementations ---
+
+  trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
+    const nullTrace: GameTraceResult = {
+        allsolid: false,
+        startsolid: false,
+        fraction: 1.0,
+        endpos: end,
+        plane: { normal: { x: 0, y: 1, z: 0 }, dist: 0, type: 0, signbits: 0 },
+        surfaceFlags: 0,
+        contents: 0,
+        ent: null
+    };
+
+    if (!this.collisionModel) {
+      return nullTrace;
+    }
+
+    // 1. Trace against world
+    const traceParams: CollisionTraceParams = {
+        model: this.collisionModel,
         start,
         end,
-        mins: actualMins,
-        maxs: actualMaxs,
+        mins: mins || undefined,
+        maxs: maxs || undefined,
+        headnode: 0, // Worldspawn
         contentMask: contentmask
-      };
+    };
 
-      const worldTrace = traceBox(traceParams);
+    const worldResult = traceBox(traceParams);
 
-      const entityTraceParams: CollisionEntityTraceParams = {
+    // 2. Trace against entities
+    const entityResult = this.entityIndex.trace({
         ...traceParams,
-        passId: passent ? passent.index : undefined
-      };
+        passId: passent ? passent.index : -1 // Entity uses 'index', not 'id'
+    });
 
-      const entityTrace = entityIndex.trace(entityTraceParams);
+    // 3. Combine results (take nearest)
+    let finalResult = worldResult;
+    let hitEntity: number | null = null;
 
-      let finalTrace: CollisionEntityTraceResult | CollisionTraceResult = worldTrace;
-      let hitEntity: Entity | null = null;
+    if (entityResult.fraction < worldResult.fraction) {
+        finalResult = entityResult;
+        hitEntity = entityResult.entityId;
+    }
 
-      if (entityTrace.fraction < worldTrace.fraction) {
-         finalTrace = entityTrace;
-         if (entityTrace.entityId !== null && gameRef && gameRef.entities) {
-            // @ts-ignore - Assuming find method or access exists or iterating
-            // EntitySystem usually stores entities in an array or map.
-            // game.entities might be an object with methods.
-            // If it's the class EntitySystem, it has `find(predicate)`.
-            // Let's assume `find` exists as per docs.
-            hitEntity = gameRef.entities.find((e: Entity) => e.index === entityTrace.entityId) || null;
-         }
-      }
+    let ent: Entity | null = null;
+    if (hitEntity !== null && this.gameExports) {
+        ent = this.gameExports.entities.find(e => e.index === hitEntity) || null;
+    }
 
-      return {
-        allsolid: finalTrace.allsolid,
-        startsolid: finalTrace.startsolid,
-        fraction: finalTrace.fraction,
-        endpos: finalTrace.endpos,
-        plane: finalTrace.plane || null,
-        surfaceFlags: finalTrace.surfaceFlags || 0,
-        contents: finalTrace.contents || 0,
-        ent: hitEntity
-      };
-  };
+    return {
+        allsolid: finalResult.allsolid,
+        startsolid: finalResult.startsolid,
+        fraction: finalResult.fraction,
+        endpos: finalResult.endpos,
+        plane: finalResult.plane || null,
+        surfaceFlags: finalResult.surfaceFlags || 0,
+        contents: finalResult.contents || 0,
+        ent
+    };
+  }
 
-  const gameImports: Partial<GameImports> = {
-    trace: traceFunc,
-    pointcontents: (point: Vec3): number => {
-      return pointContents(point, collisionModel);
-    },
-    multicast: (origin: Vec3, type: MulticastType, event: string, ...args: any[]): void => {
-    },
-    unicast: (ent: Entity, reliable: boolean, event: string, ...args: any[]): void => {
-    },
-    configstring: (index: number, value: string): void => {
-    },
-    serverCommand: (cmd: string): void => {
-    },
-    linkentity: (entity: Entity): void => {
-      const link: CollisionEntityLink = {
-        id: entity.index,
+  pointcontents(point: Vec3): number {
+    if (!this.collisionModel) return 0;
+    return pointContents(point, this.collisionModel, 0);
+  }
+
+  multicast(origin: Vec3, to: MulticastType, event: string, ...args: any[]): void {
+    // Handle multicast events
+  }
+
+  unicast(entity: Entity, reliable: boolean, event: string, ...args: any[]): void {
+    // Handle unicast events
+  }
+
+  configstring(index: number, value: string): void {
+    this.configStrings.set(index, value);
+  }
+
+  serverCommand(cmd: string): void {
+    // Handle server commands
+    console.log(`Server Command: ${cmd}`);
+  }
+
+  soundIndex(name: string): number {
+    if (this.soundIndices.has(name)) return this.soundIndices.get(name)!;
+    const index = this.soundIndices.size + 1; // 1-based usually
+    this.soundIndices.set(name, index);
+    return index;
+  }
+
+  modelIndex(name: string): number {
+    if (this.modelIndices.has(name)) return this.modelIndices.get(name)!;
+    const index = this.modelIndices.size + 1;
+    this.modelIndices.set(name, index);
+    return index;
+  }
+
+  imageIndex(name: string): number {
+    if (this.imageIndices.has(name)) return this.imageIndices.get(name)!;
+    const index = this.imageIndices.size + 1;
+    this.imageIndices.set(name, index);
+    return index;
+  }
+
+  linkentity(entity: Entity): void {
+    // Only link if solid
+    if (entity.solid === 0) return; // NOT_SOLID
+
+    // CollisionEntityLink requires { id, origin, mins, maxs, contents }
+    const link: CollisionEntityLink = {
+        id: entity.index, // Use index as id
         origin: entity.origin,
         mins: entity.mins,
         maxs: entity.maxs,
-        contents: entity.clipmask || 0,
-        surfaceFlags: 0
-      };
-      if (entity.solid > 0) {
-          entityIndex.link(link);
-      }
-    },
-    // unlinkentity removed as it's not required in Partial<GameImports> and caused error
-  };
+        contents: entity.clipmask || 1,
+        surfaceFlags: 0 // Optional
+    };
+    this.entityIndex.link(link);
+  }
 
-  const gameEngine = {
-    vfs,
-    assetManager,
-    trace: (start: Vec3, end: Vec3): unknown => {
-       return traceFunc(start, null, null, end, null, -1);
+  unlinkentity(entity: Entity | undefined): void {
+    if (entity) {
+        this.entityIndex.unlink(entity.index);
     }
+  }
+
+  areaEdicts(mins: Vec3, maxs: Vec3): number[] | null {
+      return this.entityIndex.gatherTriggerTouches(
+          { x: (mins.x + maxs.x)/2, y: (mins.y + maxs.y)/2, z: (mins.z + maxs.z)/2 },
+          mins,
+          maxs
+      );
+  }
+
+  setLagCompensation(active: boolean, client?: Entity, lagMs?: number): void {
+      // Stub
+  }
+}
+
+// Singleton management
+let gameServiceInstance: GameServiceImpl | null = null;
+
+export async function createGameSimulation(
+  vfs: VirtualFileSystem,
+  mapName: string,
+  options: Partial<GameCreateOptions> = {} // Allow partial options
+): Promise<GameSimulation> {
+  // If exists, shutdown previous
+  if (gameServiceInstance) {
+    gameServiceInstance.shutdown();
+  }
+
+  // Fill defaults
+  const fullOptions: GameCreateOptions = {
+      gravity: { x: 0, y: 0, z: -800 },
+      deathmatch: false,
+      coop: false,
+      skill: 1,
+      ...options
   };
 
-  const gameOptions: GameCreateOptions = {
-    gravity: createVec3(0, 0, -800),
-    deathmatch: false,
-    coop: false,
-    skill: 1
-  };
+  const service = new GameServiceImpl(vfs, mapName);
+  await service.init(fullOptions);
 
-  // Cast game to any to avoid "init does not exist" errors due to potential type mismatch in library exports
-  const game = createGame(gameImports, gameEngine, gameOptions) as any;
-  gameRef = game;
+  gameServiceInstance = service;
+  return service;
+}
 
-  let lastSnapshot: GameStateSnapshot | null = null;
-  let totalTime = 0;
+export function getGameService(): GameSimulation | null {
+  return gameServiceInstance;
+}
 
-  return {
-    start: () => {
-      game.init(performance.now());
-    },
-    stop: () => {
-      game.shutdown();
-    },
-    shutdown: () => {
-      game.shutdown();
-    },
-    tick: (deltaMs: number, cmd: UserCommand) => {
-      totalTime += deltaMs;
-      // Construct FixedStepContext-like object
-      const context = {
-        frame: Math.floor(totalTime / 50), // 20Hz? No, typically 40Hz (25ms) or dependent on delta.
-        // If deltaMs is variable, frame count is tricky.
-        // But game logic expects fixed steps usually.
-        // Here we just pass context.
-        time: totalTime,
-        intervalMs: deltaMs,
-        alpha: 1.0
-      };
-
-      const result = game.frame(context, cmd);
-      if (result && result.state) {
-        lastSnapshot = result.state;
-      }
-    },
-    getSnapshot: () => {
-      return lastSnapshot;
-    }
-  };
+export function shutdownGameService(): void {
+  if (gameServiceInstance) {
+    gameServiceInstance.shutdown();
+    gameServiceInstance = null;
+  }
 }

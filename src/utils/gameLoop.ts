@@ -1,45 +1,63 @@
-// src/utils/gameLoop.ts
-import { FixedTimestepLoop } from 'quake2ts/engine';
-import { generateUserCommand } from '@/src/services/inputService';
+import { FixedTimestepLoop, type FixedStepContext } from 'quake2ts/engine';
 
 export interface GameLoop {
-  start: () => void;
-  stop: () => void;
-  isRunning: () => boolean;
+  start(): void;
+  stop(): void;
+  isRunning(): boolean;
+  pause(): void;
+  resume(): void;
 }
 
 export function createGameLoop(
-  simulate: (deltaMs: number, cmd: any) => void,
-  render: (alpha: number) => void
+  simulate: (step: FixedStepContext) => void,
+  render: (alpha: number) => void,
+  tickRate: number = 40
 ): GameLoop {
-  // We use FixedTimestepLoop from engine which handles the RAF loop
-  // and fixed timestep accumulation.
+  let paused = false;
+
+  // Wrapper for simulate to handle pause
+  const wrappedSimulate = (step: FixedStepContext) => {
+    if (!paused) {
+      simulate(step);
+    }
+  };
+
+  // Wrapper for render to handle pause
+  const wrappedRender = (context: any) => {
+      // context is RenderContext { alpha, nowMs, ... }
+      render(context.alpha);
+  };
+
+  // FixedTimestepLoop from quake2ts/engine
   const loop = new FixedTimestepLoop(
     {
-      // @ts-ignore
-      simulate: (context: any) => {
-          const delta = typeof context === 'number' ? context : context.intervalMs || 16;
-          // Generate command from input service
-          const cmd = generateUserCommand(delta);
-          simulate(delta, cmd);
-      },
-      // @ts-ignore
-      render: (context: any) => {
-          const alpha = typeof context === 'number' ? context : context.alpha || 0;
-          render(alpha);
-      }
+      simulate: wrappedSimulate,
+      render: wrappedRender
     },
-    // @ts-ignore - tickRate might be named differently or not part of Partial<LoopOptions> in this version
     {
-      // @ts-ignore
-      tickRate: 40, // 40Hz physics
-      startTimeMs: performance.now()
+      fixedDeltaMs: 1000 / tickRate, // tickRate is Hz, need ms
+      startTimeMs: performance.now(),
+      now: () => performance.now(),
+      schedule: (cb) => requestAnimationFrame(cb)
     }
   );
 
   return {
-    start: () => loop.start(),
-    stop: () => loop.stop(),
-    isRunning: () => loop.isRunning()
+    start: () => {
+      paused = false;
+      loop.start();
+    },
+    stop: () => {
+      loop.stop();
+    },
+    isRunning: () => {
+      return loop.isRunning();
+    },
+    pause: () => {
+      paused = true;
+    },
+    resume: () => {
+      paused = false;
+    }
   };
 }
