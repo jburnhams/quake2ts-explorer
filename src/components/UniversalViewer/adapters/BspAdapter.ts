@@ -100,9 +100,21 @@ export class BspAdapter implements ViewerAdapter {
 
   // Helper to get surface properties for the picked face
   getSurfaceProperties(faceIndex: number) {
-      if (!this.map || faceIndex < 0 || faceIndex >= this.map.faces.length) return null;
+      if (!this.map || !this.map.faces || faceIndex < 0 || faceIndex >= this.map.faces.length) return null;
       const face = this.map.faces[faceIndex];
-      const texInfo = this.map.texinfo[face.texInfoIndex];
+      // Type assertion as the library definition might be missing texInfo in strict mode
+      // or using different casing
+      const mapAny = this.map as any;
+      const texInfos = mapAny.texinfo || mapAny.texInfo;
+
+      if (!texInfos) return null;
+
+      // Handle property name variations
+      const texInfoIndex = (face as any).texInfoIndex !== undefined ? (face as any).texInfoIndex : (face as any).texinfo;
+
+      if (texInfoIndex === undefined || texInfoIndex < 0 || texInfoIndex >= texInfos.length) return null;
+
+      const texInfo = texInfos[texInfoIndex];
 
       return {
           textureName: texInfo.texture,

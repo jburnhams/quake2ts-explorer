@@ -30,8 +30,8 @@ describe('AssetCrossRefService', () => {
     it('should find texture usage in MD2 model', async () => {
       // Mock files
       const md2File = 'models/test.md2';
-      vfs.findByExtension.mockImplementation((exts) => {
-        if (exts.includes('md2')) return [md2File];
+      vfs.findByExtension.mockImplementation((ext) => {
+        if (ext === 'md2') return [{ path: md2File }];
         return [];
       });
 
@@ -59,8 +59,8 @@ describe('AssetCrossRefService', () => {
 
     it('should find texture usage in MD2 model with extension mismatch', async () => {
       const md2File = 'models/test.md2';
-      vfs.findByExtension.mockImplementation((exts) => {
-        if (exts.includes('md2')) return [md2File];
+      vfs.findByExtension.mockImplementation((ext) => {
+        if (ext === 'md2') return [{ path: md2File }];
         return [];
       });
 
@@ -79,8 +79,8 @@ describe('AssetCrossRefService', () => {
 
     it('should find texture usage in MD3 model', async () => {
       const md3File = 'models/test.md3';
-      vfs.findByExtension.mockImplementation((exts) => {
-        if (exts.includes('md3')) return [md3File];
+      vfs.findByExtension.mockImplementation((ext) => {
+        if (ext === 'md3') return [{ path: md3File }];
         return [];
       });
 
@@ -106,8 +106,8 @@ describe('AssetCrossRefService', () => {
 
     it('should find texture usage in BSP map', async () => {
       const bspFile = 'maps/test.bsp';
-      vfs.findByExtension.mockImplementation((exts) => {
-        if (exts.includes('bsp')) return [bspFile];
+      vfs.findByExtension.mockImplementation((ext) => {
+        if (ext === 'bsp') return [{ path: bspFile }];
         return [];
       });
 
@@ -131,7 +131,7 @@ describe('AssetCrossRefService', () => {
 
     it('should cache parsed results', async () => {
       const md2File = 'models/test.md2';
-      vfs.findByExtension.mockReturnValue([md2File]);
+      vfs.findByExtension.mockReturnValue([{ path: md2File }]);
       vfs.readFile.mockReturnValue(new Uint8Array(1));
       (parseMd2 as jest.Mock).mockReturnValue({ skins: [] });
 
@@ -143,7 +143,7 @@ describe('AssetCrossRefService', () => {
 
     it('should yield to event loop periodically', async () => {
         // Mock many files
-        const files = Array.from({ length: 10 }, (_, i) => `file${i}.md2`);
+        const files = Array.from({ length: 10 }, (_, i) => ({ path: `file${i}.md2` }));
         vfs.findByExtension.mockReturnValue(files);
         vfs.readFile.mockReturnValue(new Uint8Array(1));
         (parseMd2 as jest.Mock).mockReturnValue({ skins: [] });
@@ -157,7 +157,7 @@ describe('AssetCrossRefService', () => {
 
     it('should handle parsing errors gracefully', async () => {
       const md2File = 'models/corrupt.md2';
-      vfs.findByExtension.mockReturnValue([md2File]);
+      vfs.findByExtension.mockReturnValue([{ path: md2File }]);
       vfs.readFile.mockReturnValue(new Uint8Array(1));
 
       (parseMd2 as jest.Mock).mockImplementation(() => {

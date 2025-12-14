@@ -39,11 +39,11 @@ describe('AssetCrossRefService Integration', () => {
     const mockBsp = 'maps/level1.bsp';
 
     // Mock VFS behavior
-    vfs.findByExtension = jest.fn((exts: string[]) => {
-      const results: string[] = [];
-      if (exts.includes('md2')) results.push(mockMd2);
-      if (exts.includes('md3')) results.push(mockMd3);
-      if (exts.includes('bsp')) results.push(mockBsp);
+    vfs.findByExtension = jest.fn((ext: string) => {
+      const results: { path: string }[] = [];
+      if (ext === 'md2') results.push({ path: mockMd2 });
+      if (ext === 'md3') results.push({ path: mockMd3 });
+      if (ext === 'bsp') results.push({ path: mockBsp });
       return results;
     });
 

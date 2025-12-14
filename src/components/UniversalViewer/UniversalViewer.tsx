@@ -20,7 +20,6 @@ import { PerformanceStats } from '../PerformanceStats';
 import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
-import { BspAdapter } from './adapters/BspAdapter';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
