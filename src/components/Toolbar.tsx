@@ -1,3 +1,4 @@
+import type { ViewMode } from '../services/pakService';
 import React, { useRef, useState, useEffect } from 'react';
 import { demoRecorderService } from '../services/demoRecorder';
 
@@ -5,10 +6,12 @@ export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
   pakCount: number;
   fileCount: number;
+  viewMode: ViewMode;
+  onViewModeChange: (mode: ViewMode) => void;
   onOpenEntityDatabase?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount, onOpenEntityDatabase }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -66,10 +69,20 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, onOpenEntityDatabas
         <button
           className="toolbar-button"
           onClick={handleOpenClick}
-          data-testid="open-pak-button"
+          data-testid="add-pak-button"
         >
-          Open PAK File
+          Add PAK Files
         </button>
+        <div className="toolbar-separator" style={{ width: '1px', height: '20px', background: '#444', margin: '0 10px' }} />
+        <label className="toolbar-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
+          <input
+            type="checkbox"
+            checked={viewMode === 'by-pak'}
+            onChange={(e) => onViewModeChange(e.target.checked ? 'by-pak' : 'merged')}
+            data-testid="view-mode-toggle"
+          />
+          Group by PAK
+        </label>
         {onOpenEntityDatabase && (
           <button
             className="toolbar-button"

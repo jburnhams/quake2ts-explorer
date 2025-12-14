@@ -143,7 +143,9 @@ describe('PakService', () => {
       const archive = await service.loadPakFromBuffer('test.pak', buffer);
 
       expect(archive).toBeDefined();
-      expect(archive.name).toBe('test.pak');
+      // archive.name is now a UUID, but we verify it loaded by checking metadata map
+      const pakInfo = service.getMountedPaks()[0];
+      expect(pakInfo.name).toBe('test.pak');
     });
 
     it('mounts the PAK to the VFS', async () => {
@@ -209,6 +211,7 @@ describe('PakService', () => {
       expect(meta).toBeDefined();
       expect(meta?.name).toBe('test.txt');
       expect(meta?.fileType).toBe('txt');
+      expect(meta?.sourcePak).toBe('test.pak');
     });
 
     it('returns undefined for non-existing files', async () => {
