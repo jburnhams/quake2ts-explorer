@@ -1,4 +1,4 @@
-import { Camera } from 'quake2ts/engine';
+import { Camera, DemoPlaybackController } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 
@@ -64,4 +64,7 @@ export interface ViewerAdapter {
   // Picking
   pickEntity?(ray: Ray): any;
   setHoveredEntity?(entity: any): void;
+
+  // Demo Playback
+  getDemoController?(): DemoPlaybackController | null;
 }

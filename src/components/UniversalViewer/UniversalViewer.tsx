@@ -8,6 +8,7 @@ import { Md3Adapter } from './adapters/Md3Adapter';
 import { BspAdapter } from './adapters/BspAdapter';
 import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
+import { DemoTimeline } from '../DemoTimeline';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
@@ -480,6 +481,9 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             debugMode={debugMode}
             setDebugMode={setDebugMode}
          />
+       )}
+       {adapter && adapter.getDemoController && adapter.getDemoController() && (
+          <DemoTimeline controller={adapter.getDemoController()!} />
        )}
      </div>
   );

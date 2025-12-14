@@ -63,6 +63,11 @@ jest.mock('quake2ts/engine', () => {
             stop: jest.fn(),
             update: jest.fn(),
             getState: jest.fn().mockReturnValue({ origin: [0,0,0], angles: [0,0,0] }),
+            getDuration: jest.fn().mockReturnValue(0),
+            getFrameCount: jest.fn().mockReturnValue(0),
+            getCurrentTime: jest.fn().mockReturnValue(0),
+            getCurrentFrame: jest.fn().mockReturnValue(0),
+            seekToTime: jest.fn(),
         })),
         Texture2D: jest.fn().mockImplementation(() => ({
             uploadImage: jest.fn(), setParameters: jest.fn(), bind: jest.fn(),
