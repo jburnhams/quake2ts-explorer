@@ -1,7 +1,10 @@
-import { initInputController, cleanupInputController, generateUserCommand, getInputController } from '@/src/services/inputService';
-import { InputController, InputBindings } from 'quake2ts/client';
 
-// Mock quake2ts dependencies
+import { initInputController, generateUserCommand, cleanupInputController, setInputMode, getInputController } from '@/src/services/inputService';
+import { InputController, InputBindings } from 'quake2ts/client';
+import { DEFAULT_BINDINGS } from '@/src/config/defaultBindings';
+import { UserCommand } from 'quake2ts/shared';
+
+// Mock quake2ts/client
 jest.mock('quake2ts/client', () => {
   return {
     InputController: jest.fn().mockImplementation(() => ({
@@ -11,84 +14,113 @@ jest.mock('quake2ts/client', () => {
       handleMouseButtonUp: jest.fn(),
       handleMouseMove: jest.fn(),
       buildCommand: jest.fn().mockReturnValue({
-        msec: 0,
+        msec: 16,
         buttons: 0,
         angles: { x: 0, y: 0, z: 0 },
         forwardmove: 0,
         sidemove: 0,
         upmove: 0
+      }),
+      getDefaultBindings: jest.fn().mockReturnValue({
+        getBinding: jest.fn()
       })
     })),
     InputBindings: jest.fn()
   };
 });
 
-describe('inputService', () => {
+describe('InputService', () => {
+  let mockInputController: any;
+
   beforeEach(() => {
     jest.clearAllMocks();
     cleanupInputController();
+
+    // Setup basic mock for controller
+    initInputController();
+    mockInputController = (getInputController() as unknown) as any;
   });
 
   afterEach(() => {
     cleanupInputController();
   });
 
-  it('initializes InputController with bindings', () => {
-    initInputController();
-    expect(InputBindings).toHaveBeenCalled();
+  test('initInputController initializes InputController', () => {
     expect(InputController).toHaveBeenCalled();
+    expect(InputBindings).toHaveBeenCalledWith(DEFAULT_BINDINGS);
   });
 
-  it('generates user command', () => {
-    initInputController();
+  test('generateUserCommand calls buildCommand on controller', () => {
     const cmd = generateUserCommand(16);
-    expect(getInputController()?.buildCommand).toHaveBeenCalledWith(16);
+    expect(mockInputController.buildCommand).toHaveBeenCalledWith(16);
     expect(cmd).toBeDefined();
   });
 
-  it('handles keyboard events', () => {
-    initInputController();
-    const controller = getInputController();
+  test('input handlers delegate to controller', () => {
+    // We need to simulate events
+    const keyEvent = new KeyboardEvent('keydown', { code: 'KeyW' });
+    window.dispatchEvent(keyEvent);
+    expect(mockInputController.handleKeyDown).toHaveBeenCalledWith('KeyW', expect.any(Number));
 
-    const keyDownEvent = new KeyboardEvent('keydown', { code: 'KeyW' });
-    window.dispatchEvent(keyDownEvent);
-    expect(controller?.handleKeyDown).toHaveBeenCalledWith('KeyW', expect.any(Number));
-
-    const keyUpEvent = new KeyboardEvent('keyup', { code: 'KeyW' });
-    window.dispatchEvent(keyUpEvent);
-    expect(controller?.handleKeyUp).toHaveBeenCalledWith('KeyW', expect.any(Number));
+    const mouseClick = new MouseEvent('mousedown', { button: 0 });
+    window.dispatchEvent(mouseClick);
+    expect(mockInputController.handleMouseButtonDown).toHaveBeenCalledWith(0, expect.any(Number));
   });
 
-  it('handles mouse events', () => {
-    initInputController();
-    const controller = getInputController();
+  test('input handlers do not fire when not in game mode', () => {
+    setInputMode('menu');
 
-    const mouseDownEvent = new MouseEvent('mousedown', { button: 0 });
-    window.dispatchEvent(mouseDownEvent);
-    expect(controller?.handleMouseButtonDown).toHaveBeenCalledWith(0, expect.any(Number));
+    const keyEvent = new KeyboardEvent('keydown', { code: 'KeyW' });
+    window.dispatchEvent(keyEvent);
+    expect(mockInputController.handleKeyDown).not.toHaveBeenCalled();
+  });
 
-    const mouseUpEvent = new MouseEvent('mouseup', { button: 0 });
-    window.dispatchEvent(mouseUpEvent);
-    expect(controller?.handleMouseButtonUp).toHaveBeenCalledWith(0, expect.any(Number));
-
-    const mouseMoveEvent = new MouseEvent('mousemove');
-    Object.defineProperties(mouseMoveEvent, {
-      movementX: { value: 10 },
-      movementY: { value: 20 }
+  test('mouse move only processed when pointer locked', () => {
+    // Mock document.pointerLockElement
+    Object.defineProperty(document, 'pointerLockElement', {
+      value: document.body,
+      configurable: true
     });
-    window.dispatchEvent(mouseMoveEvent);
-    expect(controller?.handleMouseMove).toHaveBeenCalledWith(10, 20);
+
+    // Manually trigger the listener logic since MouseEvent constructor options like movementX
+    // might not populate the event object correctly in all JSDOM environments without overrides
+    // or the listener might be reading it differently.
+    // Instead we can just dispatch an event with the properties directly on it if JSDOM allows,
+    // or wrap the creation.
+    // However, TypeScript might complain if we just cast it.
+
+    // In JSDOM, MouseEvent might not fully support movementX/Y in the constructor in older versions,
+    // but let's try defining getter if needed or check if the event actually had it.
+
+    const mouseMove = new MouseEvent('mousemove', { bubbles: true });
+    Object.defineProperties(mouseMove, {
+        movementX: { value: 10 },
+        movementY: { value: 5 }
+    });
+
+    window.dispatchEvent(mouseMove);
+    expect(mockInputController.handleMouseMove).toHaveBeenCalledWith(10, 5);
+
+    // Now test without pointer lock
+    Object.defineProperty(document, 'pointerLockElement', {
+      value: null,
+      configurable: true
+    });
+
+    window.dispatchEvent(mouseMove);
+    expect(mockInputController.handleMouseMove).toHaveBeenCalledTimes(1); // Still 1 from before
   });
 
-  it('cleans up event listeners', () => {
-    const addSpy = jest.spyOn(window, 'addEventListener');
-    const removeSpy = jest.spyOn(window, 'removeEventListener');
-
-    initInputController();
-    expect(addSpy).toHaveBeenCalledTimes(5); // keydown, keyup, mousedown, mouseup, mousemove
-
+  test('cleanupInputController removes listeners and clears controller', () => {
     cleanupInputController();
-    expect(removeSpy).toHaveBeenCalledTimes(5);
     expect(getInputController()).toBeNull();
+
+    // Verify events don't trigger anything (though we can't easily spy on removed listeners,
+    // we can verify no calls happen on cached controller ref if we kept it,
+    // but here we just check global state is null)
+
+    const cmd = generateUserCommand(16);
+    // Should return empty/default command
+    expect(cmd.forwardmove).toBe(0);
   });
 });

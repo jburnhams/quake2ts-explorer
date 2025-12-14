@@ -1,5 +1,6 @@
 // src/utils/gameLoop.ts
 import { FixedTimestepLoop } from 'quake2ts/engine';
+import { generateUserCommand } from '@/src/services/inputService';
 
 export interface GameLoop {
   start: () => void;
@@ -8,7 +9,7 @@ export interface GameLoop {
 }
 
 export function createGameLoop(
-  simulate: (deltaMs: number) => void,
+  simulate: (deltaMs: number, cmd: any) => void,
   render: (alpha: number) => void
 ): GameLoop {
   // We use FixedTimestepLoop from engine which handles the RAF loop
@@ -18,7 +19,9 @@ export function createGameLoop(
       // @ts-ignore
       simulate: (context: any) => {
           const delta = typeof context === 'number' ? context : context.intervalMs || 16;
-          simulate(delta);
+          // Generate command from input service
+          const cmd = generateUserCommand(delta);
+          simulate(delta, cmd);
       },
       // @ts-ignore
       render: (context: any) => {
