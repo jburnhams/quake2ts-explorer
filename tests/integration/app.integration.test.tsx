@@ -83,9 +83,9 @@ describe('Quake2TS Explorer Integration Tests', () => {
       expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
     });
 
-    it('shows Open PAK File button', () => {
+    it('shows Add PAK Files button', () => {
       render(<App />);
-      expect(screen.getByTestId('open-pak-button')).toBeInTheDocument();
+      expect(screen.getByTestId('add-pak-button')).toBeInTheDocument();
     });
 
     it('shows no PAKs loaded initially', () => {

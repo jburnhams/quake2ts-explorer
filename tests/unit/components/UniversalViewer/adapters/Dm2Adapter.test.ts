@@ -251,4 +251,42 @@ describe('Dm2Adapter', () => {
       adapter.update(0.15); // Overshoot duration
       expect(controller.seekToTime).toHaveBeenLastCalledWith(10.1);
   });
+
+  it('handles partial player state data', async () => {
+    const file: ParsedFile = {
+        type: 'dm2',
+        data: new Uint8Array(100)
+    } as any;
+
+    mockPakService.hasFile.mockReturnValue(false);
+    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+
+    const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+
+    // Reset calls
+    controllerInstance.update.mockClear();
+
+    // Partial state: no origin, no viewangles
+    controllerInstance.getFrameData.mockReturnValue({
+        playerState: {
+             // Missing properties
+        }
+    });
+
+    // Should run without error
+    adapter.update(16);
+
+    // Partial state: only origin
+    controllerInstance.getFrameData.mockReturnValue({
+        playerState: {
+             origin: [1, 2, 3]
+        }
+    });
+    adapter.update(16);
+    const cameraUpdate = adapter.getCameraUpdate();
+    expect(cameraUpdate.position).toEqual(vec3.fromValues(1, 2, 3));
+
+    // Check viewangles didn't change (still default 0,0,0 or previous)
+    expect(cameraUpdate.angles).toEqual(vec3.fromValues(0, 0, 0));
+  });
 });

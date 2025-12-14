@@ -7,6 +7,19 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
+// Mock global fetch
+global.fetch = jest.fn(() =>
+  Promise.resolve({
+    ok: true,
+    json: () => Promise.resolve({}),
+    arrayBuffer: () => Promise.resolve(new ArrayBuffer(0)),
+    text: () => Promise.resolve(''),
+    status: 200,
+    statusText: 'OK',
+    headers: new Headers(),
+  } as Response)
+) as jest.Mock;
+
 // Mock crypto.randomUUID
 if (!global.crypto) {
     // @ts-ignore
@@ -92,6 +105,12 @@ HTMLCanvasElement.prototype.getContext = function (contextId: string) {
       save: () => {},
       restore: () => {},
       canvas: { width: 0, height: 0 },
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      strokeStyle: '',
+      lineWidth: 1,
     } as unknown as CanvasRenderingContext2D;
   }
   return null;
@@ -104,4 +123,5 @@ afterEach(() => {
 
 beforeEach(() => {
   installMatchMedia();
+  (global.fetch as jest.Mock).mockClear();
 });

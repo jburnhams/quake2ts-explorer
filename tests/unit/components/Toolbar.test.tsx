@@ -28,7 +28,7 @@ describe('Toolbar', () => {
   it('renders correctly', () => {
     render(<Toolbar onFileSelect={mockOnFileSelect} pakCount={0} fileCount={0} />);
     expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
-    expect(screen.getByText('Open PAK File')).toBeInTheDocument();
+    expect(screen.getByText('Add PAK Files')).toBeInTheDocument();
   });
 
   it('handles file selection', () => {
