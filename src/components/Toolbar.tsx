@@ -1,4 +1,5 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
+import { demoRecorderService } from '../services/demoRecorder';
 
 export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
@@ -8,6 +9,19 @@ export interface ToolbarProps {
 
 export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isRecording, setIsRecording] = useState(false);
+
+  useEffect(() => {
+    // Check initial state
+    setIsRecording(demoRecorderService.isRecording());
+
+    // Poll for recording state changes (could be improved with an event emitter)
+    const interval = setInterval(() => {
+        setIsRecording(demoRecorderService.isRecording());
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleOpenClick = () => {
     fileInputRef.current?.click();
@@ -21,6 +35,29 @@ export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
     }
   };
 
+  const handleRecordToggle = () => {
+    if (isRecording) {
+        const data = demoRecorderService.stopRecording();
+        if (data) {
+            // Prompt download
+            // Cast data to any or ensure it is treated as a BlobPart (Uint8Array is valid in browser but Typescript might be picky about SharedArrayBuffer)
+            const blob = new Blob([data as unknown as BlobPart], { type: 'application/octet-stream' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `demo_${new Date().toISOString().replace(/[:.]/g, '-')}.dm2`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        setIsRecording(false);
+    } else {
+        demoRecorderService.startRecording(`demo_${Date.now()}.dm2`);
+        setIsRecording(true);
+    }
+  };
+
   return (
     <header className="toolbar" data-testid="toolbar">
       <h1 className="toolbar-title">Quake2TS Explorer</h1>
@@ -31,6 +68,14 @@ export function Toolbar({ onFileSelect, pakCount, fileCount }: ToolbarProps) {
           data-testid="open-pak-button"
         >
           Open PAK File
+        </button>
+        <button
+          className={`toolbar-button ${isRecording ? 'recording' : ''}`}
+          onClick={handleRecordToggle}
+          title={isRecording ? "Stop Recording" : "Start Recording"}
+          data-testid="record-demo-button"
+        >
+          {isRecording ? "🔴 Stop Rec" : "⚪ Rec Demo"}
         </button>
         <input
           ref={fileInputRef}
