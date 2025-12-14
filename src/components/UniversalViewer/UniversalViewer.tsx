@@ -13,6 +13,7 @@ import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { createPickingRay } from '../../utils/camera';
 import { DebugMode } from '@/src/types/debugMode';
+import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -61,6 +62,23 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [isPlaying, setIsPlaying] = useState(true);
   const [speed, setSpeed] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
+  const [showFlash, setShowFlash] = useState(false);
+
+  const handleScreenshot = async () => {
+    if (!canvasRef.current) return;
+
+    setShowFlash(true);
+    setTimeout(() => setShowFlash(false), 150);
+
+    try {
+        const blob = await captureScreenshot(canvasRef.current, { format: 'png' });
+        const filename = generateScreenshotFilename();
+        downloadScreenshot(blob, filename);
+    } catch (e) {
+        console.error("Screenshot failed:", e);
+        setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  };
 
   // Input State Refs
   const keysPressed = useRef<{ [key: string]: boolean }>({});
@@ -111,6 +129,11 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
 
         if (e.code === 'KeyF') {
             setShowFrameInfo(prev => !prev);
+        }
+
+        if (e.code === 'F12' || e.code === 'PrintScreen') {
+            e.preventDefault(); // Prevent browser dev tools or system screenshot
+            handleScreenshot();
         }
 
         // Frame Stepping Shortcuts
@@ -202,7 +225,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
      if (!canvasRef.current) return;
      try {
         const context = createWebGLContext(canvasRef.current, {
-            contextAttributes: { depth: true, antialias: true }
+            contextAttributes: { depth: true, antialias: true, preserveDrawingBuffer: true }
         });
         setGlContext(context);
 
@@ -526,6 +549,20 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
           <FrameInfo controller={adapter.getDemoController()!} />
        )}
+       {showFlash && (
+          <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'white',
+              opacity: 0.5,
+              pointerEvents: 'none',
+              zIndex: 1000,
+              transition: 'opacity 0.15s ease-out'
+          }} />
+       )}
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
        </div>
@@ -551,6 +588,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
             setRenderColor={setRenderColor}
             debugMode={debugMode}
             setDebugMode={setDebugMode}
+            onScreenshot={handleScreenshot}
          />
        )}
        {adapter && adapter.getDemoController && adapter.getDemoController() && (

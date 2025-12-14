@@ -187,22 +187,22 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **3.1**: Create `src/services/screenshotService.ts`
+- [x] **3.1**: Create `src/services/screenshotService.ts`
   - Export `captureScreenshot(canvas: HTMLCanvasElement, format: 'png' | 'jpg'): Promise<Blob>`
   - Export `downloadScreenshot(blob: Blob, filename: string): void`
 
-- [ ] **3.2**: Implement screenshot capture
+- [x] **3.2**: Implement screenshot capture
   - Call `canvas.toBlob(callback, mimeType, quality)`
   - Support PNG (lossless) and JPEG (lossy, smaller)
   - Default quality: 0.95 for JPEG
 
-- [ ] **3.3**: Add screenshot button to UI
+- [x] **3.3**: Add screenshot button to UI
   - Modify `ViewerControls.tsx`
   - Add camera icon button
   - Keyboard shortcut: F12 or PrintScreen
   - Flash white overlay briefly when screenshot taken
 
-- [ ] **3.4**: Implement screenshot download
+- [x] **3.4**: Implement screenshot download
   - Create temporary `<a>` element with `download` attribute
   - Set `href` to blob URL
   - Trigger click

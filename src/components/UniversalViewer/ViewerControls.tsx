@@ -27,6 +27,7 @@ interface ViewerControlsProps {
   setRenderColor: (color: [number, number, number]) => void;
   debugMode?: DebugMode;
   setDebugMode?: (mode: DebugMode) => void;
+  onScreenshot?: () => void;
 }
 
 export function ViewerControls({
@@ -49,7 +50,8 @@ export function ViewerControls({
   renderColor,
   setRenderColor,
   debugMode,
-  setDebugMode
+  setDebugMode,
+  onScreenshot
 }: ViewerControlsProps) {
 
   const handleMove = (direction: 'forward' | 'backward' | 'left' | 'right') => {
@@ -208,6 +210,15 @@ export function ViewerControls({
           />
         </div>
        )}
+
+      {onScreenshot && (
+          <div className="screenshot-controls" style={{ marginBottom: '10px' }}>
+              <button onClick={onScreenshot} style={{ width: '100%' }} title="Take Screenshot">
+                  📷 Screenshot
+              </button>
+          </div>
+      )}
+
       {hasPlayback && (
         <div className="md2-anim-controls">
              <div className="playback-buttons" style={{ display: 'flex', gap: '5px', marginBottom: '5px' }}>
