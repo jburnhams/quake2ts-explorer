@@ -79,13 +79,33 @@ describe('ScreenshotService', () => {
       expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
       expect(appendChildSpy).toHaveBeenCalled();
       expect(clickSpy).toHaveBeenCalled();
+    });
 
-      // Wait for cleanup timeout
-      jest.runAllTimers(); // If we used fake timers. But we are using real timers in implementation.
-      // Since we didn't enable fake timers, we can't fast-forward.
-      // However, we can verify the immediate actions.
+    it('should cleanup after download', () => {
+        jest.useFakeTimers();
+        const mockBlob = new Blob(['test'], { type: 'image/png' });
+        const filename = 'test.png';
 
-      // We can enable fake timers to test cleanup
+        const removeChildSpy = jest.spyOn(document.body, 'removeChild');
+
+        // Mock click
+        const clickSpy = jest.fn();
+        jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
+            const el = document.createElementNS('http://www.w3.org/1999/xhtml', tagName) as HTMLElement;
+            if (tagName === 'a') {
+                el.click = clickSpy;
+            }
+            return el;
+        });
+
+        downloadScreenshot(mockBlob, filename);
+
+        jest.runAllTimers();
+
+        expect(removeChildSpy).toHaveBeenCalled();
+        expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:url');
+
+        jest.useRealTimers();
     });
   });
 

@@ -550,7 +550,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
           <FrameInfo controller={adapter.getDemoController()!} />
        )}
        {showFlash && (
-          <div style={{
+          <div data-testid="screenshot-flash" style={{
               position: 'absolute',
               top: 0,
               left: 0,
