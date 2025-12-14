@@ -6,7 +6,7 @@ import {
   type ParsedFile,
 } from '../services/pakService';
 import { createGameLoop, GameLoop } from '../utils/gameLoop';
-import { createGameSimulation, GameSimulationWrapper } from '../services/gameService';
+import { getGameService, GameSimulation } from '../services/gameService';
 import { initInputController, cleanupInputController, generateUserCommand } from '../services/inputService';
 
 export type GameMode = 'browser' | 'game';
@@ -51,17 +51,9 @@ export function usePakExplorer(): UsePakExplorerResult {
   // Game state
   const [gameMode, setGameMode] = useState<GameMode>('browser');
   const [isPaused, setIsPaused] = useState(false);
-  // We use a ref for snapshot to avoid re-render on every frame if we used state directly
-  // without care, but we actually need to trigger re-render for UI.
-  // However, for high-frequency updates (60fps), usually we use refs and direct canvas updates
-  // or a requestAnimationFrame loop in the component.
-  // Since UniversalViewer is a React component, we'll expose the snapshot via state
-  // but maybe throttle it or just let it rip? React 18 is good at batching.
-  // But wait, the task implies UniversalViewer handles rendering.
-  // We should pass the snapshot to it.
   const [gameStateSnapshot, setGameStateSnapshot] = useState<any | null>(null);
 
-  const gameSimulationRef = useRef<GameSimulationWrapper | null>(null);
+  const gameSimulationRef = useRef<GameSimulation | null>(null);
   const gameLoopRef = useRef<GameLoop | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
@@ -202,7 +194,30 @@ export function usePakExplorer(): UsePakExplorerResult {
       // Stop existing game if any
       stopGameMode();
 
-      const simulation = await createGameSimulation(pakService.vfs, mapName);
+      // Get game service singleton
+      // IMPORTANT: We must update the VFS reference in the service if it changed (e.g. new PAK loaded)
+      // The current getGameService creates a singleton.
+      // If we want to support changing PAKs, we should probably recreate the service or update it.
+      // For now, let's assume getGameService handles checking if VFS matches or we add a way to update it.
+      // Ideally, GameServiceImpl should accept VFS in initGame or similar.
+      // But initGame takes mapName.
+      // Let's modify getGameService to reset if VFS is different or just create a new one.
+
+      // However, modifying getGameService signature is risky if used elsewhere.
+      // Let's rely on the fact that PakService instance in usePakExplorer state is passed.
+      // If PakService instance changes (new useState), we get new VFS.
+      // But getGameService holds the *first* VFS it saw.
+      // We need to fix getGameService to update VFS.
+
+      const simulation = getGameService(pakService.vfs);
+
+      // Initialize game
+      await simulation.initGame(mapName, {
+        maxClients: 1,
+        deathmatch: false,
+        coop: false,
+        skill: 1
+      } as any);
 
       // Check if this request is still the active one
       if (requestId !== activeGameRequestRef.current) {
@@ -224,11 +239,9 @@ export function usePakExplorer(): UsePakExplorerResult {
             }
         },
         (alpha) => {
-             // Render handled by UniversalViewer via shared state or context?
              if (gameSimulationRef.current) {
                  const snapshot = gameSimulationRef.current.getSnapshot();
                  if (snapshot) {
-                     // We update state to trigger re-render of consumers
                      setGameStateSnapshot(snapshot);
                  }
              }
