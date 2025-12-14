@@ -2,6 +2,18 @@
 import { createGameLoop } from '../../src/utils/gameLoop';
 import { FixedTimestepLoop } from 'quake2ts/engine';
 
+// Mock inputService
+jest.mock('@/src/services/inputService', () => ({
+  generateUserCommand: jest.fn().mockReturnValue({
+    msec: 16,
+    buttons: 0,
+    angles: { x: 0, y: 0, z: 0 },
+    forwardmove: 0,
+    sidemove: 0,
+    upmove: 0
+  })
+}));
+
 jest.mock('quake2ts/engine', () => {
   return {
     FixedTimestepLoop: jest.fn().mockImplementation((callbacks, options) => {
@@ -17,6 +29,10 @@ jest.mock('quake2ts/engine', () => {
 });
 
 describe('createGameLoop', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it('should create a FixedTimestepLoop with correct options', () => {
     const simulate = jest.fn();
     const render = jest.fn();
@@ -74,7 +90,11 @@ describe('createGameLoop', () => {
     const callbacks = mock.mock.calls[mock.mock.calls.length - 1][0];
 
     callbacks.simulate(16);
-    expect(simulate).toHaveBeenCalledWith(16);
+    // expect simulate to be called with delta and the mock command
+    expect(simulate).toHaveBeenCalledWith(16, expect.objectContaining({
+      msec: 16,
+      buttons: 0
+    }));
 
     callbacks.render(0.5);
     expect(render).toHaveBeenCalledWith(0.5);
