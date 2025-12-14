@@ -3,6 +3,8 @@ import { ParsedFile, PakService } from '../../../services/pakService';
 import { ViewerAdapter } from './types';
 import { mat4, vec3 } from 'gl-matrix';
 import { BspAdapter } from './BspAdapter';
+import { CameraMode } from '@/src/types/cameraMode';
+import { OrbitState, FreeCameraState, updateFreeCamera, computeCameraPosition } from '@/src/utils/cameraUtils';
 
 export class Dm2Adapter implements ViewerAdapter {
   private controller: DemoPlaybackController | null = null;
@@ -10,6 +12,12 @@ export class Dm2Adapter implements ViewerAdapter {
   private isPlayingState = false;
   private cameraPosition = vec3.create();
   private cameraAngles = vec3.create();
+  private cameraMode: CameraMode = CameraMode.FirstPerson;
+
+  // Camera states
+  private freeCamera: FreeCameraState = { position: vec3.create(), rotation: vec3.create() };
+  private orbitCamera: OrbitState = { radius: 200, theta: 0, phi: Math.PI / 4, target: vec3.create() };
+  private thirdPersonDistance = 100;
 
   // Smooth stepping
   private isStepping = false;
@@ -76,13 +84,107 @@ export class Dm2Adapter implements ViewerAdapter {
         this.controller.update(deltaTime);
     }
 
-    // Always update camera state from controller
+    // Update camera state
     const frameIdx = this.controller.getCurrentFrame();
     const frameData = this.controller.getFrameData(frameIdx);
 
     if (frameData && frameData.playerState) {
-         if (frameData.playerState.origin) vec3.copy(this.cameraPosition, frameData.playerState.origin as any);
-         if (frameData.playerState.viewangles) vec3.copy(this.cameraAngles, frameData.playerState.viewangles as any);
+        const playerOrigin = frameData.playerState.origin as any;
+        const playerAngles = frameData.playerState.viewangles as any;
+
+        switch (this.cameraMode) {
+            case CameraMode.FirstPerson:
+                if (playerOrigin) vec3.copy(this.cameraPosition, playerOrigin);
+                if (playerAngles) vec3.copy(this.cameraAngles, playerAngles);
+                // Adjust for view height (Quake 2 is typically ~22 units up)
+                this.cameraPosition[2] += 22;
+                break;
+
+            case CameraMode.ThirdPerson:
+                if (playerOrigin && playerAngles) {
+                    const viewOffset = vec3.create();
+
+                    // Convert angles to radians
+                    const pitch = playerAngles[0] * (Math.PI / 180);
+                    const yaw = playerAngles[1] * (Math.PI / 180);
+
+                    // Calculate backward vector
+                    // Z-up: yaw rotates around Z
+                    // forward x = cos(yaw) * cos(pitch)
+                    // forward y = sin(yaw) * cos(pitch)
+                    // forward z = sin(pitch)
+
+                    const forward = vec3.fromValues(
+                        Math.cos(yaw) * Math.cos(pitch),
+                        Math.sin(yaw) * Math.cos(pitch),
+                        Math.sin(pitch)
+                    );
+
+                    // Move camera back along negative forward vector
+                    vec3.scale(viewOffset, forward, -this.thirdPersonDistance);
+                    vec3.add(this.cameraPosition, playerOrigin, viewOffset);
+                    this.cameraPosition[2] += 22; // Add eye height
+
+                    vec3.copy(this.cameraAngles, playerAngles);
+                }
+                break;
+
+            case CameraMode.Free:
+                 // Handled by updateFreeCamera in UI or external input,
+                 // but here we just use stored freeCamera state
+                 vec3.copy(this.cameraPosition, this.freeCamera.position);
+                 // Convert rotation (radians) back to degrees for cameraAngles if needed by renderer
+                 // But engine camera usually expects something else?
+                 // Actually Dm2Adapter.getCameraUpdate returns angles.
+                 // UniversalViewer applies them to camera.angles.
+                 // Engine Camera uses angles in degrees.
+
+                 // FreeCameraState uses radians [pitch, yaw, roll]
+                 this.cameraAngles[0] = this.freeCamera.rotation[0] * (180 / Math.PI);
+                 this.cameraAngles[1] = this.freeCamera.rotation[1] * (180 / Math.PI);
+                 this.cameraAngles[2] = this.freeCamera.rotation[2] * (180 / Math.PI);
+                 break;
+
+            case CameraMode.Orbital:
+                 if (playerOrigin) {
+                     this.orbitCamera.target = vec3.clone(playerOrigin);
+                     // computeCameraPosition assumes Y-up usually in utils, but we have a Z-up helper in UniversalViewer.
+                     // We should reimplement Z-up orbit here.
+                     const x = this.orbitCamera.radius * Math.sin(this.orbitCamera.phi) * Math.cos(this.orbitCamera.theta);
+                     const y = this.orbitCamera.radius * Math.sin(this.orbitCamera.phi) * Math.sin(this.orbitCamera.theta);
+                     const z = this.orbitCamera.radius * Math.cos(this.orbitCamera.phi);
+
+                     vec3.set(this.cameraPosition,
+                        playerOrigin[0] + x,
+                        playerOrigin[1] + y,
+                        playerOrigin[2] + z
+                     );
+
+                     // Look at target
+                     const lookDir = vec3.create();
+                     vec3.subtract(lookDir, this.orbitCamera.target, this.cameraPosition);
+                     vec3.normalize(lookDir, lookDir);
+
+                     // Convert lookDir to angles (pitch, yaw)
+                     // Z-up:
+                     // yaw = atan2(y, x)
+                     // pitch = asin(z)
+
+                     const yawRad = Math.atan2(lookDir[1], lookDir[0]);
+                     const pitchRad = Math.asin(lookDir[2]);
+
+                     this.cameraAngles[0] = pitchRad * (180 / Math.PI);
+                     this.cameraAngles[1] = yawRad * (180 / Math.PI);
+                     this.cameraAngles[2] = 0;
+                 }
+                 break;
+
+            case CameraMode.Cinematic:
+                 // TODO: Implement cinematic paths
+                 if (playerOrigin) vec3.copy(this.cameraPosition, playerOrigin);
+                 if (playerAngles) vec3.copy(this.cameraAngles, playerAngles);
+                 break;
+        }
     }
 
     if (this.bspAdapter) {
@@ -119,9 +221,19 @@ export class Dm2Adapter implements ViewerAdapter {
   getCurrentTime() { return this.controller?.getCurrentTime() || 0; }
   getDemoController() { return this.controller; }
 
-  hasCameraControl() { return true; }
+  hasCameraControl() {
+      return this.cameraMode === CameraMode.FirstPerson ||
+             this.cameraMode === CameraMode.ThirdPerson ||
+             this.cameraMode === CameraMode.Cinematic;
+  }
+
   getCameraUpdate() {
       return { position: this.cameraPosition, angles: this.cameraAngles };
+  }
+
+  setCameraMode(mode: CameraMode) {
+      this.cameraMode = mode;
+      // Note: Logic for initializing free/orbit camera state when switching is now handled by UniversalViewer
   }
 
   useZUp() { return true; }
