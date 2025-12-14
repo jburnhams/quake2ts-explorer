@@ -1,0 +1,159 @@
+.texture-atlas {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background-color: #1a1a1a;
+  color: #eee;
+  font-family: monospace;
+}
+
+.texture-atlas-toolbar {
+  display: flex;
+  gap: 10px;
+  padding: 8px;
+  background-color: #2a2a2a;
+  border-bottom: 1px solid #333;
+  align-items: center;
+}
+
+.texture-atlas-toolbar button {
+  background: #444;
+  border: 1px solid #555;
+  color: white;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.texture-atlas-toolbar button:hover {
+  background: #555;
+}
+
+.texture-atlas-toolbar button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.texture-atlas-viewport {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  background-image:
+    linear-gradient(45deg, #111 25%, transparent 25%),
+    linear-gradient(-45deg, #111 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #111 75%),
+    linear-gradient(-45deg, transparent 75%, #111 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  background-color: #1a1a1a; /* Checkerboard dark bg */
+}
+
+.texture-atlas-canvas-container {
+  position: relative;
+  box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  margin: auto;
+}
+
+.texture-atlas-canvas {
+  display: block;
+  image-rendering: pixelated;
+}
+
+.texture-atlas-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: difference;
+}
+
+.texture-atlas-info {
+  display: flex;
+  padding: 10px;
+  background-color: #2a2a2a;
+  border-top: 1px solid #333;
+  gap: 20px;
+  font-size: 12px;
+}
+
+.texture-atlas-metadata-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.texture-atlas-metadata-item {
+  display: flex;
+  gap: 8px;
+}
+
+.texture-atlas-metadata-label {
+  color: #aaa;
+  min-width: 80px;
+}
+
+.texture-atlas-sidebar {
+  width: 250px;
+  border-left: 1px solid #333;
+  background: #222;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.texture-atlas-palette {
+  padding: 10px;
+  overflow-y: auto;
+}
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(16, 1fr);
+  gap: 1px;
+  background: #000;
+  border: 1px solid #444;
+}
+
+.palette-swatch {
+  aspect-ratio: 1;
+  cursor: pointer;
+  position: relative;
+}
+
+.palette-swatch:hover {
+  outline: 1px solid white;
+  z-index: 1;
+}
+
+.palette-swatch.selected {
+  outline: 2px solid #00f;
+  z-index: 2;
+}
+
+.palette-swatch.transparent {
+  background-image:
+    linear-gradient(45deg, #ccc 25%, transparent 25%),
+    linear-gradient(-45deg, #ccc 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #ccc 75%),
+    linear-gradient(-45deg, transparent 75%, #ccc 75%);
+  background-size: 4px 4px;
+  background-position: 0 0, 0 2px, 2px -2px, -2px 0px;
+  background-color: #fff;
+}
+
+.palette-info {
+  margin-top: 10px;
+  padding: 8px;
+  background: #333;
+  border-radius: 4px;
+}
+
+.color-preview {
+  width: 100%;
+  height: 30px;
+  border: 1px solid #555;
+  margin-bottom: 5px;
+}

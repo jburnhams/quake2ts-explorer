@@ -47,6 +47,6 @@ describe('PreviewPanel Component', () => {
         pakService={mockPakService}
       />
     );
-    expect(screen.getByTestId('image-preview')).toBeInTheDocument();
+    expect(screen.getByTestId('texture-atlas')).toBeInTheDocument();
   });
 });
