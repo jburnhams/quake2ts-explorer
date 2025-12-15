@@ -69,7 +69,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Count total usage instances
   - "Find in Files" functionality
 
-- [ ] **1.5**: Implement UV mapping visualization (for models)
+- [x] **1.5**: Implement UV mapping visualization (for models)
   - Overlay UV coordinates on texture
   - Show which parts of texture are used
   - Highlight unused areas
@@ -133,7 +133,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
     - Normal count
     - Frame name (if available)
 
-- [ ] **2.5**: Implement skeleton visualization (MD3 only)
+- [x] **2.5**: Implement skeleton visualization (MD3 only)
   - MD3 models use tag system for skeletal animation
   - Draw lines between tags (bones)
   - Show tag names and positions
@@ -146,7 +146,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Detect degenerate triangles
   - Display polygon density heatmap
 
-- [ ] **2.7**: Implement model export
+- [x] **2.7**: Implement model export
   - Export individual frame as OBJ
   - Export entire animation as FBX or GLTF (if library supports)
   - Export skeleton/tags for rigging in Blender

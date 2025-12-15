@@ -12,6 +12,7 @@ export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSet
   const [format, setFormat] = useState<'png' | 'jpeg'>('png');
   const [quality, setQuality] = useState<number>(0.95);
   const [resolutionMultiplier, setResolutionMultiplier] = useState<number>(1);
+  const [includeHud, setIncludeHud] = useState<boolean>(false);
 
   if (!isOpen) return null;
 
@@ -19,7 +20,8 @@ export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSet
     onCapture({
       format,
       quality,
-      resolutionMultiplier
+      resolutionMultiplier,
+      includeHud
     });
     onClose();
   };
@@ -62,6 +64,19 @@ export function ScreenshotSettings({ onCapture, isOpen, onClose }: ScreenshotSet
             <option value="2">2x (High Res)</option>
             <option value="4">4x (Ultra Res)</option>
           </select>
+        </div>
+
+        <div className="setting-group">
+            <label htmlFor="include-hud" style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
+                <input
+                    id="include-hud"
+                    type="checkbox"
+                    checked={includeHud}
+                    onChange={(e) => setIncludeHud(e.target.checked)}
+                    style={{ marginRight: '8px' }}
+                />
+                Include HUD (UI Overlays)
+            </label>
         </div>
 
         <div className="button-group">

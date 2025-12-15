@@ -25,26 +25,13 @@ export class AssetCrossRefService {
 
     const usages: AssetUsage[] = [];
 
-    // Find all potential files
-    // Note: This could be optimized by caching the file list or doing it incrementally
-    // VFS findByExtension returns an array of file objects or strings depending on version.
-    // The current version seems to return { path: string }[] but our memory says otherwise.
-    // Memory says: "VirtualFileSystem.findByExtension method ... returns an array of file objects (with a path property)".
-    // But error says "Argument of type 'string[]' is not assignable to parameter of type 'string'".
-    // It seems findByExtension accepts a single string, not array.
+    // Use any cast to handle potential type mismatches or version differences in findByExtension
+    const md2Files = (this.vfs.findByExtension('md2') as any[]).map(f => f.path);
+    const md3Files = (this.vfs.findByExtension('md3') as any[]).map(f => f.path);
+    const bspFiles = (this.vfs.findByExtension('bsp') as any[]).map(f => f.path);
 
-    // Let's fix the calls to findByExtension to call per extension.
-    // And cast the result properly.
+    const allFiles = [...md2Files, ...md3Files, ...bspFiles];
 
-    const md2Files = this.vfs.findByExtension('md2') as unknown as { path: string }[];
-    const md3Files = this.vfs.findByExtension('md3') as unknown as { path: string }[];
-    const bspFiles = this.vfs.findByExtension('bsp') as unknown as { path: string }[];
-
-    const allFiles = [
-        ...md2Files.map(f => f.path),
-        ...md3Files.map(f => f.path),
-        ...bspFiles.map(f => f.path)
-    ];
     let processedCount = 0;
 
     for (const file of allFiles) {
@@ -57,6 +44,8 @@ export class AssetCrossRefService {
         const refs = await this.getReferences(file);
 
         for (const ref of refs) {
+          if (!ref) continue;
+
           const normalizedRef = ref.toLowerCase().replace(/\\/g, '/');
 
           // Check for exact match or match without extension
@@ -99,7 +88,7 @@ export class AssetCrossRefService {
     let refs: string[] = [];
     const ext = filePath.split('.').pop()?.toLowerCase();
 
-    // Ensure we are working with ArrayBuffer and cast to avoid SharedArrayBuffer issues
+    // Ensure we are working with ArrayBuffer
     const arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength) as ArrayBuffer;
 
     try {
@@ -107,7 +96,8 @@ export class AssetCrossRefService {
         // parseMd2 returns Md2Model which has skins array
         const model = parseMd2(arrayBuffer);
         if (model && Array.isArray(model.skins)) {
-          refs = model.skins;
+          // MD2 skins are objects with a name property
+          refs = model.skins.map((s: any) => typeof s === 'string' ? s : s.name);
         }
       } else if (ext === 'md3') {
         // parseMd3 returns Md3Model which has surfaces -> shaders -> name

@@ -160,7 +160,7 @@ describe('UniversalViewer Screenshot Integration', () => {
       });
 
       // Should capture with default settings
-      expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 1 });
+      expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 1, includeHud: false });
   });
 
   it('should handle resolution multiplier correctly', async () => {
@@ -203,6 +203,6 @@ describe('UniversalViewer Screenshot Integration', () => {
     // And verify it was restored (last call should be original size or close to it if resize handler fired)
     // Actually, finally block restores it.
     // Let's check capture options
-    expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 2 });
+    expect(screenshotService.captureScreenshot).toHaveBeenCalledWith(expect.anything(), { format: 'png', quality: 0.95, resolutionMultiplier: 2, includeHud: false });
   });
 });

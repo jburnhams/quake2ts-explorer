@@ -127,3 +127,22 @@
 .model-inspector-prop label {
   color: #aaa;
 }
+
+.model-inspector-overlays {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 4px;
+  z-index: 10;
+}
+
+.model-inspector-overlays label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: white;
+  cursor: pointer;
+}

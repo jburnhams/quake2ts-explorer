@@ -109,7 +109,15 @@ describe('VideoRecorderService', () => {
       await expect(videoRecorderService.stopRecording()).rejects.toThrow('No active recording');
   });
 
-  it('handles recording errors', () => {
-      // Setup error handling test if needed
+  it('supports options passed to startRecording', () => {
+      videoRecorderService.startRecording(mockCanvas, {
+          fps: 60,
+          videoBitsPerSecond: 5000000,
+          mimeType: 'video/webm;codecs=vp8'
+      });
+      expect(mockCanvas.captureStream).toHaveBeenCalledWith(60);
+      expect(videoRecorderService.isRecording()).toBe(true);
+      const recorder = (videoRecorderService as any).mediaRecorder;
+      expect(recorder.mimeType).toBe('video/webm;codecs=vp8');
   });
 });

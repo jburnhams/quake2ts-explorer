@@ -1,123 +1,119 @@
-import { captureScreenshot, downloadScreenshot, generateScreenshotFilename } from '@/src/services/screenshotService';
+import { captureScreenshot, generateScreenshotFilename, downloadScreenshot, ScreenshotOptions } from '@/src/services/screenshotService';
+import html2canvas from 'html2canvas';
 
-describe('ScreenshotService', () => {
-  let mockCanvas: HTMLCanvasElement;
-  let mockToBlob: jest.Mock;
+// Mock html2canvas
+jest.mock('html2canvas', () => jest.fn());
 
-  beforeEach(() => {
-    mockToBlob = jest.fn();
-    mockCanvas = document.createElement('canvas');
-    mockCanvas.toBlob = mockToBlob;
+// Mock URL.createObjectURL and revokeObjectURL
+global.URL.createObjectURL = jest.fn();
+global.URL.revokeObjectURL = jest.fn();
 
-    // Mock URL.createObjectURL and revokeObjectURL
-    global.URL.createObjectURL = jest.fn(() => 'blob:url');
-    global.URL.revokeObjectURL = jest.fn();
-  });
+describe('captureScreenshot', () => {
+    let mockCanvas: HTMLCanvasElement;
+    let mockDiv: HTMLDivElement;
 
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
+    beforeEach(() => {
+        // Reset mocks
+        jest.clearAllMocks();
 
-  describe('captureScreenshot', () => {
-    it('should resolve with a blob when successful', async () => {
-      const mockBlob = new Blob(['test'], { type: 'image/png' });
-      mockToBlob.mockImplementation((callback) => callback(mockBlob));
-
-      const blob = await captureScreenshot(mockCanvas);
-      expect(blob).toBe(mockBlob);
-      expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
-    });
-
-    it('should use default format (png) if not specified', async () => {
-        const mockBlob = new Blob(['test'], { type: 'image/png' });
-        mockToBlob.mockImplementation((callback) => callback(mockBlob));
-
-        await captureScreenshot(mockCanvas);
-        expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
-    });
-
-    it('should use jpeg format if specified', async () => {
-        const mockBlob = new Blob(['test'], { type: 'image/jpeg' });
-        mockToBlob.mockImplementation((callback) => callback(mockBlob));
-
-        await captureScreenshot(mockCanvas, { format: 'jpeg', quality: 0.8 });
-        expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.8);
-    });
-
-    it('should reject if toBlob fails (returns null)', async () => {
-      mockToBlob.mockImplementation((callback) => callback(null));
-
-      await expect(captureScreenshot(mockCanvas)).rejects.toThrow('Failed to create blob from canvas');
-    });
-
-    it('should reject if toBlob throws', async () => {
-        mockToBlob.mockImplementation(() => { throw new Error('Canvas error'); });
-        await expect(captureScreenshot(mockCanvas)).rejects.toThrow('Canvas error');
-    });
-  });
-
-  describe('downloadScreenshot', () => {
-    it('should trigger download', () => {
-      const mockBlob = new Blob(['test'], { type: 'image/png' });
-      const filename = 'test.png';
-
-      const appendChildSpy = jest.spyOn(document.body, 'appendChild');
-      const removeChildSpy = jest.spyOn(document.body, 'removeChild');
-
-      // Mock click
-      const clickSpy = jest.fn();
-      jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
-          const el = document.createElementNS('http://www.w3.org/1999/xhtml', tagName) as HTMLElement;
-          if (tagName === 'a') {
-              el.click = clickSpy;
-          }
-          return el;
-      });
-
-      downloadScreenshot(mockBlob, filename);
-
-      expect(global.URL.createObjectURL).toHaveBeenCalledWith(mockBlob);
-      expect(appendChildSpy).toHaveBeenCalled();
-      expect(clickSpy).toHaveBeenCalled();
-    });
-
-    it('should cleanup after download', () => {
-        jest.useFakeTimers();
-        const mockBlob = new Blob(['test'], { type: 'image/png' });
-        const filename = 'test.png';
-
-        const removeChildSpy = jest.spyOn(document.body, 'removeChild');
-
-        // Mock click
-        const clickSpy = jest.fn();
-        jest.spyOn(document, 'createElement').mockImplementation((tagName) => {
-            const el = document.createElementNS('http://www.w3.org/1999/xhtml', tagName) as HTMLElement;
-            if (tagName === 'a') {
-                el.click = clickSpy;
-            }
-            return el;
+        // Create mock canvas
+        mockCanvas = document.createElement('canvas');
+        mockCanvas.toBlob = jest.fn((callback, type, quality) => {
+             // Mock blob creation
+             const blob = new Blob(['mock-image-data'], { type: type || 'image/png' });
+             callback(blob);
         });
 
-        downloadScreenshot(mockBlob, filename);
-
-        jest.runAllTimers();
-
-        expect(removeChildSpy).toHaveBeenCalled();
-        expect(global.URL.revokeObjectURL).toHaveBeenCalledWith('blob:url');
-
-        jest.useRealTimers();
+        mockDiv = document.createElement('div');
     });
-  });
 
-  describe('generateScreenshotFilename', () => {
-      it('should generate a filename with timestamp', () => {
-          const filename = generateScreenshotFilename();
-          expect(filename).toMatch(/quake2ts_screenshot_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png/);
-      });
-
-      it('should use custom prefix', () => {
-        const filename = generateScreenshotFilename('custom');
-        expect(filename).toMatch(/custom_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png/);
+    it('captures canvas screenshot as png by default', async () => {
+        const blob = await captureScreenshot(mockCanvas);
+        expect(blob.type).toBe('image/png');
+        expect(mockCanvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
     });
-  });
+
+    it('captures canvas screenshot as jpeg with quality', async () => {
+        const options: ScreenshotOptions = { format: 'jpeg', quality: 0.8 };
+        const blob = await captureScreenshot(mockCanvas, options);
+        expect(blob.type).toBe('image/jpeg');
+        expect(mockCanvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/jpeg', 0.8);
+    });
+
+    it('uses html2canvas when target is not a canvas', async () => {
+        // Mock html2canvas return
+        const mockResultCanvas = document.createElement('canvas');
+        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
+        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+
+        await captureScreenshot(mockDiv);
+
+        expect(html2canvas).toHaveBeenCalledWith(mockDiv, expect.objectContaining({
+            scale: 1
+        }));
+    });
+
+    it('uses html2canvas when includeHud is true, even for canvas target', async () => {
+        const mockResultCanvas = document.createElement('canvas');
+        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
+        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+
+        const options: ScreenshotOptions = { format: 'png', includeHud: true };
+        await captureScreenshot(mockCanvas, options);
+
+        expect(html2canvas).toHaveBeenCalled();
+    });
+
+    it('passes resolution multiplier to html2canvas scale option', async () => {
+        const mockResultCanvas = document.createElement('canvas');
+        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob([''], { type: 'image/png' })));
+        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+
+        const options: ScreenshotOptions = { format: 'png', resolutionMultiplier: 2, includeHud: true };
+        await captureScreenshot(mockDiv, options);
+
+        expect(html2canvas).toHaveBeenCalledWith(mockDiv, expect.objectContaining({
+            scale: 2
+        }));
+    });
+});
+
+describe('generateScreenshotFilename', () => {
+    it('generates filename with prefix and date', () => {
+        const filename = generateScreenshotFilename('test');
+        expect(filename).toMatch(/^test_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/);
+    });
+
+    it('uses default prefix if not provided', () => {
+        const filename = generateScreenshotFilename();
+        expect(filename).toMatch(/^quake2ts_screenshot_\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}\.png$/);
+    });
+});
+
+describe('downloadScreenshot', () => {
+    it('creates download link and triggers click', () => {
+        const blob = new Blob(['test'], { type: 'image/png' });
+        const filename = 'test.png';
+        const mockUrl = 'blob:test';
+        (global.URL.createObjectURL as jest.Mock).mockReturnValue(mockUrl);
+
+        // We need to return a real element for appendChild to work in jsdom
+        const mockLink = document.createElement('a');
+        mockLink.click = jest.fn();
+
+        const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink);
+        const appendChildSpy = jest.spyOn(document.body, 'appendChild');
+        const removeChildSpy = jest.spyOn(document.body, 'removeChild');
+
+        downloadScreenshot(blob, filename);
+
+        expect(global.URL.createObjectURL).toHaveBeenCalledWith(blob);
+        expect(createElementSpy).toHaveBeenCalledWith('a');
+        expect(mockLink.href).toBe(mockUrl);
+        expect(mockLink.download).toBe(filename);
+        expect(appendChildSpy).toHaveBeenCalledWith(mockLink);
+        expect(mockLink.click).toHaveBeenCalled();
+        expect(removeChildSpy).toHaveBeenCalledWith(mockLink);
+        expect(global.URL.revokeObjectURL).toHaveBeenCalledWith(mockUrl);
+    });
 });

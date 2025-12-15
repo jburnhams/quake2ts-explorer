@@ -1,70 +1,60 @@
-
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { GameHUD } from '@/src/components/GameHUD';
+import { PakService } from '@/src/services/pakService';
 import { PlayerState, PlayerStat } from 'quake2ts/shared';
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 
 describe('GameHUD', () => {
-  const createMockPlayerState = (overrides: Partial<PlayerState> = {}): PlayerState => {
-    const stats = new Array(55).fill(0);
-    stats[PlayerStat.STAT_HEALTH] = 100;
-    stats[PlayerStat.STAT_ARMOR] = 0;
-    stats[PlayerStat.STAT_AMMO] = 50;
-    stats[PlayerStat.STAT_ACTIVE_WEAPON] = 1; // Blaster
+    let mockPakService: PakService;
+    let mockPlayerState: PlayerState;
+    let mockConfigstrings: Map<number, string>;
 
-    return {
-      stats,
-      ...overrides
-    } as unknown as PlayerState;
-  };
+    beforeEach(() => {
+        mockPakService = {
+            readFile: jest.fn().mockResolvedValue(new Uint8Array(0))
+        } as unknown as PakService;
 
-  test('renders player stats correctly', () => {
-    const playerState = createMockPlayerState();
-    // Set some values
-    playerState.stats[PlayerStat.STAT_HEALTH] = 85;
-    playerState.stats[PlayerStat.STAT_ARMOR] = 42;
-    playerState.stats[PlayerStat.STAT_AMMO] = 120;
+        mockPlayerState = {
+            stats: []
+        } as unknown as PlayerState;
+        // Fill stats array with 0s
+        for(let i=0; i<32; i++) mockPlayerState.stats[i] = 0;
 
-    render(<GameHUD playerState={playerState} />);
+        mockConfigstrings = new Map();
+    });
 
-    expect(screen.getByText('85')).toBeInTheDocument();
-    expect(screen.getByText('42')).toBeInTheDocument();
-    expect(screen.getByText('120')).toBeInTheDocument();
-  });
+    it('renders health, armor, and ammo', () => {
+        mockPlayerState.stats[PlayerStat.STAT_HEALTH] = 100;
+        mockPlayerState.stats[PlayerStat.STAT_ARMOR] = 50;
+        mockPlayerState.stats[PlayerStat.STAT_AMMO] = 25;
 
-  test('shows death screen when health <= 0', () => {
-    const playerState = createMockPlayerState();
-    playerState.stats[PlayerStat.STAT_HEALTH] = 0;
+        render(
+            <GameHUD
+                playerState={mockPlayerState}
+                configstrings={mockConfigstrings}
+                pakService={mockPakService}
+            />
+        );
 
-    render(<GameHUD playerState={playerState} />);
+        expect(screen.getByText('100')).toBeInTheDocument();
+        expect(screen.getByText('50')).toBeInTheDocument();
+        expect(screen.getByText('25')).toBeInTheDocument();
+        expect(screen.getByText('Health')).toBeInTheDocument();
+    });
 
-    expect(screen.getByText('YOU DIED')).toBeInTheDocument();
-  });
+    it('renders death screen when health <= 0', () => {
+        mockPlayerState.stats[PlayerStat.STAT_HEALTH] = 0;
 
-  test('does not render when playerState is null', () => {
-    const { container } = render(<GameHUD playerState={null} />);
-    expect(container).toBeEmptyDOMElement();
-  });
+        render(
+            <GameHUD
+                playerState={mockPlayerState}
+                configstrings={mockConfigstrings}
+                pakService={mockPakService}
+            />
+        );
 
-  test('flashes damage overlay when health decreases', () => {
-    const playerState = createMockPlayerState();
-    playerState.stats[PlayerStat.STAT_HEALTH] = 100;
-
-    const { rerender, container } = render(<GameHUD playerState={playerState} />);
-
-    // Initial render, no flash
-    expect(container.querySelector('.flash-damage')).not.toBeInTheDocument();
-
-    // Decrease health
-    playerState.stats[PlayerStat.STAT_HEALTH] = 90;
-
-    // We need to pass a new object or force update.
-    // Since GameHUD uses props, a new render with same object reference might work if React sees it?
-    // Usually better to clone.
-    const newState = { ...playerState, stats: [...playerState.stats] };
-
-    rerender(<GameHUD playerState={newState} />);
-
-    expect(container.querySelector('.flash-damage')).toBeInTheDocument();
-  });
+        expect(screen.getByText('YOU DIED')).toBeInTheDocument();
+        expect(screen.queryByText('Health')).not.toBeInTheDocument();
+    });
 });

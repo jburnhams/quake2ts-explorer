@@ -28,6 +28,8 @@ import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
 import { getFileName } from '../../utils/helpers';
+import { PlayerState } from 'quake2ts/shared';
+import { GameHUD } from '../GameHUD';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -39,6 +41,9 @@ export interface UniversalViewerProps {
   onEntitySelected?: (entity: any) => void;
   onAdapterReady?: (adapter: ViewerAdapter) => void;
   showControls?: boolean;
+  playerState?: PlayerState;
+  configstrings?: Map<number, string>;
+  isGameMode?: boolean;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -49,7 +54,19 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames, onEntitySelected, onAdapterReady, showControls = true }: UniversalViewerProps) {
+export function UniversalViewer({
+  parsedFile,
+  pakService,
+  filePath = '',
+  onClassnamesLoaded,
+  hiddenClassnames,
+  onEntitySelected,
+  onAdapterReady,
+  showControls = true,
+  playerState,
+  configstrings,
+  isGameMode = false
+}: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -89,6 +106,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingBitrate, setRecordingBitrate] = useState<number>(0);
+  const [recordingTimeLimit, setRecordingTimeLimit] = useState<number>(300);
+  const [recordingResolution, setRecordingResolution] = useState<{ width: number; height: number } | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
   useEffect(() => {
@@ -116,8 +135,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         const duration = (Date.now() - recordingStartTime) / 1000;
         setRecordingDuration(duration);
 
-        // Auto-stop after 5 minutes (300 seconds)
-        if (duration > 300) {
+        // Auto-stop at configurable limit
+        if (recordingTimeLimit > 0 && duration > recordingTimeLimit) {
              handleStopRecording();
              setError("Recording stopped automatically (limit reached).");
         }
@@ -126,7 +145,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       setRecordingDuration(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording, recordingStartTime]);
+  }, [isRecording, recordingStartTime, recordingTimeLimit]);
 
   // Cleanup recording on unmount
   useEffect(() => {
@@ -136,6 +155,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       }
     };
   }, []);
+
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
     if (!canvasRef.current || !glContext || !camera) return;
@@ -154,8 +175,16 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              // Temporarily resize
              const newWidth = canvas.clientWidth * window.devicePixelRatio * multiplier;
              const newHeight = canvas.clientHeight * window.devicePixelRatio * multiplier;
+
+             // Set buffer size
              canvas.width = newWidth;
              canvas.height = newHeight;
+
+             // IMPORTANT: Force CSS size to remain strictly same as original to prevent layout shift
+             // which could confuse html2canvas or cause flicker.
+             canvas.style.width = `${originalWidth / window.devicePixelRatio}px`;
+             canvas.style.height = `${originalHeight / window.devicePixelRatio}px`;
+
              gl.viewport(0, 0, newWidth, newHeight);
 
              // Update camera matrices
@@ -186,7 +215,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              }
         }
 
-        const blob = await captureScreenshot(canvas, options);
+        const target = (options.includeHud && containerRef.current) ? containerRef.current : canvas;
+        const blob = await captureScreenshot(target, options);
         const ext = options.format === 'jpeg' ? 'jpg' : 'png';
         const filename = generateScreenshotFilename().replace('.png', `.${ext}`);
         downloadScreenshot(blob, filename);
@@ -195,10 +225,14 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         console.error("Screenshot failed:", e);
         setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-        // Restore original size
+        // Restore original size if we resized
         if (multiplier > 1) {
             canvas.width = originalWidth;
             canvas.height = originalHeight;
+            // Restore CSS (usually handled by CSS file or parent, but let's reset to be safe or empty to let auto work)
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+
             gl.viewport(0, 0, originalWidth, originalHeight);
             camera.aspect = originalWidth / originalHeight;
             if ((camera as any).updateMatrices) (camera as any).updateMatrices();
@@ -229,8 +263,27 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   };
 
   const handleStartRecordingWithOptions = (options: VideoRecordOptions) => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !camera || !glContext) return;
     try {
+      // Handle resolution override
+      if (options.width && options.height) {
+          setRecordingResolution({ width: options.width, height: options.height });
+
+          // Force resize immediately for recording
+          const canvas = canvasRef.current;
+          canvas.width = options.width;
+          canvas.height = options.height;
+          // Note: We don't change CSS size, so it might look stretched or pixelated in the UI,
+          // but the recording will be correct.
+
+          glContext.gl.viewport(0, 0, options.width, options.height);
+          camera.aspect = options.width / options.height;
+          if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+      }
+
+      // Handle time limit
+      setRecordingTimeLimit(options.timeLimit !== undefined ? options.timeLimit : 300);
+
       videoRecorderService.startRecording(canvasRef.current, options);
       setIsRecording(true);
       setRecordingStartTime(Date.now());
@@ -238,6 +291,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     } catch (e) {
       console.error("Recording failed:", e);
       setError(`Recording failed: ${e instanceof Error ? e.message : String(e)}`);
+      setRecordingResolution(null); // Reset if failed
     }
   };
 
@@ -246,6 +300,24 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       const blob = await videoRecorderService.stopRecording();
       setIsRecording(false);
       setRecordingStartTime(null);
+      setRecordingResolution(null); // Clear resolution override
+
+      // Trigger resize to restore original resolution
+      // We rely on the resize event or manual call next frame
+      requestAnimationFrame(() => {
+          const canvas = canvasRef.current;
+          if (canvas) {
+             // Reset canvas size to match display size
+             canvas.width = canvas.clientWidth * window.devicePixelRatio;
+             canvas.height = canvas.clientHeight * window.devicePixelRatio;
+             if (glContext && camera) {
+                 glContext.gl.viewport(0, 0, canvas.width, canvas.height);
+                 camera.aspect = canvas.width / canvas.height;
+                 if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+             }
+          }
+      });
+
       const filename = generateScreenshotFilename('quake2ts_recording').replace('.png', '.webm');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -257,6 +329,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
       console.error("Stop recording failed:", e);
       setError(`Stop recording failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsRecording(false);
+      setRecordingResolution(null);
     }
   };
 
@@ -371,6 +444,27 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         window.removeEventListener('keyup', handleKeyUp);
     };
   }, [adapter, isPlaying]); // Depend on adapter/isPlaying to capture current state for shortcuts
+
+  // Pointer Lock for Game Mode
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleGameClick = async () => {
+        if (isGameMode) {
+            try {
+                if (canvas.requestPointerLock) {
+                    await canvas.requestPointerLock();
+                }
+            } catch (e) {
+                console.warn("Pointer lock failed", e);
+            }
+        }
+    };
+
+    canvas.addEventListener('click', handleGameClick);
+    return () => canvas.removeEventListener('click', handleGameClick);
+  }, [isGameMode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -861,6 +955,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     if (!canvas || !camera || !glContext) return;
 
     const handleResize = () => {
+      if (recordingResolution) return; // Don't resize if recording with fixed resolution
+
       canvas.width = canvas.clientWidth * window.devicePixelRatio;
       canvas.height = canvas.clientHeight * window.devicePixelRatio;
       glContext.gl.viewport(0, 0, canvas.width, canvas.height);
@@ -873,10 +969,10 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     window.addEventListener('resize', handleResize);
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
-  }, [canvasRef, camera, glContext]);
+  }, [canvasRef, camera, glContext, recordingResolution]);
 
   return (
-     <div className="md2-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>
+     <div ref={containerRef} className="md2-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>
        {error && (
          <div style={{ position: 'absolute', top: 10, left: 10, color: 'red', background: 'rgba(0,0,0,0.8)', padding: 10, zIndex: 100 }}>
             Error: {error}
@@ -925,6 +1021,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        )}
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
+         {isGameMode && playerState && configstrings && (
+           <GameHUD
+               playerState={playerState}
+               configstrings={configstrings}
+               pakService={pakService}
+           />
+         )}
        </div>
        {showControls && (
          <ViewerControls
