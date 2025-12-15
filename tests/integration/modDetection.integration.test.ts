@@ -29,6 +29,7 @@ describe('ModDetection Integration', () => {
       isUser: false,
       archive: {
         has: (f: string) => f === 'pics/colormap.pcx',
+        entries: { has: (f: string) => f === 'pics/colormap.pcx' },
         readFile: () => null,
       }
     } as unknown as MountedPak;
@@ -40,6 +41,7 @@ describe('ModDetection Integration', () => {
       isUser: false,
       archive: {
         has: (f: string) => false,
+        entries: { has: (f: string) => false },
         readFile: () => null,
       }
     } as unknown as MountedPak;
@@ -56,6 +58,7 @@ describe('ModDetection Integration', () => {
       isUser: true,
       archive: {
         has: (f: string) => f === 'mod.json',
+        entries: { has: (f: string) => f === 'mod.json' },
         readFile: (f: string) => f === 'mod.json' ? new TextEncoder().encode(modMetadata) : null,
       }
     } as unknown as MountedPak;

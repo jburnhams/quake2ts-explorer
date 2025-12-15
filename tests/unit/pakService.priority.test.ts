@@ -18,16 +18,27 @@ jest.mock('quake2ts/engine', () => {
       })
     },
     VirtualFileSystem: class {
-      paks: any[] = [];
-      mountPak(pak: any) { this.paks.push(pak); }
+      paks: {pak: any, priority: number}[] = [];
+      mountPak(pak: any, priority: number = 0) {
+          this.paks.push({pak, priority});
+          this.paks.sort((a, b) => a.priority - b.priority);
+      }
+      setPriority(pak: any, priority: number) {
+          const entry = this.paks.find(p => p.pak === pak);
+          if (entry) {
+              entry.priority = priority;
+              this.paks.sort((a, b) => a.priority - b.priority);
+          }
+      }
+      // Keep unmountPak for legacy/fallback testing or if we decide to use it
       unmountPak(pak: any) {
-         const idx = this.paks.indexOf(pak);
+         const idx = this.paks.findIndex(p => p.pak === pak);
          if (idx !== -1) this.paks.splice(idx, 1);
       }
       readFile(path: string) {
         if (this.paks.length > 0) {
           // Return content from last mounted pak (override behavior)
-          return this.paks[this.paks.length - 1].readFile(path);
+          return this.paks[this.paks.length - 1].pak.readFile(path);
         }
         return null;
       }

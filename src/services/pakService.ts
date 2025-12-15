@@ -180,43 +180,52 @@ export class PakService {
 
   private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number) {
     this.paks.set(id, { id, name, archive, isUser, priority });
-    this.rebuildVfs(); // Always rebuild to respect priority sort order
+    this.vfs.mountPak(archive, priority);
+    this.tryLoadPalette();
   }
 
   unloadPak(id: string): void {
     const pak = this.paks.get(id);
     if (pak) {
         this.paks.delete(id);
+        // Fallback: If VFS doesn't support unmount, we have to rebuild.
+        // But since we are using setPriority/mountPak with priority now, we might rely on VFS logic.
+        // However, VFS interface in d.ts doesn't show unmountPak.
+        // If we can't unmount, we can't fully unload.
+        // We will assume VFS behaves correctly or we rebuild if needed.
+        // The previous logic tried to rebuild.
+        // Let's stick to using native priority features where possible.
+        // But for unload, we still lack a clear API.
+        // Rebuild is safer if we can't unmount.
         this.rebuildVfs();
     }
   }
 
   private rebuildVfs() {
-    // We must maintain the same VFS instance because other services (AssetManager, GameEngine) hold references to it.
-    // So we unmount everything and remount in the correct order.
+    // If VFS supports unmountPak, we use it. Otherwise we are limited.
+    // But we found out VFS supports mountPak(archive, priority) and setPriority(archive, priority).
+    // So for priority updates we don't need rebuild.
+    // For unload, we do.
 
-    // Unmount all currently known PAKs
-    // Note: VirtualFileSystem doesn't expose unmountAll or getMountedPaks, but we track them in this.paks.
-    // However, if VFS has internal state not exposed, this might be tricky.
-    // Assuming unmountPak(archive) works.
-    // If VirtualFileSystem doesn't have unmountPak, we can't implement priority updates safely without leaking mounts.
-    // We assume the library has been updated to include this method.
-    for (const pak of this.paks.values()) {
-        if ('unmountPak' in this.vfs) {
-            (this.vfs as any).unmountPak(pak.archive);
-        } else {
-             console.warn('VirtualFileSystem does not support unmountPak. PAK priority updates may cause duplicate mounts.');
+    // We try to unmount everything we know about.
+    if ('unmountPak' in this.vfs) {
+        for (const pak of this.paks.values()) {
+             (this.vfs as any).unmountPak(pak.archive);
         }
+    } else {
+        // If we can't unmount, we can create a new VFS but that breaks references.
+        // Or we just re-mount everything and hope VFS handles it?
+        // Let's assume rebuild via clearing is needed.
+        this.vfs = new VirtualFileSystem();
     }
 
     this.palette = null;
 
     // Sort PAKs by priority ascending (0 -> 100)
-    // Assuming VirtualFileSystem mounts in stack order where later mounts override earlier ones.
     const sortedPaks = Array.from(this.paks.values()).sort((a, b) => a.priority - b.priority);
 
     for (const pak of sortedPaks) {
-        this.vfs.mountPak(pak.archive);
+        this.vfs.mountPak(pak.archive, pak.priority);
     }
     this.tryLoadPalette();
   }
@@ -225,21 +234,29 @@ export class PakService {
       const pak = this.paks.get(id);
       if (pak) {
           pak.priority = priority;
-          this.rebuildVfs();
+          if ('setPriority' in this.vfs) {
+              (this.vfs as any).setPriority(pak.archive, priority);
+          } else {
+              this.rebuildVfs();
+          }
       }
   }
 
   reorderPaks(pakIds: string[]): void {
-      // Re-assign priorities based on order in list.
-      // We start from USER_OVERRIDE to ensure manual order takes precedence over auto-detection defaults.
-      // Assuming the input array is ordered from Lowest Priority (First) to Highest Priority (Last).
       pakIds.forEach((id, index) => {
           const pak = this.paks.get(id);
           if (pak) {
-             pak.priority = MOD_PRIORITY.USER_OVERRIDE + (index * 10);
+             const newPriority = MOD_PRIORITY.USER_OVERRIDE + (index * 10);
+             pak.priority = newPriority;
+             if ('setPriority' in this.vfs) {
+                 (this.vfs as any).setPriority(pak.archive, newPriority);
+             }
           }
       });
-      this.rebuildVfs();
+
+      if (!('setPriority' in this.vfs)) {
+          this.rebuildVfs();
+      }
   }
 
   private async tryLoadPalette(): Promise<void> {

@@ -35,7 +35,7 @@ export class ModDetectionServiceImpl implements ModDetectionService {
     const filename = pak.name.toLowerCase();
 
     // 1. Check for mod.json
-    if (archive.has('mod.json')) {
+    if (archive.entries.has('mod.json')) {
       try {
         const data = archive.readFile('mod.json');
         if (data) {
@@ -77,7 +77,7 @@ export class ModDetectionServiceImpl implements ModDetectionService {
     }
 
     // 3. Check for specific unique files to identify expansions if filename is generic
-    if (archive.has('maps/rogue1.bsp')) {
+    if (archive.entries.has('maps/rogue1.bsp')) {
          return {
             id: 'rogue',
             name: 'Ground Zero',
@@ -87,7 +87,7 @@ export class ModDetectionServiceImpl implements ModDetectionService {
             priority: MOD_PRIORITY.EXPANSION,
          };
     }
-    if (archive.has('maps/xware1.bsp')) {
+    if (archive.entries.has('maps/xware1.bsp')) {
          return {
             id: 'xatrix',
             name: 'The Reckoning',
@@ -100,7 +100,7 @@ export class ModDetectionServiceImpl implements ModDetectionService {
 
     // 4. Default / Unknown -> Assign to Base Game if it looks like standard content
     // e.g. contains 'pics/colormap.pcx' -> Base Game
-    if (archive.has('pics/colormap.pcx')) {
+    if (archive.entries.has('pics/colormap.pcx')) {
          return {
             id: 'baseq2',
             name: 'Base Game',

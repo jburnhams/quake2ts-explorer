@@ -8,6 +8,9 @@ import { MOD_PRIORITY } from '../../src/types/modInfo';
 const createMockArchive = (files: Record<string, string>) => {
   return {
     has: (path: string) => path in files,
+    entries: {
+        has: (path: string) => path in files
+    },
     readFile: (path: string) => {
       if (path in files) {
         return new TextEncoder().encode(files[path]);
