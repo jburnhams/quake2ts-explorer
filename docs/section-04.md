@@ -258,18 +258,18 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Show recording indicator (flashing red dot + elapsed time)
   - Stop button saves video
 
-- [ ] **4.4**: Implement video settings
+- [x] **4.4**: Implement video settings
   - Frame rate (30, 60 FPS)
   - Video bitrate (quality)
   - Resolution (match canvas or custom)
-  - Audio recording toggle (if audio context available)
+  - Audio recording toggle (UI added, implementation pending engine support)
 
 - [x] **4.5**: Handle download
   - Same pattern as screenshot
   - Filename: `quake2ts_recording_YYYY-MM-DD_HH-MM-SS.webm`
   - Show file size before download
 
-- [ ] **4.6**: Add recording limits
+- [x] **4.6**: Add recording limits
   - Warn if recording > 60 seconds (large file)
   - Auto-stop at configurable limit (e.g., 5 minutes)
   - Display estimated file size during recording

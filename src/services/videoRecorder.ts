@@ -2,6 +2,10 @@ export interface VideoRecordOptions {
   mimeType?: string;
   fps?: number;
   videoBitsPerSecond?: number;
+  width?: number;
+  height?: number;
+  timeLimit?: number; // In seconds, 0 for unlimited
+  audio?: boolean;
 }
 
 export class VideoRecorderService {
@@ -23,6 +27,12 @@ export class VideoRecorderService {
     try {
       // Use captureStream if available
       const stream = canvas.captureStream(fps);
+
+      // Add audio track if requested (placeholder - requires audio context integration)
+      if (options.audio) {
+          // TODO: Implement audio track capture from AudioContext
+          console.warn("Audio recording requested but not yet implemented.");
+      }
 
       // Check if mimeType is supported
       let selectedMimeType = mimeType;
