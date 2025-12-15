@@ -25,21 +25,38 @@ export const DemoMetadataEditor: React.FC<DemoMetadataProps> = ({
   });
   const [newTag, setNewTag] = useState('');
 
+  // Initial load
   useEffect(() => {
     const loaded = demoMetadataService.getMetadata(demoId);
-    // Initialize with props if not already in metadata, but don't overwrite saved values if they exist
-    setMetadata({
+    setMetadata(prev => ({
       ...loaded,
-      id: demoId, // Ensure ID matches
-      // Only set these if they aren't already saved
+      id: demoId,
+      // Use existing values if present, otherwise fall back to props, otherwise stay undefined
       mapName: loaded.mapName || mapName,
       duration: loaded.duration || duration,
+    }));
+  }, [demoId]);
+
+  // Update specific fields if props change but don't overwrite user edits to other fields
+  useEffect(() => {
+    setMetadata(prev => {
+        // Only update if the prop provides a value and we don't have one yet
+        // or if we want to enforce synchronization (usually we trust the loaded metadata first)
+        const updates: Partial<DemoMetadata> = {};
+        if (mapName && !prev.mapName) updates.mapName = mapName;
+        if (duration && !prev.duration) updates.duration = duration;
+
+        if (Object.keys(updates).length > 0) {
+            return { ...prev, ...updates };
+        }
+        return prev;
     });
-  }, [demoId, mapName, duration]);
+  }, [mapName, duration]);
 
   const handleSave = () => {
     demoMetadataService.saveMetadata(metadata);
     if (onSave) onSave();
+    if (onClose) onClose();
   };
 
   const handleAddTag = (e: React.KeyboardEvent | React.MouseEvent) => {
@@ -76,17 +93,17 @@ export const DemoMetadataEditor: React.FC<DemoMetadataProps> = ({
           <span>{filename}</span>
         </div>
 
-        {metadata.mapName && (
+        {(metadata.mapName || mapName) && (
           <div className="metadata-row read-only">
             <label>Map:</label>
-            <span>{metadata.mapName}</span>
+            <span>{metadata.mapName || mapName}</span>
           </div>
         )}
 
-        {metadata.duration && (
+        {(metadata.duration || duration) && (
           <div className="metadata-row read-only">
             <label>Duration:</label>
-            <span>{metadata.duration.toFixed(2)}s</span>
+            <span>{(metadata.duration || duration)?.toFixed(2)}s</span>
           </div>
         )}
 

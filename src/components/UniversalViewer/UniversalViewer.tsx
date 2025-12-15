@@ -27,6 +27,7 @@ import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
+import { getFileName } from '../../utils/helpers';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -991,7 +992,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        {showMetadataEditor && (
         <DemoMetadataEditor
           demoId={filePath}
-          filename={parsedFile.name}
+          filename={getFileName(filePath)}
           duration={adapter?.getDemoController?.()?.getDuration?.()}
           // Map name might be available from adapter or metadata service
           onClose={() => setShowMetadataEditor(false)}
