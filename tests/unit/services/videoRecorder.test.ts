@@ -70,7 +70,7 @@ describe('VideoRecorderService', () => {
   it('starts recording successfully', () => {
     videoRecorderService.startRecording(mockCanvas);
     expect(videoRecorderService.isRecording()).toBe(true);
-    expect(mockCanvas.captureStream).toHaveBeenCalledWith(60); // Default FPS
+    expect(mockCanvas.captureStream).toHaveBeenCalledWith(30); // Default FPS
   });
 
   it('collects data chunks', () => {

@@ -98,8 +98,14 @@ describe('UniversalViewer Integration - Video Recording', () => {
     const recordBtn = await screen.findByTitle('Record Video');
     expect(recordBtn).toBeInTheDocument();
 
-    // 3. Click Record
+    // 3. Click Record (opens modal)
     fireEvent.click(recordBtn);
+
+    // Verify modal
+    expect(screen.getByText('Video Recording Settings')).toBeInTheDocument();
+
+    // Click Start in Modal
+    fireEvent.click(screen.getByText('Start Recording'));
 
     // 4. Verify service called
     expect(videoRecorderService.startRecording).toHaveBeenCalled();

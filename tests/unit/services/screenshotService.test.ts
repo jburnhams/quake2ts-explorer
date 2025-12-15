@@ -25,7 +25,7 @@ describe('ScreenshotService', () => {
 
       const blob = await captureScreenshot(mockCanvas);
       expect(blob).toBe(mockBlob);
-      expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', 0.95);
+      expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
     });
 
     it('should use default format (png) if not specified', async () => {
@@ -33,7 +33,7 @@ describe('ScreenshotService', () => {
         mockToBlob.mockImplementation((callback) => callback(mockBlob));
 
         await captureScreenshot(mockCanvas);
-        expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', 0.95);
+        expect(mockToBlob).toHaveBeenCalledWith(expect.any(Function), 'image/png', undefined);
     });
 
     it('should use jpeg format if specified', async () => {

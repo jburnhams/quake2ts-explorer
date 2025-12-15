@@ -63,6 +63,7 @@ describe('ScreenshotSettings', () => {
     expect(mockOnCapture).toHaveBeenCalledWith({
       format: 'png',
       quality: 0.95,
+      resolutionMultiplier: 1,
     });
     expect(mockOnClose).toHaveBeenCalled();
   });
@@ -85,6 +86,7 @@ describe('ScreenshotSettings', () => {
     expect(mockOnCapture).toHaveBeenCalledWith({
       format: 'jpeg',
       quality: 0.95,
+      resolutionMultiplier: 1,
     });
   });
 
@@ -109,6 +111,7 @@ describe('ScreenshotSettings', () => {
     expect(mockOnCapture).toHaveBeenCalledWith({
       format: 'jpeg',
       quality: 0.5,
+      resolutionMultiplier: 1,
     });
   });
 });
