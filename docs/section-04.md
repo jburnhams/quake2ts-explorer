@@ -155,7 +155,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Highlight dropped frames
   - Scrolling window (last 5 seconds)
 
-- [ ] **2.7**: Add profiling markers
+- [x] **2.7**: Add profiling markers
   - Track time spent in:
     - Simulation
     - Rendering
@@ -304,13 +304,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Slider: 0.0 (black) to 2.0 (overexposed)
   - Default: 1.0 (normal)
   - Pass to renderer as uniform or post-process multiplier
-  - **Library Enhancement Needed**: Brightness adjustment API (Partially implemented via light style scaling)
+  - **Library Enhancement Needed**: Brightness adjustment API (Partially implemented via color modulation)
 
 - [ ] **5.3**: Implement gamma correction
   - Slider: 0.5 to 3.0
   - Default: 1.0 (linear)
   - Gamma curve affects midtones
-  - Apply in fragment shader or post-process (Blocked by shader support)
+  - Apply in fragment shader or post-process
+  - **Note**: Requires shader modification (Library Enhancement Needed)
 
 - [ ] **5.4**: Implement light style overrides
   - Quake II uses light styles for flickering/pulsing lights
@@ -326,7 +327,8 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 - [x] **5.6**: Implement ambient light adjustment
   - Increase minimum light level
   - Prevents pure black areas
-  - Useful for visibility in dark maps (Partially covered by brightness/fullbright)
+  - Useful for visibility in dark maps
+  - **Note**: Requires shader modification (Library Enhancement Needed)
 
 **File References**:
 - Create: `src/components/LightingControls.tsx`

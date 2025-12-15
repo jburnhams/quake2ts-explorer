@@ -47,3 +47,50 @@ describe('FpsCounter', () => {
         expect(fpsCounter.getMinFps()).toBeCloseTo(30, -1);
     });
 });
+
+describe('performanceService', () => {
+    beforeAll(() => {
+        // Setup performance API mocks
+        Object.defineProperty(global, 'performance', {
+            writable: true,
+            value: {
+                now: jest.fn(() => Date.now()),
+                mark: jest.fn(),
+                measure: jest.fn(),
+            },
+        });
+    });
+
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
+
+    it('should call performance.mark on startMeasure', () => {
+        performanceService.startMeasure('test-op');
+        expect(performance.mark).toHaveBeenCalledWith('test-op-start');
+    });
+
+    it('should call performance.mark and measure on endMeasure', () => {
+        performanceService.endMeasure('test-op');
+        expect(performance.mark).toHaveBeenCalledWith('test-op-end');
+        expect(performance.measure).toHaveBeenCalledWith('test-op', 'test-op-start', 'test-op-end');
+    });
+
+    it('should handle custom measure name', () => {
+        performanceService.endMeasure('test-op', 'custom-measure');
+        expect(performance.measure).toHaveBeenCalledWith('custom-measure', 'test-op-start', 'test-op-end');
+    });
+
+    it('should gracefully handle measure errors', () => {
+        (performance.measure as jest.Mock).mockImplementationOnce(() => {
+            throw new Error('Invalid mark');
+        });
+
+        // Should not throw
+        expect(() => {
+            performanceService.endMeasure('invalid-op');
+        }).not.toThrow();
+
+        expect(performance.mark).toHaveBeenCalledWith('invalid-op-end');
+    });
+});

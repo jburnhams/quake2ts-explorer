@@ -55,5 +55,31 @@ export class FpsCounter {
 
 export const performanceService = {
     now: () => performance.now(),
-    createFpsCounter: (windowSize?: number) => new FpsCounter(windowSize)
+    createFpsCounter: (windowSize?: number) => new FpsCounter(windowSize),
+
+    startMeasure: (name: string): void => {
+        if (typeof performance !== 'undefined' && performance.mark) {
+            performance.mark(`${name}-start`);
+        }
+    },
+
+    endMeasure: (name: string, measureName?: string): void => {
+        if (typeof performance === 'undefined') return;
+
+        const startMark = `${name}-start`;
+        const endMark = `${name}-end`;
+
+        if (performance.mark) {
+            performance.mark(endMark);
+        }
+
+        try {
+            if (performance.measure) {
+                performance.measure(measureName || name, startMark, endMark);
+            }
+        } catch (e) {
+            // Ignore errors if marks are missing (e.g. if startMeasure wasn't called)
+            console.warn(`Failed to measure ${name}:`, e);
+        }
+    }
 };

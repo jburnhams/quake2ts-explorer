@@ -20,7 +20,10 @@ jest.mock('@/src/services/performanceService', () => ({
             getAverageFps: jest.fn(),
             getMinFps: jest.fn(),
             getMaxFps: jest.fn()
-        })
+        }),
+        now: jest.fn(),
+        startMeasure: jest.fn(),
+        endMeasure: jest.fn()
     }
 }));
 
