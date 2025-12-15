@@ -221,7 +221,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Filter and search entities
   - Export entity data as JSON or ENT file
 
-- [ ] **3.7**: Add optimization suggestions
+- [x] **3.7**: Add optimization suggestions
   - Detect oversized surfaces (recommend subdivision)
   - Detect high-poly areas (performance hotspots)
   - Identify unused textures
@@ -276,7 +276,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Editable (for map editor integration, Section 06)
   - Show 3D position in map preview (if map loaded)
 
-- [ ] **4.4**: Add entity type reference
+- [x] **4.4**: Add entity type reference
   - Built-in documentation for common entity types
   - Show expected properties and their meanings
   - Link to Quake II modding wiki or docs
@@ -286,9 +286,9 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Show distribution chart (bar graph)
   - Identify most common entity types
 
-- [ ] **4.6**: Add entity export
+- [x] **4.6**: Add entity export (Partial: JSON only)
   - Export selected entities as JSON
-  - Export entire entity lump as ENT file
+  - Export entire entity lump as ENT file (Pending)
   - Import ENT file (for map editor)
 
 **File References**:
@@ -333,17 +333,17 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Heatmap (show brightness distribution)
   - Isolate light styles (show each animated light separately)
 
-- [ ] **5.4**: Show surface-to-lightmap mapping
+- [x] **5.4**: Show surface-to-lightmap mapping
   - Highlight surfaces in 3D view that use selected lightmap
   - Show UV mapping on lightmap texture
   - Detect lightmap seams
 
-- [ ] **5.5**: Analyze lightmap quality
+- [x] **5.5**: Analyze lightmap quality
   - Detect over/underexposure (histogram)
   - Identify shadow artifacts
   - Suggest higher/lower resolution where needed
 
-- [ ] **5.6**: Add lightmap export
+- [x] **5.6**: Add lightmap export
   - Export individual lightmaps as PNG
   - Export all lightmaps as atlas
   - Export lightmap UVs for external editing
@@ -396,15 +396,15 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Duration (seconds)
   - File size
 
-- [ ] **6.5**: Implement audio export
+- [x] **6.5**: Implement audio export
   - Export as WAV (if original is OGG)
   - Normalize volume
   - Trim silence from start/end
   - Resample to different rate
 
-- [ ] **6.6**: Add sound usage tracking
+- [x] **6.6**: Add sound usage tracking (Stub)
   - **Library Enhancement Needed**: Cross-reference API
-  - Show which entities use this sound
+  - Show which entities use this sound (Stubbed)
   - List maps where sound is used
 
 **File References**:
@@ -454,7 +454,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Contents (solid, water, lava, etc.)
   - Surface area (square units)
 
-- [ ] **7.4**: Highlight surfaces by flag
+- [x] **7.4**: Highlight surfaces by flag
   - Filter view to show only surfaces with specific flags
   - E.g., "Show only SKY surfaces" or "Show all TRANS surfaces"
   - Useful for debugging texture issues

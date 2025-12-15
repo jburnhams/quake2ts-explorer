@@ -64,6 +64,8 @@
     width: 100%;
 }
 
+@import './LightmapQuality.css';
+
 .lightmap-inspector-empty {
     padding: 20px;
     text-align: center;
