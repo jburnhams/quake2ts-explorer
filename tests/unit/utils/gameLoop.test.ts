@@ -54,7 +54,7 @@ describe('GameLoop', () => {
 
     loop.start();
 
-    // Should not call RAF again immediately (it calls it inside the frame callback, but not for the start call)
+    // Should not call RAF again immediately
     expect(rafSpy).not.toHaveBeenCalled();
   });
 

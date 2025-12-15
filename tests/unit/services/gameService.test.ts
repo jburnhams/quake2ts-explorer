@@ -1,6 +1,6 @@
 
 import { createGameSimulation, shutdownGameService } from '@/src/services/gameService';
-import { VirtualFileSystem, AssetManager } from 'quake2ts/engine';
+import { VirtualFileSystem } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
 
 // Mock dependencies
@@ -21,9 +21,9 @@ jest.mock('quake2ts/engine', () => ({
 
 jest.mock('quake2ts/game', () => ({
   createGame: jest.fn().mockImplementation(() => ({
-    init: jest.fn(),
+    init: jest.fn().mockReturnValue({ state: { time: 0 } }), // Return mock frame result
     shutdown: jest.fn(),
-    frame: jest.fn(),
+    frame: jest.fn().mockReturnValue({ state: { time: 100 } }), // Return mock frame result
     snapshot: jest.fn().mockReturnValue({ time: 0 }),
     entities: { find: jest.fn() }
   }))
@@ -66,13 +66,15 @@ describe('GameService', () => {
       lightlevel: 0
     };
 
-    game.tick(25, cmd);
+    const step = { frame: 1, deltaMs: 25, nowMs: 1000 };
+    game.tick(step, cmd);
 
     const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
-    expect(mockGameExports.frame).toHaveBeenCalledWith(1, cmd);
+    expect(mockGameExports.frame).toHaveBeenCalledWith(step, cmd);
 
-    game.tick(25, cmd);
-    expect(mockGameExports.frame).toHaveBeenCalledWith(2, cmd);
+    // Verify snapshot update
+    const snapshot = game.getSnapshot();
+    expect(snapshot.time).toBe(100);
   });
 
   it('should shutdown game simulation', async () => {
