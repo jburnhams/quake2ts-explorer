@@ -104,11 +104,29 @@ describe('Adapter Debug Modes', () => {
             expect(mockDebugRendererInstance.render).toHaveBeenCalled();
         });
 
-        it('does not render debug info in DebugMode.None', async () => {
+        it('does not render debug info in DebugMode.None if selection is empty', async () => {
             const adapter = new BspAdapter();
             const file = { type: 'bsp', map: { entities: { entities: [] }, models: [] } } as any;
             await adapter.load(mockGl, file, mockPakService, 'test.bsp');
             adapter.setDebugMode(DebugMode.None);
+
+            // Note: BspAdapter initializes DebugRenderer, which calls clear() on load or setDebugMode?
+            // Actually, in render() it checks if (debugMode != None && debugRenderer).
+            // But if selection is active, it calls clear() too.
+
+            // Ensure empty selection for this test
+            (adapter as any).setSelectedEntityIndices(new Set());
+
+            // Also ensure no active gizmo, as that triggers render call
+            (adapter as any).setGizmoState({ visible: false });
+
+            // Reset mock because loadMap might have triggered debugRenderer init
+            mockDebugRendererInstance.render.mockClear();
+
+            // Clear any debug render calls that might have happened implicitly
+            mockDebugRendererInstance.clear.mockClear();
+            mockDebugRendererInstance.render.mockClear();
+
             adapter.render(mockGl, { projectionMatrix: mat4.create() } as any, mat4.create());
 
             expect(mockDebugRendererInstance.render).not.toHaveBeenCalled();

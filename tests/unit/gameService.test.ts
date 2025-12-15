@@ -1,7 +1,7 @@
 import { createGameSimulation } from '@/src/services/gameService';
 import { VirtualFileSystem, AssetManager } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
-import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
+import { buildCollisionModel, traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
 
 // Mocks
 jest.mock('quake2ts/engine', () => {
@@ -76,9 +76,6 @@ describe('GameService', () => {
       shutdown: jest.fn(),
       frame: jest.fn().mockReturnValue({ state: { time: 100 } }),
       snapshot: jest.fn(),
-      createSave: jest.fn(),
-      loadSave: jest.fn(),
-      time: 120, // 2 minutes
       entities: [
           { index: 1, origin: {x:0,y:0,z:0} } // Mock entity for trace find
       ]
@@ -126,19 +123,6 @@ describe('GameService', () => {
     const simulation = await createGameSimulation(vfs, 'maps/test.bsp');
     simulation.tick(50, {} as any);
     expect(gameInstance.frame).toHaveBeenCalled();
-  });
-
-  it('delegates createSave to game exports', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp', { skill: 2 });
-    simulation.createSave('My Save');
-    expect(gameInstance.createSave).toHaveBeenCalledWith('maps/test.bsp', 2, 120);
-  });
-
-  it('delegates loadSave to game exports', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp');
-    const mockSave = { map: 'maps/test.bsp' } as any;
-    simulation.loadSave(mockSave);
-    expect(gameInstance.loadSave).toHaveBeenCalledWith(mockSave);
   });
 
   describe('GameImports callbacks', () => {
@@ -227,6 +211,18 @@ describe('GameService', () => {
               clipmask: 0
           };
           capturedImports.linkentity(entity);
+          // Should we expect unlink? The code doesn't call unlink.
+          // It only calls link if solid > 0.
+          // The previous mockEntityIndex was created in beforeEach.
+          // But capturedImports uses the one created inside createGameSimulation.
+          // Wait, createGameSimulation calls `new CollisionEntityIndex()`.
+          // My mock setup for CollisionEntityIndex should capture that instance.
+
+          // Actually, mockEntityIndex variable in test points to the mock instance.
+          // Since I used .mockImplementation inside Jest mock, all instances share behavior or I can access via mock.instances.
+          // But I need to be sure capturedImports uses the mocked instance.
+          // Yes, jest.mock replaces the constructor.
+
           expect(mockEntityIndexInstance.link).not.toHaveBeenCalled();
       });
   });

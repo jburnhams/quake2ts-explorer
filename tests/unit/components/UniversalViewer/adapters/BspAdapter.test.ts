@@ -365,13 +365,20 @@ describe('BspAdapter', () => {
   });
 
   it('delegates pickEntity to map', async () => {
-    const file: ParsedFile = { type: 'bsp', map: { pickEntity: jest.fn().mockReturnValue('hit') } } as any;
+    const mockEntity = { classname: 'test' };
+    const mockEntities = [mockEntity];
+    const mockMap = {
+        pickEntity: jest.fn().mockReturnValue({ entity: mockEntity, distance: 10 }),
+        entities: { entities: mockEntities }
+    };
+    const file: ParsedFile = { type: 'bsp', map: mockMap } as any;
+
     (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
     const result = adapter.pickEntity!('ray' as any);
-    expect(file.map.pickEntity).toHaveBeenCalledWith('ray');
-    expect(result).toBe('hit');
+    expect(mockMap.pickEntity).toHaveBeenCalledWith('ray');
+    expect(result).toEqual({ entity: mockEntity, distance: 10, entityIndex: 0 });
   });
 
   it('handles highlighting in render', async () => {

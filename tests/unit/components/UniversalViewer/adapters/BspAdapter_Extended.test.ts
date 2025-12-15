@@ -69,13 +69,15 @@ describe('BspAdapter - Extended', () => {
 
   describe('pickEntity', () => {
     it('delegates to map.pickEntity and returns result', () => {
-      const mockResult = { entity: {}, distance: 100 };
+      const mockEntity = { id: 1 };
+      const mockResult = { entity: mockEntity, distance: 100 };
+      mockMap.entities.entities = [mockEntity];
       mockMap.pickEntity.mockReturnValue(mockResult);
 
       const ray = { origin: [0,0,0], direction: [0,0,1] } as any;
       const result = adapter.pickEntity(ray);
 
-      expect(result).toBe(mockResult);
+      expect(result).toEqual({ ...mockResult, entityIndex: 0 });
       expect(mockMap.pickEntity).toHaveBeenCalledWith(ray);
     });
 

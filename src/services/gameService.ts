@@ -14,8 +14,7 @@ import {
   type GameStateSnapshot,
   type Entity,
   type MulticastType,
-  type GameEngine,
-  type GameSaveFile
+  type GameEngine
 } from 'quake2ts/game';
 
 import {
@@ -45,7 +44,7 @@ interface GameTraceResult {
 }
 
 // Re-export types
-export type { GameSimulation, GameStateSnapshot, GameSaveFile };
+export type { GameSimulation, GameStateSnapshot };
 
 interface GameSimulation {
   start(): void;
@@ -53,8 +52,6 @@ interface GameSimulation {
   tick(step: FixedStepContext, cmd: UserCommand): void;
   getSnapshot(): GameStateSnapshot;
   shutdown(): void;
-  createSave(description: string): GameSaveFile;
-  loadSave(save: GameSaveFile): void;
 }
 
 class GameServiceImpl implements GameSimulation, GameImports {
@@ -68,7 +65,6 @@ class GameServiceImpl implements GameSimulation, GameImports {
   private modelIndices = new Map<string, number>();
   private imageIndices = new Map<string, number>();
   private latestFrameResult: GameFrameResult<GameStateSnapshot> | null = null;
-  private skill: number = 1; // Default difficulty
 
   constructor(
     private vfs: VirtualFileSystem,
@@ -79,11 +75,6 @@ class GameServiceImpl implements GameSimulation, GameImports {
   }
 
   async init(options: GameCreateOptions): Promise<void> {
-    // Store skill for save games
-    if (options.skill !== undefined) {
-      this.skill = options.skill;
-    }
-
     // 1. Load the map
     this.currentMap = await this.assetManager.loadMap(this.mapName);
 
@@ -98,6 +89,9 @@ class GameServiceImpl implements GameSimulation, GameImports {
     const engineHost: GameEngine = {
       trace: (start: Vec3, end: Vec3) => {
           // GameEngine trace signature is simpler than GameImports.trace
+          // It likely expects a simple world trace or similar.
+          // We can reuse our robust trace implementation with null mins/maxs/passent
+          // and a default content mask (e.g. solid)
           return this.trace(start, null, null, end, null, 1 /* MASK_SOLID usually */);
       },
       sound: (entity, channel, sound, volume, attenuation, timeofs) => {
@@ -126,6 +120,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
     this.gameExports = createGame(imports, engineHost, options);
 
     // Call init if available and capture initial frame result
+    // Cast to any to bypass potential d.ts resolution issues where init is missing from GameExports
     if (this.gameExports) {
         const result = (this.gameExports as any).init(performance.now());
         if (result) {
@@ -144,6 +139,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   shutdown(): void {
     if (this.gameExports) {
+      // Cast to any to bypass potential d.ts resolution issues
       (this.gameExports as any).shutdown();
       this.gameExports = null;
     }
@@ -158,6 +154,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
   tick(step: FixedStepContext, cmd: UserCommand): void {
     if (!this.gameExports) return;
 
+    // Cast to any to bypass potential d.ts resolution issues
     this.latestFrameResult = (this.gameExports as any).frame(step, cmd);
   }
 
@@ -171,27 +168,6 @@ class GameServiceImpl implements GameSimulation, GameImports {
     }
 
     throw new Error("No game snapshot available");
-  }
-
-  createSave(description: string): GameSaveFile {
-    if (!this.gameExports) {
-      throw new Error("Game not initialized");
-    }
-
-    // Calculate playtime (using current game time from exports)
-    const playtimeSeconds = this.gameExports.time || 0;
-
-    // Cast to any to bypass potential missing type definitions in current library version
-    return (this.gameExports as any).createSave(this.mapName, this.skill, playtimeSeconds);
-  }
-
-  loadSave(save: GameSaveFile): void {
-    if (!this.gameExports) {
-      throw new Error("Game not initialized");
-    }
-
-    // Cast to any to bypass potential missing type definitions in current library version
-    (this.gameExports as any).loadSave(save);
   }
 
   // --- GameImports / EngineHost Implementations ---

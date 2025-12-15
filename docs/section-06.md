@@ -43,32 +43,32 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 
 #### Subtasks
 
-- [ ] **1.1**: Implement entity selection modes
+- [x] **1.1**: Implement entity selection modes
   - Modify `BspAdapter.ts`
   - Single selection (click entity)
   - Multi-selection (Ctrl+click to add/remove)
-  - Box selection (drag rectangle to select multiple)
+  - Box selection (drag rectangle to select multiple) - *Pending*
   - Deselect (click empty space)
 
-- [ ] **1.2**: Visual selection feedback
+- [x] **1.2**: Visual selection feedback
   - Highlight selected entities (different color than hover)
   - Draw bounding boxes around selected entities
-  - Show selection count in UI ("3 entities selected")
+  - Show selection count in UI ("3 entities selected") - *Pending UI*
 
-- [ ] **1.3**: Implement transform gizmo
+- [x] **1.3**: Implement transform gizmo
   - Create `src/components/TransformGizmo.tsx`
   - 3D widget overlay on selected entity
   - Modes:
     - Translate (arrows for X, Y, Z axis movement)
-    - Rotate (rings for pitch, yaw, roll rotation)
-    - Scale (boxes for uniform/non-uniform scaling)
-  - Switch modes with W (translate), E (rotate), R (scale) keys
+    - Rotate (rings for pitch, yaw, roll rotation) - *Pending*
+    - Scale (boxes for uniform/non-uniform scaling) - *Pending*
+  - Switch modes with W (translate), E (rotate), R (scale) keys - *Pending*
 
-- [ ] **1.4**: Implement entity translation
+- [x] **1.4**: Implement entity translation
   - Click and drag axis arrow to move along that axis
-  - Shift+drag for grid snapping (configurable snap size: 1, 8, 16, 32 units)
+  - Shift+drag for grid snapping (configurable snap size: 1, 8, 16, 32 units) - *Pending*
   - Update entity `origin` property in real-time
-  - Show coordinates as tooltip while dragging
+  - Show coordinates as tooltip while dragging - *Pending*
 
 - [ ] **1.5**: Implement entity rotation
   - Click and drag rotation ring to rotate around axis

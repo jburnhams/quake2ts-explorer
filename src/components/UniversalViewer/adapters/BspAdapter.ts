@@ -4,7 +4,6 @@ import { RenderOptions, ViewerAdapter, Ray, GizmoState } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
-import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
 
 export class BspAdapter implements ViewerAdapter {
   private pipeline: BspSurfacePipeline | null = null;
@@ -19,8 +18,6 @@ export class BspAdapter implements ViewerAdapter {
   private hoveredEntity: BspEntity | null = null;
   private selectedEntityIndices: Set<number> = new Set();
   private gizmoState: GizmoState = { visible: false, position: null, hoveredAxis: 'none', activeAxis: 'none', mode: 'translate' };
-  private highlightedLightmapIndex: number | null = null;
-  private activeSurfaceFlagFilter: string | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
 
@@ -147,18 +144,6 @@ export class BspAdapter implements ViewerAdapter {
   setGizmoState(state: GizmoState) {
       this.gizmoState = state;
   }
-  
-  highlightLightmapSurfaces(atlasIndex: number) {
-      this.highlightedLightmapIndex = atlasIndex;
-  }
-
-  setSurfaceFlagFilter(flag: string | null) {
-      this.activeSurfaceFlagFilter = flag;
-  }
-
-  clearHighlights() {
-      this.highlightedLightmapIndex = null;
-  }
 
   setDebugMode(mode: DebugMode) {
       this.debugMode = mode;
@@ -188,6 +173,9 @@ export class BspAdapter implements ViewerAdapter {
     mat4.multiply(mvp, projection as mat4, viewMatrix);
 
     const lightStyles = resolveLightStyles();
+    // Implement brightness control by scaling light styles
+    // Since we can't change the shader, we simulate brightness by boosting dynamic light values.
+    // Note: This only affects surfaces with light styles, not the base baked lightmap.
     const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
     const fullbright = this.renderOptions.fullbright === true;
 
@@ -239,21 +227,6 @@ export class BspAdapter implements ViewerAdapter {
                     isSelected = true;
                     break;
                 }
-            }
-        }
-      
-        if (this.highlightedLightmapIndex !== null) {
-            if (surface.lightmap && surface.lightmap.atlasIndex === this.highlightedLightmapIndex) {
-                 isHighlighted = true;
-            }
-        }
-
-        if (this.activeSurfaceFlagFilter) {
-            const flagNames = getSurfaceFlagNames(surface.surfaceFlags);
-            if (flagNames.includes(this.activeSurfaceFlagFilter)) {
-                isHighlighted = true;
-            } else {
-                 continue; // Hide non-matching surfaces
             }
         }
 
@@ -324,7 +297,12 @@ export class BspAdapter implements ViewerAdapter {
     }
 
     // Debug Rendering (and Editor overlays)
-    if (this.debugRenderer && this.map) {
+    // Only render if we have something to draw to avoid performance hit
+    const hasSelection = this.selectedEntityIndices.size > 0;
+    const hasGizmo = this.gizmoState.visible && !!this.gizmoState.position;
+    const hasDebug = this.debugMode !== DebugMode.None;
+
+    if (this.debugRenderer && this.map && (hasSelection || hasGizmo || hasDebug)) {
         this.debugRenderer.clear();
 
         // Draw selection boxes for ALL selected entities

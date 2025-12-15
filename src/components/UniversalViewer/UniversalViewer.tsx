@@ -46,8 +46,6 @@ export interface UniversalViewerProps {
   playerState?: PlayerState;
   configstrings?: Map<number, string>;
   isGameMode?: boolean;
-  activeSurfaceFilter?: string;
-  onFilterSurfaceByFlag?: (flag: string | null) => void;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -69,9 +67,7 @@ export function UniversalViewer({
   showControls = true,
   playerState,
   configstrings,
-  isGameMode = false,
-  activeSurfaceFilter,
-  onFilterSurfaceByFlag
+  isGameMode = false
 }: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
@@ -1039,13 +1035,9 @@ export function UniversalViewer({
        {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
           <FrameInfo controller={adapter.getDemoController()!} />
        )}
-       {(hoveredSurfaceProps || activeSurfaceFilter) && (
+       {hoveredSurfaceProps && (
            <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 50 }}>
-               <SurfaceFlags
-                   properties={hoveredSurfaceProps}
-                   onFilterByFlag={(flag) => onFilterSurfaceByFlag && onFilterSurfaceByFlag(activeSurfaceFilter === flag ? null : flag)}
-                   activeFilter={activeSurfaceFilter}
-               />
+               <SurfaceFlags properties={hoveredSurfaceProps} />
            </div>
        )}
        {showStats && (

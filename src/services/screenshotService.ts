@@ -1,17 +1,10 @@
 import html2canvas from 'html2canvas';
-import JSZip from 'jszip';
 
 export interface ScreenshotOptions {
     format: 'png' | 'jpeg';
     quality?: number;
     resolutionMultiplier?: number;
     includeHud?: boolean;
-}
-
-export interface BurstOptions extends ScreenshotOptions {
-    burstCount?: number;
-    burstInterval?: number;
-    filenamePrefix?: string;
 }
 
 export const captureScreenshot = async (target: HTMLElement, options?: ScreenshotOptions): Promise<Blob> => {
@@ -57,45 +50,12 @@ export const captureScreenshot = async (target: HTMLElement, options?: Screensho
     });
 };
 
-export const generateTimestampString = (): string => {
+export const generateScreenshotFilename = (prefix: string = 'quake2ts_screenshot'): string => {
     const now = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');
     const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const timeStr = `${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
-    return `${dateStr}_${timeStr}`;
-}
-
-export const captureBurst = async (target: HTMLElement, options: BurstOptions): Promise<Blob> => {
-    const count = options.burstCount || 5;
-    const interval = options.burstInterval || 200;
-    const zip = new JSZip();
-    const folder = zip.folder("burst_capture");
-    const format = options.format || 'png';
-    const ext = format === 'jpeg' ? 'jpg' : 'png';
-    const prefix = options.filenamePrefix || 'screenshot';
-    const timestamp = generateTimestampString();
-
-    for (let i = 0; i < count; i++) {
-        // Capture frame
-        const blob = await captureScreenshot(target, options);
-
-        // Add to zip
-        // Format: {context}_{timestamp}_frame_{i}.{ext}
-        const filename = `${prefix}_${timestamp}_frame_${(i + 1).toString().padStart(3, '0')}.${ext}`;
-        folder?.file(filename, blob);
-
-        // Wait for interval if not last frame
-        if (i < count - 1) {
-            await new Promise(resolve => setTimeout(resolve, interval));
-        }
-    }
-
-    // Generate zip blob
-    return await zip.generateAsync({ type: "blob" });
-};
-
-export const generateScreenshotFilename = (prefix: string = 'quake2ts_screenshot'): string => {
-    return `${prefix}_${generateTimestampString()}.png`;
+    return `${prefix}_${dateStr}_${timeStr}.png`;
 };
 
 export const downloadScreenshot = (blob: Blob, filename: string): void => {

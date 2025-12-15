@@ -40,7 +40,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
 
 #### Subtasks
 
-- [x] **1.1**: Create `src/services/networkService.ts`
+- [ ] **1.1**: Create `src/services/networkService.ts`
   - Export `connect(serverUrl: string): Promise<void>`
   - Export `disconnect(): void`
   - Export `sendCommand(cmd: UserCommand): void`
@@ -48,7 +48,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
   - Export `onDisconnect?: (reason: string) => void`
   - Store WebSocket instance
 
-- [x] **1.2**: Implement WebSocket connection
+- [ ] **1.2**: Implement WebSocket connection
   - Create WebSocket to `ws://` or `wss://` URL
   - Handle connection open event
     - Send client info (name, version, capabilities)
@@ -59,7 +59,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
     - Retry with exponential backoff (max 3 retries)
     - Show error to user if all retries fail
 
-- [x] **1.3**: Implement protocol message handling
+- [ ] **1.3**: Implement protocol message handling
   - Define message types:
     - `ServerInfo` - Server metadata (map, maxClients, gamemode)
     - `Snapshot` - Entity updates, player state
@@ -69,14 +69,14 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
   - Parse incoming binary/JSON messages
   - Route to appropriate handlers
 
-- [x] **1.4**: Implement outbound message sending
+- [ ] **1.4**: Implement outbound message sending
   - `sendCommand(cmd: UserCommand)` - Send player input
   - `sendChat(message: string)` - Send chat message
   - `sendClientCommand(cmd: string)` - Send console command to server
   - Queue messages if not connected
   - Throttle outbound rate to prevent flooding
 
-- [x] **1.5**: Handle connection state
+- [ ] **1.5**: Handle connection state
   - Track state: `'disconnected' | 'connecting' | 'connected' | 'error'`
   - Emit state change events
   - Prevent sending messages when disconnected

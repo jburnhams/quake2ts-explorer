@@ -214,7 +214,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - [x] Resolution multiplier (1x, 2x, 4x for high-res captures)
   - [x] Include HUD toggle (capture with or without UI overlays)
 
-- [x] **3.6**: Implement burst mode (optional)
+- [ ] **3.6**: Implement burst mode (optional)
   - Capture multiple screenshots rapidly
   - Useful for creating animations
   - Save all as ZIP file

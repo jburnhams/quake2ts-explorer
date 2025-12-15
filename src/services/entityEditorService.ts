@@ -118,9 +118,9 @@ export class EntityEditorService {
     }
 
     // Subscribe to changes
-    subscribe(listener: () => void) {
+    subscribe(listener: () => void): () => void {
         this.listeners.add(listener);
-        return () => this.listeners.delete(listener);
+        return () => { this.listeners.delete(listener); };
     }
 
     private notify() {

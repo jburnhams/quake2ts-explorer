@@ -3,10 +3,8 @@ import { BspMap } from 'quake2ts/engine';
 import { PakService } from '../services/pakService';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 import { LightmapInspector } from './LightmapInspector';
-import { BspOptimizationTab } from './BspOptimizationTab';
 import { ViewerAdapter } from './UniversalViewer/adapters/types';
 import './BspAnalyzer.css';
-import './BspOptimizationTab.css';
 
 export interface BspAnalyzerProps {
   map: BspMap;
@@ -17,7 +15,7 @@ export interface BspAnalyzerProps {
   onEntitySelected?: (entity: any) => void;
 }
 
-type TabType = 'overview' | 'geometry' | 'lightmaps' | 'visibility' | 'entities' | 'optimization';
+type TabType = 'overview' | 'geometry' | 'lightmaps' | 'visibility' | 'entities';
 
 interface GeometryStats {
     avgTrisPerFace: number;
@@ -141,26 +139,12 @@ function getVisibilityStats(map: BspMap): VisibilityStats {
 export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hiddenClassnames, onEntitySelected }: BspAnalyzerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
-  const [surfaceFlagFilter, setSurfaceFlagFilter] = useState<string | null>(null);
 
   const stats = React.useMemo(() => getGeometryStats(map), [map]);
 
   const handleAdapterReady = React.useCallback((newAdapter: ViewerAdapter) => {
       setAdapter(newAdapter);
   }, []);
-
-  // Pass filter to adapter/viewer.
-  // We can't pass it directly to UniversalViewer as a prop unless we modify it.
-  // Instead, we can use an effect if we have access to the adapter.
-  React.useEffect(() => {
-      // NOTE: We haven't implemented setSurfaceFlagFilter on adapter yet in this step plan,
-      // but assuming we'd pass this prop to UniversalViewer if we extended it.
-      // Or we can use `onSurfaceFilterChange` prop if we add it to UniversalViewer.
-      // For now, let's assume UniversalViewer will be updated to accept `surfaceFlagFilter`.
-      // OR, since we have the adapter instance here, we can call a method on it if it existed.
-      // Let's defer actual filtering logic connection to when we have a `setSurfaceFlagFilter` on adapter?
-      // Actually BspAdapter logic for hiddenClassnames exists. We can do similar for flags.
-  }, [surfaceFlagFilter, adapter]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -373,8 +357,6 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
                 </div>
             </div>
         );
-      case 'optimization':
-        return <BspOptimizationTab map={map} />;
       default:
         return null;
     }
@@ -414,12 +396,6 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
           >
             Entities
           </button>
-          <button
-            className={activeTab === 'optimization' ? 'active' : ''}
-            onClick={() => setActiveTab('optimization')}
-          >
-            Optimization
-          </button>
         </div>
       </div>
 
@@ -434,12 +410,6 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
              onEntitySelected={onEntitySelected}
              showControls={true}
              onAdapterReady={handleAdapterReady}
-             // We'll pass the filter handler to the SurfaceFlags component inside UniversalViewer via a callback prop if available,
-             // or UniversalViewer renders SurfaceFlags internally.
-             // Actually UniversalViewer renders SurfaceFlags. We need to pass props down.
-             // UniversalViewer props need to be extended to support onFilterByFlag/activeFilter.
-             activeSurfaceFilter={surfaceFlagFilter || undefined}
-             onFilterSurfaceByFlag={setSurfaceFlagFilter}
            />
         </div>
         <div className="bsp-analyzer-panel">

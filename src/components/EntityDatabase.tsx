@@ -149,15 +149,6 @@ export const EntityDatabase: React.FC<EntityDatabaseProps> = ({ pakService }) =>
         <div className="entity-database-status">
            {sortedEntities.length} entities
         </div>
-        <button className="inspector-btn" onClick={() => {
-            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(sortedEntities, null, 2));
-            const downloadAnchorNode = document.createElement('a');
-            downloadAnchorNode.setAttribute("href", dataStr);
-            downloadAnchorNode.setAttribute("download", "entities.json");
-            document.body.appendChild(downloadAnchorNode); // required for firefox
-            downloadAnchorNode.click();
-            downloadAnchorNode.remove();
-        }}>Export JSON</button>
       </div>
 
       <div className="entity-database-content">

@@ -67,7 +67,8 @@ describe('TransformGizmo', () => {
 
     await waitFor(() => {
         expect(mockAdapter.setGizmoState).toHaveBeenCalled();
-        const args = mockAdapter.setGizmoState.mock.calls[0][0];
+        const lastCallIndex = mockAdapter.setGizmoState.mock.calls.length - 1;
+        const args = mockAdapter.setGizmoState.mock.calls[lastCallIndex][0];
         expect(args.visible).toBe(true);
         expect(args.mode).toBe('translate');
     });

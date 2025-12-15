@@ -15,7 +15,6 @@ export function LightmapInspector({ map, adapter }: LightmapInspectorProps) {
     const [visualizationMode, setVisualizationMode] = useState<VisualizationMode>('rgb');
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [lightmapCount, setLightmapCount] = useState(0);
-    const [qualityStats, setQualityStats] = useState<{ min: number, max: number, avg: number, overexposed: number, underexposed: number } | null>(null);
 
     // Access lightmaps from adapter if possible
     const getLightmapsFromAdapter = (): Texture2D[] => {
@@ -31,30 +30,6 @@ export function LightmapInspector({ map, adapter }: LightmapInspectorProps) {
     useEffect(() => {
         setLightmapCount(lightmaps.length);
     }, [adapter, lightmaps.length]);
-
-    const highlightSurfaces = (lmIndex: number) => {
-        if (adapter && (adapter as any).highlightLightmapSurfaces) {
-            (adapter as any).highlightLightmapSurfaces(lmIndex);
-        }
-    };
-
-    const clearHighlight = () => {
-         if (adapter && (adapter as any).clearHighlights) {
-            (adapter as any).clearHighlights();
-        }
-    };
-
-    useEffect(() => {
-        if (selectedLightmapIndex !== null) {
-            highlightSurfaces(selectedLightmapIndex);
-        } else {
-            clearHighlight();
-        }
-
-        return () => {
-            clearHighlight();
-        };
-    }, [selectedLightmapIndex]);
 
     useEffect(() => {
         if (selectedLightmapIndex !== null && canvasRef.current && hasLightmaps) {
@@ -92,29 +67,11 @@ export function LightmapInspector({ map, adapter }: LightmapInspectorProps) {
 
                 const imageData = ctx.createImageData(width, height);
 
-                let minLum = 255;
-                let maxLum = 0;
-                let totalLum = 0;
-                let overexposedCount = 0;
-                let underexposedCount = 0;
-                let pixelCount = 0;
-
                 for (let i = 0; i < pixels.length; i += 4) {
                     const r = pixels[i];
                     const g = pixels[i + 1];
                     const b = pixels[i + 2];
                     const a = pixels[i + 3];
-
-                    // Skip empty pixels
-                    if (r===0 && g===0 && b===0) continue;
-                    pixelCount++;
-
-                    const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-                    minLum = Math.min(minLum, lum);
-                    maxLum = Math.max(maxLum, lum);
-                    totalLum += lum;
-                    if (lum > 240) overexposedCount++;
-                    if (lum < 10) underexposedCount++;
 
                     if (visualizationMode === 'rgb') {
                         imageData.data[i] = r;
@@ -150,18 +107,6 @@ export function LightmapInspector({ map, adapter }: LightmapInspectorProps) {
                          }
                          imageData.data[i+3] = 255;
                     }
-                }
-
-                if (pixelCount > 0) {
-                    setQualityStats({
-                        min: minLum,
-                        max: maxLum,
-                        avg: totalLum / pixelCount,
-                        overexposed: (overexposedCount / pixelCount) * 100,
-                        underexposed: (underexposedCount / pixelCount) * 100
-                    });
-                } else {
-                    setQualityStats(null);
                 }
 
                 ctx.putImageData(imageData, 0, 0);
@@ -205,24 +150,7 @@ export function LightmapInspector({ map, adapter }: LightmapInspectorProps) {
                                 <option value="grayscale">Grayscale</option>
                                 <option value="heatmap">Heatmap</option>
                             </select>
-                            <button className="inspector-btn" onClick={() => {
-                                if (canvasRef.current) {
-                                    const link = document.createElement('a');
-                                    link.download = `lightmap_${selectedLightmapIndex}.png`;
-                                    link.href = canvasRef.current.toDataURL();
-                                    link.click();
-                                }
-                            }}>Export PNG</button>
                         </div>
-
-                        {qualityStats && (
-                            <div className="lightmap-quality-stats">
-                                <div className="stat-row"><span>Avg Brightness:</span> <span>{qualityStats.avg.toFixed(1)}</span></div>
-                                <div className="stat-row"><span>Range:</span> <span>{qualityStats.min.toFixed(0)} - {qualityStats.max.toFixed(0)}</span></div>
-                                <div className="stat-row"><span>Overexposed:</span> <span>{qualityStats.overexposed.toFixed(1)}%</span></div>
-                                <div className="stat-row"><span>Underexposed:</span> <span>{qualityStats.underexposed.toFixed(1)}%</span></div>
-                            </div>
-                        )}
 
                         <canvas ref={canvasRef} className="lightmap-canvas" />
                         <div className="lightmap-meta">

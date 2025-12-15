@@ -95,7 +95,8 @@ describe('UniversalViewer Picking', () => {
       const pickedEntity = { classname: 'info_player_start', properties: {} };
       const mockMap = {
           entities: {
-              getUniqueClassnames: jest.fn().mockReturnValue([])
+              getUniqueClassnames: jest.fn().mockReturnValue([]),
+              entities: [pickedEntity] // Added this to match BspAdapter logic
           },
           models: [],
           pickEntity: jest.fn().mockReturnValue({ entity: pickedEntity, model: {}, distance: 10 })
@@ -138,7 +139,8 @@ describe('UniversalViewer Picking', () => {
       const hoveredEntity = { classname: 'func_door', properties: {} };
       const mockMap = {
           entities: {
-              getUniqueClassnames: jest.fn().mockReturnValue([])
+              getUniqueClassnames: jest.fn().mockReturnValue([]),
+              entities: [hoveredEntity] // Added this to match BspAdapter logic
           },
           models: [],
           pickEntity: jest.fn().mockReturnValue({ entity: hoveredEntity, model: {}, distance: 10 })
