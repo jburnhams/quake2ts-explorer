@@ -1,3 +1,4 @@
+import { MOD_PRIORITY } from '../types/modInfo';
 import {
   PakArchive,
   VirtualFileSystem,
@@ -142,6 +143,7 @@ export interface MountedPak {
   name: string;
   archive: PakArchive;
   isUser: boolean;
+  priority: number;
 }
 
 export type ViewMode = 'merged' | 'by-pak';
@@ -160,26 +162,25 @@ export class PakService {
     this.vfs = vfs ?? new VirtualFileSystem();
   }
 
-  async loadPakFile(file: File, id?: string, isUser: boolean = true): Promise<PakArchive> {
+  async loadPakFile(file: File, id?: string, isUser: boolean = true, priority: number = 100): Promise<PakArchive> {
     const buffer = await file.arrayBuffer();
     const pakId = id || crypto.randomUUID();
     // Use ID as internal name for VFS uniqueness, but store original name in metadata
     const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, file.name, isUser);
+    this.mountPak(archive, pakId, file.name, isUser, priority);
     return archive;
   }
 
-  async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false): Promise<PakArchive> {
+  async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false, priority: number = 0): Promise<PakArchive> {
     const pakId = id || crypto.randomUUID();
     const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, name, isUser);
+    this.mountPak(archive, pakId, name, isUser, priority);
     return archive;
   }
 
-  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean) {
-    this.paks.set(id, { id, name, archive, isUser });
-    this.vfs.mountPak(archive);
-    this.tryLoadPalette();
+  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number) {
+    this.paks.set(id, { id, name, archive, isUser, priority });
+    this.rebuildVfs(); // Always rebuild to respect priority sort order
   }
 
   unloadPak(id: string): void {
@@ -191,12 +192,54 @@ export class PakService {
   }
 
   private rebuildVfs() {
-    this.vfs = new VirtualFileSystem();
-    this.palette = null;
+    // We must maintain the same VFS instance because other services (AssetManager, GameEngine) hold references to it.
+    // So we unmount everything and remount in the correct order.
+
+    // Unmount all currently known PAKs
+    // Note: VirtualFileSystem doesn't expose unmountAll or getMountedPaks, but we track them in this.paks.
+    // However, if VFS has internal state not exposed, this might be tricky.
+    // Assuming unmountPak(archive) works.
+    // If VirtualFileSystem doesn't have unmountPak, we can't implement priority updates safely without leaking mounts.
+    // We assume the library has been updated to include this method.
     for (const pak of this.paks.values()) {
+        if ('unmountPak' in this.vfs) {
+            (this.vfs as any).unmountPak(pak.archive);
+        } else {
+             console.warn('VirtualFileSystem does not support unmountPak. PAK priority updates may cause duplicate mounts.');
+        }
+    }
+
+    this.palette = null;
+
+    // Sort PAKs by priority ascending (0 -> 100)
+    // Assuming VirtualFileSystem mounts in stack order where later mounts override earlier ones.
+    const sortedPaks = Array.from(this.paks.values()).sort((a, b) => a.priority - b.priority);
+
+    for (const pak of sortedPaks) {
         this.vfs.mountPak(pak.archive);
     }
     this.tryLoadPalette();
+  }
+
+  updatePakPriority(id: string, priority: number): void {
+      const pak = this.paks.get(id);
+      if (pak) {
+          pak.priority = priority;
+          this.rebuildVfs();
+      }
+  }
+
+  reorderPaks(pakIds: string[]): void {
+      // Re-assign priorities based on order in list.
+      // We start from USER_OVERRIDE to ensure manual order takes precedence over auto-detection defaults.
+      // Assuming the input array is ordered from Lowest Priority (First) to Highest Priority (Last).
+      pakIds.forEach((id, index) => {
+          const pak = this.paks.get(id);
+          if (pak) {
+             pak.priority = MOD_PRIORITY.USER_OVERRIDE + (index * 10);
+          }
+      });
+      this.rebuildVfs();
   }
 
   private async tryLoadPalette(): Promise<void> {

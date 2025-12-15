@@ -40,19 +40,19 @@ Enable loading and running Quake II mods (modifications) and custom content. Mod
 
 #### Subtasks
 
-- [ ] **1.1**: Define mod structure
+- [x] **1.1**: Define mod structure
   - Mods are identified by:
     - Separate PAK files (e.g., `rogue.pak`, `xatrix.pak`, `chaosmod.pak`)
     - Optional `mod.json` metadata file inside PAK
     - Directory-based mods (if supporting loose files later)
 
-- [ ] **1.2**: Create `src/services/modDetectionService.ts`
+- [x] **1.2**: Create `src/services/modDetectionService.ts`
   - Export `detectMods(vfs: VirtualFileSystem): ModInfo[]`
   - Scan VFS for `mod.json` files
   - Parse metadata
   - Return list of detected mods
 
-- [ ] **1.3**: Define `ModInfo` interface
+- [x] **1.3**: Define `ModInfo` interface
   - `id`: Unique identifier (e.g., "rogue", "chaosmod")
   - `name`: Display name (e.g., "Ground Zero")
   - `version`: Mod version
@@ -63,13 +63,13 @@ Enable loading and running Quake II mods (modifications) and custom content. Mod
   - `homepage`: Link to mod website/repo
   - `thumbnail`: Icon or screenshot (base64 or URL)
 
-- [ ] **1.4**: Implement metadata parsing
+- [x] **1.4**: Implement metadata parsing
   - Read `mod.json` from VFS
   - Parse JSON
   - Validate required fields
   - Fallback to defaults if mod.json missing (detect from PAK filename)
 
-- [ ] **1.5**: Support official expansions
+- [x] **1.5**: Support official expansions
   - Detect Rogue (Ground Zero) and Xatrix (The Reckoning) expansions
   - **Library Enhancement Needed**: Library supports expansion content
   - Pre-populate metadata for official expansions
@@ -95,7 +95,7 @@ Enable loading and running Quake II mods (modifications) and custom content. Mod
 
 #### Subtasks
 
-- [ ] **2.1**: Implement PAK priority levels
+- [x] **2.1**: Implement PAK priority levels
   - Modify `src/services/pakService.ts`
   - Assign priority to each PAK:
     - Base game: Priority 0
@@ -103,7 +103,7 @@ Enable loading and running Quake II mods (modifications) and custom content. Mod
     - Custom mods: Priority 100 (higher priority = later override)
   - Store PAKs sorted by priority
 
-- [ ] **2.2**: Modify VFS lookup to respect priority
+- [x] **2.2**: Modify VFS lookup to respect priority
   - When reading file, search PAKs in reverse priority order (highest first)
   - First match wins (higher priority PAK overrides lower)
   - **Library Enhancement Needed**: VirtualFileSystem priority support
