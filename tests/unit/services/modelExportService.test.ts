@@ -20,17 +20,17 @@ describe('ModelExportService', () => {
             { s: 0, t: 128 }
           ],
           triangles: [
-            { vertexIndices: [0, 1, 2], textureIndices: [0, 1, 2] }
-          ],
+            { vertexIndices: [0, 1, 2], texCoordIndices: [0, 1, 2] }
+          ] as any,
           frames: [
             {
               scale: [1, 1, 1],
               translate: [0, 0, 0],
               name: 'frame1',
               vertices: [
-                { v: [10, 0, 0], lightNormalIndex: 0 },
-                { v: [0, 10, 0], lightNormalIndex: 0 },
-                { v: [0, 0, 10], lightNormalIndex: 0 }
+                { position: [10, 0, 0], normal: [0,0,0], normalIndex: 0 },
+                { position: [0, 10, 0], normal: [0,0,0], normalIndex: 0 },
+                { position: [0, 0, 10], normal: [0,0,0], normalIndex: 0 }
               ]
             } as any
           ]

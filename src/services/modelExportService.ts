@@ -2,12 +2,10 @@ import { ParsedFile, ParsedMd2, ParsedMd3 } from './pakService';
 import { vec3 } from 'gl-matrix';
 
 // Helper to decompress MD2 vertex
-function decompressMd2Vertex(v: { v: number[] }, frame: { scale: number[], translate: number[] }): [number, number, number] {
-  const x = v.v[0] * frame.scale[0] + frame.translate[0];
-  const y = v.v[1] * frame.scale[1] + frame.translate[1];
-  const z = v.v[2] * frame.scale[2] + frame.translate[2];
-  return [x, y, z];
-}
+// Note: Md2Vertex in quake2ts is already decompressed (contains position as Vec3)
+// We don't need manual decompression if using Md2Vertex from parseMd2.
+// However, the test mock uses raw structure.
+// Let's rely on quake2ts definitions.
 
 export class ModelExportService {
   static exportModel(file: ParsedFile, frameIndex: number): Blob | null {
@@ -30,20 +28,8 @@ export class ModelExportService {
     // Vertices
     for (let i = 0; i < frame.vertices.length; i++) {
        const v = frame.vertices[i];
-       // MD2 vertex is compressed.
-       // The quake2ts engine definition for Md2Frame says vertices: Md2Vertex[].
-       // Md2Vertex has v: [number, number, number] (bytes) and lightNormalIndex.
-       // It also has scale and translate on the frame.
-       // However, looking at quake2ts types is hard without reading d.ts.
-       // Let's assume standard MD2 structure which the engine likely follows.
-       // Wait, I can check how Md2Adapter uses it or just follow standard.
-       // Actually, I should use the helper I wrote above assuming standard MD2 compression.
-       // Let's check quake2ts/engine types if possible or rely on my previous knowledge of MD2.
-       // MD2 stores vertices as bytes and header has scale/translate.
-       // frame.scale, frame.translate are Vec3.
-       const [x, y, z] = decompressMd2Vertex(v as any, frame as any);
-       // Swap Y and Z for standard OBJ orientation if needed?
-       // Quake is Z-up. OBJ is often Y-up. But keeping Z-up is fine.
+       // quake2ts Md2Vertex has 'position' which is already a Vec3
+       const [x, y, z] = v.position as unknown as number[];
        obj += `v ${x.toFixed(6)} ${y.toFixed(6)} ${z.toFixed(6)}\n`;
     }
 
@@ -67,9 +53,10 @@ export class ModelExportService {
         const v2 = tri.vertexIndices[1] + 1;
         const v3 = tri.vertexIndices[2] + 1;
 
-        const vt1 = tri.textureIndices[0] + 1;
-        const vt2 = tri.textureIndices[1] + 1;
-        const vt3 = tri.textureIndices[2] + 1;
+        // Property is texCoordIndices, not textureIndices
+        const vt1 = tri.texCoordIndices[0] + 1;
+        const vt2 = tri.texCoordIndices[1] + 1;
+        const vt3 = tri.texCoordIndices[2] + 1;
 
         obj += `f ${v1}/${vt1} ${v2}/${vt2} ${v3}/${vt3}\n`;
     }
