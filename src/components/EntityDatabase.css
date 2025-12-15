@@ -181,6 +181,8 @@
   word-break: break-all;
 }
 
+@import './EntityInspector.css';
+
 .inspector-actions {
   padding: 10px;
   border-top: 1px solid #333;

@@ -1,0 +1,14 @@
+.reference-info {
+    background-color: #333;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+    border: 1px solid #444;
+}
+
+.reference-info p {
+    margin: 5px 0 0 0;
+    font-size: 13px;
+    color: #ccc;
+    line-height: 1.4;
+}

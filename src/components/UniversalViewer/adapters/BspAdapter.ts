@@ -4,6 +4,7 @@ import { RenderOptions, ViewerAdapter, Ray } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
+import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
 
 export class BspAdapter implements ViewerAdapter {
   private pipeline: BspSurfacePipeline | null = null;
@@ -16,6 +17,8 @@ export class BspAdapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
   private hoveredEntity: BspEntity | null = null;
+  private highlightedLightmapIndex: number | null = null;
+  private activeSurfaceFlagFilter: string | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
 
@@ -132,6 +135,18 @@ export class BspAdapter implements ViewerAdapter {
       this.hoveredEntity = entity;
   }
 
+  highlightLightmapSurfaces(atlasIndex: number) {
+      this.highlightedLightmapIndex = atlasIndex;
+  }
+
+  setSurfaceFlagFilter(flag: string | null) {
+      this.activeSurfaceFlagFilter = flag;
+  }
+
+  clearHighlights() {
+      this.highlightedLightmapIndex = null;
+  }
+
   setDebugMode(mode: DebugMode) {
       this.debugMode = mode;
   }
@@ -191,6 +206,34 @@ export class BspAdapter implements ViewerAdapter {
              if (inputSurface.faceIndex >= hoveredModel.firstFace && inputSurface.faceIndex < hoveredModel.firstFace + hoveredModel.numFaces) {
                  isHighlighted = true;
              }
+        }
+
+        if (this.highlightedLightmapIndex !== null) {
+            if (surface.lightmap && surface.lightmap.atlasIndex === this.highlightedLightmapIndex) {
+                 isHighlighted = true;
+            }
+        }
+
+        if (this.activeSurfaceFlagFilter) {
+            const flagNames = getSurfaceFlagNames(surface.surfaceFlags);
+            if (flagNames.includes(this.activeSurfaceFlagFilter)) {
+                // If filter is active, only highlight matching surfaces
+                // Or maybe we want to hide non-matching?
+                // "Filter view to show only surfaces with specific flags"
+                // So we should hide others or make them transparent/dim.
+                // But highlighting is also valid.
+                // Let's make matching surfaces SOLID RED for high visibility, or just override isHighlighted.
+                isHighlighted = true;
+            } else {
+                 // Should we hide non-matching?
+                 // If we want to "Show only", we might want to discard drawing here?
+                 // But loop structure draws all.
+                 // We can continue loop?
+                 // But current loop handles one draw call per surface group? No, geometry.surfaces is array of draw calls.
+                 // So we can just continue;
+                 // But wait, "show only" implies hiding others.
+                 continue;
+            }
         }
 
         const texture = this.textures.get(surface.texture);
