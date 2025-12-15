@@ -128,6 +128,7 @@ describe('UniversalViewer', () => {
           frameCallbacks.clear();
           callbacks.forEach(cb => cb(time));
       };
+      (global as any).getFrameCallbacksSize = () => frameCallbacks.size;
   });
 
   it('renders MD2 adapter', async () => {
@@ -154,20 +155,30 @@ describe('UniversalViewer', () => {
           map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
       };
 
-      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      const onAdapterReady = jest.fn();
+      render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onAdapterReady={onAdapterReady} />);
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
-      const pipeline = quake2tsMock.BspSurfacePipeline.mock.results[0].value;
+      await waitFor(() => expect(onAdapterReady).toHaveBeenCalled());
 
-      await act(async () => {
-        // Flush all pending promises
-        await new Promise(resolve => setTimeout(resolve, 0));
+      const adapter = onAdapterReady.mock.calls[0][0];
+      const renderSpy = jest.spyOn(adapter, 'render');
+
+      // Get the last created pipeline instance
+      const results = quake2tsMock.BspSurfacePipeline.mock.results;
+      const pipeline = results[results.length - 1].value;
+
+      await waitFor(() => {
+          expect((global as any).getFrameCallbacksSize()).toBeGreaterThan(0);
       });
 
-      act(() => {
-        (global as any).runAllFrames(0);
+      await waitFor(() => {
+        act(() => {
+            (global as any).runAllFrames(0);
+        });
+        expect(renderSpy).toHaveBeenCalled();
+        expect(pipeline.bind).toHaveBeenCalled();
       });
-      expect(pipeline.bind).toHaveBeenCalled();
   });
 
   it('renders DM2 adapter and attempts to load map from filename', async () => {
@@ -237,19 +248,16 @@ describe('UniversalViewer', () => {
       // Ensure surfaces are returned so setHiddenClasses doesn't bail out
       quake2tsMock.createBspSurfaces.mockReturnValue([{}]);
 
-      const { rerender } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
+      const onAdapterReady = jest.fn();
+      const { rerender } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onAdapterReady={onAdapterReady} />);
 
       await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
-
-      // Wait for adapter load
-      await act(async () => {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      });
+      await waitFor(() => expect(onAdapterReady).toHaveBeenCalled());
 
       quake2tsMock.buildBspGeometry.mockClear();
 
       const hidden = new Set(['hidden_entity']);
-      rerender(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} hiddenClassnames={hidden} />);
+      rerender(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} hiddenClassnames={hidden} onAdapterReady={onAdapterReady} />);
 
       expect(quake2tsMock.buildBspGeometry).toHaveBeenCalledWith(
           expect.anything(),

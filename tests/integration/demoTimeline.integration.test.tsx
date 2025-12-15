@@ -132,7 +132,9 @@ describe('UniversalViewer - Demo Integration', () => {
       });
 
       // Wait for adapter load
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await act(async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
+      });
 
       expect(screen.getByText('0:00.00')).toBeInTheDocument(); // Timeline start time
       expect(screen.getByText('1:00.00')).toBeInTheDocument(); // Timeline duration (mocked 60s)
@@ -155,7 +157,9 @@ describe('UniversalViewer - Demo Integration', () => {
           );
       });
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await act(async () => {
+          await new Promise(resolve => setTimeout(resolve, 100));
+      });
 
       // Should not be visible initially
       expect(screen.queryByText(/Tick Rate:/)).not.toBeInTheDocument();

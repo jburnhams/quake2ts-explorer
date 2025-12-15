@@ -17,8 +17,16 @@ jest.mock('@uiw/react-color-colorful', () => ({
 }));
 
 describe('ViewerControls', () => {
-  const mockSetOrbit = jest.fn();
-  const mockSetFreeCamera = jest.fn();
+  const mockSetOrbit = jest.fn((update) => {
+      if (typeof update === 'function') {
+          update({ radius: 100, theta: 0, phi: 0, target: [0, 0, 0] });
+      }
+  });
+  const mockSetFreeCamera = jest.fn((update) => {
+      if (typeof update === 'function') {
+          update({ position: [0, 0, 0], rotation: [0, 0, 0] });
+      }
+  });
   const mockSetSpeed = jest.fn();
   const mockSetCameraMode = jest.fn();
   const mockSetRenderMode = jest.fn();
