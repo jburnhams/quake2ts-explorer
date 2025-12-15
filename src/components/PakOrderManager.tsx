@@ -114,7 +114,7 @@ export const PakOrderManager: React.FC<PakOrderManagerProps> = ({ pakService, on
     // Usually list item 1 is processed first, item N last.
     // So visual order should match priority order.
     // mounted is unsorted map values usually, so let's sort.
-    const sorted = mounted.sort((a, b) => a.priority - b.priority);
+    const sorted = [...mounted].sort((a, b) => a.priority - b.priority);
     setPaks(sorted);
   }, [pakService]);
 
@@ -124,9 +124,9 @@ export const PakOrderManager: React.FC<PakOrderManagerProps> = ({ pakService, on
     // Paks are sorted by priority (low -> high)
     // So later paks overwrite earlier ones in the map
     for (const pak of paks) {
-      const files = pak.archive.listEntries().map(e => e.name);
-      for (const file of files) {
-        map.set(file, pak.id);
+      const entries = pak.archive.listEntries();
+      for (const entry of entries) {
+        map.set(entry.name, pak.id);
       }
     }
     return map;

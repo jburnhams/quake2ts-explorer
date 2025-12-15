@@ -1,7 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { PakOrderManager } from '../../../src/components/PakOrderManager';
-import { PakService, MountedPak } from '../../../src/services/pakService';
+import { PakOrderManager } from '@/src/components/PakOrderManager.tsx';
+import { PakService, MountedPak } from '@/src/services/pakService.ts';
 import React from 'react';
 
 // Mock PakArchive
