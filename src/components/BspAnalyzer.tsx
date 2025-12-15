@@ -37,7 +37,6 @@ interface VisibilityStats {
 
 function getGeometryStats(map: BspMap): GeometryStats {
     const totalFaces = map.faces?.length || 0;
-    // console.log('getGeometryStats faces:', totalFaces, map);
     if (totalFaces === 0) return { avgTrisPerFace: 0, textureUsage: [], largestSurfaces: [] };
 
     const usageMap = new Map<string, number>();
@@ -104,7 +103,7 @@ function getLightmapStats(map: BspMap): LightmapStats {
 
     if (lightmaps instanceof Uint8Array) {
         totalSize = lightmaps.length;
-        // Each lightmap is 128*128*3 bytes (RGB) in raw BSP?
+        // Each lightmap is 128x128*3 bytes (RGB) in raw BSP?
         // Actually Q2 BSP has variable sized lightmaps packed into 128x128 pages?
         // Or specific per-face lightmaps.
         // Assuming lightmaps property exposes something.

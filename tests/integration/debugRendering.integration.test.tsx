@@ -89,7 +89,11 @@ jest.mock('quake2ts/engine', () => {
         })),
         createBspSurfaces: jest.fn().mockReturnValue([]),
         buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-        Texture2D: jest.fn(),
+        Texture2D: jest.fn().mockImplementation(() => ({
+            bind: jest.fn(),
+            uploadImage: jest.fn(),
+            setParameters: jest.fn(),
+        })),
         parseWal: jest.fn(),
         walToRgba: jest.fn(),
         resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
