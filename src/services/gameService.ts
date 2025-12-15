@@ -31,6 +31,7 @@ import {
 } from 'quake2ts/shared';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
+import { multiplayerGameService } from './multiplayerGameService';
 
 // Re-define GameTraceResult since it's not exported from main entry point of game package
 interface GameTraceResult {
@@ -55,6 +56,11 @@ interface GameSimulation {
   shutdown(): void;
   createSave(description: string): GameSaveFile;
   loadSave(save: GameSaveFile): void;
+}
+
+// Factory options extension
+export interface ExtendedGameCreateOptions extends Partial<GameCreateOptions> {
+  multiplayer?: boolean;
 }
 
 class GameServiceImpl implements GameSimulation, GameImports {
@@ -329,20 +335,27 @@ class GameServiceImpl implements GameSimulation, GameImports {
   }
 }
 
-// Singleton management
-let gameServiceInstance: GameServiceImpl | null = null;
+// Singleton management for local game
+let gameServiceInstance: GameSimulation | null = null;
 
 export async function createGameSimulation(
   vfs: VirtualFileSystem,
   mapName: string,
-  options: Partial<GameCreateOptions> = {} // Allow partial options
+  options: ExtendedGameCreateOptions = {}
 ): Promise<GameSimulation> {
   // If exists, shutdown previous
   if (gameServiceInstance) {
     gameServiceInstance.shutdown();
   }
 
-  // Fill defaults
+  // Check if multiplayer requested
+  if (options.multiplayer) {
+      await multiplayerGameService.init(vfs, mapName);
+      gameServiceInstance = multiplayerGameService;
+      return multiplayerGameService;
+  }
+
+  // Local game setup
   const fullOptions: GameCreateOptions = {
       gravity: { x: 0, y: 0, z: -800 },
       deathmatch: false,
