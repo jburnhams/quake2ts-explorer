@@ -78,7 +78,7 @@ function App() {
     consoleService.registerCommand('quit', () => {
        consoleService.log('Returning to browser...', LogLevel.INFO);
        // Trigger mode switch if implemented
-       setViewMode('model'); // Just default to a viewer mode for now
+       setViewMode('merged');
     });
 
     consoleService.registerCommand('save', async (args) => {
