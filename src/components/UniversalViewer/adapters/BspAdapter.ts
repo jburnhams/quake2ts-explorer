@@ -175,9 +175,6 @@ export class BspAdapter implements ViewerAdapter {
     mat4.multiply(mvp, projection as mat4, viewMatrix);
 
     const lightStyles = resolveLightStyles();
-    // Implement brightness control by scaling light styles
-    // Since we can't change the shader, we simulate brightness by boosting dynamic light values.
-    // Note: This only affects surfaces with light styles, not the base baked lightmap.
     const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
     const fullbright = this.renderOptions.fullbright === true;
 
@@ -217,22 +214,9 @@ export class BspAdapter implements ViewerAdapter {
         if (this.activeSurfaceFlagFilter) {
             const flagNames = getSurfaceFlagNames(surface.surfaceFlags);
             if (flagNames.includes(this.activeSurfaceFlagFilter)) {
-                // If filter is active, only highlight matching surfaces
-                // Or maybe we want to hide non-matching?
-                // "Filter view to show only surfaces with specific flags"
-                // So we should hide others or make them transparent/dim.
-                // But highlighting is also valid.
-                // Let's make matching surfaces SOLID RED for high visibility, or just override isHighlighted.
                 isHighlighted = true;
             } else {
-                 // Should we hide non-matching?
-                 // If we want to "Show only", we might want to discard drawing here?
-                 // But loop structure draws all.
-                 // We can continue loop?
-                 // But current loop handles one draw call per surface group? No, geometry.surfaces is array of draw calls.
-                 // So we can just continue;
-                 // But wait, "show only" implies hiding others.
-                 continue;
+                 continue; // Hide non-matching surfaces
             }
         }
 
