@@ -7,6 +7,19 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
+// Mock requestAnimationFrame
+if (!global.requestAnimationFrame) {
+  global.requestAnimationFrame = (callback: FrameRequestCallback): number => {
+    return setTimeout(() => callback(performance.now()), 0) as unknown as number;
+  };
+}
+
+if (!global.cancelAnimationFrame) {
+  global.cancelAnimationFrame = (id: number) => {
+    clearTimeout(id);
+  };
+}
+
 // Mock global fetch
 global.fetch = jest.fn(() =>
   Promise.resolve({
