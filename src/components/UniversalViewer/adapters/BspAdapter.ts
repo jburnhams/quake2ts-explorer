@@ -18,8 +18,6 @@ export class BspAdapter implements ViewerAdapter {
   private hoveredEntity: BspEntity | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
-  // White texture for fullbright mode
-  private whiteTexture: Texture2D | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
