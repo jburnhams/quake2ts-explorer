@@ -149,7 +149,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Display GPU vs CPU time breakdown
   - Identify bottlenecks
 
-- [ ] **2.6**: Implement performance graph
+- [x] **2.6**: Implement performance graph
   - Plot FPS over time (line graph)
   - Plot frame time (ms)
   - Highlight dropped frames
@@ -258,7 +258,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Show recording indicator (flashing red dot + elapsed time)
   - Stop button saves video
 
-- [ ] **4.4**: Implement video settings
+- [x] **4.4**: Implement video settings
   - Frame rate (30, 60 FPS)
   - Video bitrate (quality)
   - Resolution (match canvas or custom)
@@ -269,7 +269,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Filename: `quake2ts_recording_YYYY-MM-DD_HH-MM-SS.webm`
   - Show file size before download
 
-- [ ] **4.6**: Add recording limits
+- [x] **4.6**: Add recording limits
   - Warn if recording > 60 seconds (large file)
   - Auto-stop at configurable limit (e.g., 5 minutes)
   - Display estimated file size during recording
