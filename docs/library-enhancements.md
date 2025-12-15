@@ -382,7 +382,10 @@ class Renderer {
 
 **Rationale**: Lighting controls (Section 04, Task 5) for artistic and debugging purposes.
 
-**Workaround**: Post-processing brightness/gamma, but doesn't affect actual lighting calculations.
+**Workaround**:
+- Brightness: Partially implemented in app by scaling light style values, but this only affects dynamic lights, not baked lightmaps.
+- Fullbright: Partially implemented by unbinding lightmaps, but ideally should be shader-based for correctness.
+- Gamma/Ambient: Requires shader modifications (uniforms) which are not currently exposed.
 
 ---
 
