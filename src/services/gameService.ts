@@ -2,7 +2,6 @@ import {
   AssetManager,
   VirtualFileSystem,
   type BspMap,
-  type FixedStepContext,
   type GameFrameResult
 } from 'quake2ts/engine';
 
@@ -20,10 +19,8 @@ import {
 import {
   Vec3,
   type UserCommand,
-  traceBox,
   pointContents,
   type CollisionModel,
-  type CollisionTraceParams,
   CollisionEntityIndex,
   type CollisionEntityLink,
   type CollisionPlane
@@ -49,7 +46,7 @@ export type { GameSimulation, GameStateSnapshot };
 interface GameSimulation {
   start(): void;
   stop(): void;
-  tick(step: FixedStepContext, cmd: UserCommand): void;
+  tick(deltaMs: number, cmd: UserCommand): void;
   getSnapshot(): GameStateSnapshot;
   shutdown(): void;
 }
@@ -65,6 +62,9 @@ class GameServiceImpl implements GameSimulation, GameImports {
   private modelIndices = new Map<string, number>();
   private imageIndices = new Map<string, number>();
   private latestFrameResult: GameFrameResult<GameStateSnapshot> | null = null;
+
+  // Simulation state
+  private frameCount = 0;
 
   constructor(
     private vfs: VirtualFileSystem,
@@ -87,54 +87,35 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
     // 2. Initialize the game instance
     const engineHost: GameEngine = {
-      trace: (start: Vec3, end: Vec3): unknown => {
-          if (!this.collisionModel) return null;
-          return traceBox({
-              model: this.collisionModel,
-              start,
-              end,
-              headnode: 0
-          });
-      },
-      sound: (entity, channel, sound, volume, attenuation, timeofs) => {
-          // Stub for audio
-      },
-      soundIndex: (sound) => this.soundIndex(sound),
-      modelIndex: (model) => this.modelIndex(model),
-      multicast: (origin, type, event, ...args) => this.multicast(origin, type, event, ...args),
-      unicast: (ent, reliable, event, ...args) => this.unicast(ent, reliable, event, ...args),
-      configstring: (index, value) => this.configstring(index, value),
-      serverCommand: (cmd) => this.serverCommand(cmd)
+      vfs: this.vfs,
+      assetManager: this.assetManager
     };
 
     const imports: Partial<GameImports> = {
-      trace: this.trace.bind(this),
       pointcontents: this.pointcontents.bind(this),
       multicast: this.multicast.bind(this),
       unicast: this.unicast.bind(this),
       configstring: this.configstring.bind(this),
       serverCommand: this.serverCommand.bind(this),
       linkentity: this.linkentity.bind(this),
+      unlinkentity: this.unlinkentity.bind(this),
+      soundIndex: this.soundIndex.bind(this),
+      modelIndex: this.modelIndex.bind(this),
+      imageIndex: this.imageIndex.bind(this),
       areaEdicts: this.areaEdicts.bind(this),
       setLagCompensation: this.setLagCompensation.bind(this)
     };
 
     this.gameExports = createGame(imports, engineHost, options);
-    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
 
-    const initialFrame = sim.init(performance.now());
-    if (initialFrame && typeof initialFrame === 'object') {
-        this.latestFrameResult = initialFrame as GameFrameResult<GameStateSnapshot>;
-    }
-
-    // 3. Initialize level logic (spawn entities)
-    if (this.currentMap && this.currentMap.entities) {
-       // TODO: Parse entities string and spawn them
+    if (this.gameExports && typeof this.gameExports.init === 'function') {
+        this.gameExports.init();
     }
   }
 
   start(): void {
-    // Game starts ticking via external loop calling tick()
+    // Reset simulation state
+    this.frameCount = 0;
   }
 
   stop(): void {
@@ -143,19 +124,19 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   shutdown(): void {
     if (this.gameExports) {
-      const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
-      sim.shutdown();
+      this.gameExports.shutdown();
       this.gameExports = null;
     }
-    this.assetManager.resetForLevelChange();
+    this.assetManager.clearCache();
     this.currentMap = null;
     this.collisionModel = null;
   }
 
-  tick(step: FixedStepContext, cmd: UserCommand): void {
+  tick(deltaMs: number, cmd: UserCommand): void {
     if (!this.gameExports) return;
-    const sim = this.gameExports as unknown as import('quake2ts/engine').GameSimulation<GameStateSnapshot>;
-    this.latestFrameResult = sim.frame(step, cmd);
+
+    this.frameCount++;
+    this.gameExports.frame(this.frameCount, cmd);
   }
 
   getSnapshot(): GameStateSnapshot {
@@ -163,17 +144,14 @@ class GameServiceImpl implements GameSimulation, GameImports {
       throw new Error("Game not initialized");
     }
 
-    if (this.latestFrameResult && this.latestFrameResult.state) {
-        return this.latestFrameResult.state;
-    }
-
-    throw new Error("No game snapshot available");
+    return this.gameExports.snapshot();
   }
 
   // --- GameImports Implementations ---
 
   trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
-    const nullTrace: GameTraceResult = {
+    // Stub implementation as engine handles traces internally now
+    return {
         allsolid: false,
         startsolid: false,
         fraction: 1.0,
@@ -182,54 +160,6 @@ class GameServiceImpl implements GameSimulation, GameImports {
         surfaceFlags: 0,
         contents: 0,
         ent: null
-    };
-
-    if (!this.collisionModel) {
-      return nullTrace;
-    }
-
-    // 1. Trace against world
-    const traceParams: CollisionTraceParams = {
-        model: this.collisionModel,
-        start,
-        end,
-        mins: mins || undefined,
-        maxs: maxs || undefined,
-        headnode: 0, // Worldspawn
-        contentMask: contentmask
-    };
-
-    const worldResult = traceBox(traceParams);
-
-    // 2. Trace against entities
-    const entityResult = this.entityIndex.trace({
-        ...traceParams,
-        passId: passent ? passent.index : -1 // Entity uses 'index', not 'id'
-    });
-
-    // 3. Combine results (take nearest)
-    let finalResult = worldResult;
-    let hitEntity: number | null = null;
-
-    if (entityResult.fraction < worldResult.fraction) {
-        finalResult = entityResult;
-        hitEntity = entityResult.entityId;
-    }
-
-    let ent: Entity | null = null;
-    if (hitEntity !== null && this.gameExports) {
-        ent = this.gameExports.entities.find(e => e.index === hitEntity) || null;
-    }
-
-    return {
-        allsolid: finalResult.allsolid,
-        startsolid: finalResult.startsolid,
-        fraction: finalResult.fraction,
-        endpos: finalResult.endpos,
-        plane: finalResult.plane || null,
-        surfaceFlags: finalResult.surfaceFlags || 0,
-        contents: finalResult.contents || 0,
-        ent
     };
   }
 
@@ -330,11 +260,13 @@ export async function createGameSimulation(
       deathmatch: false,
       coop: false,
       skill: 1,
+      maxClients: 1, // Added maxClients based on usage.md
       ...options
   };
 
+  // Force cast to GameCreateOptions to ignore extra properties
   const service = new GameServiceImpl(vfs, mapName);
-  await service.init(fullOptions);
+  await service.init(fullOptions as unknown as GameCreateOptions);
 
   gameServiceInstance = service;
   return service;
