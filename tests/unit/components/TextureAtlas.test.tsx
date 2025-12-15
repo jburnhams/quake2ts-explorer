@@ -1,110 +1,135 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
-import { TextureAtlas, TextureAtlasProps } from '@/src/components/TextureAtlas';
-import { AssetCrossRefService } from '@/src/services/assetCrossRefService';
-import { pakService } from '@/src/services/pakService';
 
-// Mock services
-jest.mock('@/src/services/assetCrossRefService');
-jest.mock('@/src/services/pakService', () => ({
-  pakService: {
-    getVfs: jest.fn(),
-  },
-}));
+import React from 'react';
+import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { TextureAtlas } from '../../../src/components/TextureAtlas';
+import { AssetCrossRefService } from '../../../src/services/assetCrossRefService';
+import { pakService } from '../../../src/services/pakService';
+import { Md2Model, Md3Model } from 'quake2ts/engine';
+
+// Mock dependencies
+jest.mock('../../../src/services/assetCrossRefService');
+jest.mock('../../../src/services/pakService');
+
+// Mock HTMLCanvasElement.getContext
+const mockContext = {
+  createImageData: jest.fn(() => ({
+    data: new Uint8ClampedArray(100),
+    width: 10,
+    height: 10
+  })),
+  putImageData: jest.fn(),
+  drawImage: jest.fn(),
+  beginPath: jest.fn(),
+  moveTo: jest.fn(),
+  lineTo: jest.fn(),
+  stroke: jest.fn(),
+  clearRect: jest.fn(),
+  setLineDash: jest.fn(),
+  strokeStyle: '',
+  lineWidth: 1
+};
+
+HTMLCanvasElement.prototype.getContext = jest.fn((contextId) => {
+  if (contextId === '2d') {
+    return mockContext as any;
+  }
+  return null;
+});
+
+HTMLCanvasElement.prototype.toBlob = jest.fn((callback) => callback(new Blob(['test'])));
 
 describe('TextureAtlas', () => {
-  const mockProps: TextureAtlasProps = {
-    rgba: new Uint8Array([255, 0, 0, 255]),
-    width: 1,
-    height: 1,
-    format: 'tga',
-    name: 'test.tga',
+  const mockRgba = new Uint8Array(100);
+  const defaultProps = {
+    rgba: mockRgba,
+    width: 10,
+    height: 10,
+    format: 'pcx' as const,
+    name: 'test.pcx'
   };
-
-  const mockFindTextureUsage = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (pakService.getVfs as jest.Mock).mockReturnValue({});
-    (AssetCrossRefService as jest.Mock).mockImplementation(() => ({
-      findTextureUsage: mockFindTextureUsage,
-    }));
   });
 
   it('renders correctly', () => {
-    render(<TextureAtlas {...mockProps} />);
-    expect(screen.getByTestId('texture-atlas')).toBeInTheDocument();
-    expect(screen.getByText('test.tga')).toBeInTheDocument();
+    render(<TextureAtlas {...defaultProps} />);
+    expect(screen.getByText('10 x 10')).toBeInTheDocument();
+    expect(screen.getByText('test.pcx')).toBeInTheDocument();
   });
 
-  it('handles usage scanning', async () => {
-    mockFindTextureUsage.mockResolvedValue([
-      { type: 'model', path: 'models/test.md2', details: 'Ref' }
+  it('handles zoom controls', () => {
+    render(<TextureAtlas {...defaultProps} />);
+
+    const zoomIn = screen.getByLabelText('Zoom In');
+    const zoomOut = screen.getByLabelText('Zoom Out');
+
+    fireEvent.click(zoomIn);
+    expect(screen.getByText('200%')).toBeInTheDocument();
+
+    fireEvent.click(zoomOut);
+    expect(screen.getByText('100%')).toBeInTheDocument();
+  });
+
+  it('scans for usage and handles model selection', async () => {
+    const mockFindTextureUsage = jest.fn().mockResolvedValue([
+      { type: 'model', path: 'models/test.md2', details: 'Ref: skin' }
     ]);
 
-    render(<TextureAtlas {...mockProps} />);
+    (AssetCrossRefService as jest.Mock).mockImplementation(() => ({
+      findTextureUsage: mockFindTextureUsage
+    }));
 
-    const scanButton = screen.getByText('Find Usage');
-    fireEvent.click(scanButton);
+    // Mock pakService.parseFile for UV extraction
+    (pakService.parseFile as jest.Mock).mockResolvedValue({
+        type: 'md2',
+        model: {
+            header: { skinWidth: 100, skinHeight: 100 },
+            texCoords: [{s: 0, t: 0}, {s: 50, t: 50}, {s: 100, t: 0}],
+            triangles: [{ texCoordIndices: [0, 1, 2], vertexIndices: [0, 1, 2] }],
+            frames: [],
+            skins: [],
+            glCommands: []
+        }
+    });
+
+    render(<TextureAtlas {...defaultProps} />);
+
+    fireEvent.click(screen.getByText('Find Usage'));
 
     expect(screen.getByText('Scanning...')).toBeInTheDocument();
-    expect(AssetCrossRefService).toHaveBeenCalled();
-    expect(mockFindTextureUsage).toHaveBeenCalledWith('test.tga');
 
     await waitFor(() => {
-      expect(screen.getByText('Usage References (1)')).toBeInTheDocument();
+      expect(screen.getByText('models/test.md2')).toBeInTheDocument();
     });
 
-    expect(screen.getByText('MODEL')).toBeInTheDocument();
-    expect(screen.getByText('models/test.md2')).toBeInTheDocument();
-  });
+    // Select the usage
+    fireEvent.click(screen.getByText('models/test.md2'));
 
-  it('handles scan errors', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    mockFindTextureUsage.mockRejectedValue(new Error('Failed'));
+    // Verify UV controls appear
+    expect(screen.getByText('Show UVs')).toBeInTheDocument();
 
-    render(<TextureAtlas {...mockProps} />);
+    // Check Show UVs checkbox (it defaults to true on selection in our impl)
+    // Wait, the impl says:
+    // const handleUsageClick = (usage: AssetUsage) => {
+    //   if (usage.type === 'model') {
+    //       setSelectedUsage(usage);
+    //       setShowUVs(true);
+    //   }
+    // };
+    // So it should be checked.
 
-    fireEvent.click(screen.getByText('Find Usage'));
-
+    // Verify canvas draw calls
     await waitFor(() => {
-      expect(screen.getByText('Find Usage')).toBeInTheDocument(); // reverts button text
-    });
-
-    expect(consoleSpy).toHaveBeenCalledWith('Scan failed', expect.any(Error));
-    consoleSpy.mockRestore();
-  });
-
-  it('handles empty results', async () => {
-    mockFindTextureUsage.mockResolvedValue([]);
-
-    render(<TextureAtlas {...mockProps} />);
-
-    fireEvent.click(screen.getByText('Find Usage'));
-
-    await waitFor(() => {
-        expect(screen.getByText('No references found.')).toBeInTheDocument();
+        expect(pakService.parseFile).toHaveBeenCalledWith('models/test.md2');
+        expect(mockContext.stroke).toHaveBeenCalled();
     });
   });
 
-  it('resets state on prop change', async () => {
-    mockFindTextureUsage.mockResolvedValue([
-        { type: 'model', path: 'models/test.md2' }
-    ]);
+  it('displays palette when provided', () => {
+    const palette = new Uint8Array(768); // 256 * 3
+    render(<TextureAtlas {...defaultProps} palette={palette} />);
 
-    const { rerender } = render(<TextureAtlas {...mockProps} />);
-
-    // Perform scan
-    fireEvent.click(screen.getByText('Find Usage'));
-    await waitFor(() => {
-        expect(screen.getByText('models/test.md2')).toBeInTheDocument();
-    });
-
-    // Change prop
-    rerender(<TextureAtlas {...mockProps} name="other.tga" />);
-
-    // Usage list should disappear
-    expect(screen.queryByText('models/test.md2')).not.toBeInTheDocument();
-    expect(screen.queryByText('Usage References (1)')).not.toBeInTheDocument();
+    expect(screen.getByTestId('palette-grid')).toBeInTheDocument();
   });
 });

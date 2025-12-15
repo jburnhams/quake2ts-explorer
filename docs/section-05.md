@@ -69,7 +69,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Count total usage instances
   - "Find in Files" functionality
 
-- [ ] **1.5**: Implement UV mapping visualization (for models)
+- [x] **1.5**: Implement UV mapping visualization (for models)
   - Overlay UV coordinates on texture
   - Show which parts of texture are used
   - Highlight unused areas
