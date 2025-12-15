@@ -20,6 +20,10 @@ export interface Ray {
   direction: [number, number, number];
 }
 
+export interface PickOptions {
+  multiSelect?: boolean;
+}
+
 export interface AnimationInfo {
   name: string;
   firstFrame: number;
@@ -71,7 +75,7 @@ export interface ViewerAdapter {
   setHiddenClasses?(hidden: Set<string>): void;
 
   // Picking
-  pickEntity?(ray: Ray): any;
+  pickEntity?(ray: Ray, options?: PickOptions): any;
   setHoveredEntity?(entity: any): void;
 
   // Debugging

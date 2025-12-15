@@ -31,6 +31,7 @@ import { getFileName } from '../../utils/helpers';
 import { PlayerState } from 'quake2ts/shared';
 import { GameHUD } from '../GameHUD';
 import '../../styles/md2Viewer.css';
+import { EntityEditorService } from '@/src/services/entityEditorService';
 
 export interface UniversalViewerProps {
   parsedFile: ParsedFile;
@@ -131,6 +132,15 @@ export function UniversalViewer({
       ambient: 0.1,
       fullbright: false
   });
+  const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Subscribe to EntityEditorService updates
+    const unsubscribe = EntityEditorService.getInstance().subscribe(() => {
+        setSelectedEntityIds(EntityEditorService.getInstance().getSelectedEntityIds());
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -767,7 +777,8 @@ export function UniversalViewer({
 
         const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
 
-        const result = adapter.pickEntity!(pickRay);
+        const multiSelect = e.ctrlKey || e.metaKey;
+        const result = adapter.pickEntity!(pickRay, { multiSelect });
         if (onEntitySelected) {
             onEntitySelected(result ? result.entity : null);
         }
