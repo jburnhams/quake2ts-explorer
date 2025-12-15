@@ -234,12 +234,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Kill feed (recent kills)
   - Team scores (if team game)
 
-- [ ] **4.5**: Add speed graph
+- [x] **4.5**: Add speed graph
   - Plot speed over time
   - Useful for speedrun analysis
   - Highlight jumps, acceleration events
 
-- [ ] **4.6**: Make stats configurable
+- [x] **4.6**: Make stats configurable
   - Toggle individual stat displays
   - Adjust overlay position and size
   - Save preferences to localStorage
