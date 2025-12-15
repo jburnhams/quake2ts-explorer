@@ -137,6 +137,58 @@ export class Md3Adapter implements ViewerAdapter {
             } else {
                  this.debugRenderer.addBox(vec3.fromValues(-20, -20, 0), vec3.fromValues(20, 20, 60), vec4.fromValues(0, 1, 0, 1));
             }
+        } else if (this.debugMode === DebugMode.Skeleton) {
+            const frameIndex = Math.floor(this.currentFrame);
+            const nextFrameIndex = (frameIndex + 1) % this.totalFrames;
+            const lerp = this.currentFrame - frameIndex;
+
+            if (this.model && this.model.tags && frameIndex >= 0 && frameIndex < this.model.tags.length) {
+                const currentTags = this.model.tags[frameIndex];
+                const nextTags = this.model.tags[nextFrameIndex];
+
+                if (currentTags && nextTags) {
+                    for (let i = 0; i < currentTags.length; i++) {
+                        const tag1 = currentTags[i];
+                        const tag2 = nextTags[i];
+
+                        // Interpolate position
+                        const pos = vec3.create();
+                        vec3.lerp(pos, tag1.origin as unknown as vec3, tag2.origin as unknown as vec3, lerp);
+
+                        // Draw axis (approximate from rotation matrix)
+                        const axisLength = 5.0;
+                        const xStart = pos;
+                        const yStart = pos;
+                        const zStart = pos;
+
+                        // MD3 tags have 3x3 rotation matrix in axis property [Vec3, Vec3, Vec3]
+                        // Interpolating rotation is harder, just using current frame for axis visualization for now or slerp quats if I had them
+                        // Let's just use current frame axis for simplicity as visual guide
+                        const xAxis = vec3.fromValues(tag1.axis[0][0], tag1.axis[0][1], tag1.axis[0][2]);
+                        const yAxis = vec3.fromValues(tag1.axis[1][0], tag1.axis[1][1], tag1.axis[1][2]);
+                        const zAxis = vec3.fromValues(tag1.axis[2][0], tag1.axis[2][1], tag1.axis[2][2]);
+
+                        const xEnd = vec3.create();
+                        vec3.scaleAndAdd(xEnd, pos, xAxis, axisLength);
+                        const yEnd = vec3.create();
+                        vec3.scaleAndAdd(yEnd, pos, yAxis, axisLength);
+                        const zEnd = vec3.create();
+                        vec3.scaleAndAdd(zEnd, pos, zAxis, axisLength);
+
+                        this.debugRenderer.addLine(xStart, xEnd, vec4.fromValues(1, 0, 0, 1)); // Red X
+                        this.debugRenderer.addLine(yStart, yEnd, vec4.fromValues(0, 1, 0, 1)); // Green Y
+                        this.debugRenderer.addLine(zStart, zEnd, vec4.fromValues(0, 0, 1, 1)); // Blue Z
+
+                        // Draw a small box at origin
+                        const boxSize = 1.0;
+                        const min = vec3.create();
+                        vec3.subtract(min, pos, vec3.fromValues(boxSize, boxSize, boxSize));
+                        const max = vec3.create();
+                        vec3.add(max, pos, vec3.fromValues(boxSize, boxSize, boxSize));
+                        this.debugRenderer.addBox(min, max, vec4.fromValues(1, 1, 1, 1));
+                    }
+                }
+            }
         }
 
         this.debugRenderer.render(mvp);
