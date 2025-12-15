@@ -104,6 +104,8 @@ export function UniversalViewer({
   const [recordingStartTime, setRecordingStartTime] = useState<number | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingBitrate, setRecordingBitrate] = useState<number>(0);
+  const [recordingTimeLimit, setRecordingTimeLimit] = useState<number>(300);
+  const [recordingResolution, setRecordingResolution] = useState<{ width: number; height: number } | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
 
   useEffect(() => {
@@ -130,8 +132,8 @@ export function UniversalViewer({
         const duration = (Date.now() - recordingStartTime) / 1000;
         setRecordingDuration(duration);
 
-        // Auto-stop after 5 minutes (300 seconds)
-        if (duration > 300) {
+        // Auto-stop at configurable limit
+        if (recordingTimeLimit > 0 && duration > recordingTimeLimit) {
              handleStopRecording();
              setError("Recording stopped automatically (limit reached).");
         }
@@ -140,7 +142,7 @@ export function UniversalViewer({
       setRecordingDuration(0);
     }
     return () => clearInterval(interval);
-  }, [isRecording, recordingStartTime]);
+  }, [isRecording, recordingStartTime, recordingTimeLimit]);
 
   // Cleanup recording on unmount
   useEffect(() => {
@@ -258,8 +260,27 @@ export function UniversalViewer({
   };
 
   const handleStartRecordingWithOptions = (options: VideoRecordOptions) => {
-    if (!canvasRef.current) return;
+    if (!canvasRef.current || !camera || !glContext) return;
     try {
+      // Handle resolution override
+      if (options.width && options.height) {
+          setRecordingResolution({ width: options.width, height: options.height });
+
+          // Force resize immediately for recording
+          const canvas = canvasRef.current;
+          canvas.width = options.width;
+          canvas.height = options.height;
+          // Note: We don't change CSS size, so it might look stretched or pixelated in the UI,
+          // but the recording will be correct.
+
+          glContext.gl.viewport(0, 0, options.width, options.height);
+          camera.aspect = options.width / options.height;
+          if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+      }
+
+      // Handle time limit
+      setRecordingTimeLimit(options.timeLimit !== undefined ? options.timeLimit : 300);
+
       videoRecorderService.startRecording(canvasRef.current, options);
       setIsRecording(true);
       setRecordingStartTime(Date.now());
@@ -267,6 +288,7 @@ export function UniversalViewer({
     } catch (e) {
       console.error("Recording failed:", e);
       setError(`Recording failed: ${e instanceof Error ? e.message : String(e)}`);
+      setRecordingResolution(null); // Reset if failed
     }
   };
 
@@ -275,6 +297,24 @@ export function UniversalViewer({
       const blob = await videoRecorderService.stopRecording();
       setIsRecording(false);
       setRecordingStartTime(null);
+      setRecordingResolution(null); // Clear resolution override
+
+      // Trigger resize to restore original resolution
+      // We rely on the resize event or manual call next frame
+      requestAnimationFrame(() => {
+          const canvas = canvasRef.current;
+          if (canvas) {
+             // Reset canvas size to match display size
+             canvas.width = canvas.clientWidth * window.devicePixelRatio;
+             canvas.height = canvas.clientHeight * window.devicePixelRatio;
+             if (glContext && camera) {
+                 glContext.gl.viewport(0, 0, canvas.width, canvas.height);
+                 camera.aspect = canvas.width / canvas.height;
+                 if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+             }
+          }
+      });
+
       const filename = generateScreenshotFilename('quake2ts_recording').replace('.png', '.webm');
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -286,6 +326,7 @@ export function UniversalViewer({
       console.error("Stop recording failed:", e);
       setError(`Stop recording failed: ${e instanceof Error ? e.message : String(e)}`);
       setIsRecording(false);
+      setRecordingResolution(null);
     }
   };
 
@@ -911,6 +952,8 @@ export function UniversalViewer({
     if (!canvas || !camera || !glContext) return;
 
     const handleResize = () => {
+      if (recordingResolution) return; // Don't resize if recording with fixed resolution
+
       canvas.width = canvas.clientWidth * window.devicePixelRatio;
       canvas.height = canvas.clientHeight * window.devicePixelRatio;
       glContext.gl.viewport(0, 0, canvas.width, canvas.height);
@@ -923,7 +966,7 @@ export function UniversalViewer({
     window.addEventListener('resize', handleResize);
     handleResize();
     return () => window.removeEventListener('resize', handleResize);
-  }, [canvasRef, camera, glContext]);
+  }, [canvasRef, camera, glContext, recordingResolution]);
 
   return (
      <div ref={containerRef} className="md2-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>

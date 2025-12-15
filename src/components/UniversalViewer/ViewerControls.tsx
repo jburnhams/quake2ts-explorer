@@ -288,7 +288,7 @@ export function ViewerControls({
                     <>
                       <span>■</span>
                       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: '1', marginLeft: '2px' }}>
-                        <span style={{ fontSize: '0.9em' }}>{formatTime(recordingTime)}</span>
+                        <span style={{ fontSize: '0.9em', color: recordingTime > 60 ? 'yellow' : 'inherit' }}>{formatTime(recordingTime)}</span>
                         {recordingSizeEstimate !== undefined && (
                              <span style={{ fontSize: '0.7em', opacity: 0.8 }}>{formatSize(recordingSizeEstimate)}</span>
                         )}

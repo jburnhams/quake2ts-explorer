@@ -262,7 +262,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Frame rate (30, 60 FPS)
   - Video bitrate (quality)
   - Resolution (match canvas or custom)
-  - Audio recording toggle (if audio context available)
+  - Audio recording toggle (UI added, implementation pending engine support)
 
 - [x] **4.5**: Handle download
   - Same pattern as screenshot
