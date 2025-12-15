@@ -154,14 +154,23 @@ export class BspAdapter implements ViewerAdapter {
     // Since we can't change the shader, we simulate brightness by boosting dynamic light values.
     // Note: This only affects surfaces with light styles, not the base baked lightmap.
     const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
+    const fullbright = this.renderOptions.fullbright === true;
+
     const styleValues = new Float32Array(lightStyles.length);
     for (let j = 0; j < lightStyles.length; j++) {
-        styleValues[j] = lightStyles[j] * brightness;
+        // If fullbright, force style value to 1.0 (or higher?) to avoid pulsing.
+        // Actually, if we use white texture for lightmap, the style value modulates it.
+        // If style value is 0 (off), surface becomes black even with white lightmap.
+        // So we should force it to 1.0 or brightness.
+        if (fullbright) {
+            styleValues[j] = 1.0;
+        } else {
+            styleValues[j] = lightStyles[j] * brightness;
+        }
     }
 
     const timeSeconds = performance.now() / 1000;
     const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
-    const fullbright = this.renderOptions.fullbright === true;
 
     // Normal Rendering Loop
     for (let i = 0; i < this.geometry.surfaces.length; i++) {
@@ -191,13 +200,11 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         // Setup Texture Unit 1 (Lightmap)
-        let useLightmap = false;
         if (surface.lightmap && !fullbright) {
              const atlas = this.geometry.lightmaps[surface.lightmap.atlasIndex];
              if (atlas) {
                  gl.activeTexture(gl.TEXTURE1);
                  atlas.texture.bind();
-                 useLightmap = true;
              }
         }
 
