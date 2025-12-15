@@ -26,6 +26,8 @@ import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
+import { PlayerState } from 'quake2ts/shared';
+import { GameHUD } from '../GameHUD';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -37,6 +39,9 @@ export interface UniversalViewerProps {
   onEntitySelected?: (entity: any) => void;
   onAdapterReady?: (adapter: ViewerAdapter) => void;
   showControls?: boolean;
+  playerState?: PlayerState;
+  configstrings?: Map<number, string>;
+  isGameMode?: boolean;
 }
 
 function computeCameraPositionZUp(orbit: OrbitState): vec3 {
@@ -47,7 +52,19 @@ function computeCameraPositionZUp(orbit: OrbitState): vec3 {
   return vec3.fromValues(x, y, z);
 }
 
-export function UniversalViewer({ parsedFile, pakService, filePath = '', onClassnamesLoaded, hiddenClassnames, onEntitySelected, onAdapterReady, showControls = true }: UniversalViewerProps) {
+export function UniversalViewer({
+  parsedFile,
+  pakService,
+  filePath = '',
+  onClassnamesLoaded,
+  hiddenClassnames,
+  onEntitySelected,
+  onAdapterReady,
+  showControls = true,
+  playerState,
+  configstrings,
+  isGameMode = false
+}: UniversalViewerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [glContext, setGlContext] = useState<{ gl: WebGL2RenderingContext } | null>(null);
@@ -368,6 +385,27 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         window.removeEventListener('keyup', handleKeyUp);
     };
   }, [adapter, isPlaying]); // Depend on adapter/isPlaying to capture current state for shortcuts
+
+  // Pointer Lock for Game Mode
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleGameClick = async () => {
+        if (isGameMode) {
+            try {
+                if (canvas.requestPointerLock) {
+                    await canvas.requestPointerLock();
+                }
+            } catch (e) {
+                console.warn("Pointer lock failed", e);
+            }
+        }
+    };
+
+    canvas.addEventListener('click', handleGameClick);
+    return () => canvas.removeEventListener('click', handleGameClick);
+  }, [isGameMode]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -922,6 +960,13 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
        )}
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
+         {isGameMode && playerState && configstrings && (
+           <GameHUD
+               playerState={playerState}
+               configstrings={configstrings}
+               pakService={pakService}
+           />
+         )}
        </div>
        {showControls && (
          <ViewerControls

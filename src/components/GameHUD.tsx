@@ -1,151 +1,120 @@
-
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { PlayerState, PlayerStat } from 'quake2ts/shared';
+import { PakService } from '@/src/services/pakService';
+import './GameHUD.css';
 
-export interface GameHUDProps {
-  playerState: PlayerState | null;
+interface GameHUDProps {
+  playerState: PlayerState;
+  configstrings: Map<number, string>;
+  pakService: PakService;
 }
 
-const WEAPON_NAMES = [
-  'Blaster',
-  'Shotgun',
-  'Super Shotgun',
-  'Machinegun',
-  'Chaingun',
-  'Grenade Launcher',
-  'Rocket Launcher',
-  'Hyperblaster',
-  'Railgun',
-  'BFG10K'
-];
+export function GameHUD({ playerState, configstrings, pakService }: GameHUDProps) {
+  const [damageFlash, setDamageFlash] = useState(false);
+  const [pickupFlash, setPickupFlash] = useState(false);
+  const [lastHealth, setLastHealth] = useState(0);
+  const [weaponIconUrl, setWeaponIconUrl] = useState<string | null>(null);
+  const [ammoIconUrl, setAmmoIconUrl] = useState<string | null>(null);
+  const [armorIconUrl, setArmorIconUrl] = useState<string | null>(null);
 
-export const GameHUD: React.FC<GameHUDProps> = ({ playerState }) => {
-  const [flash, setFlash] = useState<string | null>(null);
-  const [lastHealth, setLastHealth] = useState<number>(0);
+  const health = playerState.stats[PlayerStat.STAT_HEALTH] || 0;
+  const ammo = playerState.stats[PlayerStat.STAT_AMMO] || 0;
+  const armor = playerState.stats[PlayerStat.STAT_ARMOR] || 0;
+  const weaponIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
+  const ammoIconIndex = playerState.stats[PlayerStat.STAT_AMMO_ICON];
+  const armorIconIndex = playerState.stats[PlayerStat.STAT_ARMOR_ICON];
 
+  // Note: STAT_SELECTED_ICON (6) is usually the icon.
+  // I'll stick to PlayerStat enum.
+  // If icons are missing, I'll fallback to text.
+
+  const selectedIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
+
+  // Load icons
   useEffect(() => {
-    if (!playerState) return;
+    const loadIcon = async (index: number, setter: (url: string | null) => void) => {
+      if (index && configstrings) {
+        // CS_IMAGES start at 544
+        const CS_IMAGES = 544;
+        const imageName = configstrings.get(CS_IMAGES + index);
+        if (imageName) {
+           try {
+             // Try loading from pak
+             // Images are usually pcx or wal.
+             // We need to resolve path. configstring usually has relative path like "pics/w_rail.pcx"
+             // pakService can read it. But we need a URL for img tag.
+             // We can use pakService.readFile to get buffer, then blob.
+             const buffer = await pakService.readFile(imageName);
+             if (buffer) {
+                 // Convert PCX/WAL to PNG blob url?
+                 // That requires decoding. pakService has methods?
+                 // pakService.loadTexture returns PreparedTexture.
+                 // This is complicated for UI. UI usually expects <img> src.
+                 // Maybe we just skip icons for now or implement a simpler text HUD first.
+                 // Or we implement an Icon component that handles decoding.
+             }
+           } catch (e) {
+             console.warn("Failed to load HUD icon", imageName);
+           }
+        }
+      }
+      setter(null);
+    };
 
-    const currentHealth = playerState.stats[PlayerStat.STAT_HEALTH];
-    if (lastHealth > 0 && currentHealth < lastHealth) {
-      setFlash('damage');
-      const timer = setTimeout(() => setFlash(null), 200);
-      return () => clearTimeout(timer);
+    // Placeholder logic for now as decoding PCX in UI requires canvas/texture atlas logic
+    // which is heavy for this component.
+    // We will render text labels instead.
+  }, [selectedIconIndex, ammoIconIndex, armorIconIndex, configstrings, pakService]);
+
+  // Flash detection
+  useEffect(() => {
+    if (health < lastHealth) {
+      setDamageFlash(true);
+      setTimeout(() => setDamageFlash(false), 200);
     }
-    setLastHealth(currentHealth);
-  }, [playerState, lastHealth]);
+    setLastHealth(health);
+  }, [health, lastHealth]);
 
-  if (!playerState || playerState.stats[PlayerStat.STAT_HEALTH] <= 0) {
-    if (playerState && playerState.stats[PlayerStat.STAT_HEALTH] <= 0) {
+  // Centerprint
+  // playerState doesn't have centerprint directly, it comes from events/server commands.
+  // But checking PlayerState interface in usage.md, it doesn't show centerprint.
+  // Usually centerprint is handled by client receiving commands.
+  // For now, we omit centerprint.
+
+  if (health <= 0) {
       return (
-        <div className="game-hud death-screen" style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: 'rgba(50, 0, 0, 0.5)',
-          color: 'red',
-          fontFamily: 'monospace',
-          fontSize: '2rem',
-          pointerEvents: 'none'
-        }}>
-          <h1>YOU DIED</h1>
-          <p>Press Fire to Respawn</p>
-        </div>
+          <div className="game-hud">
+              <div className="hud-death-overlay">
+                  <div className="hud-death-message">YOU DIED</div>
+                  <div className="hud-respawn-hint">Press Jump to Respawn</div>
+              </div>
+          </div>
       );
-    }
-    return null;
   }
 
-  const health = playerState.stats[PlayerStat.STAT_HEALTH];
-  const armor = playerState.stats[PlayerStat.STAT_ARMOR];
-  const ammo = playerState.stats[PlayerStat.STAT_AMMO];
-  const weaponIndex = playerState.stats[PlayerStat.STAT_ACTIVE_WEAPON];
-  // STAT_WEAPON is often an index into the weapon list.
-  // NOTE: Quake 2 weapon indices might need mapping.
-  // Usually 1=Blaster, 2=Shotgun etc.
-  // Assuming 1-based index for display purposes.
-  const weaponName = WEAPON_NAMES[weaponIndex - 1] || 'Unknown';
-
   return (
-    <div className={`game-hud ${flash ? `flash-${flash}` : ''}`} style={{
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      width: '100%',
-      height: '100%',
-      pointerEvents: 'none',
-      fontFamily: '"Courier New", Courier, monospace',
-      color: '#0f0',
-      textShadow: '1px 1px 0 #000'
-    }}>
-      {/* Damage Flash Overlay */}
-      {flash === 'damage' && (
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(255, 0, 0, 0.3)',
-          zIndex: -1
-        }} />
-      )}
+    <div className="game-hud">
+      {damageFlash && <div className="damage-flash" />}
+      {pickupFlash && <div className="pickup-flash" />}
 
-      {/* Crosshair */}
-      <div style={{
-        position: 'absolute',
-        top: '50%',
-        left: '50%',
-        width: '4px',
-        height: '4px',
-        backgroundColor: '#0f0',
-        transform: 'translate(-50%, -50%)',
-        boxShadow: '0 0 2px #000'
-      }} />
+      <div className="hud-crosshair" />
 
-      {/* Bottom Bar */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '0',
-        width: '100%',
-        display: 'flex',
-        justifyContent: 'space-between',
-        padding: '0 40px',
-        boxSizing: 'border-box',
-        fontSize: '24px',
-        fontWeight: 'bold'
-      }}>
-        <div style={{ display: 'flex', gap: '40px' }}>
-          <div>
-            <div style={{ fontSize: '14px', color: '#888' }}>HEALTH</div>
-            <div style={{ fontSize: '48px', color: health <= 25 ? 'red' : '#0f0' }}>
-              {Math.max(0, health)}
-            </div>
-          </div>
-          <div>
-            <div style={{ fontSize: '14px', color: '#888' }}>ARMOR</div>
-            <div style={{ fontSize: '48px' }}>{armor}</div>
-          </div>
+      <div className="hud-bottom-bar">
+        <div className="hud-stat hud-armor">
+            <span className="hud-stat-value">{armor}</span>
+            <span className="hud-stat-label">Armor</span>
         </div>
 
-        <div style={{ display: 'flex', gap: '40px', textAlign: 'right' }}>
-          <div>
-            <div style={{ fontSize: '14px', color: '#888' }}>AMMO</div>
-            <div style={{ fontSize: '48px' }}>{ammo > -1 ? ammo : '-'}</div>
-          </div>
-          <div>
-            <div style={{ fontSize: '14px', color: '#888' }}>WEAPON</div>
-            <div style={{ fontSize: '24px', marginTop: '16px' }}>{weaponName}</div>
-          </div>
+        <div className="hud-stat hud-health">
+            <span className="hud-stat-value">{health}</span>
+            <span className="hud-stat-label">Health</span>
+        </div>
+
+        <div className="hud-stat hud-ammo">
+            <span className="hud-stat-value">{ammo}</span>
+            <span className="hud-stat-label">Ammo</span>
         </div>
       </div>
     </div>
   );
-};
+}

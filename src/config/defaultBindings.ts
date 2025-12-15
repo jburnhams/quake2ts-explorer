@@ -1,4 +1,4 @@
-
+// Task 3: Default Key Bindings
 export interface KeyBindingEntry {
   code: string;
   command: string;
