@@ -1,4 +1,8 @@
-import { FixedTimestepLoop, type FixedStepContext } from 'quake2ts/engine';
+import {
+  FixedTimestepLoop,
+  type FixedStepContext,
+  type RenderContext
+} from 'quake2ts/engine';
 
 export interface GameLoop {
   start(): void;
@@ -8,56 +12,73 @@ export interface GameLoop {
   resume(): void;
 }
 
+/**
+ * Creates a game loop using the engine's FixedTimestepLoop.
+ *
+ * @param simulate Callback for game simulation. Receives FixedStepContext.
+ * @param render Callback for rendering. Receives RenderContext.
+ * @param tickRate Optional tick rate in Hz (default 40).
+ */
 export function createGameLoop(
   simulate: (step: FixedStepContext) => void,
-  render: (alpha: number) => void,
+  render: (context: RenderContext) => void,
   tickRate: number = 40
 ): GameLoop {
-  let paused = false;
-
-  // Wrapper for simulate to handle pause
-  const wrappedSimulate = (step: FixedStepContext) => {
-    if (!paused) {
-      simulate(step);
-    }
-  };
-
-  // Wrapper for render to handle pause
-  const wrappedRender = (context: any) => {
-      // context is RenderContext { alpha, nowMs, ... }
-      render(context.alpha);
-  };
-
-  // FixedTimestepLoop from quake2ts/engine
   const loop = new FixedTimestepLoop(
     {
-      simulate: wrappedSimulate,
-      render: wrappedRender
+      simulate: (step) => simulate(step),
+      render: (context) => render(context)
     },
     {
-      fixedDeltaMs: 1000 / tickRate, // tickRate is Hz, need ms
-      startTimeMs: performance.now(),
+      fixedDeltaMs: 1000 / tickRate,
+      maxSubSteps: 10,
+      maxDeltaMs: 250,
       now: () => performance.now(),
       schedule: (cb) => requestAnimationFrame(cb)
     }
   );
 
+  let rafId: number | null = null;
+  let isPaused = false;
+
+  const frame = (now: number) => {
+      if (isPaused) {
+         // Pause logic: do not pump
+      } else {
+        loop.pump(now);
+      }
+
+      if (loop.isRunning() || isPaused) {
+          rafId = requestAnimationFrame(frame);
+      }
+  };
+
   return {
     start: () => {
-      paused = false;
-      loop.start();
+        if (rafId !== null) return; // Already running
+
+        loop.start();
+        isPaused = false;
+        rafId = requestAnimationFrame(frame);
     },
     stop: () => {
-      loop.stop();
+        loop.stop();
+        if (rafId !== null) {
+            cancelAnimationFrame(rafId);
+            rafId = null;
+        }
     },
-    isRunning: () => {
-      return loop.isRunning();
-    },
+    isRunning: () => loop.isRunning(),
     pause: () => {
-      paused = true;
+        isPaused = true;
     },
     resume: () => {
-      paused = false;
+        if (isPaused) {
+            isPaused = false;
+            // Restart internal loop to reset accumulation
+            loop.stop();
+            loop.start();
+        }
     }
   };
 }
