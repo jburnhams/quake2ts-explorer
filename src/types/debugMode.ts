@@ -5,4 +5,5 @@ export enum DebugMode {
   PVSClusters = 'pvs-clusters',
   CollisionHulls = 'collision-hulls',
   Lightmaps = 'lightmaps',
+  Skeleton = 'skeleton',
 }

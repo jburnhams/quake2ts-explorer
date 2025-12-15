@@ -130,4 +130,36 @@ describe('ModelInspector', () => {
       fireEvent.click(screen.getByText('Play'));
       expect(adapterMock.play).toHaveBeenCalled();
   });
+
+  it('triggers export', () => {
+    // Mock URL.createObjectURL and revokeObjectURL
+    const mockCreateObjectURL = jest.fn();
+    const mockRevokeObjectURL = jest.fn();
+    global.URL.createObjectURL = mockCreateObjectURL;
+    global.URL.revokeObjectURL = mockRevokeObjectURL;
+
+    const parsedFile: ParsedFile = {
+        type: 'md2',
+        model: {
+          header: { numVertices: 100, numTriangles: 50, numSkins: 1 },
+          frames: [{ name: 'frame1', vertices: [], scale: [1,1,1], translate: [0,0,0] }],
+          texCoords: [],
+          triangles: []
+        } as any,
+        animations: []
+    };
+    render(<ModelInspector parsedFile={parsedFile} pakService={pakServiceMock} filePath="test.md2" />);
+
+    act(() => {
+      if ((global as any).lastOnAdapterReady) {
+        (global as any).lastOnAdapterReady(adapterMock);
+      }
+    });
+
+    const exportBtn = screen.getByText('Export');
+    fireEvent.click(exportBtn);
+
+    expect(mockCreateObjectURL).toHaveBeenCalled();
+    expect(mockRevokeObjectURL).toHaveBeenCalled();
+  });
 });
