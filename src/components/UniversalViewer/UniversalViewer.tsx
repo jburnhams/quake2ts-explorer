@@ -10,6 +10,7 @@ import { Dm2Adapter } from './adapters/Dm2Adapter';
 import { ViewerControls } from './ViewerControls';
 import { DemoTimeline } from '../DemoTimeline';
 import { DemoBookmarks } from '../DemoBookmarks';
+import { DemoMetadataEditor } from '../DemoMetadata';
 import { FrameInfo } from '../FrameInfo';
 import { OrbitState, computeCameraPosition, FreeCameraState, updateFreeCamera, computeFreeCameraViewMatrix } from '../../utils/cameraUtils';
 import { Bookmark, bookmarkService } from '@/src/services/bookmarkService';
@@ -26,6 +27,7 @@ import { RenderStatistics } from '@/src/types/renderStatistics';
 import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
+import { getFileName } from '../../utils/helpers';
 import { PlayerState } from 'quake2ts/shared';
 import { GameHUD } from '../GameHUD';
 import '../../styles/md2Viewer.css';
@@ -116,6 +118,7 @@ export function UniversalViewer({
     }
   }, [filePath]);
   const [showScreenshotSettings, setShowScreenshotSettings] = useState(false);
+  const [showMetadataEditor, setShowMetadataEditor] = useState(false);
   const [showVideoSettings, setShowVideoSettings] = useState(false);
   const [showLightingControls, setShowLightingControls] = useState(false);
   const [lightingOptions, setLightingOptions] = useState<LightingOptions>({
@@ -1051,6 +1054,7 @@ export function UniversalViewer({
             debugMode={debugMode}
             setDebugMode={setDebugMode}
             onScreenshot={() => setShowScreenshotSettings(true)}
+            onMetadata={filePath.toLowerCase().endsWith('.dm2') ? () => setShowMetadataEditor(true) : undefined}
             showStats={showStats}
             setShowStats={setShowStats}
             onStartRecording={handleStartRecording}
@@ -1088,6 +1092,15 @@ export function UniversalViewer({
             />
           </>
        )}
+       {showMetadataEditor && (
+        <DemoMetadataEditor
+          demoId={filePath}
+          filename={getFileName(filePath)}
+          duration={adapter?.getDemoController?.()?.getDuration?.()}
+          // Map name might be available from adapter or metadata service
+          onClose={() => setShowMetadataEditor(false)}
+        />
+      )}
      </div>
   );
 }
