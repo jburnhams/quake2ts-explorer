@@ -24,6 +24,7 @@
     "@uiw/react-color-colorful": "^2.9.2",
     "@wasm-audio-decoders/ogg-vorbis": "^0.1.20",
     "gl-matrix": "^3.4.4",
+    "html2canvas": "^1.4.1",
     "quake2ts": "0.0.503",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
@@ -38,6 +39,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
+    "@types/html2canvas": "^1.0.0",
     "@types/jest": "^29.5.14",
     "@types/node": "^24.9.2",
     "@types/react": "^19.2.2",

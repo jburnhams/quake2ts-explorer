@@ -134,6 +134,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
     };
   }, []);
 
+  const containerRef = useRef<HTMLDivElement>(null);
+
   const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
     if (!canvasRef.current || !glContext || !camera) return;
 
@@ -151,8 +153,16 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              // Temporarily resize
              const newWidth = canvas.clientWidth * window.devicePixelRatio * multiplier;
              const newHeight = canvas.clientHeight * window.devicePixelRatio * multiplier;
+
+             // Set buffer size
              canvas.width = newWidth;
              canvas.height = newHeight;
+
+             // IMPORTANT: Force CSS size to remain strictly same as original to prevent layout shift
+             // which could confuse html2canvas or cause flicker.
+             canvas.style.width = `${originalWidth / window.devicePixelRatio}px`;
+             canvas.style.height = `${originalHeight / window.devicePixelRatio}px`;
+
              gl.viewport(0, 0, newWidth, newHeight);
 
              // Update camera matrices
@@ -183,7 +193,8 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
              }
         }
 
-        const blob = await captureScreenshot(canvas, options);
+        const target = (options.includeHud && containerRef.current) ? containerRef.current : canvas;
+        const blob = await captureScreenshot(target, options);
         const ext = options.format === 'jpeg' ? 'jpg' : 'png';
         const filename = generateScreenshotFilename().replace('.png', `.${ext}`);
         downloadScreenshot(blob, filename);
@@ -192,10 +203,14 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
         console.error("Screenshot failed:", e);
         setError(`Screenshot failed: ${e instanceof Error ? e.message : String(e)}`);
     } finally {
-        // Restore original size
+        // Restore original size if we resized
         if (multiplier > 1) {
             canvas.width = originalWidth;
             canvas.height = originalHeight;
+            // Restore CSS (usually handled by CSS file or parent, but let's reset to be safe or empty to let auto work)
+            canvas.style.width = '100%';
+            canvas.style.height = '100%';
+
             gl.viewport(0, 0, originalWidth, originalHeight);
             camera.aspect = originalWidth / originalHeight;
             if ((camera as any).updateMatrices) (camera as any).updateMatrices();
@@ -873,7 +888,7 @@ export function UniversalViewer({ parsedFile, pakService, filePath = '', onClass
   }, [canvasRef, camera, glContext]);
 
   return (
-     <div className="md2-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>
+     <div ref={containerRef} className="md2-viewer" style={{ position: 'relative', width: '100%', height: '100%' }}>
        {error && (
          <div style={{ position: 'absolute', top: 10, left: 10, color: 'red', background: 'rgba(0,0,0,0.8)', padding: 10, zIndex: 100 }}>
             Error: {error}
