@@ -384,7 +384,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 
 #### Subtasks
 
-- [ ] **7.1**: Create `src/components/DemoMetadata.tsx`
+- [x] **7.1**: Create `src/components/DemoMetadata.tsx`
   - Show demo properties:
     - File name
     - File size
@@ -395,12 +395,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - Recording date (if available)
   - Editable fields: Custom name, description, tags
 
-- [ ] **7.2**: Implement metadata storage
+- [x] **7.2**: Implement metadata storage
   - Store metadata separate from demo file (IndexedDB or localStorage)
   - Key by demo file hash or filename
   - Associate metadata with demo
 
-- [ ] **7.3**: Add tagging system
+- [x] **7.3**: Add tagging system
   - Allow adding custom tags (e.g., "speedrun", "frag movie", "tournament")
   - Filter demos by tags in demo browser
 

@@ -9,9 +9,10 @@ export interface ToolbarProps {
   viewMode: ViewMode;
   onViewModeChange: (mode: ViewMode) => void;
   onOpenEntityDatabase?: () => void;
+  onOpenPakManager?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase, onOpenPakManager }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -72,6 +73,15 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
           data-testid="add-pak-button"
         >
           Add PAK Files
+        </button>
+        <button
+            className="toolbar-button"
+            onClick={onOpenPakManager}
+            disabled={pakCount === 0}
+            data-testid="pak-manager-button"
+            title="Manage PAK Load Order"
+        >
+            Load Order
         </button>
         <div className="toolbar-separator" style={{ width: '1px', height: '20px', background: '#444', margin: '0 10px' }} />
         <label className="toolbar-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>

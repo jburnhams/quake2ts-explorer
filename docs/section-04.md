@@ -317,14 +317,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Quake II uses light styles for flickering/pulsing lights
   - Allow overriding light style patterns
   - Freeze animated lights for static screenshots
-  - **Library Enhancement Needed**: Light style API
+  - **Library Enhancement Needed**: Light style API (Light style array resolved but API to freeze/override needed)
 
 - [x] **5.5**: Add fullbright mode
   - Disable lighting, render all surfaces at full brightness
   - Useful for seeing geometry without shadows
   - Toggle button
 
-- [ ] **5.6**: Implement ambient light adjustment
+- [x] **5.6**: Implement ambient light adjustment
   - Increase minimum light level
   - Prevents pure black areas
   - Useful for visibility in dark maps

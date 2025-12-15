@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../services/pakService';
 import { ViewerAdapter, AnimationInfo, FrameInfo } from './UniversalViewer/adapters/types';
+import { DebugMode } from '../types/debugMode';
+import { ModelExportService } from '../services/modelExportService';
 import './ModelInspector.css';
 
 interface ModelInspectorProps {
@@ -16,6 +18,7 @@ export function ModelInspector({ parsedFile, pakService, filePath }: ModelInspec
   const [activeAnimation, setActiveAnimation] = useState<string | null>(null);
   const [frameInfo, setFrameInfo] = useState<FrameInfo>({ currentFrame: 0, totalFrames: 0, interpolatedFrame: 0 });
   const [isPlaying, setIsPlaying] = useState(true);
+  const [showSkeleton, setShowSkeleton] = useState(false);
 
   // Poll for frame info
   useEffect(() => {
@@ -67,6 +70,35 @@ export function ModelInspector({ parsedFile, pakService, filePath }: ModelInspec
     }
   };
 
+  const toggleSkeleton = () => {
+    if (adapter && adapter.setDebugMode) {
+      const newMode = !showSkeleton ? DebugMode.Skeleton : DebugMode.None;
+      adapter.setDebugMode(newMode);
+      setShowSkeleton(!showSkeleton);
+    }
+  };
+
+  const handleExport = () => {
+    try {
+      const frameToExport = Math.floor(frameInfo.interpolatedFrame);
+      const blob = ModelExportService.exportModel(parsedFile, frameToExport);
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        const name = filePath.split('/').pop()?.split('.')[0] || 'model';
+        a.download = `${name}_frame${frameToExport}.obj`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+    } catch (e) {
+      console.error('Failed to export model', e);
+      alert('Failed to export model');
+    }
+  };
+
   const handleScrub = (e: React.ChangeEvent<HTMLInputElement>) => {
     const frame = parseFloat(e.target.value);
     if (adapter && adapter.seekFrame) {
@@ -109,6 +141,14 @@ export function ModelInspector({ parsedFile, pakService, filePath }: ModelInspec
             onAdapterReady={handleAdapterReady}
             showControls={true}
           />
+          {parsedFile.type === 'md3' && (
+            <div className="model-inspector-overlays">
+              <label>
+                <input type="checkbox" checked={showSkeleton} onChange={toggleSkeleton} />
+                Show Skeleton
+              </label>
+            </div>
+          )}
         </div>
 
         <div className="model-inspector-info">
@@ -185,6 +225,7 @@ export function ModelInspector({ parsedFile, pakService, filePath }: ModelInspec
       <div className="model-inspector-timeline">
         <div className="model-inspector-controls">
           <button onClick={togglePlay}>{isPlaying ? 'Pause' : 'Play'}</button>
+          <button onClick={handleExport} title="Export current frame as OBJ">Export</button>
         </div>
         <div className="model-inspector-scrubber">
            <input

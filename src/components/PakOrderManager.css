@@ -1,0 +1,196 @@
+.pak-order-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.pak-order-modal {
+  background: #2a2a2a;
+  width: 800px;
+  max-width: 90vw;
+  height: 80vh;
+  border: 1px solid #444;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+}
+
+.pak-order-header {
+  padding: 16px;
+  background: #333;
+  border-bottom: 1px solid #444;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pak-order-header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #eee;
+}
+
+.pak-order-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.pak-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pak-item {
+  background: #3a3a3a;
+  border: 1px solid #555;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pak-item.dragging {
+  opacity: 0.5;
+  border-style: dashed;
+}
+
+.pak-item-header {
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: grab;
+  user-select: none;
+}
+
+.pak-item-header:active {
+  cursor: grabbing;
+}
+
+.drag-handle {
+  color: #888;
+  font-size: 20px;
+}
+
+.pak-info {
+  flex: 1;
+}
+
+.pak-name {
+  font-weight: bold;
+  color: #ddd;
+}
+
+.pak-meta {
+  font-size: 12px;
+  color: #aaa;
+  margin-top: 4px;
+}
+
+.pak-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.pak-action-btn {
+  background: #444;
+  border: 1px solid #666;
+  color: #eee;
+  padding: 4px 8px;
+  cursor: pointer;
+  border-radius: 2px;
+}
+
+.pak-action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pak-action-btn:hover:not(:disabled) {
+  background: #555;
+}
+
+.pak-file-list {
+  background: #222;
+  border-top: 1px solid #555;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 8px;
+  font-family: monospace;
+  font-size: 12px;
+}
+
+.file-item {
+  padding: 2px 4px;
+  color: #ccc;
+  display: flex;
+  justify-content: space-between;
+}
+
+.file-item.overridden {
+  color: #666;
+  text-decoration: line-through;
+}
+
+.overridden-tag {
+  color: #ff6b6b;
+  font-size: 10px;
+  margin-left: 8px;
+}
+
+.load-order-info {
+  background: #223;
+  border: 1px solid #446;
+  padding: 12px;
+  border-radius: 4px;
+  color: #ccc;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.pak-order-footer {
+  padding: 16px;
+  background: #333;
+  border-top: 1px solid #444;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.primary-button {
+  background: #4a9eff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.primary-button:hover {
+  background: #3a8eef;
+}
+
+.secondary-button {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid #666;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.secondary-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+}

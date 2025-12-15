@@ -39,6 +39,7 @@ interface ViewerControlsProps {
   isRecording?: boolean;
   recordingTime?: number;
   recordingSizeEstimate?: number;
+  onMetadata?: () => void;
 }
 
 export function ViewerControls({
@@ -72,7 +73,8 @@ export function ViewerControls({
   isRecording,
   recordingTime = 0,
   recordingSizeEstimate,
-  onLightingSettings
+  onLightingSettings,
+  onMetadata
 }: ViewerControlsProps & { onLightingSettings?: () => void }) {
 
   const formatTime = (seconds: number) => {
@@ -269,6 +271,11 @@ export function ViewerControls({
                   <button onClick={onLightingSettings} style={{ flex: '1 1 40%' }} title="Lighting Settings">
                       💡 Light
                   </button>
+              )}
+              {onMetadata && (
+                <button onClick={onMetadata} style={{ flex: '1 1 40%' }} title="Edit Metadata">
+                    📝 Metadata
+                </button>
               )}
               {onStartRecording && onStopRecording && (
                 <button

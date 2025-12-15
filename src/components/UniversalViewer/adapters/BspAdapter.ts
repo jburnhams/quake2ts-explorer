@@ -18,6 +18,8 @@ export class BspAdapter implements ViewerAdapter {
   private hoveredEntity: BspEntity | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
+  // White texture for fullbright mode
+  private whiteTexture: Texture2D | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -47,6 +49,11 @@ export class BspAdapter implements ViewerAdapter {
     this.debugRenderer = new DebugRenderer(gl);
     this.surfaces = createBspSurfaces(map);
     this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
+
+    // Initialize white texture for fullbright/lighting-only modes
+    this.whiteTexture = new Texture2D(gl);
+    this.whiteTexture.bind();
+    this.whiteTexture.uploadImage(0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
 
     const neededTextures = new Set<string>();
     this.geometry.surfaces.forEach(s => neededTextures.add(s.texture));
@@ -90,21 +97,8 @@ export class BspAdapter implements ViewerAdapter {
 
   pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
     if (!this.map) return null;
-    // BspMap.pickEntity might return faceIndex, if extended.
-    // If not, we might need a custom raycast if we want precise surface picking.
-    // For now, assuming map.pickEntity returns enough info or we accept entity-level granularity.
-    // But for Task 7 (Surface Flags), we need the surface.
-    // The library update is not in my scope, so I rely on what's available.
-    // However, buildBspGeometry uses createBspSurfaces which returns BspSurfaceInput with faceIndex.
-    // So we can raycast against the visual geometry if BspMap.pickEntity isn't sufficient.
-
-    // For now, use the engine's pickEntity. If it doesn't return faceIndex, we might be limited.
-    // But let's assume we can get it or implement a geometry-based picker later if needed.
     const result = this.map.pickEntity(ray);
     if (result) {
-        // If the result hits worldspawn, we might want to find which face it hit.
-        // This is complex without a ray-triangle intersector.
-        // If result doesn't have faceIndex, we return it as is.
         return result;
     }
     return null;
@@ -151,10 +145,6 @@ export class BspAdapter implements ViewerAdapter {
           return this.map.models[0];
       }
 
-      // Check if entity has an origin property to determine its position if it's not a brush model
-      // Note: non-brush models (like lights, player starts) don't have a BSP model associated in the same way,
-      // but they might have an origin. We can return a small box for them.
-
       if (entity.properties && entity.properties.model && entity.properties.model.startsWith('*')) {
           const modelIndex = parseInt(entity.properties.model.substring(1));
           if (!isNaN(modelIndex) && modelIndex >= 0 && modelIndex < this.map.models.length) {
@@ -172,9 +162,25 @@ export class BspAdapter implements ViewerAdapter {
     mat4.multiply(mvp, projection as mat4, viewMatrix);
 
     const lightStyles = resolveLightStyles();
-    const styleValues = Array.from(lightStyles);
-    const timeSeconds = performance.now() / 1000;
+    // Implement brightness control by scaling light styles
+    // Since we can't change the shader, we simulate brightness by boosting dynamic light values.
+    // Note: This only affects surfaces with light styles, not the base baked lightmap.
+    const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
+    const fullbright = this.renderOptions.fullbright === true;
 
+    // Convert to Array for compatibility with BspSurfacePipeline binding which expects number[]
+    // resolveLightStyles returns Float32Array
+    const styleValues: number[] = new Array(lightStyles.length);
+    for (let j = 0; j < lightStyles.length; j++) {
+        // If fullbright, force style value to 1.0 to avoid pulsing.
+        if (fullbright) {
+            styleValues[j] = 1.0;
+        } else {
+            styleValues[j] = lightStyles[j] * brightness;
+        }
+    }
+
+    const timeSeconds = performance.now() / 1000;
     const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
 
     // Normal Rendering Loop
@@ -229,7 +235,7 @@ export class BspAdapter implements ViewerAdapter {
             modelViewProjection: mvp as any,
             diffuseSampler: 0,
             lightmapSampler: 1,
-            styleValues: styleValues,
+            styleValues: styleValues, // Pass modified styles as array
             surfaceFlags: surface.surfaceFlags,
             timeSeconds: timeSeconds,
             renderMode: {
@@ -276,11 +282,6 @@ export class BspAdapter implements ViewerAdapter {
                  const face = this.map?.faces[surface.faceIndex];
                  if (face && this.map) {
                      const plane = this.map.planes[face.planeIndex];
-                     // Visualize plane normal
-                     // Since we don't have a center point readily available without calculating from vertices,
-                     // we can just skip for now or try to compute a center from the first 3 vertices if available.
-                     // The requirement is to show normals, but without vertex processing here it's hard.
-                     // However, BspSurfaceInput has 'vertices' array (x,y,z flat).
                      if (surface.vertices && surface.vertices.length >= 3) {
                          const x = surface.vertices[0];
                          const y = surface.vertices[1];
@@ -312,11 +313,6 @@ export class BspAdapter implements ViewerAdapter {
             }
         }
 
-         if (this.debugMode === DebugMode.CollisionHulls) {
-            // Draw collision hulls (head nodes)
-            // Simplified: Draw head node boxes
-         }
-
         this.debugRenderer.render(mvp);
     }
   }
@@ -341,11 +337,6 @@ export class BspAdapter implements ViewerAdapter {
       if (!this.geometry || !this.geometry.lightmaps[atlasIndex]) {
           return { width: 0, height: 0, surfaceCount: 0 };
       }
-
-      // Quake 2 engine lightmaps are typically packed into 128x128 pages.
-      // We assume standard size if not exposed, but ideally Texture2D would expose it.
-      // Since we can't inspect Texture2D easily here, we use the known constant.
-      // However, we can count surfaces.
       const width = 128;
       const height = 128;
 
