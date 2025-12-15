@@ -280,14 +280,14 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **5.1**: Create `src/services/saveService.ts`
+- [x] **5.1**: Create `src/services/saveService.ts`
   - Export `saveGame(slot: number, name: string): Promise<void>`
   - Export `loadGame(slot: number): Promise<SavedGame>`
   - Export `listSaves(): SavedGame[]`
   - Export `deleteSave(slot: number): void`
   - Use `localStorage` for save data (or IndexedDB for larger saves)
 
-- [ ] **5.2**: Define save data format
+- [x] **5.2**: Define save data format
   - Create interface `SavedGame`:
     - `slot: number`
     - `name: string`
@@ -297,13 +297,13 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
     - `gameState: SerializedGameState` (from library if available, else custom)
     - `screenshot?: string` (base64 thumbnail)
 
-- [ ] **5.3**: Implement save game
+- [x] **5.3**: Implement save game
   - Capture current game snapshot
   - Serialize to JSON
   - Store in localStorage with key `quake2ts-save-${slot}`
   - Capture canvas screenshot for thumbnail
 
-- [ ] **5.4**: Implement load game
+- [x] **5.4**: Implement load game
   - Read save data from localStorage
   - Deserialize JSON
   - Restore game state via `gameService.loadState(savedGame.gameState)`
