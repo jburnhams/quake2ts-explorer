@@ -147,13 +147,13 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **3.1**: Create `src/services/inputService.ts`
+- [x] **3.1**: Create `src/services/inputService.ts`
   - Import `InputController, KeyBindings` from `@quake2ts/client`
   - Export `initInputController(bindings?: KeyBindings): void`
   - Export `generateUserCommand(deltaMs: number): UserCommand`
   - Store active keys, mouse movement, button states
 
-- [ ] **3.2**: Define default key bindings
+- [x] **3.2**: Define default key bindings
   - Create `src/config/defaultBindings.ts`
   - Export `DEFAULT_BINDINGS: KeyBindings`
     - Movement: W/A/S/D, Space (jump), Ctrl (crouch)
@@ -162,7 +162,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
     - Weapons: 1-9 (weapon select), Q/E (next/prev)
   - Support rebinding via settings (Section 08)
 
-- [ ] **3.3**: Implement input handlers
+- [x] **3.3**: Implement input handlers
   - Create `handleKeyDown(event: KeyboardEvent): void`
     - Prevent default for game keys
     - Update active keys set
@@ -174,7 +174,7 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Create `handleMouseDown/Up(event: MouseEvent): void`
     - Track button states
 
-- [ ] **3.4**: Generate UserCommand from input state
+- [x] **3.4**: Generate UserCommand from input state
   - Implement `generateUserCommand(deltaMs: number): UserCommand`
     - Map active keys to `forwardmove`, `sidemove`, `upmove` (-400 to 400)
     - Map mouse delta to `angles` (pitch/yaw)
@@ -182,11 +182,11 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
     - Set `msec` to deltaMs
     - Clear accumulated mouse delta after generation
 
-- [ ] **3.5**: Integrate with game loop
+- [x] **3.5**: Integrate with game loop
   - Call `inputService.generateUserCommand(deltaMs)` in loop's `simulate` callback
   - Pass command to `gameService.tick(deltaMs, cmd)`
 
-- [ ] **3.6**: Handle input mode switching
+- [x] **3.6**: Handle input mode switching
   - Disable game input when in menu/console
   - Re-enable when returning to game
   - Pointer lock for mouse capture (request on game start)
@@ -215,19 +215,19 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **4.1**: Create `src/components/GameHUD.tsx`
+- [x] **4.1**: Create `src/components/GameHUD.tsx`
   - Accept `playerState: PlayerState` prop
   - Render as overlay on top of 3D canvas
   - Use absolute positioning with pointer-events: none (except interactive elements)
 
-- [ ] **4.2**: Implement HUD layout
+- [x] **4.2**: Implement HUD layout
   - Bottom-left: Health, Armor
   - Bottom-right: Ammo, Weapon
   - Bottom-center: Pickup messages, obituaries
   - Top-center: Objectives, timer (if applicable)
   - Center: Crosshair (small dot, changes color when over target)
 
-- [ ] **4.3**: Extract stats from PlayerState
+- [x] **4.3**: Extract stats from PlayerState
   - Health: `playerState.stats[STAT_HEALTH]`
   - Armor: `playerState.stats[STAT_ARMOR]`
   - Ammo: `playerState.stats[STAT_AMMO]`
@@ -235,23 +235,23 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Inventory items: `playerState.stats[STAT_*]`
   - Reference protocol constants from `@quake2ts/shared`
 
-- [ ] **4.4**: Render weapon icons
+- [x] **4.4**: Render weapon icons
   - Load weapon icons from PAK (pics/w_*.pcx)
   - Display current weapon icon
   - Highlight selected weapon in weapon wheel (if implemented)
 
-- [ ] **4.5**: Implement damage/pickup flash effects
+- [x] **4.5**: Implement damage/pickup flash effects
   - Detect health/armor changes
   - Flash red on damage (screen blend)
   - Flash green/blue on pickup
   - Use CSS animations or canvas overlay
 
-- [ ] **4.6**: Center print messages
+- [x] **4.6**: Center print messages
   - Display centerprint messages from `PlayerState.centerprint` (if available)
   - Auto-dismiss after timeout
   - Support multi-line text
 
-- [ ] **4.7**: Death screen
+- [x] **4.7**: Death screen
   - Detect `playerState.stats[STAT_HEALTH] <= 0`
   - Display death overlay with respawn button
   - Show death reason (if available from game events)

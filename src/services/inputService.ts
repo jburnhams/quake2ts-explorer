@@ -1,4 +1,4 @@
-
+// Task 3: Input Controller Implementation
 import { InputController, InputBindings } from 'quake2ts/client';
 import { UserCommand } from 'quake2ts/shared';
 import { DEFAULT_BINDINGS, KeyBindingEntry } from '@/src/config/defaultBindings';
