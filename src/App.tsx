@@ -8,6 +8,7 @@ import { ResizablePanel } from './components/ResizablePanel';
 import { EntityLegend } from './components/EntityLegend';
 import { EntityMetadata } from './components/EntityMetadata';
 import { EntityDatabase } from './components/EntityDatabase';
+import { PakOrderManager } from './components/PakOrderManager';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import './App.css';
 
@@ -37,6 +38,7 @@ function App() {
   const [hiddenClassnames, setHiddenClassnames] = useState<Set<string>>(new Set());
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
   const [showEntityDb, setShowEntityDb] = useState(false);
+  const [showPakManager, setShowPakManager] = useState(false);
 
   // Reset when file changes
   useEffect(() => {
@@ -69,7 +71,14 @@ function App() {
           viewMode={viewMode}
           onViewModeChange={setViewMode}
           onOpenEntityDatabase={() => setShowEntityDb(true)}
+          onOpenPakManager={() => setShowPakManager(true)}
         />
+        {showPakManager && (
+          <PakOrderManager
+            pakService={pakService}
+            onClose={() => setShowPakManager(false)}
+          />
+        )}
         {error && (
           <div className="error-banner" data-testid="error-banner">
             {error}

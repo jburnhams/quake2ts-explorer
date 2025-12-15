@@ -109,7 +109,7 @@ Enable loading and running Quake II mods (modifications) and custom content. Mod
   - **Library Enhancement Needed**: VirtualFileSystem priority support
     - If not available, implement wrapper service
 
-- [ ] **2.3**: Add explicit PAK ordering UI
+- [x] **2.3**: Add explicit PAK ordering UI
   - Create `src/components/PakOrderManager.tsx`
   - List all mounted PAKs with drag-to-reorder
   - Show which files each PAK provides
