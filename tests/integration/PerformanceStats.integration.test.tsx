@@ -18,6 +18,8 @@ jest.mock('@/src/services/performanceService', () => ({
       reset: jest.fn(),
     }),
     now: () => 1000,
+    startMeasure: jest.fn(),
+    endMeasure: jest.fn(),
   },
 }));
 
