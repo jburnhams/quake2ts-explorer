@@ -33,6 +33,14 @@ export interface FrameInfo {
   interpolatedFrame: number;
 }
 
+export interface GizmoState {
+    visible: boolean;
+    position: vec3 | null;
+    hoveredAxis: 'x' | 'y' | 'z' | 'none';
+    activeAxis: 'x' | 'y' | 'z' | 'none';
+    mode: 'translate' | 'rotate' | 'scale';
+}
+
 export interface ViewerAdapter {
   load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void>;
   update(deltaTime: number): void;
@@ -73,6 +81,10 @@ export interface ViewerAdapter {
   // Picking
   pickEntity?(ray: Ray): any;
   setHoveredEntity?(entity: any): void;
+  setSelectedEntityIndices?(indices: Set<number>): void;
+
+  // Gizmo
+  setGizmoState?(state: GizmoState): void;
 
   // Debugging
   setDebugMode?(mode: DebugMode): void;

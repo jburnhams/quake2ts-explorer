@@ -1,6 +1,6 @@
 import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity, findLeafForPoint } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter, Ray } from './types';
+import { RenderOptions, ViewerAdapter, Ray, GizmoState } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
@@ -17,6 +17,8 @@ export class BspAdapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
   private hoveredEntity: BspEntity | null = null;
+  private selectedEntityIndices: Set<number> = new Set();
+  private gizmoState: GizmoState = { visible: false, position: null, hoveredAxis: 'none', activeAxis: 'none', mode: 'translate' };
   private highlightedLightmapIndex: number | null = null;
   private activeSurfaceFlagFilter: string | null = null;
   private debugMode: DebugMode = DebugMode.None;
@@ -96,11 +98,14 @@ export class BspAdapter implements ViewerAdapter {
     // Static map
   }
 
-  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
+  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number; entityIndex?: number } | null {
     if (!this.map) return null;
     const result = this.map.pickEntity(ray);
     if (result) {
-        return result;
+        // Find index of entity in the list
+        const entities = this.map.entities.entities;
+        const index = entities.indexOf(result.entity);
+        return { ...result, entityIndex: index };
     }
     return null;
   }
@@ -135,6 +140,14 @@ export class BspAdapter implements ViewerAdapter {
       this.hoveredEntity = entity;
   }
 
+  setSelectedEntityIndices(indices: Set<number>) {
+      this.selectedEntityIndices = indices;
+  }
+
+  setGizmoState(state: GizmoState) {
+      this.gizmoState = state;
+  }
+  
   highlightLightmapSurfaces(atlasIndex: number) {
       this.highlightedLightmapIndex = atlasIndex;
   }
@@ -193,18 +206,42 @@ export class BspAdapter implements ViewerAdapter {
     const timeSeconds = performance.now() / 1000;
     const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
 
+    // Determine selected models for highlighting surfaces
+    const selectedModels = new Set<any>();
+    if (this.selectedEntityIndices.size > 0 && this.map) {
+        this.selectedEntityIndices.forEach(idx => {
+            const ent = this.map!.entities.entities[idx];
+            if (ent) {
+                const model = this.getModelFromEntity(ent);
+                if (model) selectedModels.add(model);
+            }
+        });
+    }
+
     // Normal Rendering Loop
     for (let i = 0; i < this.geometry.surfaces.length; i++) {
         const surface = this.geometry.surfaces[i];
         const inputSurface = this.surfaces[i];
 
         let isHighlighted = false;
+        let isSelected = false;
+
         if (hoveredModel) {
              if (inputSurface.faceIndex >= hoveredModel.firstFace && inputSurface.faceIndex < hoveredModel.firstFace + hoveredModel.numFaces) {
                  isHighlighted = true;
              }
         }
 
+        // Check selection
+        if (!isHighlighted && selectedModels.size > 0) {
+            for(const model of selectedModels) {
+                if (inputSurface.faceIndex >= model.firstFace && inputSurface.faceIndex < model.firstFace + model.numFaces) {
+                    isSelected = true;
+                    break;
+                }
+            }
+        }
+      
         if (this.highlightedLightmapIndex !== null) {
             if (surface.lightmap && surface.lightmap.atlasIndex === this.highlightedLightmapIndex) {
                  isHighlighted = true;
@@ -245,29 +282,37 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         // Lighting Control: Brightness
-        // We use the 'color' uniform to apply brightness scaling.
-        // Default color is [1,1,1]. We scale by renderOptions.brightness.
         const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
         const baseColor = this.renderOptions.color;
-        const scaledColor: [number, number, number, number] = [
-            baseColor[0] * brightness,
-            baseColor[1] * brightness,
-            baseColor[2] * brightness,
-            1.0
-        ];
+
+        // Selection color override
+        let finalColor: [number, number, number, number];
+
+        if (isHighlighted) {
+            finalColor = [1.0, 0.0, 0.0, 1.0];
+        } else if (isSelected) {
+            finalColor = [1.0, 0.5, 0.0, 1.0]; // Orange for selection
+        } else {
+            finalColor = [
+                baseColor[0] * brightness,
+                baseColor[1] * brightness,
+                baseColor[2] * brightness,
+                1.0
+            ];
+        }
 
         const state = this.pipeline.bind({
             modelViewProjection: mvp as any,
             diffuseSampler: 0,
             lightmapSampler: 1,
-            styleValues: styleValues, // Pass modified styles as array
+            styleValues: styleValues,
             surfaceFlags: surface.surfaceFlags,
             timeSeconds: timeSeconds,
             renderMode: {
-                mode: isHighlighted ? 'solid' : this.renderOptions.mode,
-                color: isHighlighted ? [1.0, 0.0, 0.0, 1.0] : scaledColor,
+                mode: (isHighlighted || isSelected) ? 'solid' : this.renderOptions.mode,
+                color: finalColor,
                 applyToAll: true,
-                generateRandomColor: isHighlighted ? false : this.renderOptions.generateRandomColor,
+                generateRandomColor: (isHighlighted || isSelected) ? false : this.renderOptions.generateRandomColor,
             }
         });
 
@@ -278,25 +323,91 @@ export class BspAdapter implements ViewerAdapter {
         gl.drawElements(drawMode, surface.indexCount, gl.UNSIGNED_SHORT, 0);
     }
 
-    // Debug Rendering
-    if (this.debugMode !== DebugMode.None && this.debugRenderer && this.map) {
+    // Debug Rendering (and Editor overlays)
+    if (this.debugRenderer && this.map) {
         this.debugRenderer.clear();
 
+        // Draw selection boxes for ALL selected entities
+        if (this.selectedEntityIndices.size > 0) {
+            this.selectedEntityIndices.forEach(idx => {
+                const entity = this.map!.entities.entities[idx];
+                if (!entity) return;
+
+                const model = this.getModelFromEntity(entity);
+                if (model) {
+                     this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(1, 0.5, 0, 1)); // Orange box
+                } else if (entity.properties && entity.properties.origin) {
+                    const parts = entity.properties.origin.split(' ').map(parseFloat);
+                    if (parts.length === 3 && !parts.some(isNaN)) {
+                        const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                        const size = 20;
+                        const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
+                        const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
+                        this.debugRenderer?.addBox(min, max, vec4.fromValues(1, 0.5, 0, 1));
+                    }
+                }
+            });
+        }
+
+        // Draw Gizmo
+        if (this.gizmoState.visible && this.gizmoState.position) {
+            const pos = this.gizmoState.position;
+            const length = 50;
+            const arrowSize = 8;
+
+            // X Axis (Red)
+            const xEnd = vec3.fromValues(pos[0] + length, pos[1], pos[2]);
+            const xColor = (this.gizmoState.hoveredAxis === 'x' || this.gizmoState.activeAxis === 'x')
+                          ? vec4.fromValues(1, 1, 1, 1) : vec4.fromValues(1, 0, 0, 1);
+            this.debugRenderer.addLine(pos, xEnd, xColor);
+
+            // Y Axis (Green)
+            const yEnd = vec3.fromValues(pos[0], pos[1] + length, pos[2]);
+            const yColor = (this.gizmoState.hoveredAxis === 'y' || this.gizmoState.activeAxis === 'y')
+                          ? vec4.fromValues(1, 1, 1, 1) : vec4.fromValues(0, 1, 0, 1);
+            this.debugRenderer.addLine(pos, yEnd, yColor);
+
+            // Z Axis (Blue)
+            const zEnd = vec3.fromValues(pos[0], pos[1], pos[2] + length);
+            const zColor = (this.gizmoState.hoveredAxis === 'z' || this.gizmoState.activeAxis === 'z')
+                          ? vec4.fromValues(1, 1, 1, 1) : vec4.fromValues(0, 0, 1, 1);
+            this.debugRenderer.addLine(pos, zEnd, zColor);
+
+            // TODO: Draw arrow heads using small lines or boxes?
+            // DebugRenderer only supports lines and boxes.
+            // Box at tip
+            const tipSize = 4;
+            this.debugRenderer.addBox(
+                vec3.fromValues(xEnd[0]-tipSize, xEnd[1]-tipSize, xEnd[2]-tipSize),
+                vec3.fromValues(xEnd[0]+tipSize, xEnd[1]+tipSize, xEnd[2]+tipSize),
+                xColor
+            );
+             this.debugRenderer.addBox(
+                vec3.fromValues(yEnd[0]-tipSize, yEnd[1]-tipSize, yEnd[2]-tipSize),
+                vec3.fromValues(yEnd[0]+tipSize, yEnd[1]+tipSize, yEnd[2]+tipSize),
+                yColor
+            );
+             this.debugRenderer.addBox(
+                vec3.fromValues(zEnd[0]-tipSize, zEnd[1]-tipSize, zEnd[2]-tipSize),
+                vec3.fromValues(zEnd[0]+tipSize, zEnd[1]+tipSize, zEnd[2]+tipSize),
+                zColor
+            );
+        }
+
         if (this.debugMode === DebugMode.BoundingBoxes) {
-            this.map.entities.entities.forEach(entity => {
+             // ... existing bounding box code ...
+             this.map.entities.entities.forEach(entity => {
                 const model = this.getModelFromEntity(entity);
                 if (model) {
                     this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
                 } else if (entity.properties && entity.properties.origin) {
-                    // For point entities without a brush model, draw a small box at origin
-                    // Origin string format "x y z"
                     const parts = entity.properties.origin.split(' ').map(parseFloat);
                     if (parts.length === 3 && !parts.some(isNaN)) {
                         const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
                         const size = 16;
                         const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
                         const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
-                        this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1)); // Green for point entities
+                        this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1));
                     }
                 }
             });
@@ -322,14 +433,12 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         if (this.debugMode === DebugMode.PVSClusters) {
-            // Visualize visible clusters from camera position
             const camPos = camera.position;
             if (camPos) {
                  const leafIndex = findLeafForPoint(this.map, camPos as any);
                  if (leafIndex >= 0 && leafIndex < this.map.leafs.length) {
                      const leaf = this.map.leafs[leafIndex];
                      if (leaf && leaf.cluster !== -1) {
-                         // Draw the current leaf box
                          const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
                          const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
                          this.debugRenderer.addBox(min, max, vec4.fromValues(1, 1, 0, 1));
@@ -347,7 +456,6 @@ export class BspAdapter implements ViewerAdapter {
       // t.dispose()?
     });
     this.textures.clear();
-    // this.whiteTexture = null; // Can't dispose easily if no dispose method, but let GC handle it
   }
 
   getUniqueClassnames(): string[] {

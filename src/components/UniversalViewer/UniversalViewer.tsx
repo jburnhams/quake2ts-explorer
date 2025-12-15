@@ -30,6 +30,8 @@ import { ScreenshotOptions } from '@/src/services/screenshotService';
 import { getFileName } from '../../utils/helpers';
 import { PlayerState } from 'quake2ts/shared';
 import { GameHUD } from '../GameHUD';
+import { TransformGizmo } from '../TransformGizmo';
+import { entityEditorService } from '@/src/services/entityEditorService';
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -89,6 +91,9 @@ export function UniversalViewer({
   const [minFps, setMinFps] = useState(0);
   const [maxFps, setMaxFps] = useState(0);
   const [perfHistory, setPerfHistory] = useState<{ fps: number; frameTime: number }[]>([]);
+
+  // Current view matrix (updated every frame in loop) - USE REF to avoid re-renders
+  const viewMatrixRef = useRef<mat4>(mat4.create());
 
   const [orbit, setOrbit] = useState<OrbitState>({
     radius: 200,
@@ -547,7 +552,14 @@ export function UniversalViewer({
              switch (parsedFile.type) {
                  case 'md2': newAdapter = new Md2Adapter(); break;
                  case 'md3': newAdapter = new Md3Adapter(); break;
-                 case 'bsp': newAdapter = new BspAdapter(); break;
+                 case 'bsp': {
+                     newAdapter = new BspAdapter();
+                     // Load entities into editor service
+                     if (fileTreeHasMap(parsedFile)) {
+                        entityEditorService.loadEntities(parsedFile.map);
+                     }
+                     break;
+                 }
                  case 'dm2': newAdapter = new Dm2Adapter(); break;
                  default: throw new Error(`Unsupported file type: ${(parsedFile as any).type}`);
              }
@@ -609,6 +621,26 @@ export function UniversalViewer({
          setAdapter(null);
      };
   }, [parsedFile, glContext, pakService]);
+
+  // Helper for type check
+  const fileTreeHasMap = (f: ParsedFile): f is (ParsedFile & { type: 'bsp', map: any }) => {
+      return f.type === 'bsp' && !!(f as any).map;
+  }
+
+  // Subscribe adapter to editor service
+  useEffect(() => {
+     if (adapter && (adapter as any).setSelectedEntityIndices) {
+         const updateSelection = () => {
+             const selected = entityEditorService.getSelectedEntities();
+             const indices = new Set(selected.map(e => e.id));
+             (adapter as any).setSelectedEntityIndices(indices);
+         };
+
+         const unsubscribe = entityEditorService.subscribe(updateSelection);
+         updateSelection();
+         return unsubscribe;
+     }
+  }, [adapter]);
 
 
   const freeCameraRef = useRef<FreeCameraState>(freeCamera);
@@ -771,6 +803,18 @@ export function UniversalViewer({
         if (onEntitySelected) {
             onEntitySelected(result ? result.entity : null);
         }
+
+        // Editor Selection Logic
+        // We do this if parsedFile is BSP for now, or if we have an "Editor Mode" toggle.
+        // For now, let's enable it for BSPs implicitly if we are in free camera mode?
+        // Or better, check if we found an entityIndex.
+        if (result && (result as any).entityIndex !== undefined) {
+            const index = (result as any).entityIndex;
+            entityEditorService.select(index, e.ctrlKey ? 'multi' : 'single');
+        } else if (!result) {
+            // Clicked void -> deselect
+            entityEditorService.deselectAll();
+        }
     };
 
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -780,7 +824,7 @@ export function UniversalViewer({
         canvas.removeEventListener('mousemove', handleMouseMove);
         canvas.removeEventListener('click', handleClick);
     };
-  }, [adapter, camera, cameraMode, onEntitySelected]);
+  }, [adapter, camera, cameraMode, onEntitySelected, parsedFile]);
 
   useEffect(() => {
       if (adapter && adapter.setHoveredEntity) {
@@ -883,6 +927,9 @@ export function UniversalViewer({
                     }
                }
           }
+
+          // Update View Matrix Ref directly
+          mat4.copy(viewMatrixRef.current, viewMatrix);
 
           gl.clearColor(0.15, 0.15, 0.2, 1.0);
           gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -1043,6 +1090,13 @@ export function UniversalViewer({
                pakService={pakService}
            />
          )}
+
+         <TransformGizmo
+             adapter={adapter}
+             camera={camera}
+             viewMatrixRef={viewMatrixRef}
+             canvas={canvasRef.current}
+         />
        </div>
        {showControls && (
          <ViewerControls
