@@ -546,7 +546,10 @@ export function UniversalViewer({
              }
 
              if (newAdapter) {
+                 performanceService.startMeasure('asset-load');
                  await newAdapter.load(gl, parsedFile, pakService, filePath);
+                 performanceService.endMeasure('asset-load');
+
                  setAdapter(newAdapter);
                  if (onAdapterReady) {
                      onAdapterReady(newAdapter);
@@ -805,9 +808,11 @@ export function UniversalViewer({
           if (isPlaying && adapter.play && !adapter.isPlaying?.()) adapter.play();
           else if (!isPlaying && adapter.pause && adapter.isPlaying?.()) adapter.pause();
 
+          performanceService.startMeasure('simulation');
           const simStart = performance.now();
           adapter.update(delta);
           const simEnd = performance.now();
+          performanceService.endMeasure('simulation');
           const simTime = simEnd - simStart;
 
           // Camera Logic
@@ -877,9 +882,11 @@ export function UniversalViewer({
           gl.enable(gl.DEPTH_TEST);
           gl.enable(gl.CULL_FACE);
 
+          performanceService.startMeasure('render');
           const renderStart = performance.now();
           adapter.render(gl, camera, viewMatrix);
           const renderEnd = performance.now();
+          performanceService.endMeasure('render');
           const renderTime = renderEnd - renderStart;
 
           // Collect stats if enabled

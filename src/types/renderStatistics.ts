@@ -6,6 +6,7 @@ export interface RenderStatistics {
     cpuFrameTimeMs: number;
     simulationTimeMs?: number;
     renderTimeMs?: number;
+    assetLoadTimeMs?: number;
 
     // Rendering metrics
     drawCalls: number;

@@ -42,6 +42,12 @@ if (!global.crypto.getRandomValues) {
     };
 }
 
+// Ensure performance API is initialized
+if (typeof performance === 'undefined') {
+    // @ts-ignore
+    global.performance = {};
+}
+
 // Mock DataTransfer for drag-and-drop tests
 class MockDataTransfer {
   private _files: File[] = [];
@@ -71,7 +77,7 @@ class MockDataTransfer {
 }
 global.DataTransfer = MockDataTransfer as any;
 
-// Mock window.matchMedia for components that use responsive design
+// Mock window.matchMedia
 const installMatchMedia = () => {
   Object.defineProperty(window, 'matchMedia', {
     writable: true,
@@ -90,7 +96,7 @@ const installMatchMedia = () => {
 
 installMatchMedia();
 
-// Mock canvas context for PreviewPanel tests
+// Mock canvas context
 HTMLCanvasElement.prototype.getContext = function (contextId: string) {
   if (contextId === '2d') {
     return {
@@ -168,7 +174,6 @@ if (typeof global.indexedDB === 'undefined') {
     },
   };
 
-  // Define on both global and window to be safe
   Object.defineProperty(global, 'indexedDB', {
     value: mockIndexedDB,
     writable: true
@@ -181,6 +186,39 @@ if (typeof global.indexedDB === 'undefined') {
   }
 }
 
+// Helper to install performance mocks safely
+const installPerformanceMocks = () => {
+    const p = global.performance || (typeof window !== 'undefined' ? window.performance : null);
+    if (!p) return;
+
+    // Use defineProperty to overwrite potentially read-only properties in JSDOM
+    try {
+        if (!p.mark || jest.isMockFunction(p.mark) === false) {
+             Object.defineProperty(p, 'mark', { value: jest.fn(), writable: true, configurable: true });
+        }
+        if (!p.measure || jest.isMockFunction(p.measure) === false) {
+             Object.defineProperty(p, 'measure', { value: jest.fn(), writable: true, configurable: true });
+        }
+        if (!p.getEntriesByName || jest.isMockFunction(p.getEntriesByName) === false) {
+             Object.defineProperty(p, 'getEntriesByName', { value: jest.fn(() => []), writable: true, configurable: true });
+        }
+        if (!p.now || jest.isMockFunction(p.now) === false) {
+             Object.defineProperty(p, 'now', { value: jest.fn(() => Date.now()), writable: true, configurable: true });
+        }
+        if (!p.clearMarks || jest.isMockFunction(p.clearMarks) === false) {
+             Object.defineProperty(p, 'clearMarks', { value: jest.fn(), writable: true, configurable: true });
+        }
+        if (!p.clearMeasures || jest.isMockFunction(p.clearMeasures) === false) {
+             Object.defineProperty(p, 'clearMeasures', { value: jest.fn(), writable: true, configurable: true });
+        }
+    } catch (e) {
+        console.warn('Failed to patch performance object:', e);
+    }
+};
+
+// Initial install
+installPerformanceMocks();
+
 // Cleanup after each test
 afterEach(() => {
   cleanup();
@@ -189,4 +227,14 @@ afterEach(() => {
 beforeEach(() => {
   installMatchMedia();
   (global.fetch as jest.Mock).mockClear();
+
+  // Re-install/Verify performance mocks before each test
+  // This helps when fake timers reset the environment
+  installPerformanceMocks();
+
+  const p = global.performance || (typeof window !== 'undefined' ? window.performance : null);
+  if (p) {
+      if (p.mark) (p.mark as jest.Mock).mockClear();
+      if (p.measure) (p.measure as jest.Mock).mockClear();
+  }
 });

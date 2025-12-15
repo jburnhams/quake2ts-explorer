@@ -97,6 +97,12 @@ export const PerformanceStats: React.FC<PerformanceStatsProps> = ({ fps, minFps,
                                 <span className="value">{stats.gpuTimeMs.toFixed(2)} ms</span>
                             </div>
                         )}
+                        {stats.assetLoadTimeMs !== undefined && (
+                            <div className="stats-row">
+                                <span className="label">Asset Load</span>
+                                <span className="value">{stats.assetLoadTimeMs.toFixed(2)} ms</span>
+                            </div>
+                        )}
                     </div>
 
                     {(stats.textureMemoryBytes !== undefined || stats.bufferMemoryBytes !== undefined) && (

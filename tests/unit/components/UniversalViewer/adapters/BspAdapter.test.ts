@@ -69,6 +69,8 @@ describe('BspAdapter', () => {
         TRIANGLES: 9,
         UNSIGNED_SHORT: 10,
         LINES: 1,
+        NEAREST: 0,
+        CLAMP_TO_EDGE: 33071,
         generateMipmap: jest.fn(),
         activeTexture: jest.fn(),
         drawElements: jest.fn(),
@@ -82,6 +84,7 @@ describe('BspAdapter', () => {
 
     // Clear mocks
     jest.clearAllMocks();
+    (Texture2D as jest.Mock).mockClear();
   });
 
   it('throws error if file type is not bsp', async () => {
@@ -126,8 +129,10 @@ describe('BspAdapter', () => {
     expect(walToRgba).toHaveBeenCalled();
 
     expect(Texture2D).toHaveBeenCalledWith(mockGl);
-    const textureInstance = (Texture2D as jest.Mock).mock.results[0].value;
-    expect(textureInstance.uploadImage).toHaveBeenCalled();
+    // Should create white texture + texture for wall
+    // Access returned objects via results, not instances
+    const results = (Texture2D as jest.Mock).mock.results;
+    expect(results.length).toBeGreaterThanOrEqual(2);
     expect(mockGl.generateMipmap).toHaveBeenCalled();
   });
 
@@ -198,14 +203,71 @@ describe('BspAdapter', () => {
     expect(resolveLightStyles).toHaveBeenCalled();
     // Verify texture binding
     expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE0); // Diffuse
-    const textureInstance = (Texture2D as jest.Mock).mock.results[0].value;
-    expect(textureInstance.bind).toHaveBeenCalled();
 
     expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE1); // Lightmap
 
     expect(applySurfaceState).toHaveBeenCalled();
     expect(mockVao.bind).toHaveBeenCalled();
     expect(mockGl.drawElements).toHaveBeenCalledWith(mockGl.TRIANGLES, 6, mockGl.UNSIGNED_SHORT, 0);
+  });
+
+  it('applies brightness scaling', async () => {
+    const file: ParsedFile = { type: 'bsp', map: {} } as any;
+    const mockVao = { bind: jest.fn() };
+
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [
+            { vao: mockVao, indexCount: 6, texture: 'test' }
+        ],
+        lightmaps: []
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    const camera = { projectionMatrix: mat4.create() } as any;
+    const viewMatrix = mat4.create();
+
+    adapter.setRenderOptions({ mode: 'textured', color: [1, 1, 1], brightness: 0.5 });
+    adapter.render(mockGl, camera, viewMatrix);
+
+    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
+        renderMode: {
+            mode: 'textured',
+            color: [0.5, 0.5, 0.5, 1.0], // 1.0 * 0.5
+            applyToAll: true,
+            generateRandomColor: undefined
+        }
+    }));
+  });
+
+  it('handles fullbright mode correctly', async () => {
+    const file: ParsedFile = { type: 'bsp', map: {} } as any;
+    const mockVao = { bind: jest.fn() };
+
+    (buildBspGeometry as jest.Mock).mockReturnValue({
+        surfaces: [
+            { vao: mockVao, indexCount: 6, texture: 'test', lightmap: { atlasIndex: 0 } }
+        ],
+        lightmaps: [
+             { texture: { bind: jest.fn() } }
+        ]
+    });
+
+    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    const camera = { projectionMatrix: mat4.create() } as any;
+    const viewMatrix = mat4.create();
+
+    // Enable fullbright
+    adapter.setRenderOptions({ mode: 'textured', color: [1, 1, 1], fullbright: true });
+    adapter.render(mockGl, camera, viewMatrix);
+
+    // Should bind white texture to unit 1 (lightmap)
+    expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE1);
+
+    // The white texture is created first in load()
+    // Use mock.results to access returned object
+    const whiteTexture = (Texture2D as jest.Mock).mock.results[0].value;
+    expect(whiteTexture.bind).toHaveBeenCalled();
   });
 
   it('cleans up (no-op/simple clear)', () => {

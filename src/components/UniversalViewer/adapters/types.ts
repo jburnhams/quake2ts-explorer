@@ -8,6 +8,11 @@ export interface RenderOptions {
   mode: 'textured' | 'wireframe' | 'solid' | 'solid-faceted';
   color: [number, number, number];
   generateRandomColor?: boolean;
+  // Lighting options
+  brightness?: number;
+  gamma?: number;
+  ambient?: number;
+  fullbright?: boolean;
 }
 
 export interface Ray {

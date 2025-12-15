@@ -9,6 +9,7 @@ export class BspAdapter implements ViewerAdapter {
   private pipeline: BspSurfacePipeline | null = null;
   private geometry: BspGeometryBuildResult | null = null;
   private textures: Map<string, Texture2D> = new Map();
+  private whiteTexture: Texture2D | null = null;
   private map: BspMap | null = null;
   private surfaces: BspSurfaceInput[] = [];
   private gl: WebGL2RenderingContext | null = null;
@@ -24,6 +25,17 @@ export class BspAdapter implements ViewerAdapter {
     } else {
         throw new Error('Invalid file type for BspAdapter');
     }
+
+    // Create 1x1 white texture for lightmap/fullbright fallback
+    this.whiteTexture = new Texture2D(gl);
+    this.whiteTexture.bind();
+    this.whiteTexture.uploadImage(0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
+    this.whiteTexture.setParameters({
+        minFilter: gl.NEAREST,
+        magFilter: gl.NEAREST,
+        wrapS: gl.CLAMP_TO_EDGE,
+        wrapT: gl.CLAMP_TO_EDGE
+    });
 
     await this.loadMap(gl, this.map, pakService);
   }
@@ -181,20 +193,37 @@ export class BspAdapter implements ViewerAdapter {
         if (texture && this.debugMode !== DebugMode.Lightmaps) {
             gl.activeTexture(gl.TEXTURE0);
             texture.bind();
-        } else if (this.debugMode === DebugMode.Lightmaps) {
+        } else if (this.debugMode === DebugMode.Lightmaps && this.whiteTexture) {
              // Use a white texture for lightmap mode to show only lighting
-             const whiteTex = new Texture2D(gl); // Ideally cached
-             whiteTex.bind(); // Placeholder logic
-             // Real implementation should bind a white texture
+             gl.activeTexture(gl.TEXTURE0);
+             this.whiteTexture.bind();
         }
 
-        if (surface.lightmap) {
-             const atlas = this.geometry.lightmaps[surface.lightmap.atlasIndex];
-             if (atlas) {
-                 gl.activeTexture(gl.TEXTURE1);
-                 atlas.texture.bind();
+        // Lighting Control: Fullbright
+        if (this.renderOptions.fullbright && this.whiteTexture) {
+             gl.activeTexture(gl.TEXTURE1);
+             this.whiteTexture.bind();
+        } else {
+             if (surface.lightmap) {
+                 const atlas = this.geometry.lightmaps[surface.lightmap.atlasIndex];
+                 if (atlas) {
+                     gl.activeTexture(gl.TEXTURE1);
+                     atlas.texture.bind();
+                 }
              }
         }
+
+        // Lighting Control: Brightness
+        // We use the 'color' uniform to apply brightness scaling.
+        // Default color is [1,1,1]. We scale by renderOptions.brightness.
+        const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
+        const baseColor = this.renderOptions.color;
+        const scaledColor: [number, number, number, number] = [
+            baseColor[0] * brightness,
+            baseColor[1] * brightness,
+            baseColor[2] * brightness,
+            1.0
+        ];
 
         const state = this.pipeline.bind({
             modelViewProjection: mvp as any,
@@ -205,7 +234,7 @@ export class BspAdapter implements ViewerAdapter {
             timeSeconds: timeSeconds,
             renderMode: {
                 mode: isHighlighted ? 'solid' : this.renderOptions.mode,
-                color: isHighlighted ? [1.0, 0.0, 0.0, 1.0] : [...this.renderOptions.color, 1.0],
+                color: isHighlighted ? [1.0, 0.0, 0.0, 1.0] : scaledColor,
                 applyToAll: true,
                 generateRandomColor: isHighlighted ? false : this.renderOptions.generateRandomColor,
             }
@@ -297,6 +326,7 @@ export class BspAdapter implements ViewerAdapter {
       // t.dispose()?
     });
     this.textures.clear();
+    // this.whiteTexture = null; // Can't dispose easily if no dispose method, but let GC handle it
   }
 
   getUniqueClassnames(): string[] {
