@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './TextureAtlas.css';
 import { AssetCrossRefService, AssetUsage } from '../services/assetCrossRefService';
-import { pakService } from '../services/pakService';
+import { pakService, ParsedMd2, ParsedMd3 } from '../services/pakService';
 
 export interface TextureAtlasProps {
   rgba: Uint8Array;
@@ -13,13 +13,26 @@ export interface TextureAtlasProps {
   mipmaps?: { width: number; height: number; rgba: Uint8Array }[];
 }
 
+interface UVLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
 export function TextureAtlas({ rgba, width, height, format, name, palette, mipmaps }: TextureAtlasProps) {
   const [zoom, setZoom] = useState(1);
   const [selectedColorIndex, setSelectedColorIndex] = useState<number | null>(null);
   const [assetUsages, setAssetUsages] = useState<AssetUsage[]>([]);
   const [isScanning, setIsScanning] = useState(false);
   const [scanComplete, setScanComplete] = useState(false);
+  const [selectedUsage, setSelectedUsage] = useState<AssetUsage | null>(null);
+  const [uvLines, setUvLines] = useState<UVLine[]>([]);
+  const [showUVs, setShowUVs] = useState(false);
+  const [uvColor, setUvColor] = useState('#00ff00');
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const uvCanvasRef = useRef<HTMLCanvasElement>(null);
   const serviceRef = useRef<AssetCrossRefService | null>(null);
 
   useEffect(() => {
@@ -29,8 +42,12 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
     setAssetUsages([]);
     setScanComplete(false);
     setIsScanning(false);
+    setSelectedUsage(null);
+    setUvLines([]);
+    setShowUVs(false);
   }, [rgba, width, height, name]);
 
+  // Draw main texture
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -44,6 +61,127 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
     imageData.data.set(rgba);
     ctx.putImageData(imageData, 0, 0);
   }, [rgba, width, height]);
+
+  // Handle usage selection and UV extraction
+  useEffect(() => {
+    const loadUVs = async () => {
+        if (!selectedUsage || !showUVs) {
+            setUvLines([]);
+            return;
+        }
+
+        try {
+            const parsed = await pakService.parseFile(selectedUsage.path);
+            const lines: UVLine[] = [];
+
+            if (parsed.type === 'md2') {
+                const model = (parsed as ParsedMd2).model;
+                const { header, texCoords, triangles, glCommands } = model;
+                // MD2 tex coords are usually integers, need normalization by skinWidth/skinHeight
+                // But header.skinWidth/skinHeight are what we should use.
+                // However, wait. texCoords in quake2ts are normalized?
+                // Let's check `md2.d.ts`:
+                // export interface Md2TexCoord { readonly s: number; readonly t: number; }
+                // They are usually short integers (pixels).
+                // But let's check glCommands.
+                // glCommands have s, t (float 0..1).
+                // Let's use triangles and texCoords first.
+
+                // Actually quake2ts parser might normalize them?
+                // `texCoords` in MD2 file are shorts.
+                // In quake2ts `parseMd2` implementation (I can't see source but I can infer):
+                // Usually it reads them as shorts.
+                // But `glCommands` are floats.
+
+                // If we use triangles:
+                // triangles have `texCoordIndices`.
+                // texCoords array has {s, t}.
+
+                // Let's assume they are pixel coordinates and normalize by skinWidth/Height from header.
+                const skinW = header.skinWidth;
+                const skinH = header.skinHeight;
+
+                for (const tri of triangles) {
+                    const t0 = texCoords[tri.texCoordIndices[0]];
+                    const t1 = texCoords[tri.texCoordIndices[1]];
+                    const t2 = texCoords[tri.texCoordIndices[2]];
+
+                    // Convert to 0..1
+                    const u0 = t0.s / skinW; const v0 = t0.t / skinH;
+                    const u1 = t1.s / skinW; const v1 = t1.t / skinH;
+                    const u2 = t2.s / skinW; const v2 = t2.t / skinH;
+
+                    lines.push({ x1: u0, y1: v0, x2: u1, y2: v1 });
+                    lines.push({ x1: u1, y1: v1, x2: u2, y2: v2 });
+                    lines.push({ x1: u2, y1: v2, x2: u0, y2: v0 });
+                }
+
+            } else if (parsed.type === 'md3') {
+                const model = (parsed as ParsedMd3).model;
+                // MD3 has surfaces. Each surface has triangles and texCoords.
+                // We need to find which surface uses THIS texture?
+                // The `AssetUsage` might give us a hint? Or we just show all UVs for the model?
+                // A model might have multiple skins.
+                // Ideally we filter by surface that uses this texture.
+                // `details` field in usage might help: "Ref: skin.pcx" or shader name.
+
+                // For now, let's aggregate all surfaces.
+                for (const surf of model.surfaces) {
+                    // Check if this surface uses the texture?
+                    // surf.shaders has names.
+                    const usesTexture = surf.shaders.some(s => s.name.toLowerCase().includes(name.toLowerCase().replace(/\.\w+$/, '')));
+
+                    if (usesTexture || model.surfaces.length === 1) {
+                         for (const tri of surf.triangles) {
+                             const t0 = surf.texCoords[tri.indices[0]];
+                             const t1 = surf.texCoords[tri.indices[1]];
+                             const t2 = surf.texCoords[tri.indices[2]];
+
+                             lines.push({ x1: t0.s, y1: t0.t, x2: t1.s, y2: t1.t });
+                             lines.push({ x1: t1.s, y1: t1.t, x2: t2.s, y2: t2.t });
+                             lines.push({ x1: t2.s, y1: t2.t, x2: t0.s, y2: t0.t });
+                         }
+                    }
+                }
+            }
+
+            setUvLines(lines);
+
+        } catch (e) {
+            console.warn("Failed to load model for UVs", e);
+            setUvLines([]);
+        }
+    };
+
+    loadUVs();
+  }, [selectedUsage, showUVs, name]);
+
+  // Draw UV overlay
+  useEffect(() => {
+    const canvas = uvCanvasRef.current;
+    if (!canvas) return;
+
+    // Canvas size matches texture size 1:1, scaled by CSS
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.clearRect(0, 0, width, height);
+
+    if (showUVs && uvLines.length > 0) {
+        ctx.strokeStyle = uvColor;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (const line of uvLines) {
+            ctx.moveTo(line.x1 * width, line.y1 * height);
+            ctx.lineTo(line.x2 * width, line.y2 * height);
+        }
+        ctx.stroke();
+    }
+
+  }, [uvLines, showUVs, uvColor, width, height]);
+
 
   const handleZoomIn = () => setZoom((z) => Math.min(z * 2, 16));
   const handleZoomOut = () => setZoom((z) => Math.max(z / 2, 0.25));
@@ -88,9 +226,6 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
 
   const handleExportPng = () => {
     if (!canvasRef.current) return;
-    // We want to export the original image, not the potentially zoomed one
-    // But the canvas currently holds the image data at 1:1 scale (width/height attributes)
-    // and CSS scales it. So canvas.toBlob should work fine.
     canvasRef.current.toBlob((blob) => {
       if (blob) {
         downloadBlob(blob, `${name}.png`);
@@ -146,6 +281,7 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
 
     setIsScanning(true);
     setScanComplete(false);
+    setSelectedUsage(null);
 
     if (!serviceRef.current) {
         serviceRef.current = new AssetCrossRefService(pakService.getVfs());
@@ -160,6 +296,13 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
         setIsScanning(false);
         setScanComplete(true);
     }
+  };
+
+  const handleUsageClick = (usage: AssetUsage) => {
+      if (usage.type === 'model') {
+          setSelectedUsage(usage);
+          setShowUVs(true);
+      }
   };
 
   return (
@@ -204,6 +347,20 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
                 height: '100%',
               }}
               data-testid="atlas-canvas"
+            />
+            <canvas
+              ref={uvCanvasRef}
+              className="texture-atlas-uv-canvas"
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: 'none',
+                opacity: showUVs ? 1 : 0
+              }}
+              data-testid="uv-canvas"
             />
             {showGrid && <div className="texture-atlas-grid" style={gridStyle} data-testid="pixel-grid" />}
           </div>
@@ -254,13 +411,36 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
                 <div className="usage-list" data-testid="usage-list">
                     {assetUsages.length === 0 && scanComplete && <div className="usage-empty">No references found.</div>}
                     {assetUsages.map((usage, i) => (
-                        <div key={i} className="usage-item">
+                        <div
+                          key={i}
+                          className={`usage-item ${selectedUsage === usage ? 'selected' : ''}`}
+                          onClick={() => handleUsageClick(usage)}
+                          style={{ cursor: usage.type === 'model' ? 'pointer' : 'default' }}
+                        >
                             <span className={`usage-tag ${usage.type}`}>{usage.type.toUpperCase()}</span>
                             <span className="usage-path" title={usage.path}>{usage.path}</span>
                             {usage.details && <div className="usage-details">{usage.details}</div>}
                         </div>
                     ))}
                 </div>
+                {selectedUsage && (
+                    <div className="uv-controls">
+                        <label>
+                            <input
+                                type="checkbox"
+                                checked={showUVs}
+                                onChange={(e) => setShowUVs(e.target.checked)}
+                            />
+                            Show UVs
+                        </label>
+                        <input
+                            type="color"
+                            value={uvColor}
+                            onChange={(e) => setUvColor(e.target.value)}
+                            title="UV Line Color"
+                        />
+                    </div>
+                )}
               </div>
             )}
         </div>
