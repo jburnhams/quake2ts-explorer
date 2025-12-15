@@ -31,6 +31,7 @@ import {
 } from 'quake2ts/shared';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
+import { consoleService, LogLevel } from './consoleService';
 
 // Re-define GameTraceResult since it's not exported from main entry point of game package
 interface GameTraceResult {
@@ -132,6 +133,8 @@ class GameServiceImpl implements GameSimulation, GameImports {
             this.latestFrameResult = result as GameFrameResult<GameStateSnapshot>;
         }
     }
+
+    this.registerConsoleCommands();
   }
 
   start(): void {
@@ -143,6 +146,7 @@ class GameServiceImpl implements GameSimulation, GameImports {
   }
 
   shutdown(): void {
+    this.unregisterConsoleCommands();
     if (this.gameExports) {
       (this.gameExports as any).shutdown();
       this.gameExports = null;
@@ -326,6 +330,84 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
   setLagCompensation(active: boolean, client?: Entity, lagMs?: number): void {
       // Stub
+  }
+
+  // --- Console Commands ---
+
+  private registerConsoleCommands() {
+    consoleService.registerCommand('god', this.cmdGod.bind(this));
+    consoleService.registerCommand('noclip', this.cmdNoclip.bind(this));
+    consoleService.registerCommand('notarget', this.cmdNotarget.bind(this));
+    consoleService.registerCommand('give', this.cmdGive.bind(this));
+    consoleService.registerCommand('kill', this.cmdKill.bind(this));
+  }
+
+  private unregisterConsoleCommands() {
+    consoleService.unregisterCommand('god');
+    consoleService.unregisterCommand('noclip');
+    consoleService.unregisterCommand('notarget');
+    consoleService.unregisterCommand('give');
+    consoleService.unregisterCommand('kill');
+  }
+
+  private getPlayerEntity(): Entity | null {
+    if (!this.gameExports) return null;
+    // Assuming player is the first entity or found by classname
+    const player = this.gameExports.entities.find(e => e.classname === 'player');
+    return player || null;
+  }
+
+  private cmdGod() {
+    const player = this.getPlayerEntity();
+    if (player) {
+      // Toggle god mode flag (assuming flag exists or similar)
+      // Since specific flag constants might not be exposed, we'll log for now
+      // In real implementation: player.flags ^= FL_GODMODE;
+      consoleService.log('god mode not fully implemented in library', LogLevel.WARNING);
+    } else {
+      consoleService.log('Player not found', LogLevel.ERROR);
+    }
+  }
+
+  private cmdNoclip() {
+    const player = this.getPlayerEntity();
+    if (player) {
+      // Toggle noclip
+      // In real implementation: player.movetype = player.movetype === MOVETYPE_NOCLIP ? MOVETYPE_WALK : MOVETYPE_NOCLIP;
+      consoleService.log('noclip not fully implemented in library', LogLevel.WARNING);
+    } else {
+      consoleService.log('Player not found', LogLevel.ERROR);
+    }
+  }
+
+  private cmdNotarget() {
+    const player = this.getPlayerEntity();
+    if (player) {
+      // player.flags ^= FL_NOTARGET;
+      consoleService.log('notarget not fully implemented in library', LogLevel.WARNING);
+    } else {
+      consoleService.log('Player not found', LogLevel.ERROR);
+    }
+  }
+
+  private cmdGive(args: string[]) {
+    if (args.length === 0) {
+      consoleService.log('Usage: give <item>', LogLevel.WARNING);
+      return;
+    }
+    const item = args[0];
+    consoleService.log(`Giving item: ${item} (not implemented)`, LogLevel.WARNING);
+  }
+
+  private cmdKill() {
+    const player = this.getPlayerEntity();
+    if (player) {
+      // Kill player
+      // player.die(...)
+      consoleService.log('Suicide not implemented', LogLevel.WARNING);
+    } else {
+      consoleService.log('Player not found', LogLevel.ERROR);
+    }
   }
 }
 

@@ -40,10 +40,10 @@ export async function saveGame(slot: number, name: string, screenshot?: string):
   }
 }
 
-export async function loadGame(slot: number): Promise<void> {
+export async function loadGame(slot: number): Promise<SavedGame | null> {
   const json = localStorage.getItem(`${STORAGE_KEY_PREFIX}${slot}`);
   if (!json) {
-    throw new Error(`Save slot ${slot} is empty`);
+    return null;
   }
 
   let savedGame: SavedGame;
@@ -55,18 +55,12 @@ export async function loadGame(slot: number): Promise<void> {
 
   const gameService = getGameService();
 
-  if (!gameService) {
-      // NOTE: In a real app, we might need to initialize the game with the map first
-      // using gameService.initGame(savedGame.mapName).
-      // For now, we assume the game loop handles map loading or we're already in the right context.
-      // Or we should throw.
-      // Actually, if we are in the main menu, we should probably start the game mode with the map.
-      // But loadGame signature here returns void.
-      // Let's assume for now we are already running a game or caller handles init.
-      throw new Error('Game service not initialized. Start game first or implement auto-init.');
+  // If we have a running game, try to load directly
+  if (gameService) {
+      gameService.loadSave(savedGame.data);
   }
 
-  gameService.loadSave(savedGame.data);
+  return savedGame;
 }
 
 export function listSaves(): SavedGame[] {
@@ -91,3 +85,10 @@ export function listSaves(): SavedGame[] {
 export function deleteSave(slot: number): void {
   localStorage.removeItem(`${STORAGE_KEY_PREFIX}${slot}`);
 }
+
+export const saveService = {
+  saveGame,
+  loadGame,
+  listSaves,
+  deleteSave
+};

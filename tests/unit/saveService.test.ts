@@ -62,13 +62,15 @@ describe('SaveService', () => {
     };
     localStorage.setItem('quake2ts-save-1', JSON.stringify(savedGame));
 
-    await loadGame(1);
+    const result = await loadGame(1);
 
     expect(mockGameService.loadSave).toHaveBeenCalledWith(mockSaveFile);
+    expect(result).toEqual(savedGame);
   });
 
-  test('loadGame throws if slot empty', async () => {
-    await expect(loadGame(99)).rejects.toThrow('Save slot 99 is empty');
+  test('loadGame returns null if slot empty', async () => {
+    const result = await loadGame(99);
+    expect(result).toBeNull();
   });
 
   test('listSaves returns sorted saves', () => {
