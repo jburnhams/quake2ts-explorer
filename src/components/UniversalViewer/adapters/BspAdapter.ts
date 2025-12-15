@@ -156,12 +156,11 @@ export class BspAdapter implements ViewerAdapter {
     const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
     const fullbright = this.renderOptions.fullbright === true;
 
-    const styleValues = new Float32Array(lightStyles.length);
+    // Convert to Array for compatibility with BspSurfacePipeline binding which expects number[]
+    // resolveLightStyles returns Float32Array
+    const styleValues: number[] = new Array(lightStyles.length);
     for (let j = 0; j < lightStyles.length; j++) {
-        // If fullbright, force style value to 1.0 (or higher?) to avoid pulsing.
-        // Actually, if we use white texture for lightmap, the style value modulates it.
-        // If style value is 0 (off), surface becomes black even with white lightmap.
-        // So we should force it to 1.0 or brightness.
+        // If fullbright, force style value to 1.0 to avoid pulsing.
         if (fullbright) {
             styleValues[j] = 1.0;
         } else {
@@ -219,7 +218,7 @@ export class BspAdapter implements ViewerAdapter {
             modelViewProjection: mvp as any,
             diffuseSampler: 0,
             lightmapSampler: 1,
-            styleValues: styleValues, // Pass modified styles
+            styleValues: styleValues, // Pass modified styles as array
             surfaceFlags: surface.surfaceFlags,
             timeSeconds: timeSeconds,
             renderMode: {
