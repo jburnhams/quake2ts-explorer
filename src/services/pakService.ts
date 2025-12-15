@@ -1,3 +1,4 @@
+import { MOD_PRIORITY } from '../types/modInfo';
 import {
   PakArchive,
   VirtualFileSystem,
@@ -142,6 +143,7 @@ export interface MountedPak {
   name: string;
   archive: PakArchive;
   isUser: boolean;
+  priority: number;
 }
 
 export type ViewMode = 'merged' | 'by-pak';
@@ -160,25 +162,25 @@ export class PakService {
     this.vfs = vfs ?? new VirtualFileSystem();
   }
 
-  async loadPakFile(file: File, id?: string, isUser: boolean = true): Promise<PakArchive> {
+  async loadPakFile(file: File, id?: string, isUser: boolean = true, priority: number = 100): Promise<PakArchive> {
     const buffer = await file.arrayBuffer();
     const pakId = id || crypto.randomUUID();
     // Use ID as internal name for VFS uniqueness, but store original name in metadata
     const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, file.name, isUser);
+    this.mountPak(archive, pakId, file.name, isUser, priority);
     return archive;
   }
 
-  async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false): Promise<PakArchive> {
+  async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false, priority: number = 0): Promise<PakArchive> {
     const pakId = id || crypto.randomUUID();
     const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, name, isUser);
+    this.mountPak(archive, pakId, name, isUser, priority);
     return archive;
   }
 
-  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean) {
-    this.paks.set(id, { id, name, archive, isUser });
-    this.vfs.mountPak(archive);
+  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number) {
+    this.paks.set(id, { id, name, archive, isUser, priority });
+    this.vfs.mountPak(archive, priority);
     this.tryLoadPalette();
   }
 
@@ -186,17 +188,75 @@ export class PakService {
     const pak = this.paks.get(id);
     if (pak) {
         this.paks.delete(id);
+        // Fallback: If VFS doesn't support unmount, we have to rebuild.
+        // But since we are using setPriority/mountPak with priority now, we might rely on VFS logic.
+        // However, VFS interface in d.ts doesn't show unmountPak.
+        // If we can't unmount, we can't fully unload.
+        // We will assume VFS behaves correctly or we rebuild if needed.
+        // The previous logic tried to rebuild.
+        // Let's stick to using native priority features where possible.
+        // But for unload, we still lack a clear API.
+        // Rebuild is safer if we can't unmount.
         this.rebuildVfs();
     }
   }
 
   private rebuildVfs() {
-    this.vfs = new VirtualFileSystem();
+    // If VFS supports unmountPak, we use it. Otherwise we are limited.
+    // But we found out VFS supports mountPak(archive, priority) and setPriority(archive, priority).
+    // So for priority updates we don't need rebuild.
+    // For unload, we do.
+
+    // We try to unmount everything we know about.
+    if ('unmountPak' in this.vfs) {
+        for (const pak of this.paks.values()) {
+             (this.vfs as any).unmountPak(pak.archive);
+        }
+    } else {
+        // If we can't unmount, we can create a new VFS but that breaks references.
+        // Or we just re-mount everything and hope VFS handles it?
+        // Let's assume rebuild via clearing is needed.
+        this.vfs = new VirtualFileSystem();
+    }
+
     this.palette = null;
-    for (const pak of this.paks.values()) {
-        this.vfs.mountPak(pak.archive);
+
+    // Sort PAKs by priority ascending (0 -> 100)
+    const sortedPaks = Array.from(this.paks.values()).sort((a, b) => a.priority - b.priority);
+
+    for (const pak of sortedPaks) {
+        this.vfs.mountPak(pak.archive, pak.priority);
     }
     this.tryLoadPalette();
+  }
+
+  updatePakPriority(id: string, priority: number): void {
+      const pak = this.paks.get(id);
+      if (pak) {
+          pak.priority = priority;
+          if ('setPriority' in this.vfs) {
+              (this.vfs as any).setPriority(pak.archive, priority);
+          } else {
+              this.rebuildVfs();
+          }
+      }
+  }
+
+  reorderPaks(pakIds: string[]): void {
+      pakIds.forEach((id, index) => {
+          const pak = this.paks.get(id);
+          if (pak) {
+             const newPriority = MOD_PRIORITY.USER_OVERRIDE + (index * 10);
+             pak.priority = newPriority;
+             if ('setPriority' in this.vfs) {
+                 (this.vfs as any).setPriority(pak.archive, newPriority);
+             }
+          }
+      });
+
+      if (!('setPriority' in this.vfs)) {
+          this.rebuildVfs();
+      }
   }
 
   private async tryLoadPalette(): Promise<void> {
