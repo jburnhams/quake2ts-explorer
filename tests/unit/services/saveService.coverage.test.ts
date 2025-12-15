@@ -55,8 +55,9 @@ describe('SaveService Coverage', () => {
         expect(mockGameService.loadSave).toHaveBeenCalled();
     });
 
-    it('should throw if no save found', async () => {
-        await expect(loadGame(99)).rejects.toThrow("empty");
+    it('should return null if no save found', async () => {
+        const result = await loadGame(99);
+        expect(result).toBeNull();
     });
 
     it('should list saves', () => {
