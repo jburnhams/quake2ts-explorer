@@ -1,0 +1,77 @@
+.console-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 50vh; /* Takes up half the screen */
+  background-color: rgba(0, 0, 0, 0.85);
+  color: #0f0;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  border-bottom: 2px solid #444;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+  transition: transform 0.2s ease-in-out;
+}
+
+.console-overlay.hidden {
+    transform: translateY(-100%);
+    pointer-events: none;
+}
+
+.console-logs {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.console-log-entry {
+  line-height: 1.4;
+  word-break: break-all;
+}
+
+.console-log-entry.error {
+  color: #ff4444;
+}
+
+.console-log-entry.warning {
+  color: #ffaa00;
+}
+
+.console-log-entry.success {
+  color: #44ff44;
+}
+
+.console-log-entry.info {
+  color: #cccccc;
+}
+
+.console-input-area {
+  display: flex;
+  padding: 8px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #444;
+  align-items: center;
+}
+
+.console-prompt {
+  margin-right: 8px;
+  color: #0f0;
+  font-weight: bold;
+}
+
+.console-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: inherit;
+  outline: none;
+}

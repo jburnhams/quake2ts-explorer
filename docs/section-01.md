@@ -348,21 +348,21 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **6.1**: Create `src/components/Console.tsx`
+- [x] **6.1**: Create `src/components/Console.tsx`
   - Toggle with backtick (`) or F1 key
   - Overlay at top of screen, semi-transparent background
   - Command input field at bottom
   - Scrollable output log above
   - Command history (up/down arrows)
 
-- [ ] **6.2**: Implement console command system
+- [x] **6.2**: Implement console command system
   - Create `src/services/consoleService.ts`
   - Export `registerCommand(name: string, handler: (args: string[]) => void): void`
   - Export `executeCommand(input: string): void`
   - Parse command string into name and arguments
   - Call registered handler
 
-- [ ] **6.3**: Register default commands
+- [x] **6.3**: Register default commands
   - `map <mapname>` - Load map
   - `quit` - Return to file browser
   - `restart` - Restart current map
@@ -374,13 +374,13 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - `notarget` - Toggle notarget (cheat)
   - `kill` - Suicide
 
-- [ ] **6.4**: Integrate with game service
+- [x] **6.4**: Integrate with game service
   - Commands like `give`, `god`, `noclip` require game API
     - **Library Enhancement Needed**: Expose cheat/admin APIs
     - If unavailable, implement via direct entity manipulation
   - `map` command calls `gameService.initGame(mapName)`
 
-- [ ] **6.5**: Add console output logging
+- [x] **6.5**: Add console output logging
   - Redirect game messages to console output
   - Show errors, warnings, info messages
   - Add timestamps

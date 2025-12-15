@@ -9,6 +9,9 @@ import { EntityLegend } from './components/EntityLegend';
 import { EntityMetadata } from './components/EntityMetadata';
 import { EntityDatabase } from './components/EntityDatabase';
 import { PakOrderManager } from './components/PakOrderManager';
+import { Console } from './components/Console';
+import { consoleService, LogLevel } from './services/consoleService';
+import { saveService } from './services/saveService';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import './App.css';
 
@@ -39,6 +42,87 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
   const [showEntityDb, setShowEntityDb] = useState(false);
   const [showPakManager, setShowPakManager] = useState(false);
+  const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+
+  // Toggle console with backtick
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+
+      if (e.key === '`' || e.key === '~') {
+        e.preventDefault();
+        setIsConsoleOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Register App-level console commands
+  useEffect(() => {
+    consoleService.registerCommand('map', (args) => {
+      if (args.length === 0) {
+        consoleService.log('Usage: map <mapname>', LogLevel.WARNING);
+        return;
+      }
+      const mapName = args[0];
+      const fullPath = mapName.endsWith('.bsp') ? `maps/${mapName}` : `maps/${mapName}.bsp`;
+      consoleService.log(`Loading map: ${fullPath}`, LogLevel.INFO);
+
+      // Trigger navigation/load
+      handleTreeSelect(fullPath);
+      // Note: switching to game mode logic would go here if implemented in App
+    });
+
+    consoleService.registerCommand('quit', () => {
+       consoleService.log('Returning to browser...', LogLevel.INFO);
+       // Trigger mode switch if implemented
+       setViewMode('model'); // Just default to a viewer mode for now
+    });
+
+    consoleService.registerCommand('save', async (args) => {
+       if (args.length < 2) {
+           consoleService.log('Usage: save <slot> <name>', LogLevel.WARNING);
+           return;
+       }
+       const slot = parseInt(args[0], 10);
+       const name = args.slice(1).join(' ');
+       try {
+           await saveService.saveGame(slot, name);
+           consoleService.log(`Game saved to slot ${slot}`, LogLevel.SUCCESS);
+       } catch (err) {
+           consoleService.log(`Save failed: ${err}`, LogLevel.ERROR);
+       }
+    });
+
+    consoleService.registerCommand('load', async (args) => {
+       if (args.length === 0) {
+           consoleService.log('Usage: load <slot>', LogLevel.WARNING);
+           return;
+       }
+       const slot = parseInt(args[0], 10);
+       try {
+           const save = await saveService.loadGame(slot);
+           if (save) {
+             consoleService.log(`Loading save: ${save.name}`, LogLevel.INFO);
+             // Logic to actually restore state would invoke gameService.loadState
+             // and potentially switch map
+           } else {
+             consoleService.log(`No save found in slot ${slot}`, LogLevel.WARNING);
+           }
+       } catch (err) {
+           consoleService.log(`Load failed: ${err}`, LogLevel.ERROR);
+       }
+    });
+
+    return () => {
+      consoleService.unregisterCommand('map');
+      consoleService.unregisterCommand('quit');
+      consoleService.unregisterCommand('save');
+      consoleService.unregisterCommand('load');
+    };
+  }, [handleTreeSelect, setViewMode]);
 
   // Reset when file changes
   useEffect(() => {
@@ -79,6 +163,7 @@ function App() {
             onClose={() => setShowPakManager(false)}
           />
         )}
+        <Console isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
         {error && (
           <div className="error-banner" data-testid="error-banner">
             {error}
