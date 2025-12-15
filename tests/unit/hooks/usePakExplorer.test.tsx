@@ -70,6 +70,10 @@ describe('usePakExplorer', () => {
     it('initializes with default state', async () => {
         const { result } = renderHook(() => usePakExplorer());
 
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
         await waitFor(() => {
              expect(result.current.loading).toBe(false);
         });
@@ -84,6 +88,10 @@ describe('usePakExplorer', () => {
         (indexedDBService.getPaks as jest.Mock).mockResolvedValue(mockPaks);
 
         const { result } = renderHook(() => usePakExplorer());
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
 
         await waitFor(() => {
             expect(result.current.loading).toBe(false);
@@ -156,6 +164,11 @@ describe('usePakExplorer', () => {
         (indexedDBService.getPaks as jest.Mock).mockRejectedValue(new Error('DB Error'));
 
         const { result } = renderHook(() => usePakExplorer());
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
         await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(result.current.error).toBe('Failed to initialize application data');
