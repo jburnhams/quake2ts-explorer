@@ -305,14 +305,14 @@ export function usePakExplorer(): UsePakExplorerResult {
   const activeGameRequestRef = useRef<number>(0);
 
   const startGameMode = useCallback(async (mapName: string) => {
+    // Stop existing game if any
+    stopGameMode();
+
     // Increment request ID to invalidate previous pending requests
     const requestId = ++activeGameRequestRef.current;
 
     try {
       setLoading(true);
-
-      // Stop existing game if any
-      stopGameMode();
 
       const simulation = await createGameSimulation(pakService.vfs, mapName);
 

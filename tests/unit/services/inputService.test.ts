@@ -1,126 +1,147 @@
 
-import { initInputController, generateUserCommand, cleanupInputController, setInputMode, getInputController } from '@/src/services/inputService';
+import { initInputController, cleanupInputController, generateUserCommand, setInputMode, getInputController } from '@/src/services/inputService';
 import { InputController, InputBindings } from 'quake2ts/client';
-import { DEFAULT_BINDINGS } from '@/src/config/defaultBindings';
-import { UserCommand } from 'quake2ts/shared';
 
 // Mock quake2ts/client
 jest.mock('quake2ts/client', () => {
-  return {
-    InputController: jest.fn().mockImplementation(() => ({
-      handleKeyDown: jest.fn(),
-      handleKeyUp: jest.fn(),
-      handleMouseButtonDown: jest.fn(),
-      handleMouseButtonUp: jest.fn(),
-      handleMouseMove: jest.fn(),
-      buildCommand: jest.fn().mockReturnValue({
-        msec: 16,
-        buttons: 0,
-        angles: { x: 0, y: 0, z: 0 },
-        forwardmove: 0,
-        sidemove: 0,
-        upmove: 0
-      }),
-      getDefaultBindings: jest.fn().mockReturnValue({
-        getBinding: jest.fn()
-      })
-    })),
-    InputBindings: jest.fn()
-  };
+    const mockInputController = {
+        handleKeyDown: jest.fn(),
+        handleKeyUp: jest.fn(),
+        handleMouseButtonDown: jest.fn(),
+        handleMouseButtonUp: jest.fn(),
+        handleMouseMove: jest.fn(),
+        buildCommand: jest.fn().mockReturnValue({ buttons: 0 }),
+        getDefaultBindings: jest.fn().mockReturnValue({
+            getBinding: jest.fn().mockReturnValue(null)
+        })
+    };
+    return {
+        InputController: jest.fn().mockImplementation(() => mockInputController),
+        InputBindings: jest.fn().mockImplementation(() => ({}))
+    };
 });
 
 describe('InputService', () => {
-  let mockInputController: any;
+    let mockController: any;
 
-  beforeEach(() => {
-    jest.clearAllMocks();
-    cleanupInputController();
-
-    // Setup basic mock for controller
-    initInputController();
-    mockInputController = (getInputController() as unknown) as any;
-  });
-
-  afterEach(() => {
-    cleanupInputController();
-  });
-
-  test('initInputController initializes InputController', () => {
-    expect(InputController).toHaveBeenCalled();
-    expect(InputBindings).toHaveBeenCalledWith(DEFAULT_BINDINGS);
-  });
-
-  test('generateUserCommand calls buildCommand on controller', () => {
-    const cmd = generateUserCommand(16);
-    expect(mockInputController.buildCommand).toHaveBeenCalledWith(16);
-    expect(cmd).toBeDefined();
-  });
-
-  test('input handlers delegate to controller', () => {
-    // We need to simulate events
-    const keyEvent = new KeyboardEvent('keydown', { code: 'KeyW' });
-    window.dispatchEvent(keyEvent);
-    expect(mockInputController.handleKeyDown).toHaveBeenCalledWith('KeyW', expect.any(Number));
-
-    const mouseClick = new MouseEvent('mousedown', { button: 0 });
-    window.dispatchEvent(mouseClick);
-    expect(mockInputController.handleMouseButtonDown).toHaveBeenCalledWith(0, expect.any(Number));
-  });
-
-  test('input handlers do not fire when not in game mode', () => {
-    setInputMode('menu');
-
-    const keyEvent = new KeyboardEvent('keydown', { code: 'KeyW' });
-    window.dispatchEvent(keyEvent);
-    expect(mockInputController.handleKeyDown).not.toHaveBeenCalled();
-  });
-
-  test('mouse move only processed when pointer locked', () => {
-    // Mock document.pointerLockElement
-    Object.defineProperty(document, 'pointerLockElement', {
-      value: document.body,
-      configurable: true
+    beforeEach(() => {
+        jest.clearAllMocks();
+        cleanupInputController();
+        // Initialize to get the mock instance
+        initInputController();
+        mockController = (InputController as unknown as jest.Mock).mock.results[0].value;
+        // Reset call counts from init
+        jest.clearAllMocks();
     });
 
-    // Manually trigger the listener logic since MouseEvent constructor options like movementX
-    // might not populate the event object correctly in all JSDOM environments without overrides
-    // or the listener might be reading it differently.
-    // Instead we can just dispatch an event with the properties directly on it if JSDOM allows,
-    // or wrap the creation.
-    // However, TypeScript might complain if we just cast it.
-
-    // In JSDOM, MouseEvent might not fully support movementX/Y in the constructor in older versions,
-    // but let's try defining getter if needed or check if the event actually had it.
-
-    const mouseMove = new MouseEvent('mousemove', { bubbles: true });
-    Object.defineProperties(mouseMove, {
-        movementX: { value: 10 },
-        movementY: { value: 5 }
+    afterEach(() => {
+        cleanupInputController();
     });
 
-    window.dispatchEvent(mouseMove);
-    expect(mockInputController.handleMouseMove).toHaveBeenCalledWith(10, 5);
+    it('should initialize input controller', () => {
+        // Need to clear mocks and re-init to capture call
+        jest.clearAllMocks();
+        cleanupInputController();
 
-    // Now test without pointer lock
-    Object.defineProperty(document, 'pointerLockElement', {
-      value: null,
-      configurable: true
+        initInputController();
+        expect(InputController).toHaveBeenCalled();
+        expect(getInputController()).toBeDefined();
     });
 
-    window.dispatchEvent(mouseMove);
-    expect(mockInputController.handleMouseMove).toHaveBeenCalledTimes(1); // Still 1 from before
-  });
+    it('should cleanup input controller', () => {
+        cleanupInputController();
+        expect(getInputController()).toBeNull();
+    });
 
-  test('cleanupInputController removes listeners and clears controller', () => {
-    cleanupInputController();
-    expect(getInputController()).toBeNull();
+    it('should handle key events in game mode', () => {
+        initInputController();
 
-    // Verify events don't trigger anything (though we can't easily spy on removed listeners,
-    // we can verify no calls happen on cached controller ref if we kept it,
-    // but here we just check global state is null)
+        const keyDown = new KeyboardEvent('keydown', { code: 'KeyW' });
+        window.dispatchEvent(keyDown);
+        expect(mockController.handleKeyDown).toHaveBeenCalledWith('KeyW', expect.any(Number));
 
-    const cmd = generateUserCommand(16);
-    // Should return empty/default command
-    expect(cmd.forwardmove).toBe(0);
-  });
+        const keyUp = new KeyboardEvent('keyup', { code: 'KeyW' });
+        window.dispatchEvent(keyUp);
+        expect(mockController.handleKeyUp).toHaveBeenCalledWith('KeyW', expect.any(Number));
+    });
+
+    it('should prevent default on bound keys', () => {
+        initInputController();
+
+        mockController.getDefaultBindings().getBinding.mockReturnValue('some_command');
+
+        const keyDown = new KeyboardEvent('keydown', { code: 'Space', cancelable: true });
+        const spy = jest.spyOn(keyDown, 'preventDefault');
+        window.dispatchEvent(keyDown);
+
+        expect(spy).toHaveBeenCalled();
+    });
+
+    it('should ignore events when not in game mode (or disabled)', () => {
+        // Technically setInputMode controls 'isGameMode' flag which defaults to true on init.
+        // Let's toggle it.
+        setInputMode('menu');
+
+        const keyDown = new KeyboardEvent('keydown', { code: 'KeyW' });
+        window.dispatchEvent(keyDown);
+        expect(mockController.handleKeyDown).not.toHaveBeenCalled();
+    });
+
+    it('should ignore F-keys', () => {
+        initInputController();
+
+        const f5 = new KeyboardEvent('keydown', { code: 'F5' });
+        window.dispatchEvent(f5);
+        expect(mockController.handleKeyDown).not.toHaveBeenCalled();
+    });
+
+    it('should handle mouse button events', () => {
+        initInputController();
+
+        const mouseDown = new MouseEvent('mousedown', { button: 0 });
+        window.dispatchEvent(mouseDown);
+        expect(mockController.handleMouseButtonDown).toHaveBeenCalledWith(0, expect.any(Number));
+
+        const mouseUp = new MouseEvent('mouseup', { button: 0 });
+        window.dispatchEvent(mouseUp);
+        expect(mockController.handleMouseButtonUp).toHaveBeenCalledWith(0, expect.any(Number));
+    });
+
+    it('should handle mouse move events ONLY when pointer is locked', () => {
+        initInputController();
+
+        // Helper to create valid mouse event with movement
+        const createMoveEvent = (x: number, y: number) => {
+            const event = new MouseEvent('mousemove');
+            // JSDOM MouseEvent doesn't support movementX/Y in constructor args correctly
+            Object.defineProperty(event, 'movementX', { value: x });
+            Object.defineProperty(event, 'movementY', { value: y });
+            return event;
+        };
+
+        // Simulate unlocked
+        Object.defineProperty(document, 'pointerLockElement', { value: null, writable: true });
+        window.dispatchEvent(createMoveEvent(10, 5));
+        expect(mockController.handleMouseMove).not.toHaveBeenCalled();
+
+        // Simulate locked
+        Object.defineProperty(document, 'pointerLockElement', { value: document.body, writable: true });
+        window.dispatchEvent(createMoveEvent(10, 5));
+        expect(mockController.handleMouseMove).toHaveBeenCalledWith(10, 5);
+    });
+
+    it('should generate user commands', () => {
+        initInputController();
+        const cmd = generateUserCommand(16);
+        expect(mockController.buildCommand).toHaveBeenCalledWith(16);
+        expect(cmd).toBeDefined();
+    });
+
+    it('should return empty command if not initialized', () => {
+        cleanupInputController();
+        const cmd = generateUserCommand(16);
+        expect(cmd.msec).toBe(16);
+        expect(cmd.buttons).toBe(0);
+        // Verify it didn't crash
+    });
 });
