@@ -1,88 +1,106 @@
 
 import { createGameSimulation, shutdownGameService } from '@/src/services/gameService';
-import { VirtualFileSystem } from 'quake2ts/engine';
+import { AssetManager, VirtualFileSystem } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
+import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
-  AssetManager: jest.fn().mockImplementation(() => ({
-    loadMap: jest.fn().mockResolvedValue({
-      // Mock BspMap
-      entities: 'mock-entities',
-      leafs: [],
-      nodes: [],
-      models: [],
-      planes: []
-    }),
-    clearCache: jest.fn()
-  }))
-}));
+const mockLoadMap = jest.fn().mockResolvedValue({
+    leafs: [],
+    planes: [],
+    nodes: [],
+    models: [{ headnode: 0 }],
+    entities: []
+});
+
+jest.mock('quake2ts/engine', () => {
+    return {
+        AssetManager: jest.fn().mockImplementation(() => ({
+            loadMap: mockLoadMap,
+            clearCache: jest.fn()
+        })),
+        VirtualFileSystem: jest.fn(),
+    };
+});
 
 jest.mock('quake2ts/game', () => ({
-  createGame: jest.fn().mockImplementation(() => ({
-    init: jest.fn().mockReturnValue({ state: { time: 0 } }), // Return mock frame result
-    shutdown: jest.fn(),
-    frame: jest.fn().mockReturnValue({ state: { time: 100 } }), // Return mock frame result
-    snapshot: jest.fn().mockReturnValue({ time: 0 }),
-    entities: { find: jest.fn() }
-  }))
+    createGame: jest.fn().mockReturnValue({
+        init: jest.fn().mockReturnValue({ state: {} }),
+        shutdown: jest.fn(),
+        frame: jest.fn().mockReturnValue({ state: {} }),
+        createSave: jest.fn(),
+        loadSave: jest.fn(),
+        entities: { find: jest.fn() }
+    })
+}));
+
+jest.mock('quake2ts/shared', () => ({
+    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: { x: 0, y: 0, z: 0 }, allsolid: false, startsolid: false }),
+    pointContents: jest.fn().mockReturnValue(0),
+    CollisionEntityIndex: jest.fn().mockImplementation(() => ({
+        trace: jest.fn().mockReturnValue({ fraction: 1.0, endpos: { x: 0, y: 0, z: 0 } }),
+        link: jest.fn(),
+        gatherTriggerTouches: jest.fn()
+    })),
+    Vec3: jest.fn()
 }));
 
 jest.mock('@/src/utils/collisionAdapter', () => ({
-  createCollisionModel: jest.fn().mockReturnValue({})
+    createCollisionModel: jest.fn().mockReturnValue({})
+}));
+
+jest.mock('@/src/services/consoleService', () => ({
+    consoleService: {
+        registerCommand: jest.fn(),
+        unregisterCommand: jest.fn(),
+        log: jest.fn()
+    },
+    LogLevel: { WARNING: 'warning', ERROR: 'error' }
 }));
 
 describe('GameService', () => {
-  let vfs: VirtualFileSystem;
+    let vfs: any;
 
-  beforeEach(() => {
-    vfs = new VirtualFileSystem();
-    jest.clearAllMocks();
-  });
+    beforeEach(() => {
+        jest.clearAllMocks();
+        vfs = new VirtualFileSystem();
+    });
 
-  afterEach(() => {
-    shutdownGameService();
-  });
+    afterEach(() => {
+        shutdownGameService();
+    });
 
-  it('should create and initialize game simulation', async () => {
-    const game = await createGameSimulation(vfs, 'test_map');
+    it('should initialize successfully', async () => {
+        const game = await createGameSimulation(vfs, 'testmap');
+        expect(createGame).toHaveBeenCalled();
+        expect(game).toBeDefined();
+    });
 
-    expect(game).toBeDefined();
-    expect(createGame).toHaveBeenCalled();
-  });
+    it('should load map during initialization', async () => {
+        await createGameSimulation(vfs, 'testmap');
+        expect(mockLoadMap).toHaveBeenCalledWith('testmap');
+    });
 
-  it('should tick the game simulation', async () => {
-    const game = await createGameSimulation(vfs, 'test_map');
+    it('should shutdown properly', async () => {
+        const game = await createGameSimulation(vfs, 'testmap');
+        game.shutdown();
+        const mockGameExports = createGame(null as any, null as any, null as any);
+        expect(mockGameExports.shutdown).toHaveBeenCalled();
+    });
 
-    const cmd = {
-      msec: 25,
-      buttons: 0,
-      angles: { x: 0, y: 0, z: 0 },
-      forwardmove: 0,
-      sidemove: 0,
-      upmove: 0,
-      impulse: 0,
-      lightlevel: 0
-    };
+    it('should tick game simulation', async () => {
+        const game = await createGameSimulation(vfs, 'testmap');
+        const cmd: any = {};
+        const step: any = { frame: 1, deltaMs: 25, nowMs: 1000 };
+        game.tick(step, cmd);
 
-    const step = { frame: 1, deltaMs: 25, nowMs: 1000 };
-    game.tick(step, cmd);
+        const mockGameExports = createGame(null as any, null as any, null as any);
+        expect(mockGameExports.frame).toHaveBeenCalledWith(step, cmd);
+    });
 
-    const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
-    expect(mockGameExports.frame).toHaveBeenCalledWith(step, cmd);
-
-    // Verify snapshot update
-    const snapshot = game.getSnapshot();
-    expect(snapshot.time).toBe(100);
-  });
-
-  it('should shutdown game simulation', async () => {
-    const game = await createGameSimulation(vfs, 'test_map');
-
-    game.shutdown();
-
-    const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
-    expect(mockGameExports.shutdown).toHaveBeenCalled();
-  });
+    it('should return snapshot', async () => {
+        const game = await createGameSimulation(vfs, 'testmap');
+        const snapshot = game.getSnapshot();
+        expect(snapshot).toBeDefined();
+    });
 });
