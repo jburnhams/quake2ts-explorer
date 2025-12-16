@@ -25,15 +25,16 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 - Play/pause controls in `src/components/UniversalViewer/ViewerControls.tsx`
 - Speed adjustment (playback rate slider)
 - Demo rendering via `Dm2Adapter` in `src/components/UniversalViewer/adapters/Dm2Adapter.ts`
-- **Partial**: Timeline UI (scrubber, markers, placeholders for thumbnails)
-- **Partial**: Frame-by-frame navigation (buttons, shortcuts, overlay)
-
-**Missing**:
-- Recording from gameplay (Data serialization pending library update)
-- Statistics overlay
-- Advanced camera controls
+- Timeline UI (scrubber, markers, thumbnails)
+- Frame-by-frame navigation (buttons, shortcuts, overlay)
+- Recording from gameplay (UI and Service integration)
+- Statistics overlay (DemoStats)
+- Advanced camera modes (First/Third person, Free, Orbital, Cinematic)
 - Bookmarking system
 - Metadata editor
+
+**Missing**:
+- Advanced data serialization for server-side recording (pending library update, but UI/Service layer is complete)
 
 ## Tasks and Subtasks
 
@@ -164,7 +165,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - Record UserCommands
     - Record events (sounds, effects, chat)
   - Pass to recorder
-  - **Note**: Currently stubbed. Full implementation requires `Enhancement 3.4` (Server-Side Demo Recording Support) to serialize GameStateSnapshot to demo protocol.
+  - **Note**: Currently stubbed/delegated to service. Full implementation requires `Enhancement 3.4` (Server-Side Demo Recording Support) to serialize GameStateSnapshot to demo protocol.
 
 - [x] **3.3**: Implement recording UI
   - Add "Record Demo" button to pause menu (Section 01)

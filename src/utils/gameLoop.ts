@@ -3,7 +3,6 @@ import {
   type FixedStepContext,
   type RenderContext
 } from 'quake2ts/engine';
-import { demoRecorderService } from '../services/demoRecorder';
 
 export interface GameLoop {
   start(): void;
@@ -27,18 +26,7 @@ export function createGameLoop(
 ): GameLoop {
   const loop = new FixedTimestepLoop(
     {
-      simulate: (step) => {
-        simulate(step);
-        // Integrate demo recorder - strictly this needs access to UserCommand and state snapshot
-        // which might not be available in 'step' context depending on engine version.
-        // Assuming simulate does the work and we might need to hook into the game logic itself
-        // rather than the loop wrapper.
-        // However, requirements say "Modify src/utils/gameLoop.ts".
-
-        // NOTE: Actual recording logic requires access to game state which is not passed here.
-        // This hook is a placeholder for where per-tick recording logic would trigger if we had access.
-        // In a real implementation, the GameService would call recorder.recordFrame() inside its frame() method.
-      },
+      simulate: (step) => simulate(step),
       render: (context) => render(context)
     },
     {

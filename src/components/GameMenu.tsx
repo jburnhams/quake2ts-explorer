@@ -18,9 +18,9 @@ export function GameMenu({ onResume, onSave, onLoad, onQuit }: GameMenuProps) {
     setIsRecording(demoRecorderService.isRecording());
   }, []);
 
-  const handleRecordClick = () => {
+  const handleRecordClick = async () => {
     if (isRecording) {
-      const data = demoRecorderService.stopRecording();
+      const data = await demoRecorderService.stopRecording();
       if (data) {
         // In a real app we'd prompt for download or save
         const blob = new Blob([data], { type: 'application/octet-stream' });
