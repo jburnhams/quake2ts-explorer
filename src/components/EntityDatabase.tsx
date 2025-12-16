@@ -158,6 +158,18 @@ export const EntityDatabase: React.FC<EntityDatabaseProps> = ({ pakService }) =>
             downloadAnchorNode.click();
             downloadAnchorNode.remove();
         }}>Export JSON</button>
+        <button className="inspector-btn" onClick={() => {
+            const entContent = entityService.generateEntFile(sortedEntities);
+            const blob = new Blob([entContent], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const downloadAnchorNode = document.createElement('a');
+            downloadAnchorNode.href = url;
+            downloadAnchorNode.download = "entities.ent";
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+            URL.revokeObjectURL(url);
+        }}>Export ENT</button>
       </div>
 
       <div className="entity-database-content">

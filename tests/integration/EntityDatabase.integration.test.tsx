@@ -15,8 +15,8 @@ jest.mock('quake2ts/engine', () => ({
   parseBsp: jest.fn().mockReturnValue({
     entities: {
       entities: [
-        { classname: 'worldspawn', properties: { message: 'Integration Test Map' } },
-        { classname: 'info_player_start', properties: { origin: '100 0 0' } }
+        { classname: 'worldspawn', properties: { classname: 'worldspawn', message: 'Integration Test Map' } },
+        { classname: 'info_player_start', properties: { classname: 'info_player_start', origin: '100 0 0' } }
       ]
     }
   }),
@@ -28,6 +28,9 @@ describe('EntityDatabase Integration', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     pakService = new PakService();
+    // Mock URL object
+    global.URL.createObjectURL = jest.fn();
+    global.URL.revokeObjectURL = jest.fn();
   });
 
   it('loads entities from mock PAK and displays them', async () => {
@@ -56,5 +59,34 @@ describe('EntityDatabase Integration', () => {
     // Check properties
     expect(screen.getByText('origin')).toBeInTheDocument();
     expect(screen.getByText('100 0 0')).toBeInTheDocument();
+  });
+
+  it('exports entities as ENT file', async () => {
+    await act(async () => {
+      render(<EntityDatabase pakService={pakService} />);
+    });
+
+    await waitFor(() => {
+       expect(screen.getByText('2 entities')).toBeInTheDocument();
+    });
+
+    const exportBtn = screen.getByText('Export ENT');
+    fireEvent.click(exportBtn);
+
+    expect(global.URL.createObjectURL).toHaveBeenCalled();
+    const blob = (global.URL.createObjectURL as jest.Mock).mock.calls[0][0];
+    expect(blob).toBeInstanceOf(Blob);
+
+    // Read blob content manually since jsdom's Blob might not support .text() or FileReader is safer
+    const reader = new FileReader();
+    const promise = new Promise<string>((resolve) => {
+        reader.onload = () => resolve(reader.result as string);
+    });
+    reader.readAsText(blob);
+    const text = await promise;
+
+    expect(text).toContain('"classname" "worldspawn"');
+    expect(text).toContain('"message" "Integration Test Map"');
+    expect(text).toContain('"classname" "info_player_start"');
   });
 });

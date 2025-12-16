@@ -107,4 +107,48 @@ describe('EntityService', () => {
     expect(stats.entitiesByType['light']).toBe(2);
     expect(stats.entitiesByType['worldspawn']).toBe(1);
   });
+
+  it('should generate valid ENT file content', () => {
+    const records: EntityRecord[] = [
+      {
+        id: '1', mapName: 'map1', index: 0, classname: 'worldspawn',
+        properties: { classname: 'worldspawn', message: 'My Map' },
+        raw: {} as any
+      },
+      {
+        id: '2', mapName: 'map1', index: 1, classname: 'info_player_start',
+        properties: { classname: 'info_player_start', origin: '100 0 -50' },
+        raw: {} as any
+      }
+    ];
+
+    const entContent = service.generateEntFile(records);
+
+    // Should look like:
+    // {
+    // "classname" "worldspawn"
+    // "message" "My Map"
+    // }
+    // {
+    // "classname" "info_player_start"
+    // "origin" "100 0 -50"
+    // }
+
+    expect(entContent).toContain('{\n"classname" "worldspawn"\n"message" "My Map"\n}');
+    expect(entContent).toContain('{\n"classname" "info_player_start"\n"origin" "100 0 -50"\n}');
+  });
+
+  it('should escape quotes in ENT file content', () => {
+     const records: EntityRecord[] = [
+      {
+        id: '1', mapName: 'map1', index: 0, classname: 'worldspawn',
+        properties: { classname: 'worldspawn', message: 'Map "Quake" 2' },
+        raw: {} as any
+      }
+    ];
+
+    const entContent = service.generateEntFile(records);
+    // Expect quotes to be escaped: "message" "Map \"Quake\" 2"
+    expect(entContent).toContain('"message" "Map \\"Quake\\" 2"');
+  });
 });
