@@ -45,7 +45,7 @@ Polish the user experience with professional-grade interface design, accessibili
 
 #### Subtasks
 
-- [ ] **1.1**: Create `src/components/SettingsPanel.tsx`
+- [x] **1.1**: Create `src/components/SettingsPanel.tsx`
   - Modal overlay (ESC to close)
   - Tabbed interface:
     - General
@@ -56,14 +56,14 @@ Polish the user experience with professional-grade interface design, accessibili
     - Advanced
   - "Save" and "Reset to Defaults" buttons at bottom
 
-- [ ] **1.2**: Implement General settings tab
+- [x] **1.2**: Implement General settings tab
   - Language selection (for future i18n)
   - Default mode on startup (browser / last used)
   - Auto-load default PAK (pak.pak)
   - Default file tree sort (name / type / size)
   - Confirm before close (if unsaved changes)
 
-- [ ] **1.3**: Implement Graphics settings tab
+- [x] **1.3**: Implement Graphics settings tab
   - Render quality preset (Low / Medium / High / Ultra)
   - Field of view slider (60-120 degrees)
   - VSync toggle
@@ -73,7 +73,7 @@ Polish the user experience with professional-grade interface design, accessibili
   - Resolution scale (50% - 200%)
   - Frame rate limit (30 / 60 / 120 / Unlimited)
 
-- [ ] **1.4**: Implement Audio settings tab
+- [x] **1.4**: Implement Audio settings tab
   - Master volume slider
   - Sound effects volume
   - Music volume
@@ -82,14 +82,14 @@ Polish the user experience with professional-grade interface design, accessibili
   - 3D audio spatialization toggle
   - Audio quality (sample rate)
 
-- [ ] **1.5**: Implement Controls settings tab
+- [x] **1.5**: Implement Controls settings tab
   - Mouse sensitivity slider (X and Y separately)
   - Invert mouse Y toggle
   - Keyboard layout selector (QWERTY / AZERTY / QWERTZ)
   - Gamepad support toggle
   - "Configure Keybindings" button (opens Task 2 editor)
 
-- [ ] **1.6**: Implement Accessibility settings tab
+- [x] **1.6**: Implement Accessibility settings tab
   - High contrast mode
   - Large font size
   - Color blind mode (Deuteranopia, Protanopia, Tritanopia)
@@ -98,14 +98,14 @@ Polish the user experience with professional-grade interface design, accessibili
   - Subtitles/captions toggle (for future video content)
   - Keyboard-only mode (no mouse required)
 
-- [ ] **1.7**: Implement Advanced settings tab
+- [x] **1.7**: Implement Advanced settings tab
   - Developer mode (shows debug features from Section 04)
   - Verbose logging
   - Experimental features toggle
   - Cache size limits
   - Reset all data (clear localStorage/IndexedDB)
 
-- [ ] **1.8**: Persist settings
+- [x] **1.8**: Persist settings
   - Save to localStorage as JSON
   - Load on application start
   - Apply settings to respective systems (renderer, audio, input)
@@ -136,7 +136,7 @@ Polish the user experience with professional-grade interface design, accessibili
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/components/KeybindingEditor.tsx`
+- [x] **2.1**: Create `src/components/KeybindingEditor.tsx`
   - Table view with columns:
     - Action (e.g., "Move Forward")
     - Primary Key (e.g., "W")
@@ -144,32 +144,32 @@ Polish the user experience with professional-grade interface design, accessibili
     - Conflict indicator (if duplicate)
   - Grouped by category (Movement, Combat, Interface, Camera)
 
-- [ ] **2.2**: Implement keybinding capture
+- [x] **2.2**: Implement keybinding capture
   - Click key cell to enter "capture mode"
   - Shows "Press any key..." message
   - Captures next key press
   - ESC cancels capture
   - Supports modifiers (Ctrl, Shift, Alt)
 
-- [ ] **2.3**: Implement conflict detection
+- [x] **2.3**: Implement conflict detection
   - Scan all bindings for duplicates
   - Highlight conflicts in red
   - Show warning: "W is already bound to Move Forward"
   - Offer to swap bindings or clear conflicting binding
 
-- [ ] **2.4**: Add preset layouts
+- [x] **2.4**: Add preset layouts
   - Default (WASD + standard)
   - Classic (Arrow keys + Ctrl/Alt)
   - Left-handed
   - Custom (user-defined)
   - Quick-switch between presets
 
-- [ ] **2.5**: Implement search and filter
+- [x] **2.5**: Implement search and filter
   - Search by action name
   - Filter by category
   - Filter by unbound actions
 
-- [ ] **2.6**: Add "Reset to Defaults" per category
+- [x] **2.6**: Add "Reset to Defaults" per category
   - Reset all bindings in category
   - Reset individual action
   - Reset entire keybinding config
