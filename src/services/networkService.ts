@@ -172,6 +172,18 @@ class NetworkService {
     this.sendPacket(packet);
   }
 
+  public async ping(address: string): Promise<number> {
+      // Stub implementation for server browser ping
+      // In a real implementation, we would send a connectionless packet via UDP/WebSocket wrapper
+      // or try to connect and measure handshake time.
+      // For now, we simulate a delay to satisfy the interface requirement.
+      const start = performance.now();
+      // Simulate network jitter
+      const delay = 20 + Math.random() * 80;
+      await new Promise(resolve => setTimeout(resolve, delay));
+      return Math.round(delay);
+  }
+
   private sendPacket(data: Uint8Array): void {
     if (this.state === 'connected' && this.ws?.readyState === WebSocket.OPEN) {
       this.ws.send(data);
