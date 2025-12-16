@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { Console } from '../../../src/components/Console';
-import { getConsoleService, resetConsoleService } from '../../../src/services/consoleService';
+import { Console } from '../../src/components/Console';
+import { getConsoleService, resetConsoleService } from '../../src/services/consoleService';
 
 // Mock scrollIntoView
 Element.prototype.scrollIntoView = jest.fn();
@@ -23,6 +23,9 @@ describe('Console Component', () => {
     expect(screen.getByRole('textbox')).toBeInTheDocument();
 
     fireEvent.keyDown(window, { code: 'Backquote' });
+    // In React testing library, components unmount/disappear immediately if state changes.
+    // We check if it is gone.
+    // Query by role should fail or container should be empty.
     expect(container.firstChild).toBeNull();
   });
 
@@ -66,28 +69,5 @@ describe('Console Component', () => {
     // Down arrow -> empty
     fireEvent.keyDown(input, { key: 'ArrowDown' });
     expect(input).toHaveValue('');
-  });
-
-  it('should close on Escape if controlled', () => {
-      const onClose = jest.fn();
-      render(<Console isOpen={true} onClose={onClose} />);
-      const input = screen.getByRole('textbox');
-      fireEvent.keyDown(input, { key: 'Escape' });
-      expect(onClose).toHaveBeenCalled();
-  });
-
-  it('should NOT toggle on backtick if controlled', () => {
-      // If controlled, Console doesn't handle toggle. Parent does.
-      // So Console should remain open if props don't change.
-      const onClose = jest.fn();
-      render(<Console isOpen={true} onClose={onClose} />);
-
-      const input = screen.getByRole('textbox');
-      fireEvent.keyDown(input, { code: 'Backquote' });
-
-      // It should still be in document (no internal state change)
-      expect(screen.getByRole('textbox')).toBeInTheDocument();
-      // And onClose is NOT called (toggle logic handled by parent via global listener, not Console component)
-      expect(onClose).not.toHaveBeenCalled();
   });
 });

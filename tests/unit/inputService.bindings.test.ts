@@ -1,7 +1,7 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { initInputController, cleanupInputController } from '@/src/services/inputService';
+import { getInputService, resetInputService } from '../../src/services/inputService';
 import { InputController, InputBindings } from 'quake2ts/client';
-import { DEFAULT_BINDINGS } from '@/src/config/defaultBindings';
+import { DEFAULT_BINDINGS } from '../../src/config/defaultBindings';
 
 // Mock quake2ts/client
 jest.mock('quake2ts/client', () => {
@@ -23,17 +23,17 @@ jest.mock('quake2ts/client', () => {
 
 describe('InputService Bindings', () => {
     beforeEach(() => {
-        cleanupInputController();
+        resetInputService();
         (InputController as unknown as jest.Mock).mockClear();
         (InputBindings as unknown as jest.Mock).mockClear();
     });
 
     afterEach(() => {
-        cleanupInputController();
+        resetInputService();
     });
 
     it('should initialize with default bindings when no custom bindings provided', () => {
-        initInputController();
+        getInputService();
 
         expect(InputBindings).toHaveBeenCalledTimes(1);
         expect(InputBindings).toHaveBeenCalledWith(DEFAULT_BINDINGS);
@@ -41,26 +41,13 @@ describe('InputService Bindings', () => {
     });
 
     it('should initialize with custom bindings when provided', () => {
-        const customBindings = [
-            { code: 'KeyZ', command: '+attack' }
-        ];
+        const customBindings = new InputBindings([]);
 
-        initInputController(customBindings);
+        getInputService(customBindings);
 
-        expect(InputBindings).toHaveBeenCalledTimes(1);
-        expect(InputBindings).toHaveBeenCalledWith(customBindings);
-    });
-
-    it('should handle binding conflicts by respecting the list order (last one wins implicitly via library behavior)', () => {
-        // We verify that the service simply passes the list to the library.
-        // The library is responsible for resolution, so we mock checking that the list is passed as-is.
-        const conflictingBindings = [
-            { code: 'KeyA', command: '+moveleft' },
-            { code: 'KeyA', command: '+moveright' }
-        ];
-
-        initInputController(conflictingBindings);
-
-        expect(InputBindings).toHaveBeenCalledWith(conflictingBindings);
+        expect(InputController).toHaveBeenCalledWith(
+            expect.anything(),
+            customBindings
+        );
     });
 });

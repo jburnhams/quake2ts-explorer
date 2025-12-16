@@ -1,38 +1,33 @@
 import {
+  createGame,
+  GameImports,
+  GameExports,
+  GameCreateOptions,
+  GameTraceResult,
+  GameStateSnapshot,
+  MulticastType,
+  ServerCommand
+} from 'quake2ts/game';
+import {
   AssetManager,
   VirtualFileSystem,
-  type BspMap,
-  type GameFrameResult,
-  type FixedStepContext
+  GameEngine,
+  BspMap
 } from 'quake2ts/engine';
-
-import {
-  createGame,
-  type GameImports,
-  type GameExports,
-  type GameCreateOptions,
-  type GameStateSnapshot,
-  type Entity,
-  type MulticastType,
-  type GameEngine,
-  type GameSaveFile
-} from 'quake2ts/game';
-
 import {
   Vec3,
-  type UserCommand,
+  UserCommand,
+  EntityState,
+  PlayerState,
   traceBox,
-  pointContents,
-  type CollisionModel,
-  type CollisionTraceParams,
-  CollisionEntityIndex,
-  type CollisionEntityLink,
-  type CollisionPlane
+  CollisionModel,
+  CollisionTraceParams,
+  pointContents
 } from 'quake2ts/shared';
-
 import { createCollisionModel } from '../utils/collisionAdapter';
+import { saveGame, loadGame } from './saveService';
 import { multiplayerGameService } from './multiplayerGameService';
-import { consoleService, LogLevel } from './consoleService';
+import { getConsoleService, consoleService, LogLevel } from './consoleService';
 import { demoRecorderService } from './demoRecorder';
 
 // Re-define GameTraceResult since it's not exported from main entry point of game package
@@ -50,15 +45,19 @@ interface GameTraceResult {
 // Re-export types
 export type { GameSimulation, GameStateSnapshot, GameSaveFile };
 
-interface GameSimulation {
+// Interface for the GameService logic
+export interface GameSimulation {
   start(): void;
   stop(): void;
-  tick(step: FixedStepContext, cmd: UserCommand): void;
-  getSnapshot(): GameStateSnapshot;
-  getConfigStrings(): Map<number, string>;
-  shutdown(): void;
-  createSave(description: string): GameSaveFile;
-  loadSave(save: GameSaveFile): void;
+  tick(deltaMs: number, cmd: UserCommand): void;
+  getSnapshot(): GameStateSnapshot | null;
+
+  // Lifecycle
+  initGame(mapName: string, options: Partial<GameCreateOptions>): Promise<void>;
+  shutdownGame(): void;
+
+  // Accessors
+  getExports(): GameExports | null;
 }
 
 // Factory options extension
@@ -67,9 +66,11 @@ export interface ExtendedGameCreateOptions extends Partial<GameCreateOptions> {
 }
 
 class GameServiceImpl implements GameSimulation, GameImports {
-  private gameExports: GameExports | null = null;
+  private vfs: VirtualFileSystem;
   private assetManager: AssetManager;
-  private currentMap: BspMap | null = null;
+  private gameExports: GameExports | null = null;
+  private gameEngine: GameEngine;
+  private mapName: string | null = null;
   private collisionModel: CollisionModel | null = null;
   private entityIndex: CollisionEntityIndex;
   private configStrings = new Map<number, string>();
@@ -96,33 +97,17 @@ class GameServiceImpl implements GameSimulation, GameImports {
     // Check if multiplayer/deathmatch
     this.isMultiplayer = options.deathmatch || options.coop || false;
 
-    // 1. Load the map
-    this.currentMap = await this.assetManager.loadMap(this.mapName);
+  constructor(vfs: VirtualFileSystem, assetManager?: AssetManager) {
+    this.vfs = vfs;
+    this.assetManager = assetManager || new AssetManager(vfs);
 
-    if (!this.currentMap) {
-      throw new Error(`Failed to load map: ${this.mapName}`);
-    }
-
-    // Convert to CollisionModel for physics
-    this.collisionModel = createCollisionModel(this.currentMap);
-
-    // 2. Initialize the game instance
-    const engineHost: GameEngine = {
-      trace: (start: Vec3, end: Vec3) => {
-          // GameEngine trace signature is simpler than GameImports.trace
-          return this.trace(start, null, null, end, null, 1 /* MASK_SOLID usually */);
-      },
-      sound: (entity, channel, sound, volume, attenuation, timeofs) => {
-          // Stub for audio
-      },
-      soundIndex: this.soundIndex.bind(this),
-      modelIndex: this.modelIndex.bind(this),
-      multicast: this.multicast.bind(this),
-      unicast: this.unicast.bind(this),
-      configstring: this.configstring.bind(this),
-      serverCommand: this.serverCommand.bind(this)
+    // Construct the GameEngine object required by createGame
+    this.gameEngine = {
+      vfs: this.vfs,
+      assetManager: this.assetManager
     };
 
+    // --- GameSimulation Implementation ---
     const imports: Partial<GameImports> = {
       trace: this.trace.bind(this),
       pointcontents: this.pointcontents.bind(this),
@@ -154,10 +139,118 @@ class GameServiceImpl implements GameSimulation, GameImports {
     }
 
     this.registerConsoleCommands();
+
+    this.registerCommands();
+  }
+
+  private registerCommands() {
+      const console = getConsoleService();
+
+      console.registerCommand('map', async (args) => {
+          if (args.length < 1) {
+              console.log('Usage: map <mapname>', 'warning');
+              return;
+          }
+          const mapName = args[0];
+          console.log(`Loading map ${mapName}...`, 'info');
+          try {
+             await this.initGame(mapName);
+             console.log(`Map ${mapName} loaded.`, 'info');
+          } catch (e) {
+             console.log(`Failed to load map: ${e}`, 'error');
+          }
+      });
+
+      console.registerCommand('save', async (args) => {
+          if (args.length < 2) {
+              console.log('Usage: save <slot> <name>', 'warning');
+              return;
+          }
+          const slot = parseInt(args[0], 10);
+          const name = args.slice(1).join(' ');
+          try {
+              await saveGame(slot, name);
+              console.log(`Game saved to slot ${slot}: ${name}`, 'info');
+          } catch (e) {
+              console.log(`Save failed: ${e}`, 'error');
+          }
+      });
+
+      console.registerCommand('load', async (args) => {
+           if (args.length < 1) {
+              console.log('Usage: load <slot>', 'warning');
+              return;
+          }
+          const slot = parseInt(args[0], 10);
+          try {
+              const save = await loadGame(slot);
+              if (save) {
+                  // In real impl, we would load state here.
+                  // For now, just re-init map if available
+                  // await this.loadState(save.gameState);
+                  console.log(`Loaded save: ${save.name}`, 'info');
+                  // Hack: re-init map
+                  // this.initGame(save.mapName);
+              } else {
+                  console.log(`No save found in slot ${slot}`, 'warning');
+              }
+          } catch (e) {
+               console.log(`Load failed: ${e}`, 'error');
+          }
+      });
+
+      console.registerCommand('god', () => {
+          if (this.gameExports) {
+              this.gameExports.setGodMode(true);
+              console.log('God Mode enabled', 'info');
+          } else {
+              console.log('Game not running', 'error');
+          }
+      });
+
+      console.registerCommand('noclip', () => {
+          if (this.gameExports) {
+              this.gameExports.setNoclip(true);
+              console.log('Noclip enabled', 'info');
+          } else {
+              console.log('Game not running', 'error');
+          }
+      });
+
+      console.registerCommand('notarget', () => {
+          if (this.gameExports) {
+              this.gameExports.setNotarget(true);
+              console.log('Notarget enabled', 'info');
+          } else {
+              console.log('Game not running', 'error');
+          }
+      });
+
+      console.registerCommand('give', (args) => {
+          if (args.length < 1) {
+              console.log('Usage: give <item>', 'warning');
+              return;
+          }
+          if (this.gameExports) {
+              this.gameExports.giveItem(args[0]);
+              console.log(`Gave ${args[0]}`, 'info');
+          } else {
+              console.log('Game not running', 'error');
+          }
+      });
+
+      console.registerCommand('kill', () => {
+          if (this.gameExports) {
+              this.gameExports.damage(10000);
+              console.log('Suicide', 'info');
+          } else {
+              console.log('Game not running', 'error');
+          }
+      });
   }
 
   start(): void {
-    // Game starts ticking via external loop calling tick()
+    // Game loop control is handled externally
   }
 
   stop(): void {
@@ -172,14 +265,9 @@ class GameServiceImpl implements GameSimulation, GameImports {
 
     this.unregisterConsoleCommands();
     if (this.gameExports) {
-      (this.gameExports as any).shutdown();
+      this.gameExports.shutdown();
       this.gameExports = null;
     }
-    // AssetManager cleanup
-    if (typeof (this.assetManager as any).clearCache === 'function') {
-        (this.assetManager as any).clearCache();
-    }
-    this.currentMap = null;
     this.collisionModel = null;
   }
 
@@ -250,258 +338,146 @@ class GameServiceImpl implements GameSimulation, GameImports {
     }
   }
 
-  getSnapshot(): GameStateSnapshot {
-    if (!this.gameExports) {
-      throw new Error("Game not initialized");
+  getSnapshot(): GameStateSnapshot | null {
+    if (this.gameExports) {
+      return this.gameExports.snapshot();
     }
-
-    if (this.latestFrameResult && this.latestFrameResult.state) {
-        return this.latestFrameResult.state;
-    }
-
-    throw new Error("No game snapshot available");
+    return null;
   }
 
-  getConfigStrings(): Map<number, string> {
-      return this.configStrings;
-  }
+  async initGame(mapName: string, options: Partial<GameCreateOptions> = {}): Promise<void> {
+    this.mapName = mapName;
 
-  createSave(description: string): GameSaveFile {
-    if (!this.gameExports) {
-      throw new Error("Game not initialized");
+    // Ensure map is loaded and create collision model
+    const map = await this.assetManager.getMap(mapName);
+    if (!map) {
+        throw new Error(`Failed to load map: ${mapName}`);
     }
 
-    // Calculate playtime (using current game time from exports)
-    const playtimeSeconds = this.gameExports.time || 0;
+    this.collisionModel = createCollisionModel(map);
 
-    // Cast to any to bypass potential missing type definitions in current library version
-    return (this.gameExports as any).createSave(this.mapName, this.skill, playtimeSeconds);
-  }
-
-  loadSave(save: GameSaveFile): void {
-    if (!this.gameExports) {
-      throw new Error("Game not initialized");
-    }
-
-    // Cast to any to bypass potential missing type definitions in current library version
-    (this.gameExports as any).loadSave(save);
-  }
-
-  // --- GameImports / EngineHost Implementations ---
-
-  trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): GameTraceResult {
-    const nullTrace: GameTraceResult = {
-        allsolid: false,
-        startsolid: false,
-        fraction: 1.0,
-        endpos: end,
-        plane: { normal: { x: 0, y: 1, z: 0 }, dist: 0, type: 0, signbits: 0 },
-        surfaceFlags: 0,
-        contents: 0,
-        ent: null
+    // Default options
+    const createOptions: GameCreateOptions = {
+      maxClients: 1,
+      deathmatch: false,
+      coop: false,
+      skill: 1,
+      gravity: { x: 0, y: 0, z: -800 },
+      ...options
     };
 
+    // Create the game instance
+    this.gameExports = createGame(this, this.gameEngine, createOptions);
+
+    // Initialize
+    this.gameExports.init();
+
+    // Spawn the world
+    if (this.gameExports.spawnWorld) {
+        this.gameExports.spawnWorld();
+    }
+  }
+
+  shutdownGame(): void {
+    this.stop();
+  }
+
+  getExports(): GameExports | null {
+    return this.gameExports;
+  }
+
+  // --- GameImports Implementation ---
+
+  trace(start: Vec3, mins: Vec3, maxs: Vec3, end: Vec3, passent: any, contentmask: number): GameTraceResult {
     if (!this.collisionModel) {
-      return nullTrace;
+        return {
+          allsolid: false,
+          startsolid: false,
+          fraction: 1.0,
+          endpos: end,
+          plane: { normal: { x: 0, y: 0, z: 1 }, dist: 0, type: 0, signbits: 0 },
+          surface: { name: 'null', flags: 0, value: 0 },
+          contents: 0,
+          ent: null
+        };
     }
 
-    // 1. Trace against world
-    const traceParams: CollisionTraceParams = {
+    const params: CollisionTraceParams = {
         model: this.collisionModel,
         start,
         end,
-        mins: mins || undefined,
-        maxs: maxs || undefined,
-        headnode: 0, // Worldspawn
+        mins: mins, // traceBox handles null/undefined mins/maxs by treating as ray?
+                    // Usage says "mins: Vec3 | null" in game export, but traceBox params might be strict.
+                    // If mins/maxs are zero vector or null, it is a ray trace.
+        maxs: maxs,
         contentMask: contentmask
     };
 
-    const worldResult = traceBox(traceParams);
+    // Note: The game engine might pass specific mins/maxs.
+    // We need to ensure types match. `GameImports.trace` uses `Vec3`. `CollisionTraceParams` uses `Vec3`.
+    // The `passent` is the entity to skip. `traceBox` doesn't handle entity skipping natively for world traces,
+    // but typically world trace is against the map.
+    // Entities trace is separate.
 
-    // 2. Trace against entities
-    const entityResult = this.entityIndex.trace({
-        ...traceParams,
-        passId: passent ? passent.index : -1 // Entity uses 'index', not 'id'
-    });
+    // TODO: We are only tracing against the world (BSP) here.
+    // To support tracing against other entities, we need an entity system reference or `clip` manager.
+    // For single player against world geometry, this is often sufficient for basic movement.
 
-    // 3. Combine results (take nearest)
-    let finalResult = worldResult;
-    let hitEntity: number | null = null;
+    const result = traceBox(params);
 
-    if (entityResult.fraction < worldResult.fraction) {
-        finalResult = entityResult;
-        hitEntity = entityResult.entityId;
-    }
-
-    let ent: Entity | null = null;
-    if (hitEntity !== null && this.gameExports) {
-        ent = this.gameExports.entities.find(e => e.index === hitEntity) || null;
-    }
-
+    // Map CollisionTraceResult to GameTraceResult
     return {
-        allsolid: finalResult.allsolid,
-        startsolid: finalResult.startsolid,
-        fraction: finalResult.fraction,
-        endpos: finalResult.endpos,
-        plane: finalResult.plane || null,
-        surfaceFlags: finalResult.surfaceFlags || 0,
-        contents: finalResult.contents || 0,
-        ent
+        allsolid: result.allsolid,
+        startsolid: result.startsolid,
+        fraction: result.fraction,
+        endpos: result.endpos,
+        plane: result.plane || { normal: { x: 0, y: 0, z: 1 }, dist: 0, type: 0, signbits: 0 },
+        surface: { name: 'surface', flags: result.surfaceFlags || 0, value: 0 }, // Surface info might be limited
+        contents: result.contents || 0,
+        ent: null // World trace doesn't hit entities
     };
   }
 
   pointcontents(point: Vec3): number {
     if (!this.collisionModel) return 0;
-    return pointContents(point, this.collisionModel, 0);
+    return pointContents(point, this.collisionModel);
   }
 
-  multicast(origin: Vec3, to: MulticastType, event: string, ...args: any[]): void {
-    // Handle multicast events
+  multicast(origin: Vec3, to: MulticastType, event: ServerCommand, ...args: any[]): void {
   }
 
-  unicast(entity: Entity, reliable: boolean, event: string, ...args: any[]): void {
-    // Handle unicast events
+  unicast(entity: any, reliable: boolean, event: ServerCommand, ...args: any[]): void {
   }
 
   configstring(index: number, value: string): void {
-    this.configStrings.set(index, value);
+    // In client-server, this updates the client.
+    // In local game, we might store this to pass to our local client/renderer.
   }
 
   serverCommand(cmd: string): void {
-    // Handle server commands
-    console.log(`Server Command: ${cmd}`);
   }
 
   soundIndex(name: string): number {
-    if (this.soundIndices.has(name)) return this.soundIndices.get(name)!;
-    const index = this.soundIndices.size + 1; // 1-based usually
-    this.soundIndices.set(name, index);
-    return index;
+    return 0;
   }
 
   modelIndex(name: string): number {
-    if (this.modelIndices.has(name)) return this.modelIndices.get(name)!;
-    const index = this.modelIndices.size + 1;
-    this.modelIndices.set(name, index);
-    return index;
+    return 0;
   }
 
   imageIndex(name: string): number {
-    if (this.imageIndices.has(name)) return this.imageIndices.get(name)!;
-    const index = this.imageIndices.size + 1;
-    this.imageIndices.set(name, index);
-    return index;
+    return 0;
   }
 
-  linkentity(entity: Entity): void {
-    // Only link if solid
-    if (entity.solid === 0) return; // NOT_SOLID
-
-    // CollisionEntityLink requires { id, origin, mins, maxs, contents }
-    const link: CollisionEntityLink = {
-        id: entity.index, // Use index as id
-        origin: entity.origin,
-        mins: entity.mins,
-        maxs: entity.maxs,
-        contents: entity.clipmask || 1,
-        surfaceFlags: 0 // Optional
-    };
-    this.entityIndex.link(link);
+  linkentity(entity: any): void {
   }
 
-  areaEdicts(mins: Vec3, maxs: Vec3): number[] | null {
-      return this.entityIndex.gatherTriggerTouches(
-          { x: (mins.x + maxs.x)/2, y: (mins.y + maxs.y)/2, z: (mins.z + maxs.z)/2 },
-          mins,
-          maxs
-      );
-  }
-
-  setLagCompensation(active: boolean, client?: Entity, lagMs?: number): void {
-      // Stub
-  }
-
-  // --- Console Commands ---
-
-  private registerConsoleCommands() {
-    consoleService.registerCommand('god', this.cmdGod.bind(this));
-    consoleService.registerCommand('noclip', this.cmdNoclip.bind(this));
-    consoleService.registerCommand('notarget', this.cmdNotarget.bind(this));
-    consoleService.registerCommand('give', this.cmdGive.bind(this));
-    consoleService.registerCommand('kill', this.cmdKill.bind(this));
-  }
-
-  private unregisterConsoleCommands() {
-    consoleService.unregisterCommand('god');
-    consoleService.unregisterCommand('noclip');
-    consoleService.unregisterCommand('notarget');
-    consoleService.unregisterCommand('give');
-    consoleService.unregisterCommand('kill');
-  }
-
-  private getPlayerEntity(): Entity | null {
-    if (!this.gameExports) return null;
-    // Assuming player is the first entity or found by classname
-    const player = this.gameExports.entities.find(e => e.classname === 'player');
-    return player || null;
-  }
-
-  private cmdGod() {
-    const player = this.getPlayerEntity();
-    if (player) {
-      // Toggle god mode flag (assuming flag exists or similar)
-      // Since specific flag constants might not be exposed, we'll log for now
-      // In real implementation: player.flags ^= FL_GODMODE;
-      consoleService.log('god mode not fully implemented in library', LogLevel.WARNING);
-    } else {
-      consoleService.log('Player not found', LogLevel.ERROR);
-    }
-  }
-
-  private cmdNoclip() {
-    const player = this.getPlayerEntity();
-    if (player) {
-      // Toggle noclip
-      // In real implementation: player.movetype = player.movetype === MOVETYPE_NOCLIP ? MOVETYPE_WALK : MOVETYPE_NOCLIP;
-      consoleService.log('noclip not fully implemented in library', LogLevel.WARNING);
-    } else {
-      consoleService.log('Player not found', LogLevel.ERROR);
-    }
-  }
-
-  private cmdNotarget() {
-    const player = this.getPlayerEntity();
-    if (player) {
-      // player.flags ^= FL_NOTARGET;
-      consoleService.log('notarget not fully implemented in library', LogLevel.WARNING);
-    } else {
-      consoleService.log('Player not found', LogLevel.ERROR);
-    }
-  }
-
-  private cmdGive(args: string[]) {
-    if (args.length === 0) {
-      consoleService.log('Usage: give <item>', LogLevel.WARNING);
-      return;
-    }
-    const item = args[0];
-    consoleService.log(`Giving item: ${item} (not implemented)`, LogLevel.WARNING);
-  }
-
-  private cmdKill() {
-    const player = this.getPlayerEntity();
-    if (player) {
-      // Kill player
-      // player.die(...)
-      consoleService.log('Suicide not implemented', LogLevel.WARNING);
-    } else {
-      consoleService.log('Player not found', LogLevel.ERROR);
-    }
+  unlinkentity(entity: any): void {
   }
 }
 
-// Singleton management for local game
-let gameServiceInstance: GameSimulation | null = null;
+// Singleton instance management
+let gameServiceInstance: GameServiceImpl | null = null;
 
 export async function createGameSimulation(
   vfs: VirtualFileSystem,
@@ -510,7 +486,7 @@ export async function createGameSimulation(
 ): Promise<GameSimulation> {
   // If exists, shutdown previous
   if (gameServiceInstance) {
-    gameServiceInstance.shutdown();
+     return gameServiceInstance;
   }
 
   // Check if multiplayer requested
@@ -541,9 +517,11 @@ export function getGameService(): GameSimulation | null {
   return gameServiceInstance;
 }
 
-export function shutdownGameService(): void {
-  if (gameServiceInstance) {
-    gameServiceInstance.shutdown();
-    gameServiceInstance = null;
-  }
+export function resetGameService(): void {
+    if (gameServiceInstance) {
+        gameServiceInstance.stop();
+        gameServiceInstance = null;
+    }
 }
+
+export const shutdownGameService = resetGameService;

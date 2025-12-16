@@ -1,119 +1,118 @@
-// Task 3: Input Controller Implementation
 import { InputController, InputBindings } from 'quake2ts/client';
 import { UserCommand } from 'quake2ts/shared';
-import { DEFAULT_BINDINGS, KeyBindingEntry } from '@/src/config/defaultBindings';
+import { createApplicationBindings } from '../config/defaultBindings';
 
-let inputController: InputController | null = null;
-let listeners: { type: string, handler: EventListener }[] = [];
+class InputService {
+  private controller: InputController;
+  private pointerLocked: boolean = false;
+  private active: boolean = false;
 
-// Track input state for internal use if needed, though controller handles most
-let isGameMode = false;
-
-export function initInputController(customBindings?: KeyBindingEntry[]) {
-  // Cleanup existing if any
-  cleanupInputController();
-
-  // Convert array of binding entries to binding map if needed
-  // Based on reading types, InputBindings constructor takes Iterable<BindingEntry>
-  // KeyBindingEntry matches {code, command} structure of BindingEntry
-  const bindings = new InputBindings(customBindings || DEFAULT_BINDINGS);
-
-  inputController = new InputController({}, bindings);
-  isGameMode = true;
-
-  const handleKeyDown = (e: Event) => {
-    if (!isGameMode || !inputController) return;
-    if (e instanceof KeyboardEvent) {
-      // Don't consume F-keys or browser shortcuts unless captured
-      if (e.code === 'F5' || e.code === 'F12') return;
-
-      inputController.handleKeyDown(e.code, e.timeStamp);
-
-      // Prevent default for bound keys to stop page scrolling etc.
-      if (inputController.getDefaultBindings().getBinding(e.code)) {
-        e.preventDefault();
-      }
-    }
-  };
-
-  const handleKeyUp = (e: Event) => {
-    if (!isGameMode || !inputController) return;
-    if (e instanceof KeyboardEvent) {
-      inputController.handleKeyUp(e.code, e.timeStamp);
-    }
-  };
-
-  const handleMouseDown = (e: Event) => {
-    if (!isGameMode || !inputController) return;
-    if (e instanceof MouseEvent) {
-      inputController.handleMouseButtonDown(e.button, e.timeStamp);
-    }
-  };
-
-  const handleMouseUp = (e: Event) => {
-    if (!isGameMode || !inputController) return;
-    if (e instanceof MouseEvent) {
-      inputController.handleMouseButtonUp(e.button, e.timeStamp);
-    }
-  };
-
-  const handleMouseMove = (e: Event) => {
-    if (!isGameMode || !inputController) return;
-    if (e instanceof MouseEvent) {
-      // Only process mouse movement if pointer is locked for gameplay
-      if (document.pointerLockElement) {
-        inputController.handleMouseMove(e.movementX, e.movementY);
-      }
-    }
-  };
-
-  listeners = [
-    { type: 'keydown', handler: handleKeyDown },
-    { type: 'keyup', handler: handleKeyUp },
-    { type: 'mousedown', handler: handleMouseDown },
-    { type: 'mouseup', handler: handleMouseUp },
-    { type: 'mousemove', handler: handleMouseMove }
-  ];
-
-  listeners.forEach(({ type, handler }) => {
-    window.addEventListener(type, handler);
-  });
-}
-
-export function cleanupInputController() {
-  listeners.forEach(({ type, handler }) => {
-    window.removeEventListener(type, handler);
-  });
-  listeners = [];
-  inputController = null;
-  isGameMode = false;
-}
-
-export function setInputMode(mode: 'game' | 'menu') {
-  isGameMode = mode === 'game';
-  // If switching to menu, we might want to release keys or something
-  // But controller state management handles most of it
-}
-
-export function generateUserCommand(deltaMs: number): UserCommand {
-  if (!inputController) {
-    // Return empty command structure matching UserCommand interface
-    return {
-      msec: Math.min(255, deltaMs),
-      buttons: 0,
-      angles: { x: 0, y: 0, z: 0 },
-      forwardmove: 0,
-      sidemove: 0,
-      upmove: 0,
-      impulse: 0,
-      lightlevel: 0
-    } as unknown as UserCommand;
+  constructor(bindings?: InputBindings) {
+    this.controller = new InputController(
+        {
+            sensitivity: 3.0,
+            requirePointerLock: false
+        },
+        bindings || createApplicationBindings()
+    );
   }
 
-  // quake2ts input controller handles command generation
-  return inputController.buildCommand(deltaMs);
+  // Lifecycle
+  init(): void {
+    this.active = true;
+    this.setupGlobalListeners();
+  }
+
+  shutdown(): void {
+    this.active = false;
+    this.removeGlobalListeners();
+  }
+
+  setActive(active: boolean): void {
+      this.active = active;
+  }
+
+  generateUserCommand(deltaMs: number, nowMs: number): UserCommand {
+      return this.controller.buildCommand(deltaMs, nowMs);
+  }
+
+  // Event Handlers
+  handleKeyDown(event: KeyboardEvent): void {
+    if (!this.active) return;
+    this.controller.handleKeyDown(event.code);
+    if (this.isGameKey(event.code)) {
+        event.preventDefault();
+    }
+  }
+
+  handleKeyUp(event: KeyboardEvent): void {
+    if (!this.active) return;
+    this.controller.handleKeyUp(event.code);
+    if (this.isGameKey(event.code)) {
+        event.preventDefault();
+    }
+  }
+
+  handleMouseDown(event: MouseEvent): void {
+    if (!this.active) return;
+    this.controller.handleMouseButtonDown(event.button);
+  }
+
+  handleMouseUp(event: MouseEvent): void {
+    if (!this.active) return;
+    this.controller.handleMouseButtonUp(event.button);
+  }
+
+  handleMouseMove(event: MouseEvent): void {
+    if (!this.active) return;
+    if (document.pointerLockElement) {
+        this.controller.handleMouseMove(event.movementX, event.movementY);
+    }
+  }
+
+  // Helpers
+  private setupGlobalListeners(): void {
+      window.addEventListener('keydown', this.boundKeyDown);
+      window.addEventListener('keyup', this.boundKeyUp);
+      window.addEventListener('mousedown', this.boundMouseDown);
+      window.addEventListener('mouseup', this.boundMouseUp);
+      window.addEventListener('mousemove', this.boundMouseMove);
+  }
+
+  private removeGlobalListeners(): void {
+      window.removeEventListener('keydown', this.boundKeyDown);
+      window.removeEventListener('keyup', this.boundKeyUp);
+      window.removeEventListener('mousedown', this.boundMouseDown);
+      window.removeEventListener('mouseup', this.boundMouseUp);
+      window.removeEventListener('mousemove', this.boundMouseMove);
+  }
+
+  private boundKeyDown = (e: KeyboardEvent) => this.handleKeyDown(e);
+  private boundKeyUp = (e: KeyboardEvent) => this.handleKeyUp(e);
+  private boundMouseDown = (e: MouseEvent) => this.handleMouseDown(e);
+  private boundMouseUp = (e: MouseEvent) => this.handleMouseUp(e);
+  private boundMouseMove = (e: MouseEvent) => this.handleMouseMove(e);
+
+  private isGameKey(code: string): boolean {
+      return true; // Simplified
+  }
 }
 
-export function getInputController(): InputController | null {
-  return inputController;
+// Singleton
+let inputServiceInstance: InputService | null = null;
+
+export function getInputService(bindings?: InputBindings): InputService {
+    if (!inputServiceInstance) {
+        inputServiceInstance = new InputService(bindings);
+    }
+    return inputServiceInstance;
 }
+
+export function resetInputService(): void {
+    if (inputServiceInstance) {
+        inputServiceInstance.shutdown(); // Ensure listeners are removed
+        inputServiceInstance = null;
+    }
+}
+
+export const cleanupInputController = resetInputService;

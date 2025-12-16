@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { GameHUD, PlayerStat } from '../../../src/components/GameHUD';
+import { GameHUD, PlayerStat } from '../../src/components/GameHUD';
 import { PlayerState } from 'quake2ts/shared';
 
 // Mock PlayerState
@@ -25,7 +25,12 @@ jest.mock('quake2ts/shared', () => ({
 }));
 
 describe('GameHUD', () => {
-  it('renders health, armor, and ammo', () => {
+  it('should render nothing if playerState is null', () => {
+    const { container } = render(<GameHUD playerState={null} />);
+    expect(container.firstChild).toBeNull();
+  });
+
+  it('should render health, armor, and ammo', () => {
     const state = createMockPlayerState();
     render(<GameHUD playerState={state} />);
 
@@ -34,7 +39,7 @@ describe('GameHUD', () => {
     expect(screen.getByText('25')).toBeInTheDocument();  // Ammo
   });
 
-  it('renders death screen when health <= 0', () => {
+  it('should display death screen when health <= 0', () => {
     const state = createMockPlayerState();
     state.stats[PlayerStat.STAT_HEALTH] = 0;
 
@@ -43,7 +48,7 @@ describe('GameHUD', () => {
     expect(screen.getByText('YOU DIED')).toBeInTheDocument();
   });
 
-  it('does not display death screen when health > 0', () => {
+  it('should not display death screen when health > 0', () => {
     const state = createMockPlayerState();
 
     render(<GameHUD playerState={state} />);
@@ -51,7 +56,7 @@ describe('GameHUD', () => {
     expect(screen.queryByText('YOU DIED')).not.toBeInTheDocument();
   });
 
-  it('renders center print message', () => {
+  it('should render center print message', () => {
     const state = createMockPlayerState({ centerPrint: "Objective Updated" });
 
     render(<GameHUD playerState={state} />);

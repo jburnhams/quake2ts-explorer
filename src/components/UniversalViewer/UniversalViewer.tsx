@@ -30,6 +30,7 @@ import { ScreenshotOptions } from '@/src/services/screenshotService';
 import { getFileName } from '../../utils/helpers';
 import { PlayerState } from 'quake2ts/shared';
 import { GameHUD } from '../GameHUD';
+import { Console } from '../Console';
 import { PostProcessor, PostProcessOptions, defaultPostProcessOptions } from '../../utils/postProcessing';
 import { PostProcessSettings } from '../PostProcessSettings';
 import postProcessVert from '../../shaders/postProcess.vert?raw';

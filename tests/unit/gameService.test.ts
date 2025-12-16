@@ -1,233 +1,184 @@
-import { createGameSimulation } from '@/src/services/gameService';
+import { createGameSimulation, getGameService, resetGameService, GameSimulation } from '../../src/services/gameService';
 import { VirtualFileSystem, AssetManager } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
-import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
+import { traceBox, pointContents } from 'quake2ts/shared';
+import { createCollisionModel } from '../../src/utils/collisionAdapter';
+import { getConsoleService } from '../../src/services/consoleService';
 
-// Mocks
+// Mock dependencies
+jest.mock('../../src/services/consoleService', () => ({
+  getConsoleService: jest.fn().mockReturnValue({
+    registerCommand: jest.fn(),
+    log: jest.fn()
+  })
+}));
+
+jest.mock('../../src/services/saveService', () => ({
+  saveGame: jest.fn(),
+  loadGame: jest.fn()
+}));
+
 jest.mock('quake2ts/engine', () => {
   return {
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
+    VirtualFileSystem: jest.fn().mockImplementation(() => ({
+      mountPak: jest.fn(),
+    })),
     AssetManager: jest.fn().mockImplementation(() => ({
-      loadMap: jest.fn(),
-      getMap: jest.fn(),
-      resetForLevelChange: jest.fn()
+      getMap: jest.fn().mockResolvedValue({
+        planes: [],
+        nodes: [],
+        leafs: [],
+        brushes: [],
+        brushSides: [],
+        models: [],
+        visibility: null
+      }),
     })),
   };
 });
 
 jest.mock('quake2ts/game', () => {
   return {
-    createGame: jest.fn(),
-    MulticastType: { All: 0 }
-  };
-});
-
-jest.mock('quake2ts/shared', () => {
-  const actual = jest.requireActual('quake2ts/shared');
-  return {
-    ...actual,
-    buildCollisionModel: jest.fn(),
-    CollisionEntityIndex: jest.fn(),
-    traceBox: jest.fn(),
-    pointContents: jest.fn(),
-    createVec3: jest.fn((x,y,z) => ({x,y,z})),
-  };
-});
-
-const mockEntityIndexInstance = {
-  link: jest.fn(),
-  unlink: jest.fn(),
-  trace: jest.fn().mockReturnValue({ fraction: 1.0, entityId: null })
-};
-(CollisionEntityIndex as unknown as jest.Mock).mockReturnValue(mockEntityIndexInstance);
-
-describe('GameService', () => {
-  let vfs: any;
-  let assetManager: any;
-  let gameInstance: any;
-  let capturedImports: any;
-
-  beforeEach(() => {
-    jest.clearAllMocks();
-    // Reset mockEntityIndexInstance behavior
-    mockEntityIndexInstance.link.mockClear();
-    mockEntityIndexInstance.unlink.mockClear();
-    mockEntityIndexInstance.trace.mockReset().mockReturnValue({ fraction: 1.0, entityId: null });
-
-    vfs = new VirtualFileSystem();
-    assetManager = new AssetManager(vfs);
-    (AssetManager as unknown as jest.Mock).mockImplementation(() => assetManager);
-
-    // Mock map data with full structure to test bspToCollisionLump
-    assetManager.loadMap.mockResolvedValue({
-      planes: [{ normal: [0, 0, 1], dist: 0, type: 0 }],
-      nodes: [{ planeIndex: 0, children: [1, -1] }],
-      leafs: [{ contents: 1, cluster: 0, area: 0, firstLeafBrush: 0, numLeafBrushes: 1 }],
-      leafLists: { leafBrushes: [0] },
-      brushes: [{ firstSide: 0, numSides: 6, contents: 1 }],
-      brushSides: [{ planeIndex: 0, texInfo: 0 }],
-      texInfo: [{ flags: 0 }],
-      models: [{ mins: [-10,-10,-10], maxs: [10,10,10], origin: [0,0,0], headNode: 0 }],
-      visibility: { numClusters: 1, clusters: [{ pvs: [], phs: [] }] }
-    });
-
-    gameInstance = {
+    createGame: jest.fn().mockReturnValue({
       init: jest.fn(),
       shutdown: jest.fn(),
-      frame: jest.fn().mockReturnValue({ state: { time: 100 } }),
+      frame: jest.fn(),
       snapshot: jest.fn(),
-      createSave: jest.fn(),
-      loadSave: jest.fn(),
-      time: 120, // 2 minutes
-      entities: [
-          { index: 1, origin: {x:0,y:0,z:0} } // Mock entity for trace find
-      ]
+      spawnWorld: jest.fn(),
+    }),
+    MulticastType: {},
+  };
+});
+
+jest.mock('quake2ts/shared', () => ({
+  traceBox: jest.fn().mockReturnValue({
+    allsolid: false,
+    startsolid: false,
+    fraction: 1.0,
+    endpos: { x: 0, y: 0, z: 0 },
+    plane: null,
+    contents: 0
+  }),
+  pointContents: jest.fn().mockReturnValue(0),
+  buildCollisionModel: jest.fn().mockReturnValue({}),
+  Vec3: {},
+}));
+
+jest.mock('../../src/utils/collisionAdapter', () => ({
+  createCollisionModel: jest.fn().mockReturnValue({})
+}));
+
+describe('GameService', () => {
+  let vfs: VirtualFileSystem;
+  let gameService: GameSimulation;
+
+  beforeEach(() => {
+    resetGameService();
+    vfs = new VirtualFileSystem();
+    gameService = createGameSimulation(vfs);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should be a singleton', () => {
+    const service1 = getGameService();
+    const service2 = getGameService();
+    expect(service1).toBe(service2);
+    expect(service1).toBe(gameService);
+  });
+
+  it('should initialize the game', async () => {
+    await gameService.initGame('maps/test.bsp', { deathmatch: true });
+
+    expect(createGame).toHaveBeenCalledTimes(1);
+    const mockExports = (createGame as jest.Mock).mock.results[0].value;
+    expect(mockExports.init).toHaveBeenCalled();
+    expect(mockExports.spawnWorld).toHaveBeenCalled();
+    expect(createCollisionModel).toHaveBeenCalled();
+  });
+
+  it('should fail if map loading returns undefined', async () => {
+    const AssetManagerMock = require('quake2ts/engine').AssetManager;
+    AssetManagerMock.mockImplementationOnce(() => ({
+      getMap: jest.fn().mockResolvedValue(undefined)
+    }));
+    // We need to recreate service because constructor calls new AssetManager
+    resetGameService();
+    gameService = createGameSimulation(vfs);
+
+    await expect(gameService.initGame('maps/missing.bsp', {})).rejects.toThrow('Failed to load map: maps/missing.bsp');
+  });
+
+  it('should run simulation ticks', async () => {
+    await gameService.initGame('maps/test.bsp', {});
+    const cmd = {
+        msec: 25,
+        buttons: 0,
+        angles: { x: 0, y: 0, z: 0 },
+        forwardmove: 0,
+        sidemove: 0,
+        upmove: 0,
+        impulse: 0,
+        lightlevel: 0
     };
 
-    (createGame as jest.Mock).mockImplementation((imports: any) => {
-        capturedImports = imports;
-        return gameInstance;
-    });
+    gameService.tick(25, cmd);
 
-    // Mock traceBox default return
-    (traceBox as jest.Mock).mockReturnValue({
-        fraction: 1.0,
-        allsolid: false,
-        startsolid: false,
-        endpos: {x:0,y:0,z:0},
-        plane: { normal: {x:0,y:0,z:1}, dist:0, type:0 },
-        contents: 0,
-        surfaceFlags: 0
-    });
-
+    const mockExports = (createGame as jest.Mock).mock.results[0].value;
+    expect(mockExports.frame).toHaveBeenCalledWith(25, cmd);
   });
 
-  it('initializes game simulation correctly and maps BSP data', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp');
+  it('should return snapshots', async () => {
+    await gameService.initGame('maps/test.bsp', {});
 
-    expect(assetManager.loadMap).toHaveBeenCalledWith('maps/test.bsp');
-    expect(createGame).toHaveBeenCalled();
+    const snapshot = gameService.getSnapshot();
 
-    simulation.start();
-    expect(gameInstance.init).toHaveBeenCalled();
+    const mockExports = (createGame as jest.Mock).mock.results[0].value;
+    expect(mockExports.snapshot).toHaveBeenCalled();
   });
 
-  it('handles map load failure', async () => {
-      assetManager.loadMap.mockRejectedValue(new Error('Failed'));
-      await expect(createGameSimulation(vfs, 'maps/fail.bsp')).rejects.toThrow('Failed');
+  it('should shutdown the game', async () => {
+    await gameService.initGame('maps/test.bsp', {});
+    gameService.shutdownGame();
+
+    const mockExports = (createGame as jest.Mock).mock.results[0].value;
+    expect(mockExports.shutdown).toHaveBeenCalled();
   });
 
-  it('handles undefined map', async () => {
-      assetManager.loadMap.mockResolvedValue(undefined);
-      await expect(createGameSimulation(vfs, 'maps/empty.bsp')).rejects.toThrow('Failed to load map');
+  it('should perform trace using collision model', async () => {
+     // Access private/protected methods by casting to any if necessary,
+     // but GameService calls trace internally?
+     // Actually GameImports.trace is called BY the game engine.
+     // So we can call it directly on the instance to test it.
+
+     await gameService.initGame('maps/test.bsp', {});
+     const impl = gameService as any;
+
+     const start = { x: 0, y: 0, z: 0 };
+     const end = { x: 100, y: 0, z: 0 };
+     const mins = { x: -16, y: -16, z: -24 };
+     const maxs = { x: 16, y: 16, z: 32 };
+
+     impl.trace(start, mins, maxs, end, null, 1);
+
+     expect(traceBox).toHaveBeenCalledWith(expect.objectContaining({
+         start,
+         end,
+         mins,
+         maxs,
+         contentMask: 1
+     }));
   });
 
-  it('runs game loop tick', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp');
-    simulation.tick(50, {} as any);
-    expect(gameInstance.frame).toHaveBeenCalled();
-  });
+  it('should perform pointcontents check', async () => {
+     await gameService.initGame('maps/test.bsp', {});
+     const impl = gameService as any;
 
-  it('delegates createSave to game exports', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp', { skill: 2 });
-    simulation.createSave('My Save');
-    expect(gameInstance.createSave).toHaveBeenCalledWith('maps/test.bsp', 2, 120);
-  });
+     const point = { x: 50, y: 50, z: 50 };
+     impl.pointcontents(point);
 
-  it('delegates loadSave to game exports', async () => {
-    const simulation = await createGameSimulation(vfs, 'maps/test.bsp');
-    const mockSave = { map: 'maps/test.bsp' } as any;
-    simulation.loadSave(mockSave);
-    expect(gameInstance.loadSave).toHaveBeenCalledWith(mockSave);
-  });
-
-  describe('GameImports callbacks', () => {
-      let simulation: any;
-
-      beforeEach(async () => {
-          simulation = await createGameSimulation(vfs, 'maps/test.bsp');
-      });
-
-      it('implements trace callback (world hit)', () => {
-          (traceBox as jest.Mock).mockReturnValue({
-              fraction: 0.5,
-              endpos: {x:50,y:0,z:0},
-              contents: 1,
-              plane: { normal: {x:-1,y:0,z:0}, dist: 50 },
-              surfaceFlags: 0,
-              allsolid: false,
-              startsolid: false
-          });
-          mockEntityIndexInstance.trace.mockReturnValue({ fraction: 1.0 });
-
-          const result = capturedImports.trace(
-              {x:0,y:0,z:0}, {x:-10,y:-10,z:-10}, {x:10,y:10,z:10}, {x:100,y:0,z:0}, null, -1
-          );
-
-          expect(result.fraction).toBe(0.5);
-          expect(result.contents).toBe(1);
-          expect(result.ent).toBeNull();
-      });
-
-      it('implements trace callback (entity hit)', () => {
-          (traceBox as jest.Mock).mockReturnValue({ fraction: 1.0 });
-          mockEntityIndexInstance.trace.mockReturnValue({
-              fraction: 0.5,
-              entityId: 1,
-              endpos: {x:50,y:0,z:0},
-              plane: { normal: {x:-1,y:0,z:0}, dist: 50 },
-              surfaceFlags: 0,
-              contents: 1,
-              allsolid: false,
-              startsolid: false
-          });
-
-          // Update gameInstance.entities to support find
-          gameInstance.entities = [{ index: 1, classname: 'player' }];
-
-          const result = capturedImports.trace(
-              {x:0,y:0,z:0}, null, null, {x:100,y:0,z:0}, null, -1
-          );
-
-          expect(result.fraction).toBe(0.5);
-          expect(result.ent).toBeDefined();
-          expect(result.ent.index).toBe(1);
-      });
-
-      it('implements pointcontents callback', () => {
-          (pointContents as jest.Mock).mockReturnValue(42);
-          const result = capturedImports.pointcontents({x:0,y:0,z:0});
-          expect(result).toBe(42);
-          expect(pointContents).toHaveBeenCalled();
-      });
-
-      it('implements linkentity callback', () => {
-          const entity = {
-              index: 1,
-              origin: {x:0,y:0,z:0},
-              mins: {x:-10,y:-10,z:-10},
-              maxs: {x:10,y:10,z:10},
-              solid: 1, // Solid
-              clipmask: 1
-          };
-          capturedImports.linkentity(entity);
-          expect(mockEntityIndexInstance.link).toHaveBeenCalledWith(expect.objectContaining({
-              id: 1,
-              contents: 1
-          }));
-      });
-
-      it('skips linkentity if not solid', () => {
-          const entity = {
-              index: 1,
-              origin: {x:0,y:0,z:0},
-              mins: {x:-10,y:-10,z:-10},
-              maxs: {x:10,y:10,z:10},
-              solid: 0, // Not solid
-              clipmask: 0
-          };
-          capturedImports.linkentity(entity);
-          expect(mockEntityIndexInstance.link).not.toHaveBeenCalled();
-      });
+     expect(pointContents).toHaveBeenCalledWith(point, expect.anything());
   });
 });

@@ -1,4 +1,4 @@
-import { getInputService, resetInputService } from '../../../src/services/inputService';
+import { getInputService, resetInputService } from '../../src/services/inputService';
 import { InputController } from 'quake2ts/client';
 
 // Mock InputController
@@ -51,7 +51,7 @@ describe('InputService', () => {
 
   beforeEach(() => {
     resetInputService();
-    jest.clearAllMocks();
+    jest.clearAllMocks(); // This clears the calls to mockHandleKeyDown etc.
 
     inputService = getInputService();
     inputService.init();
