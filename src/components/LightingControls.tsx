@@ -1,11 +1,12 @@
 import React from 'react';
-import './ScreenshotSettings.css'; // Reuse basic panel styles or create new ones? Let's use inline for simplicity or reuse.
+import './ScreenshotSettings.css';
 
 export interface LightingOptions {
     brightness: number;
     gamma: number;
     ambient: number;
     fullbright: boolean;
+    freezeLights: boolean;
 }
 
 interface LightingControlsProps {
@@ -26,7 +27,7 @@ export const LightingControls: React.FC<LightingControlsProps> = ({ options, onC
     };
 
     return (
-        <div className="screenshot-settings-modal" style={{ zIndex: 2000 }}> {/* Reuse modal class but maybe positioning different? */}
+        <div className="screenshot-settings-modal" style={{ zIndex: 2000 }}>
             <div className="screenshot-settings-content" style={{ minWidth: '300px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
                     <h3 style={{ margin: 0 }}>Lighting Controls</h3>
@@ -78,8 +79,17 @@ export const LightingControls: React.FC<LightingControlsProps> = ({ options, onC
                     />
                 </div>
 
+                <div className="setting-group" style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <label style={{ marginBottom: 0, marginRight: '10px' }}>Freeze Animated Lights:</label>
+                    <input
+                        type="checkbox"
+                        checked={options.freezeLights}
+                        onChange={(e) => handleChange('freezeLights', e.target.checked)}
+                    />
+                </div>
+
                 <div className="button-group" style={{ marginTop: '15px' }}>
-                    <button onClick={() => onChange({ brightness: 1.0, gamma: 1.0, ambient: 0.1, fullbright: false })} className="cancel-btn">
+                    <button onClick={() => onChange({ brightness: 1.0, gamma: 1.0, ambient: 0.1, fullbright: false, freezeLights: false })} className="cancel-btn">
                         Reset Defaults
                     </button>
                     <button onClick={onClose} className="capture-btn">Close</button>

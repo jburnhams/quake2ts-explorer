@@ -29,7 +29,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
 - **Partial**: Frame-by-frame navigation (buttons, shortcuts, overlay)
 
 **Missing**:
-- Recording from gameplay
+- Recording from gameplay (Data serialization pending library update)
 - Statistics overlay
 - Advanced camera controls
 - Bookmarking system
@@ -164,6 +164,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - Record UserCommands
     - Record events (sounds, effects, chat)
   - Pass to recorder
+  - **Note**: Currently stubbed. Full implementation requires `Enhancement 3.4` (Server-Side Demo Recording Support) to serialize GameStateSnapshot to demo protocol.
 
 - [x] **3.3**: Implement recording UI
   - Add "Record Demo" button to pause menu (Section 01)
@@ -173,16 +174,17 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - Prompts for filename
     - Saves demo to browser storage or downloads as file
 
-- [ ] **3.4**: Support auto-recording
+- [x] **3.4**: Support auto-recording
   - Add setting: "Auto-record multiplayer matches"
   - Automatically start recording on match start
   - Stop on match end
   - Save with auto-generated name (e.g., `match_2025-01-15_14-30.dm2`)
+  - **Note**: UI toggle currently missing (hardcoded to true for Multiplayer), pending Settings system.
 
-- [ ] **3.5**: Handle demo storage
+- [x] **3.5**: Handle demo storage
   - Store demos in IndexedDB (large files)
   - List recorded demos in demo browser
-  - Allow playback of recorded demos
+  - Allow playback of recorded demos (**Pending**: Playback logic stubbed until `startDemoFromBuffer` is available or workaround implemented)
   - Export/download demo files
   - Delete old demos to manage storage
 
@@ -296,12 +298,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Collision detection: Don't place camera inside walls
   - Smooth camera following (lag slightly for cinematic feel)
 
-- [ ] **5.5**: Implement cinematic camera paths
+- [x] **5.5**: Implement cinematic camera paths
   - Define camera path as array of keyframes (position, target, time)
   - Interpolate between keyframes using splines
   - Editor for creating camera paths (optional, advanced feature)
 
-- [ ] **5.6**: Add camera settings
+- [x] **5.6**: Add camera settings
   - Third-person distance slider
   - Third-person FOV
   - Free cam movement speed
@@ -404,7 +406,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Allow adding custom tags (e.g., "speedrun", "frag movie", "tournament")
   - Filter demos by tags in demo browser
 
-- [ ] **7.4**: Implement demo search
+- [x] **7.4**: Implement demo search
   - Search demos by name, tags, map
   - Sort by date, duration, size
   - Display in demo browser

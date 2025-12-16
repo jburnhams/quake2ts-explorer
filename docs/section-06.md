@@ -45,18 +45,19 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
 
 - [ ] **1.1**: Implement entity selection modes
   - Modify `BspAdapter.ts`
-  - Single selection (click entity)
-  - Multi-selection (Ctrl+click to add/remove)
-  - Box selection (drag rectangle to select multiple)
-  - Deselect (click empty space)
+  - [x] Single selection (click entity)
+  - [x] Multi-selection (Ctrl+click to add/remove)
+  - [ ] Box selection (drag rectangle to select multiple)
+  - [x] Deselect (click empty space)
 
-- [ ] **1.2**: Visual selection feedback
-  - Highlight selected entities (different color than hover)
-  - Draw bounding boxes around selected entities
-  - Show selection count in UI ("3 entities selected")
+- [x] **1.2**: Visual selection feedback
+  - [x] Highlight selected entities (different color than hover)
+  - [x] Draw bounding boxes around selected entities
+  - [ ] Show selection count in UI ("3 entities selected")
 
-- [ ] **1.3**: Implement transform gizmo
-  - Create `src/components/TransformGizmo.tsx`
+- [x] **1.3**: Implement transform gizmo
+  - Created `src/components/UniversalViewer/adapters/GizmoRenderer.ts`
+  - Integrated into `BspAdapter` render loop for proper depth handling and synchronization
   - 3D widget overlay on selected entity
   - Modes:
     - Translate (arrows for X, Y, Z axis movement)

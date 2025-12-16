@@ -306,14 +306,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Pass to renderer as uniform or post-process multiplier
   - **Library Enhancement Needed**: Brightness adjustment API (Partially implemented via color modulation)
 
-- [ ] **5.3**: Implement gamma correction
+- [x] **5.3**: Implement gamma correction
   - Slider: 0.5 to 3.0
   - Default: 1.0 (linear)
   - Gamma curve affects midtones
   - Apply in fragment shader or post-process
   - **Note**: Requires shader modification (Library Enhancement Needed)
 
-- [ ] **5.4**: Implement light style overrides
+- [x] **5.4**: Implement light style overrides
   - Quake II uses light styles for flickering/pulsing lights
   - Allow overriding light style patterns
   - Freeze animated lights for static screenshots

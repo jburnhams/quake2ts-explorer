@@ -13,11 +13,16 @@ export interface RenderOptions {
   gamma?: number;
   ambient?: number;
   fullbright?: boolean;
+  freezeLights?: boolean;
 }
 
 export interface Ray {
   origin: [number, number, number];
   direction: [number, number, number];
+}
+
+export interface PickOptions {
+  multiSelect?: boolean;
 }
 
 export interface AnimationInfo {
@@ -71,7 +76,7 @@ export interface ViewerAdapter {
   setHiddenClasses?(hidden: Set<string>): void;
 
   // Picking
-  pickEntity?(ray: Ray): any;
+  pickEntity?(ray: Ray, options?: PickOptions): any;
   setHoveredEntity?(entity: any): void;
 
   // Debugging
