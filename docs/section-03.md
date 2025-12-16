@@ -298,12 +298,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Collision detection: Don't place camera inside walls
   - Smooth camera following (lag slightly for cinematic feel)
 
-- [ ] **5.5**: Implement cinematic camera paths
+- [x] **5.5**: Implement cinematic camera paths
   - Define camera path as array of keyframes (position, target, time)
   - Interpolate between keyframes using splines
   - Editor for creating camera paths (optional, advanced feature)
 
-- [ ] **5.6**: Add camera settings
+- [x] **5.6**: Add camera settings
   - Third-person distance slider
   - Third-person FOV
   - Free cam movement speed

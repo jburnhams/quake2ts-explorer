@@ -37,6 +37,9 @@ import postProcessFrag from '../../shaders/postProcess.frag?raw';
 
 import '../../styles/md2Viewer.css';
 import { EntityEditorService } from '@/src/services/entityEditorService';
+import { CameraSettings, DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
+import { CameraSettingsPanel } from '../CameraSettingsPanel';
+import { CinematicPath, CameraKeyframe } from '@/src/utils/cameraPath';
 
 export interface UniversalViewerProps {
   parsedFile: ParsedFile;
@@ -119,6 +122,9 @@ export function UniversalViewer({
   const [recordingTimeLimit, setRecordingTimeLimit] = useState<number>(300);
   const [recordingResolution, setRecordingResolution] = useState<{ width: number; height: number } | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [cameraSettings, setCameraSettings] = useState<CameraSettings>(DEFAULT_CAMERA_SETTINGS);
+  const [showCameraSettings, setShowCameraSettings] = useState(false);
+  const [cinematicPath, setCinematicPath] = useState<CinematicPath>({ name: 'default', keyframes: [], loop: false });
 
   useEffect(() => {
     if (filePath) {
@@ -754,6 +760,18 @@ export function UniversalViewer({
   }, [adapter, debugMode]);
 
   useEffect(() => {
+    if (adapter && (adapter as any).setCameraSettings) {
+      (adapter as any).setCameraSettings(cameraSettings);
+    }
+  }, [adapter, cameraSettings]);
+
+  useEffect(() => {
+    if (adapter && (adapter as any).setCinematicPath) {
+        (adapter as any).setCinematicPath(cinematicPath.keyframes.length > 0 ? cinematicPath : null);
+    }
+  }, [adapter, cinematicPath]);
+
+  useEffect(() => {
     if (adapter && adapter.setCameraMode) {
         // If we are switching TO free or orbital mode, we should sync the local camera state
         // to the current camera position so there is no jump.
@@ -953,7 +971,7 @@ export function UniversalViewer({
                    mouseState.current.deltaX = 0;
                    mouseState.current.deltaY = 0;
 
-                   const newState = updateFreeCamera(freeCameraRef.current, inputs, delta, 300, 0.002, useZUp);
+                   const newState = updateFreeCamera(freeCameraRef.current, inputs, delta, cameraSettings.freeCamSpeed, 0.002, useZUp);
                    freeCameraRef.current = newState;
                    setFreeCamera(newState);
 
@@ -1074,7 +1092,7 @@ export function UniversalViewer({
           running = false;
           cancelAnimationFrame(frameId);
       };
-  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode, postProcessOptions]);
+  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode, postProcessOptions, cameraSettings]);
 
   // Resize Handler
   useEffect(() => {
@@ -1145,6 +1163,49 @@ export function UniversalViewer({
             options={postProcessOptions}
             onChange={setPostProcessOptions}
        />
+       {showCameraSettings && (
+           <div style={{ position: 'absolute', top: 50, right: 10, zIndex: 60 }}>
+             <CameraSettingsPanel
+                settings={cameraSettings}
+                onChange={setCameraSettings}
+                onClose={() => setShowCameraSettings(false)}
+                onAddKeyframe={() => {
+                    if (camera && adapter) {
+                        const time = adapter.getCurrentTime ? adapter.getCurrentTime() : 0;
+                        const pos = vec3.create();
+                        const rot = vec3.create(); // In degrees
+
+                        // Determine current camera pos/rot
+                        // If we are in Free/Orbit, use our state. If first person, use adapter's.
+                        // Actually better to ask adapter for current camera if possible, or use the last render camera.
+                        if (camera.position) vec3.copy(pos, camera.position);
+                        if (camera.angles) vec3.copy(rot, camera.angles);
+
+                        // If we are in Free mode, the camera angles might be radians from freeCamera state.
+                        // But UniversalViewer converts them to degrees for camera.angles before render.
+                        // Wait, adapter.render updates camera.angles from adapter's logic.
+                        // If free mode, UniversalViewer updates camera.angles from freeCameraRef.
+                        // But freeCamera uses radians in rotation[].
+                        // Loop:
+                        // this.cameraAngles[0] = this.freeCamera.rotation[0] * (180 / Math.PI);
+                        // camera.angles is likely in degrees.
+
+                        const keyframe: CameraKeyframe = {
+                            time,
+                            position: pos as any,
+                            rotation: rot as any
+                        };
+                        setCinematicPath(prev => ({
+                            ...prev,
+                            keyframes: [...prev.keyframes, keyframe].sort((a, b) => a.time - b.time)
+                        }));
+                    }
+                }}
+                onClearPath={() => setCinematicPath({ name: 'default', keyframes: [], loop: false })}
+                pathKeyframeCount={cinematicPath.keyframes.length}
+             />
+           </div>
+       )}
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
               position: 'absolute',
@@ -1204,6 +1265,7 @@ export function UniversalViewer({
             recordingSizeEstimate={isRecording ? (recordingDuration * recordingBitrate) / 8 : undefined}
             onLightingSettings={() => setShowLightingControls(true)}
             onPostProcessSettings={() => setShowPostProcessSettings(true)}
+            onCameraSettings={() => setShowCameraSettings(!showCameraSettings)}
          />
        )}
        <LightingControls

@@ -42,6 +42,7 @@ interface ViewerControlsProps {
   onMetadata?: () => void;
   onLightingSettings?: () => void;
   onPostProcessSettings?: () => void;
+  onCameraSettings?: () => void;
 }
 
 export function ViewerControls({
@@ -77,7 +78,8 @@ export function ViewerControls({
   recordingSizeEstimate,
   onLightingSettings,
   onPostProcessSettings,
-  onMetadata
+  onMetadata,
+  onCameraSettings
 }: ViewerControlsProps) {
 
   const formatTime = (seconds: number) => {
@@ -351,17 +353,28 @@ export function ViewerControls({
       {setDemoCameraMode && (
           <div className="demo-camera-controls" style={{ marginBottom: '10px' }}>
               <label htmlFor="demo-camera-select" style={{ display: 'block', marginBottom: '5px', fontSize: '12px' }}>Camera Mode:</label>
-              <select
-                  id="demo-camera-select"
-                  value={demoCameraMode || CameraMode.FirstPerson}
-                  onChange={(e) => setDemoCameraMode(e.target.value as CameraMode)}
-                  style={{ width: '100%', padding: '5px', fontSize: '12px' }}
-              >
-                  <option value={CameraMode.FirstPerson}>First Person</option>
-                  <option value={CameraMode.ThirdPerson}>Third Person</option>
-                  <option value={CameraMode.Free}>Free Cam</option>
-                  <option value={CameraMode.Orbital}>Orbital</option>
-              </select>
+              <div style={{ display: 'flex', gap: '5px' }}>
+                <select
+                    id="demo-camera-select"
+                    value={demoCameraMode || CameraMode.FirstPerson}
+                    onChange={(e) => setDemoCameraMode(e.target.value as CameraMode)}
+                    style={{ flex: 1, padding: '5px', fontSize: '12px' }}
+                >
+                    <option value={CameraMode.FirstPerson}>First Person</option>
+                    <option value={CameraMode.ThirdPerson}>Third Person</option>
+                    <option value={CameraMode.Free}>Free Cam</option>
+                    <option value={CameraMode.Orbital}>Orbital</option>
+                </select>
+                {onCameraSettings && (
+                    <button
+                        onClick={onCameraSettings}
+                        title="Camera Settings"
+                        style={{ width: '30px', padding: '0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                    >
+                        ⚙
+                    </button>
+                )}
+              </div>
           </div>
       )}
 
