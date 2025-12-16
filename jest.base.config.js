@@ -12,6 +12,7 @@ const baseConfig = {
     '^quake2ts/client$': '<rootDir>/node_modules/quake2ts/packages/client/dist/esm/index.js',
     '^quake2ts/server$': '<rootDir>/node_modules/quake2ts/packages/server/dist/esm/index.js',
     '^quake2ts/shared$': '<rootDir>/node_modules/quake2ts/packages/shared/dist/esm/index.js',
+    '^quake2ts/cgame$': '<rootDir>/node_modules/quake2ts/packages/cgame/dist/index.js',
     // Aliases for internal resolution within quake2ts packages (matches vite.config.ts)
     '^@quake2ts/cgame$': '<rootDir>/node_modules/quake2ts/packages/cgame/dist/index.js',
     '^@quake2ts/game$': '<rootDir>/node_modules/quake2ts/packages/game/dist/esm/index.js',
