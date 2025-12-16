@@ -1,77 +1,57 @@
 .console-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 50vh; /* Takes up half the screen */
-  background-color: rgba(0, 0, 0, 0.85);
-  color: #0f0;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 14px;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  border-bottom: 2px solid #444;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
-  backdrop-filter: blur(4px);
-  transition: transform 0.2s ease-in-out;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 50%;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #0f0;
+    font-family: 'Courier New', Courier, monospace;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    border-bottom: 2px solid #0f0;
 }
 
-.console-overlay.hidden {
-    transform: translateY(-100%);
-    pointer-events: none;
+.console-log {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+    font-size: 14px;
 }
 
-.console-logs {
-  flex: 1;
-  overflow-y: auto;
-  padding: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+.console-msg {
+    margin-bottom: 4px;
+    word-wrap: break-word;
 }
 
-.console-log-entry {
-  line-height: 1.4;
-  word-break: break-all;
+.console-msg.info { color: #ccc; }
+.console-msg.warning { color: #ff0; }
+.console-msg.error { color: #f00; }
+
+.timestamp {
+    color: #666;
+    margin-right: 8px;
 }
 
-.console-log-entry.error {
-  color: #ff4444;
+.console-input-bar {
+    display: flex;
+    padding: 5px;
+    background-color: rgba(0, 50, 0, 0.5);
 }
 
-.console-log-entry.warning {
-  color: #ffaa00;
+.prompt {
+    color: #0f0;
+    margin-right: 8px;
+    font-weight: bold;
 }
 
-.console-log-entry.success {
-  color: #44ff44;
-}
-
-.console-log-entry.info {
-  color: #cccccc;
-}
-
-.console-input-area {
-  display: flex;
-  padding: 8px;
-  background-color: rgba(255, 255, 255, 0.1);
-  border-top: 1px solid #444;
-  align-items: center;
-}
-
-.console-prompt {
-  margin-right: 8px;
-  color: #0f0;
-  font-weight: bold;
-}
-
-.console-input {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: #fff;
-  font-family: inherit;
-  font-size: inherit;
-  outline: none;
+.console-input-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: white;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
 }

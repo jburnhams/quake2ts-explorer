@@ -8,9 +8,9 @@ import { createGame } from 'quake2ts/game';
 jest.mock('quake2ts/engine', () => ({
   VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
   AssetManager: jest.fn().mockImplementation(() => ({
-    loadMap: jest.fn().mockResolvedValue({
+    getMap: jest.fn().mockResolvedValue({
         // Minimal map mock
-        leafs: [], nodes: [], models: [], planes: []
+        leafs: [], nodes: [], models: [], planes: [], brushes: [], brushSides: [], leafLists: { leafBrushes: [] }
     }),
     clearCache: jest.fn()
   }))
@@ -20,10 +20,16 @@ jest.mock('quake2ts/game', () => ({
   createGame: jest.fn().mockImplementation(() => ({
     init: jest.fn().mockReturnValue({ state: {} }),
     shutdown: jest.fn(),
+    spawnWorld: jest.fn(),
     entities: [
         { classname: 'player', index: 1, flags: 0, movetype: 0 },
         { classname: 'other', index: 2 }
-    ]
+    ],
+    setGodMode: jest.fn(),
+    setNoclip: jest.fn(),
+    setNotarget: jest.fn(),
+    giveItem: jest.fn(),
+    damage: jest.fn()
   }))
 }));
 
@@ -39,6 +45,7 @@ jest.mock('quake2ts/shared', () => ({
     })),
     traceBox: jest.fn().mockReturnValue({ fraction: 1.0 }),
     pointContents: jest.fn().mockReturnValue(0),
+    buildCollisionModel: jest.fn(),
     Vec3: {},
     CollisionPlane: {}
 }));
@@ -62,7 +69,11 @@ describe('GameService Console Commands', () => {
     });
 
     it('should register and execute console commands', async () => {
-        await createGameSimulation(vfs, 'test_map');
+        const service = createGameSimulation(vfs);
+        await service.initGame('test_map', {});
+
+        // Debug: Verify game exports are set
+        expect(service.getExports()).toBeDefined();
 
         expect(commands['god']).toBeDefined();
         expect(commands['noclip']).toBeDefined();
@@ -72,36 +83,30 @@ describe('GameService Console Commands', () => {
 
         // Execute commands
         commands['god']();
-        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('god mode'), expect.any(String));
+        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('God Mode'), expect.any(String));
 
         commands['noclip']();
-        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('noclip'), expect.any(String));
+        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Noclip'), expect.any(String));
 
         commands['notarget']();
-        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('notarget'), expect.any(String));
+        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Notarget'), expect.any(String));
 
         commands['kill']();
         expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Suicide'), expect.any(String));
 
         commands['give'](['weapon_shotgun']);
-        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Giving item'), expect.any(String));
+        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Gave'), expect.any(String));
 
         // Edge case: give without args
         commands['give']([]);
         expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Usage'), expect.any(String));
     });
 
-    it('should handle missing player in console commands', async () => {
-        // Mock no player in entities
-        (createGame as jest.Mock).mockImplementationOnce(() => ({
-            init: jest.fn(),
-            shutdown: jest.fn(),
-            entities: [] // No player
-        }));
-
-        await createGameSimulation(vfs, 'test_map');
+    it('should handle uninitialized game', async () => {
+        // Just create, don't init
+        createGameSimulation(vfs);
 
         commands['god']();
-        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Player not found'), expect.any(String));
+        expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Game not running'), expect.any(String));
     });
 });

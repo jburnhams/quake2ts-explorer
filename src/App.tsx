@@ -16,7 +16,6 @@ import { usePakExplorer } from './hooks/usePakExplorer';
 import { GameMenu } from './components/GameMenu';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
-import { GameHUD } from './components/GameHUD';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
@@ -223,7 +222,7 @@ function App() {
                           pakService={pakService}
                           filePath={selectedPath || ''}
                           playerState={gameStateSnapshot?.playerState}
-                          configstrings={gameStateSnapshot?.configstrings} // Need to expose this from snapshot or hook
+                          configstrings={gameStateSnapshot?.configstrings}
                           isGameMode={true}
                           showControls={false}
                       />

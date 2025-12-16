@@ -1,4 +1,4 @@
-import { getConsoleService, resetConsoleService } from '../../../src/services/consoleService';
+import { getConsoleService, resetConsoleService } from '../../src/services/consoleService';
 
 describe('ConsoleService', () => {
   let consoleService: any;
@@ -49,7 +49,7 @@ describe('ConsoleService', () => {
       consoleService.log('test');
       expect(consoleService.getMessages().length).toBe(1);
 
-      consoleService.clearLogs();
+      consoleService.clear();
       expect(consoleService.getMessages().length).toBe(0);
   });
 });

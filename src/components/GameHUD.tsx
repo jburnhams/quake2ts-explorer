@@ -1,120 +1,92 @@
-import React, { useEffect, useState, useMemo } from 'react';
-import { PlayerState, PlayerStat } from 'quake2ts/shared';
-import { PakService } from '@/src/services/pakService';
+import React from 'react';
 import './GameHUD.css';
+import { PlayerState } from 'quake2ts/shared';
 
-interface GameHUDProps {
-  playerState: PlayerState;
-  configstrings: Map<number, string>;
-  pakService: PakService;
+// We import the enum from shared if available, or define it locally if not exported
+// Since we saw it in shared/dist/types/protocol/stats.d.ts, we can try to import it.
+// However, it might be exported as `PlayerStat` or just consts.
+// The grep showed `STAT_HEALTH = 1`.
+// We will use the enum from `quake2ts/shared` if possible, but for now we rely on the indices we found.
+
+export enum PlayerStat {
+    STAT_HEALTH_ICON = 0,
+    STAT_HEALTH = 1,
+    STAT_AMMO_ICON = 2,
+    STAT_AMMO = 3,
+    STAT_ARMOR_ICON = 4,
+    STAT_ARMOR = 5,
+    STAT_SELECTED_ICON = 6,
+    STAT_PICKUP_ICON = 7,
+    STAT_PICKUP_STRING = 8,
+    STAT_TIMER_ICON = 9,
+    STAT_TIMER = 10,
+    STAT_HELPICON = 11,
+    STAT_SELECTED_ITEM = 12,
+    STAT_LAYOUTS = 13,
+    STAT_FRAGS = 14,
+    STAT_FLASHES = 15
 }
 
-export function GameHUD({ playerState, configstrings, pakService }: GameHUDProps) {
-  const [damageFlash, setDamageFlash] = useState(false);
-  const [pickupFlash, setPickupFlash] = useState(false);
-  const [lastHealth, setLastHealth] = useState(0);
-  const [weaponIconUrl, setWeaponIconUrl] = useState<string | null>(null);
-  const [ammoIconUrl, setAmmoIconUrl] = useState<string | null>(null);
-  const [armorIconUrl, setArmorIconUrl] = useState<string | null>(null);
+interface GameHUDProps {
+  playerState: PlayerState | null;
+  configStrings?: Map<number, string>;
+}
 
-  const health = playerState.stats[PlayerStat.STAT_HEALTH] || 0;
-  const ammo = playerState.stats[PlayerStat.STAT_AMMO] || 0;
-  const armor = playerState.stats[PlayerStat.STAT_ARMOR] || 0;
-  const weaponIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
-  const ammoIconIndex = playerState.stats[PlayerStat.STAT_AMMO_ICON];
-  const armorIconIndex = playerState.stats[PlayerStat.STAT_ARMOR_ICON];
+export const GameHUD: React.FC<GameHUDProps> = ({ playerState, configStrings }) => {
+  if (!playerState) return null;
 
-  // Note: STAT_SELECTED_ICON (6) is usually the icon.
-  // I'll stick to PlayerStat enum.
-  // If icons are missing, I'll fallback to text.
+  const health = playerState.stats[PlayerStat.STAT_HEALTH];
+  const armor = playerState.stats[PlayerStat.STAT_ARMOR];
+  const ammo = playerState.stats[PlayerStat.STAT_AMMO];
 
-  const selectedIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
+  // Flash effect based on blend
+  // playerState.blend is [r, g, b, a]
+  const flashStyle: React.CSSProperties = {
+      backgroundColor: `rgba(${playerState.blend[0] * 255}, ${playerState.blend[1] * 255}, ${playerState.blend[2] * 255}, ${playerState.blend[3]})`
+  };
 
-  // Load icons
-  useEffect(() => {
-    const loadIcon = async (index: number, setter: (url: string | null) => void) => {
-      if (index && configstrings) {
-        // CS_IMAGES start at 544
-        const CS_IMAGES = 544;
-        const imageName = configstrings.get(CS_IMAGES + index);
-        if (imageName) {
-           try {
-             // Try loading from pak
-             // Images are usually pcx or wal.
-             // We need to resolve path. configstring usually has relative path like "pics/w_rail.pcx"
-             // pakService can read it. But we need a URL for img tag.
-             // We can use pakService.readFile to get buffer, then blob.
-             const buffer = await pakService.readFile(imageName);
-             if (buffer) {
-                 // Convert PCX/WAL to PNG blob url?
-                 // That requires decoding. pakService has methods?
-                 // pakService.loadTexture returns PreparedTexture.
-                 // This is complicated for UI. UI usually expects <img> src.
-                 // Maybe we just skip icons for now or implement a simpler text HUD first.
-                 // Or we implement an Icon component that handles decoding.
-             }
-           } catch (e) {
-             console.warn("Failed to load HUD icon", imageName);
-           }
-        }
-      }
-      setter(null);
-    };
-
-    // Placeholder logic for now as decoding PCX in UI requires canvas/texture atlas logic
-    // which is heavy for this component.
-    // We will render text labels instead.
-  }, [selectedIconIndex, ammoIconIndex, armorIconIndex, configstrings, pakService]);
-
-  // Flash detection
-  useEffect(() => {
-    if (health < lastHealth) {
-      setDamageFlash(true);
-      setTimeout(() => setDamageFlash(false), 200);
-    }
-    setLastHealth(health);
-  }, [health, lastHealth]);
-
-  // Centerprint
-  // playerState doesn't have centerprint directly, it comes from events/server commands.
-  // But checking PlayerState interface in usage.md, it doesn't show centerprint.
-  // Usually centerprint is handled by client receiving commands.
-  // For now, we omit centerprint.
-
-  if (health <= 0) {
-      return (
-          <div className="game-hud">
-              <div className="hud-death-overlay">
-                  <div className="hud-death-message">YOU DIED</div>
-                  <div className="hud-respawn-hint">Press Jump to Respawn</div>
-              </div>
-          </div>
-      );
-  }
+  const isDead = health <= 0;
 
   return (
     <div className="game-hud">
-      {damageFlash && <div className="damage-flash" />}
-      {pickupFlash && <div className="pickup-flash" />}
+      {/* Damage/Pickup Flash */}
+      <div className="hud-flash" style={flashStyle} />
 
-      <div className="hud-crosshair" />
+      {/* Crosshair */}
+      <div className="hud-crosshair">+</div>
 
-      <div className="hud-bottom-bar">
-        <div className="hud-stat hud-armor">
-            <span className="hud-stat-value">{armor}</span>
-            <span className="hud-stat-label">Armor</span>
+      {/* Stats Bar */}
+      <div className="hud-stats-bar">
+        <div className="stat-box health">
+          <span className="stat-icon">❤️</span>
+          <span className="stat-value">{health}</span>
         </div>
 
-        <div className="hud-stat hud-health">
-            <span className="hud-stat-value">{health}</span>
-            <span className="hud-stat-label">Health</span>
+        <div className="stat-box armor">
+           <span className="stat-icon">🛡️</span>
+           <span className="stat-value">{armor}</span>
         </div>
 
-        <div className="hud-stat hud-ammo">
-            <span className="hud-stat-value">{ammo}</span>
-            <span className="hud-stat-label">Ammo</span>
+        <div className="stat-box ammo">
+           <span className="stat-icon">🔫</span>
+           <span className="stat-value">{ammo}</span>
         </div>
       </div>
+
+      {/* Death Screen */}
+      {isDead && (
+          <div className="death-overlay">
+              <h1>YOU DIED</h1>
+              <p>Press Fire to Respawn</p>
+          </div>
+      )}
+
+      {/* Center Print */}
+      {playerState.centerPrint && (
+          <div className="center-print">
+              {playerState.centerPrint}
+          </div>
+      )}
     </div>
   );
-}
+};

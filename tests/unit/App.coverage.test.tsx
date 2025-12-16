@@ -9,7 +9,12 @@ import { saveService } from '../../src/services/saveService';
 // Mocks
 jest.mock('../../src/hooks/usePakExplorer');
 jest.mock('../../src/services/consoleService');
-jest.mock('../../src/services/saveService');
+jest.mock('../../src/services/saveService', () => ({
+  saveService: {
+    saveGame: jest.fn(),
+    loadGame: jest.fn()
+  }
+}));
 
 // Mock child components to avoid deep rendering issues
 jest.mock('../../src/components/Toolbar', () => ({

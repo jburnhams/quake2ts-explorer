@@ -1,81 +1,105 @@
-import { getGameService, type GameSaveFile } from './gameService';
+import { SerializedGameState } from 'quake2ts/game';
+import { PlayerState } from 'quake2ts/shared';
+import { getGameService } from './gameService';
 
 export interface SavedGame {
   slot: number;
   name: string;
   timestamp: number;
   mapName: string;
-  screenshot?: string; // Base64
-  data: GameSaveFile;
+  playerState: PlayerState;
+  gameState: SerializedGameState;
+  screenshot?: string; // base64
 }
 
-const STORAGE_KEY_PREFIX = 'quake2ts-save-';
+const STORAGE_PREFIX = 'quake2ts-save-';
 
-export async function saveGame(slot: number, name: string, screenshot?: string): Promise<void> {
+export async function saveGame(slot: number, name: string): Promise<void> {
   const gameService = getGameService();
   if (!gameService) {
-    throw new Error('No active game to save');
+    throw new Error('Game not running');
   }
 
-  // Get current game state via GameService which delegates to GameExports.createSave
-  const saveFile = gameService.createSave(name);
+  const exports = gameService.getExports();
+  if (!exports) {
+    throw new Error('Game exports not available');
+  }
 
-  const savedGame: SavedGame = {
+  const snapshot = gameService.getSnapshot();
+  if (!snapshot) {
+     throw new Error('No game snapshot available');
+  }
+
+  // Serialize game state
+  // Assuming exports.serialize() exists as per d.ts
+  const gameState = exports.serialize();
+
+  const playerState: PlayerState = {
+      stats: snapshot.stats,
+      origin: snapshot.origin,
+      viewAngles: snapshot.viewangles,
+      velocity: snapshot.velocity,
+      blend: snapshot.blend,
+      // ... fill strictly required fields with defaults or from snapshot
+      onGround: false,
+      waterLevel: 0,
+      mins: {x:0,y:0,z:0},
+      maxs: {x:0,y:0,z:0},
+      damageAlpha: snapshot.damageAlpha,
+      damageIndicators: snapshot.damageIndicators,
+      kick_angles: snapshot.kick_angles,
+      kick_origin: snapshot.kick_origin,
+      gunoffset: snapshot.gunoffset,
+      gunangles: snapshot.gunangles,
+      gunindex: snapshot.gunindex,
+      pm_type: snapshot.pm_type,
+      pm_time: snapshot.pm_time,
+      pm_flags: snapshot.pm_flags,
+      gun_frame: snapshot.gun_frame,
+      rdflags: snapshot.rdflags,
+      fov: snapshot.fov,
+      renderfx: snapshot.renderfx
+  };
+
+  const save: SavedGame = {
     slot,
     name,
     timestamp: Date.now(),
-    mapName: saveFile.map,
-    screenshot,
-    data: saveFile
+    mapName: 'unknown',
+    playerState,
+    gameState
   };
 
   try {
-    const json = JSON.stringify(savedGame);
-    localStorage.setItem(`${STORAGE_KEY_PREFIX}${slot}`, json);
+    localStorage.setItem(`${STORAGE_PREFIX}${slot}`, JSON.stringify(save));
   } catch (e) {
-    if (e instanceof DOMException && e.name === 'QuotaExceededError') {
-      throw new Error('Storage quota exceeded. Please delete old saves.');
-    }
-    throw e;
+    throw new Error('Failed to save game: Storage quota exceeded?');
   }
 }
 
 export async function loadGame(slot: number): Promise<SavedGame | null> {
-  const json = localStorage.getItem(`${STORAGE_KEY_PREFIX}${slot}`);
-  if (!json) {
+  const json = localStorage.getItem(`${STORAGE_PREFIX}${slot}`);
+  if (!json) return null;
+
+  try {
+    return JSON.parse(json) as SavedGame;
+  } catch {
     return null;
   }
-
-  let savedGame: SavedGame;
-  try {
-    savedGame = JSON.parse(json);
-  } catch (e) {
-    throw new Error(`Failed to parse save file in slot ${slot}`);
-  }
-
-  const gameService = getGameService();
-
-  // If we have a running game, try to load directly
-  if (gameService) {
-      gameService.loadSave(savedGame.data);
-  }
-
-  return savedGame;
 }
 
 export function listSaves(): SavedGame[] {
   const saves: SavedGame[] = [];
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key && key.startsWith(STORAGE_KEY_PREFIX)) {
+    if (key && key.startsWith(STORAGE_PREFIX)) {
       try {
-        const value = localStorage.getItem(key);
-        if (value) {
-          const save: SavedGame = JSON.parse(value);
-          saves.push(save);
+        const json = localStorage.getItem(key);
+        if (json) {
+          saves.push(JSON.parse(json));
         }
-      } catch (e) {
-        console.warn(`Failed to parse save ${key}`, e);
+      } catch {
+        // Ignore corrupted
       }
     }
   }
@@ -83,7 +107,7 @@ export function listSaves(): SavedGame[] {
 }
 
 export function deleteSave(slot: number): void {
-  localStorage.removeItem(`${STORAGE_KEY_PREFIX}${slot}`);
+  localStorage.removeItem(`${STORAGE_PREFIX}${slot}`);
 }
 
 export const saveService = {
