@@ -386,10 +386,10 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
   - Add timestamps
   - Support colored output (error=red, warn=yellow, info=white)
 
-- [ ] **6.6**: Implement autocomplete
-  - Show suggestions when typing
-  - Tab completion for commands
-  - Show command syntax hints
+- [x] **6.6**: Implement autocomplete
+  - [x] Show suggestions when typing
+  - [x] Tab completion for commands
+  - [x] Show command syntax hints
 
 **File References**:
 - Create: `src/components/Console.tsx`

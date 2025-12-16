@@ -62,4 +62,41 @@ describe('ConsoleService', () => {
     expect(logs[logs.length - 1].level).toBe(LogLevel.ERROR);
     expect(logs[logs.length - 1].message).toContain('oops');
   });
+
+  it('should return command suggestions', () => {
+    consoleService.registerCommand('foobar', () => {});
+    consoleService.registerCommand('foobaz', () => {});
+    consoleService.registerCommand('football', () => {});
+
+    // Exact match prefix
+    const suggestions1 = consoleService.getSuggestions('foo');
+    expect(suggestions1).toContain('foobar');
+    expect(suggestions1).toContain('foobaz');
+    expect(suggestions1).toContain('football');
+
+    // Partial match
+    const suggestions2 = consoleService.getSuggestions('foob');
+    expect(suggestions2).toContain('foobar');
+    expect(suggestions2).toContain('foobaz');
+    expect(suggestions2).not.toContain('football');
+
+    // Case insensitive
+    const suggestions3 = consoleService.getSuggestions('FOO');
+    expect(suggestions3).toContain('foobar');
+
+    // No match
+    const suggestions4 = consoleService.getSuggestions('xyz');
+    expect(suggestions4).toEqual([]);
+
+    // Empty string
+    const suggestions5 = consoleService.getSuggestions('');
+    expect(suggestions5).toEqual([]);
+  });
+
+  it('should register and retrieve help text', () => {
+    consoleService.registerCommand('help-cmd', () => {}, 'This is help text');
+    expect(consoleService.getHelpText('help-cmd')).toBe('This is help text');
+    expect(consoleService.getHelpText('HELP-CMD')).toBe('This is help text');
+    expect(consoleService.getHelpText('unknown')).toBeUndefined();
+  });
 });

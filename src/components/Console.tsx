@@ -10,6 +10,7 @@ interface ConsoleProps {
 export const Console: React.FC<ConsoleProps> = ({ isOpen, onClose }) => {
   const [logs, setLogs] = useState<ConsoleLog[]>([]);
   const [inputValue, setInputValue] = useState('');
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const logsEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -43,6 +44,14 @@ export const Console: React.FC<ConsoleProps> = ({ isOpen, onClose }) => {
     if (e.key === 'Enter') {
       consoleService.executeCommand(inputValue);
       setInputValue('');
+      setSuggestions([]);
+    } else if (e.key === 'Tab') {
+      e.preventDefault();
+      const currentSuggestions = consoleService.getSuggestions(inputValue);
+      if (currentSuggestions.length > 0) {
+        setInputValue(currentSuggestions[0] + ' ');
+        setSuggestions([]);
+      }
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
       const prev = consoleService.getHistoryPrevious();
@@ -62,6 +71,23 @@ export const Console: React.FC<ConsoleProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setInputValue(value);
+
+    if (value.trim()) {
+      setSuggestions(consoleService.getSuggestions(value));
+    } else {
+      setSuggestions([]);
+    }
+  };
+
+  const handleSuggestionClick = (suggestion: string) => {
+    setInputValue(suggestion + ' ');
+    setSuggestions([]);
+    inputRef.current?.focus();
+  };
+
   return (
     <div className="console-overlay">
       <div className="console-logs">
@@ -72,6 +98,25 @@ export const Console: React.FC<ConsoleProps> = ({ isOpen, onClose }) => {
         ))}
         <div ref={logsEndRef} />
       </div>
+
+      {suggestions.length > 0 && (
+        <div className="console-suggestions">
+          {suggestions.map((suggestion) => {
+            const helpText = consoleService.getHelpText(suggestion);
+            return (
+              <div
+                key={suggestion}
+                className="console-suggestion-item"
+                onClick={() => handleSuggestionClick(suggestion)}
+              >
+                <span className="suggestion-name">{suggestion}</span>
+                {helpText && <span className="suggestion-help"> - {helpText}</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
       <div className="console-input-area">
         <span className="console-prompt">&gt;</span>
         <input
@@ -79,7 +124,7 @@ export const Console: React.FC<ConsoleProps> = ({ isOpen, onClose }) => {
           className="console-input"
           type="text"
           value={inputValue}
-          onChange={(e) => setInputValue(e.target.value)}
+          onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           autoFocus
           spellCheck={false}

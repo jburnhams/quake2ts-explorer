@@ -75,3 +75,41 @@
   font-size: inherit;
   outline: none;
 }
+
+.console-suggestions {
+  position: absolute;
+  bottom: 40px; /* Position above input */
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.9);
+  border: 1px solid #444;
+  border-radius: 4px;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 10000;
+  min-width: 200px;
+}
+
+.console-suggestion-item {
+  padding: 4px 8px;
+  cursor: pointer;
+  color: #ccc;
+  display: flex;
+  justify-content: space-between;
+}
+
+.console-suggestion-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: #fff;
+}
+
+.suggestion-name {
+  font-weight: bold;
+  color: #44ff44;
+}
+
+.suggestion-help {
+  margin-left: 10px;
+  color: #888;
+  font-size: 0.9em;
+  font-style: italic;
+}
