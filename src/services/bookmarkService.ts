@@ -54,9 +54,6 @@ export class BookmarkService {
   ): Bookmark {
     const bookmarks = this.getBookmarks(demoId);
 
-    // Check if a bookmark already exists at this frame (optional, but prevents duplicates)
-    // For now, we allow multiple bookmarks at same frame.
-
     const newBookmark: Bookmark = {
       ...bookmark,
       id: crypto.randomUUID(),
@@ -94,6 +91,63 @@ export class BookmarkService {
       bookmarks
     };
     localStorage.setItem(key, JSON.stringify(data));
+  }
+
+  public exportBookmarks(demoId: string): string {
+    const bookmarks = this.getBookmarks(demoId);
+    const exportData: DemoBookmarks = {
+      demoId,
+      bookmarks
+    };
+    return JSON.stringify(exportData, null, 2);
+  }
+
+  public importBookmarks(demoId: string, jsonContent: string): Bookmark[] {
+    try {
+      const parsed: Partial<DemoBookmarks> = JSON.parse(jsonContent);
+      if (!Array.isArray(parsed.bookmarks)) {
+        throw new Error('Invalid bookmark format: missing bookmarks array');
+      }
+
+      // Validate and sanitize imported bookmarks
+      const validBookmarks = parsed.bookmarks.filter(b =>
+        typeof b.name === 'string' &&
+        typeof b.frame === 'number' &&
+        typeof b.timeSeconds === 'number'
+      );
+
+      if (validBookmarks.length === 0) {
+        return this.getBookmarks(demoId);
+      }
+
+      const existing = this.getBookmarks(demoId);
+
+      // Merge strategy: Append imported bookmarks, regenerating IDs to avoid conflicts
+      const merged = [...existing];
+
+      for (const b of validBookmarks) {
+        // Check for duplicates (same frame and name) to avoid clutter
+        const isDuplicate = existing.some(ex =>
+          ex.frame === b.frame && ex.name === b.name
+        );
+
+        if (!isDuplicate) {
+           merged.push({
+             ...b,
+             id: crypto.randomUUID(), // New ID
+             createdAt: b.createdAt || Date.now()
+           });
+        }
+      }
+
+      merged.sort((a, b) => a.frame - b.frame);
+      this.saveBookmarks(demoId, merged);
+      return merged;
+
+    } catch (e) {
+      console.error('Failed to import bookmarks', e);
+      throw new Error('Failed to parse bookmark file');
+    }
   }
 
   // Clip extraction stub

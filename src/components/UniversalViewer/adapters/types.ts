@@ -13,6 +13,7 @@ export interface RenderOptions {
   gamma?: number;
   ambient?: number;
   fullbright?: boolean;
+  freezeLights?: boolean;
 }
 
 export interface Ray {

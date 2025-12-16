@@ -14,6 +14,7 @@ export interface PreviewPanelProps {
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
   onEntitySelected?: (entity: any) => void;
+  onPlay?: () => void;
 }
 
 interface TextPreviewProps {
@@ -65,7 +66,7 @@ function HexPreview({ data, error }: HexPreviewProps) {
   );
 }
 
-export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoaded, hiddenClassnames, onEntitySelected }: PreviewPanelProps) {
+export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoaded, hiddenClassnames, onEntitySelected, onPlay }: PreviewPanelProps) {
   if (!parsedFile || !filePath) {
     return (
       <main className="preview-panel preview-panel-empty" data-testid="preview-panel">
@@ -135,6 +136,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
             onClassnamesLoaded={onClassnamesLoaded}
             hiddenClassnames={hiddenClassnames}
             onEntitySelected={onEntitySelected}
+            onPlay={onPlay}
           />
         );
       case 'dm2':
