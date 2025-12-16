@@ -37,6 +37,7 @@ export class Dm2Adapter implements ViewerAdapter {
 
     this.controller = new DemoPlaybackController();
     const buffer = file.data.buffer.slice(file.data.byteOffset, file.data.byteOffset + file.data.byteLength) as ArrayBuffer;
+    this.demoBuffer = buffer; // Store for extraction
     this.controller.loadDemo(buffer);
 
     // Attempt to load map
@@ -298,4 +299,13 @@ export class Dm2Adapter implements ViewerAdapter {
       this.stepProgress = 0;
       this.isStepping = true;
   }
+
+  getDemoBuffer(): ArrayBuffer | null {
+      // Need to expose the internal buffer from the controller if possible.
+      // Since controller doesn't expose it via public API, we might need to store it when loading.
+      // But we can store a reference during load().
+      return this.demoBuffer;
+  }
+
+  private demoBuffer: ArrayBuffer | null = null;
 }
