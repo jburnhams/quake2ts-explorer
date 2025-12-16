@@ -124,4 +124,21 @@ describe('PredictionService', () => {
 
       expect(predictionService.getMispredictionCount()).toBe(1); // Should not increment
   });
+
+  it('should handle uninitialized state safely', () => {
+      // Force uninitialized state by modifying private property
+      (predictionService as any).predictor = null;
+
+      expect(() => predictionService.predict({} as any)).toThrow("PredictionService not initialized");
+
+      expect(() => predictionService.setEnabled(true)).not.toThrow();
+
+      expect(() => predictionService.onServerFrame({} as any, 0, 0)).not.toThrow();
+
+      expect(predictionService.getPredictionError()).toEqual({ x: 0, y: 0, z: 0 });
+
+      expect(() => predictionService.decayError(16)).not.toThrow();
+
+      expect(predictionService.getPredictedState()).toBeNull();
+  });
 });

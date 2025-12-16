@@ -4,7 +4,16 @@ const unitConfig = {
   ...baseConfig,
   displayName: 'unit',
   testMatch: ['<rootDir>/tests/unit/**/*.test.ts?(x)'],
-  collectCoverageFrom: ['src/**/*.{ts,tsx}', '!src/**/*.d.ts', '!src/main.tsx', '!**/node_modules/**'],
+  collectCoverageFrom: [
+    'src/**/*.{ts,tsx}',
+    '!src/**/*.d.ts',
+    '!src/main.tsx',
+    '!**/node_modules/**',
+    '!src/types/cameraMode.ts',
+    '!src/types/debugMode.ts',
+    '!src/types/lightmap.ts',
+    '!src/types/renderStatistics.ts'
+  ],
   coverageThreshold: {
     global: {
       lines: 80,

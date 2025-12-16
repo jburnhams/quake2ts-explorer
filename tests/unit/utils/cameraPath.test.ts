@@ -127,18 +127,11 @@ describe('PathInterpolator', () => {
         const pos = new Float32Array(3);
         const rot = new Float32Array(3);
 
-        // Halfway should be 0 (or 360)
+        // Halfway should be 0 (implementation relative to start)
         interpolator.getStateAtTime(5, pos, rot);
-        expect(rot[1]).toBeCloseTo(360);
+        expect(rot[1]).toBeCloseTo(0);
 
         // Reverse case: 350 -> 10
-        k1.rotation[1] = 350;
-        k2.rotation[1] = 10;
-        // Re-init interpolator? No, it holds ref to path but constructor sorts frames?
-        // Frames are same objects.
-        // Constructor sorts a copy? No, sorts in place.
-        // We should recreate.
-
         const path2: CinematicPath = {
             name: 'test2',
             loop: false,

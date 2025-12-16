@@ -198,4 +198,15 @@ describe('NetworkService', () => {
     });
     expect(callbacks.onSnapshot).toHaveBeenCalled();
  });
+
+  it('should return qport', () => {
+      expect(networkService.getQport()).toBeDefined();
+  });
+
+  it('should ping address', async () => {
+      const pPromise = networkService.ping('localhost');
+      await jest.advanceTimersByTimeAsync(200);
+      const p = await pPromise;
+      expect(p).toBeGreaterThanOrEqual(20);
+  });
 });
