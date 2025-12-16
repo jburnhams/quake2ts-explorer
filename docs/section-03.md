@@ -406,7 +406,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Allow adding custom tags (e.g., "speedrun", "frag movie", "tournament")
   - Filter demos by tags in demo browser
 
-- [ ] **7.4**: Implement demo search
+- [x] **7.4**: Implement demo search
   - Search demos by name, tags, map
   - Sort by date, duration, size
   - Display in demo browser
