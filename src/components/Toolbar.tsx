@@ -1,6 +1,6 @@
-import type { ViewMode } from '../services/pakService';
 import React, { useRef, useState, useEffect } from 'react';
 import { demoRecorderService } from '../services/demoRecorder';
+import type { ViewMode } from '../services/pakService';
 
 export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
@@ -11,9 +11,20 @@ export interface ToolbarProps {
   onOpenEntityDatabase?: () => void;
   onOpenPakManager?: () => void;
   onOpenDemoBrowser?: () => void;
+  onOpenServerBrowser?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase, onOpenPakManager, onOpenDemoBrowser }: ToolbarProps) {
+export function Toolbar({
+  onFileSelect,
+  pakCount,
+  fileCount,
+  viewMode,
+  onViewModeChange,
+  onOpenEntityDatabase,
+  onOpenPakManager,
+  onOpenDemoBrowser,
+  onOpenServerBrowser
+}: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -107,6 +118,15 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
             data-testid="open-demo-browser-button"
           >
             Demos
+          </button>
+        )}
+        {onOpenServerBrowser && (
+          <button
+            className="toolbar-button"
+            onClick={onOpenServerBrowser}
+            data-testid="open-server-browser-button"
+          >
+            Multiplayer
           </button>
         )}
         <input

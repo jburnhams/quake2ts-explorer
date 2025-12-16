@@ -11,13 +11,14 @@ import { EntityDatabase } from './components/EntityDatabase';
 import { PakOrderManager } from './components/PakOrderManager';
 import { Console } from './components/Console';
 import { DemoBrowser } from './components/DemoBrowser';
+import { ServerBrowser } from './components/ServerBrowser';
 import { consoleService, LogLevel } from './services/consoleService';
 import { saveService } from './services/saveService';
+import { networkService } from './services/networkService';
 import { usePakExplorer } from './hooks/usePakExplorer';
 import { GameMenu } from './components/GameMenu';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
-import { GameHUD } from './components/GameHUD';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
@@ -58,6 +59,7 @@ function App() {
   const [showEntityDb, setShowEntityDb] = useState(false);
   const [showPakManager, setShowPakManager] = useState(false);
   const [showDemoBrowser, setShowDemoBrowser] = useState(false);
+  const [showServerBrowser, setShowServerBrowser] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
   // Toggle console with backtick
@@ -131,11 +133,21 @@ function App() {
        }
     });
 
+    consoleService.registerCommand('connect', async (args) => {
+        if (args.length === 0) {
+            consoleService.log('Usage: connect <server>', LogLevel.WARNING);
+            return;
+        }
+        const address = args[0];
+        handleServerConnect(address);
+    });
+
     return () => {
       consoleService.unregisterCommand('map');
       consoleService.unregisterCommand('quit');
       consoleService.unregisterCommand('save');
       consoleService.unregisterCommand('load');
+      consoleService.unregisterCommand('connect');
     };
   }, [handleTreeSelect, setViewMode]);
 
@@ -173,12 +185,10 @@ function App() {
 
   const handlePlayDemo = (demo: any) => {
     // Logic to play demo
-    // We probably need to implement a "load demo" function in usePakExplorer or similar
-    // For now we just close the browser and log
     console.log("Play demo:", demo.name);
     setShowDemoBrowser(false);
-    // TODO: Implement actual demo playback trigger
   };
+
   const handlePlayMap = () => {
     if (selectedPath && selectedPath.endsWith('.bsp')) {
        // Extract map name from path
@@ -187,6 +197,19 @@ function App() {
        const mapName = filename.replace('.bsp', '');
        startGameMode(mapName);
     }
+  };
+
+  const handleServerConnect = async (address: string) => {
+      setShowServerBrowser(false);
+      consoleService.log(`Connecting to ${address}...`, LogLevel.INFO);
+
+      try {
+          await networkService.connect(address);
+          consoleService.log(`Connected to ${address}`, LogLevel.SUCCESS);
+          // TODO: Switch to multiplayer game mode (Task 6)
+      } catch (err) {
+          consoleService.log(`Failed to connect: ${err}`, LogLevel.ERROR);
+      }
   };
 
   return (
@@ -202,6 +225,7 @@ function App() {
             onOpenEntityDatabase={() => setShowEntityDb(true)}
             onOpenPakManager={() => setShowPakManager(true)}
             onOpenDemoBrowser={() => setShowDemoBrowser(true)}
+            onOpenServerBrowser={() => setShowServerBrowser(true)}
           />
         )}
         {showPakManager && (
@@ -214,6 +238,12 @@ function App() {
           <DemoBrowser
             onPlayDemo={handlePlayDemo}
             onClose={() => setShowDemoBrowser(false)}
+          />
+        )}
+        {showServerBrowser && (
+          <ServerBrowser
+            onConnect={handleServerConnect}
+            onClose={() => setShowServerBrowser(false)}
           />
         )}
         <Console isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
@@ -240,7 +270,7 @@ function App() {
                           pakService={pakService}
                           filePath={selectedPath || ''}
                           gameState={gameStateSnapshot || undefined}
-                          configstrings={gameStateSnapshot?.configstrings} // Need to expose this from snapshot or hook
+                          configstrings={gameStateSnapshot?.configstrings}
                           isGameMode={true}
                           showControls={false}
                       />

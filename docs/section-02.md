@@ -165,7 +165,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
 
 #### Subtasks
 
-- [ ] **3.1**: Create `src/components/ServerBrowser.tsx`
+- [x] **3.1**: Create `src/components/ServerBrowser.tsx`
   - Display as modal overlay or dedicated screen
   - Show table of available servers with columns:
     - Server name
@@ -176,7 +176,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
   - Refresh button to re-query servers
   - Connect button to join selected server
 
-- [ ] **3.2**: Implement server discovery
+- [x] **3.2**: Implement server discovery
   - Option 1: Manual server entry (IP:port)
   - Option 2: Master server query (if available)
     - **Library Enhancement Needed**: Master server client
