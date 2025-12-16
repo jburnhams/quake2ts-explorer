@@ -1,3 +1,5 @@
+@import './SurfaceFlagsFilter.css';
+
 .surface-flags {
   padding: 10px;
   background-color: rgba(0, 0, 0, 0.8);
@@ -59,8 +61,6 @@
   border-radius: 2px;
   font-size: 10px;
 }
-
-@import './SurfaceFlagsFilter.css';
 
 .surface-flags-none {
   color: #666;

@@ -352,28 +352,28 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **6.1**: Create post-processing framework
+- [x] **6.1**: Create post-processing framework
   - Render scene to framebuffer texture
   - Apply fragment shader to full-screen quad
   - Display final result
 
-- [ ] **6.2**: Implement bloom effect
+- [x] **6.2**: Implement bloom effect
   - Extract bright pixels (threshold)
   - Gaussian blur
   - Composite back over scene
   - Intensity slider
 
-- [ ] **6.3**: Implement FXAA (anti-aliasing)
+- [x] **6.3**: Implement FXAA (anti-aliasing)
   - Apply FXAA shader as post-process
   - Smooth jagged edges
   - Toggle on/off
 
-- [ ] **6.4**: Implement color grading
+- [x] **6.4**: Implement color grading
   - Adjust hue, saturation, contrast
   - Use LUT (lookup table) textures for advanced grading
   - Presets: Neutral, Warm, Cool, Desaturated
 
-- [ ] **6.5**: Add post-process settings panel
+- [x] **6.5**: Add post-process settings panel
   - Enable/disable each effect
   - Adjust parameters
   - Save presets
