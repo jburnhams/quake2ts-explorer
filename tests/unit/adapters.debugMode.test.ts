@@ -183,10 +183,13 @@ describe('Adapter Debug Modes', () => {
                     skins: [],
                     header: { numFrames: 1 },
                     frames: [{
-                        scale: [1,1,1], translate: [0,0,0],
-                        vertices: [[0,0,0], [10,0,0], [0,10,0]] // Triangle
+                        vertices: [
+                            { position: { x: 0, y: 0, z: 0 }, normal: { x: 0, y: 0, z: 1 } },
+                            { position: { x: 10, y: 0, z: 0 }, normal: { x: 0, y: 0, z: 1 } },
+                            { position: { x: 0, y: 10, z: 0 }, normal: { x: 0, y: 0, z: 1 } }
+                        ]
                     }],
-                    triangles: [[0, 1, 2]]
+                    triangles: [{ vertexIndices: [0, 1, 2], texCoordIndices: [0, 0, 0] }]
                 },
                 animations: []
             } as any;

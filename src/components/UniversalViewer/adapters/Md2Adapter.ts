@@ -139,45 +139,41 @@ export class Md2Adapter implements ViewerAdapter {
                      const verts0 = frame0.vertices;
                      const verts1 = frame1.vertices;
 
-                     const scale0 = frame0.scale;
-                     const trans0 = frame0.translate;
-                     const scale1 = frame1.scale;
-                     const trans1 = frame1.translate;
-
-                     const getVec = (frameVerts: any[], index: number, scale: any, trans: any) => {
+                     const getVec = (frameVerts: readonly any[], index: number) => {
                          const v = frameVerts[index];
-                         return vec3.fromValues(
-                             v[0] * scale[0] + trans[0],
-                             v[1] * scale[1] + trans[1],
-                             v[2] * scale[2] + trans[2]
-                         );
+                         // Md2Vertex has { position: {x,y,z}, normal: {x,y,z} }
+                         return v.position;
                      };
 
                      for (let i = 0; i < triangles.length; i++) {
                          const tri = triangles[i];
+                         // Md2Triangle has vertexIndices: [n, n, n]
                          // Get vertices for frame0 and frame1
-                         const v0_0 = getVec(verts0, tri[0], scale0, trans0);
-                         const v1_0 = getVec(verts0, tri[1], scale0, trans0);
-                         const v2_0 = getVec(verts0, tri[2], scale0, trans0);
+                         const v0_0 = getVec(verts0, tri.vertexIndices[0]);
+                         const v1_0 = getVec(verts0, tri.vertexIndices[1]);
+                         const v2_0 = getVec(verts0, tri.vertexIndices[2]);
 
-                         const v0_1 = getVec(verts1, tri[0], scale1, trans1);
-                         const v1_1 = getVec(verts1, tri[1], scale1, trans1);
-                         const v2_1 = getVec(verts1, tri[2], scale1, trans1);
+                         const v0_1 = getVec(verts1, tri.vertexIndices[0]);
+                         const v1_1 = getVec(verts1, tri.vertexIndices[1]);
+                         const v2_1 = getVec(verts1, tri.vertexIndices[2]);
 
-                         // Lerp
-                         const v0 = vec3.create(); vec3.lerp(v0, v0_0, v0_1, blend.lerp);
-                         const v1 = vec3.create(); vec3.lerp(v1, v1_0, v1_1, blend.lerp);
-                         const v2 = vec3.create(); vec3.lerp(v2, v2_0, v2_1, blend.lerp);
+                         // Convert to vec3 for gl-matrix if they are plain objects
+                         const toGlVec3 = (v: any) => vec3.fromValues(v.x, v.y, v.z);
+
+                         // Lerp positions
+                         const p0 = vec3.create(); vec3.lerp(p0, toGlVec3(v0_0), toGlVec3(v0_1), blend.lerp);
+                         const p1 = vec3.create(); vec3.lerp(p1, toGlVec3(v1_0), toGlVec3(v1_1), blend.lerp);
+                         const p2 = vec3.create(); vec3.lerp(p2, toGlVec3(v2_0), toGlVec3(v2_1), blend.lerp);
 
                          // Compute center
                          const center = vec3.create();
-                         vec3.add(center, v0, v1);
-                         vec3.add(center, center, v2);
+                         vec3.add(center, p0, p1);
+                         vec3.add(center, center, p2);
                          vec3.scale(center, center, 1/3);
 
-                         // Compute normal
-                         const edge1 = vec3.create(); vec3.subtract(edge1, v1, v0);
-                         const edge2 = vec3.create(); vec3.subtract(edge2, v2, v0);
+                         // Compute normal from triangle
+                         const edge1 = vec3.create(); vec3.subtract(edge1, p1, p0);
+                         const edge2 = vec3.create(); vec3.subtract(edge2, p2, p0);
                          const normal = vec3.create();
                          vec3.cross(normal, edge1, edge2);
                          vec3.normalize(normal, normal);
