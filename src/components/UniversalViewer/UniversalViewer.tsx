@@ -832,7 +832,21 @@ export function UniversalViewer({
         const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
 
         const result = adapter.pickEntity!(pickRay);
-        setHoveredEntity(result ? result.entity : null);
+
+        // Handle Gizmo Hover via adapter state check
+        let isGizmoHovered = false;
+        if (adapter.getHoveredGizmoAxis) {
+            const axis = adapter.getHoveredGizmoAxis();
+            isGizmoHovered = axis !== 'none';
+        }
+
+        if (result) {
+            setHoveredEntity(result.entity);
+        } else if (!isGizmoHovered) {
+            // Only clear if not hovering gizmo (to avoid flickering when moving between gizmo handles)
+            // Actually, if we hover gizmo, we probably want to show "Gizmo X" or similar?
+            setHoveredEntity(null);
+        }
 
         // Task 7: Surface properties
         if (result && adapter instanceof BspAdapter) {
@@ -861,6 +875,19 @@ export function UniversalViewer({
         const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
 
         const result = adapter.pickEntity!(pickRay);
+
+        // Check if gizmo was clicked
+        let gizmoAxis = 'none';
+        if (adapter.getHoveredGizmoAxis) {
+            gizmoAxis = adapter.getHoveredGizmoAxis();
+        }
+
+        if (gizmoAxis !== 'none') {
+            // Gizmo clicked - don't change selection, maybe initiate transform logic?
+            console.log("Gizmo Clicked:", gizmoAxis);
+            return;
+        }
+
         if (onEntitySelected) {
             onEntitySelected(result ? result.entity : null);
         }

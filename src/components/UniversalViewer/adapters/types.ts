@@ -74,6 +74,7 @@ export interface ViewerAdapter {
   // Picking
   pickEntity?(ray: Ray): any;
   setHoveredEntity?(entity: any): void;
+  getHoveredGizmoAxis?(): string; // Returns TransformAxis value or 'none'
 
   // Debugging
   setDebugMode?(mode: DebugMode): void;

@@ -4,6 +4,8 @@ import { RenderOptions, ViewerAdapter, Ray } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
+import { GizmoRenderer } from './GizmoRenderer';
+import { TransformAxis, TransformMode } from '@/src/utils/transformUtils';
 import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
 
 export class BspAdapter implements ViewerAdapter {
@@ -17,10 +19,12 @@ export class BspAdapter implements ViewerAdapter {
   private renderOptions: RenderOptions = { mode: 'textured', color: [1, 1, 1] };
   private hiddenClassnames: Set<string> = new Set();
   private hoveredEntity: BspEntity | null = null;
+  private selectedEntities: Set<BspEntity> = new Set();
   private highlightedLightmapIndex: number | null = null;
   private activeSurfaceFlagFilter: string | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
+  private gizmoRenderer: GizmoRenderer | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -48,6 +52,7 @@ export class BspAdapter implements ViewerAdapter {
     this.map = map;
     this.pipeline = new BspSurfacePipeline(gl);
     this.debugRenderer = new DebugRenderer(gl);
+    this.gizmoRenderer = new GizmoRenderer(gl);
     this.surfaces = createBspSurfaces(map);
     this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
 
@@ -98,11 +103,27 @@ export class BspAdapter implements ViewerAdapter {
 
   pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
     if (!this.map) return null;
+
+    // Check gizmo first if selection exists
+    if (this.selectedEntities.size > 0 && this.gizmoRenderer) {
+        const axis = this.gizmoRenderer.checkIntersection(ray);
+        if (axis !== TransformAxis.None) {
+             this.gizmoRenderer.setHoveredAxis(axis);
+             return null; // Consume click for gizmo
+        } else {
+             this.gizmoRenderer.setHoveredAxis(TransformAxis.None);
+        }
+    }
+
     const result = this.map.pickEntity(ray);
     if (result) {
         return result;
     }
     return null;
+  }
+
+  getHoveredGizmoAxis(): string {
+      return this.gizmoRenderer ? this.gizmoRenderer.getHoveredAxis() : 'none';
   }
 
   // Helper to get surface properties for the picked face
@@ -133,6 +154,10 @@ export class BspAdapter implements ViewerAdapter {
 
   setHoveredEntity(entity: BspEntity | null) {
       this.hoveredEntity = entity;
+  }
+
+  setSelectedEntities(entities: Set<BspEntity>) {
+      this.selectedEntities = entities;
   }
 
   highlightLightmapSurfaces(atlasIndex: number) {
@@ -206,10 +231,19 @@ export class BspAdapter implements ViewerAdapter {
         const inputSurface = this.surfaces[i];
 
         let isHighlighted = false;
-        if (hoveredModel) {
-             if (inputSurface.faceIndex >= hoveredModel.firstFace && inputSurface.faceIndex < hoveredModel.firstFace + hoveredModel.numFaces) {
-                 isHighlighted = true;
-             }
+        let isSelected = false;
+
+        // Check selection/hover for brush models
+        if (hoveredModel && inputSurface.faceIndex >= hoveredModel.firstFace && inputSurface.faceIndex < hoveredModel.firstFace + hoveredModel.numFaces) {
+            isHighlighted = true;
+        }
+
+        for (const selected of this.selectedEntities) {
+            const selectedModel = this.getModelFromEntity(selected);
+            if (selectedModel && inputSurface.faceIndex >= selectedModel.firstFace && inputSurface.faceIndex < selectedModel.firstFace + selectedModel.numFaces) {
+                isSelected = true;
+                break;
+            }
         }
 
         if (this.highlightedLightmapIndex !== null) {
@@ -226,6 +260,20 @@ export class BspAdapter implements ViewerAdapter {
                  continue; // Hide non-matching surfaces
             }
         }
+
+        // Lighting Control: Brightness
+        // We use the 'color' uniform to apply brightness scaling.
+        // Default color is [1,1,1]. We scale by renderOptions.brightness.
+        const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
+        const baseColor = this.renderOptions.color;
+        const scaledColor: [number, number, number, number] = [
+            baseColor[0] * brightness,
+            baseColor[1] * brightness,
+            baseColor[2] * brightness,
+            1.0
+        ];
+
+        const renderColor = isSelected ? [0.0, 1.0, 0.0, 1.0] : (isHighlighted ? [1.0, 0.0, 0.0, 1.0] : scaledColor);
 
         const texture = this.textures.get(surface.texture);
         if (texture && this.debugMode !== DebugMode.Lightmaps) {
@@ -251,17 +299,6 @@ export class BspAdapter implements ViewerAdapter {
              }
         }
 
-        // Lighting Control: Brightness
-        // We use the 'color' uniform to apply brightness scaling.
-        // Default color is [1,1,1]. We scale by renderOptions.brightness.
-        const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
-        const baseColor = this.renderOptions.color;
-        const scaledColor: [number, number, number, number] = [
-            baseColor[0] * brightness,
-            baseColor[1] * brightness,
-            baseColor[2] * brightness,
-            1.0
-        ];
 
         const state = this.pipeline.bind({
             modelViewProjection: mvp as any,
@@ -271,10 +308,10 @@ export class BspAdapter implements ViewerAdapter {
             surfaceFlags: surface.surfaceFlags,
             timeSeconds: timeSeconds,
             renderMode: {
-                mode: isHighlighted ? 'solid' : this.renderOptions.mode,
-                color: isHighlighted ? [1.0, 0.0, 0.0, 1.0] : scaledColor,
+                mode: (isHighlighted || isSelected) ? 'solid' : this.renderOptions.mode,
+                color: renderColor as [number, number, number, number],
                 applyToAll: true,
-                generateRandomColor: isHighlighted ? false : this.renderOptions.generateRandomColor,
+                generateRandomColor: (isHighlighted || isSelected) ? false : this.renderOptions.generateRandomColor,
             }
         });
 
@@ -291,9 +328,12 @@ export class BspAdapter implements ViewerAdapter {
 
         if (this.debugMode === DebugMode.BoundingBoxes) {
             this.map.entities.entities.forEach(entity => {
+                const isSelected = this.selectedEntities.has(entity);
+                const color = isSelected ? vec4.fromValues(0, 1, 0, 1) : vec4.fromValues(1, 1, 0, 1);
+
                 const model = this.getModelFromEntity(entity);
                 if (model) {
-                    this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
+                    this.debugRenderer?.addBox(model.min, model.max, color);
                 } else if (entity.properties && entity.properties.origin) {
                     // For point entities without a brush model, draw a small box at origin
                     // Origin string format "x y z"
@@ -303,7 +343,7 @@ export class BspAdapter implements ViewerAdapter {
                         const size = 16;
                         const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
                         const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
-                        this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1)); // Green for point entities
+                        this.debugRenderer?.addBox(min, max, color);
                     }
                 }
             });
@@ -346,6 +386,64 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         this.debugRenderer.render(mvp);
+    }
+
+    // Render Gizmo on top
+    if (this.selectedEntities.size > 0 && this.gizmoRenderer) {
+         // Determine gizmo position (average of selected)
+         const center = vec3.create();
+         let count = 0;
+         this.selectedEntities.forEach(ent => {
+             const model = this.getModelFromEntity(ent);
+             if (model) {
+                 const min = vec3.fromValues(model.min[0], model.min[1], model.min[2]);
+                 const max = vec3.fromValues(model.max[0], model.max[1], model.max[2]);
+                 vec3.add(center, center, min);
+                 vec3.add(center, center, max);
+                 count += 2; // Adding min and max
+             } else if (ent.properties.origin) {
+                 const parts = ent.properties.origin.split(' ').map(parseFloat);
+                 if (parts.length === 3 && !parts.some(isNaN)) {
+                     vec3.add(center, center, vec3.fromValues(parts[0], parts[1], parts[2]));
+                     count++;
+                 }
+             }
+         });
+
+         if (count > 0) {
+             // For brushes we added min+max, so divide by 2*N
+             // For points we added origin, so divide by N
+             // But we mixed them.
+             // Wait, center calculation:
+             // Sum of all centers.
+             // Brush center = (min+max)/2
+             // Point center = origin
+             // Let's re-do logic properly.
+             vec3.scale(center, center, 0); // reset
+             count = 0;
+             this.selectedEntities.forEach(ent => {
+                 const model = this.getModelFromEntity(ent);
+                 if (model) {
+                     const c = vec3.create();
+                     vec3.add(c, model.min as vec3, model.max as vec3);
+                     vec3.scale(c, c, 0.5);
+                     vec3.add(center, center, c);
+                     count++;
+                 } else if (ent.properties.origin) {
+                     const parts = ent.properties.origin.split(' ').map(parseFloat);
+                     if (parts.length === 3 && !parts.some(isNaN)) {
+                        vec3.add(center, center, vec3.fromValues(parts[0], parts[1], parts[2]));
+                        count++;
+                     }
+                 }
+             });
+
+             if (count > 0) {
+                 vec3.scale(center, center, 1 / count);
+                 this.gizmoRenderer.setPosition(center);
+                 this.gizmoRenderer.render(projection, view, camera);
+             }
+         }
     }
   }
 
