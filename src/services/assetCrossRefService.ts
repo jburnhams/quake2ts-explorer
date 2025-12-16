@@ -75,6 +75,66 @@ export class AssetCrossRefService {
     return usages;
   }
 
+  async findSoundUsage(soundPath: string): Promise<AssetUsage[]> {
+    const normalizedSoundPath = soundPath.toLowerCase().replace(/\\/g, '/');
+    const usages: AssetUsage[] = [];
+
+    // Sounds are mainly referenced in BSP entities
+    const bspFiles = (this.vfs.findByExtension('bsp') as any[]).map(f => f.path);
+
+    let processedCount = 0;
+
+    for (const file of bspFiles) {
+      try {
+        if (++processedCount % 5 === 0) {
+          await new Promise(resolve => setTimeout(resolve, 0));
+        }
+
+        const refs = await this.getReferences(file);
+
+        // First pass: look for detailed entity references
+        let foundDetailed = false;
+        for (const ref of refs) {
+            if (ref.startsWith('entity:')) {
+                const parts = ref.split('|');
+                if (parts.length >= 3) {
+                   const path = parts[2];
+                   if (path.toLowerCase() === normalizedSoundPath || path.toLowerCase().endsWith(normalizedSoundPath)) {
+                       usages.push({
+                           type: 'map',
+                           path: file,
+                           details: `classname: ${parts[1]}`
+                       });
+                       foundDetailed = true;
+                   }
+                }
+            }
+        }
+
+        // If no detailed refs found, fall back to simple check (but only if we haven't added this file yet)
+        if (!foundDetailed) {
+            for (const ref of refs) {
+                if (!ref || ref.startsWith('entity:')) continue;
+                const normalizedRef = ref.toLowerCase().replace(/\\/g, '/');
+
+                if (normalizedRef === normalizedSoundPath || normalizedRef.endsWith(normalizedSoundPath)) {
+                    usages.push({
+                        type: 'map',
+                        path: file,
+                        details: `Used in map`
+                    });
+                    break;
+                }
+            }
+        }
+      } catch (e) {
+        console.warn(`Failed to analyze ${file}`, e);
+      }
+    }
+
+    return usages;
+  }
+
   private async getReferences(filePath: string): Promise<string[]> {
     if (this.cache.has(filePath)) {
       return this.cache.get(filePath)!;
@@ -108,12 +168,55 @@ export class AssetCrossRefService {
           );
         }
       } else if (ext === 'bsp') {
-        // parseBsp returns BspMap which has textures
+        // parseBsp returns BspMap which has textures AND entities
         const map = parseBsp(arrayBuffer);
-        // Cast map to any because properties might be missing in strict types or named differently
         const mapAny = map as any;
+
+        // 1. Textures
         if (map && Array.isArray(mapAny.textures)) {
-          refs = mapAny.textures.map((t: any) => typeof t === 'string' ? t : t.name);
+          const textures = mapAny.textures.map((t: any) => typeof t === 'string' ? t : t.name);
+          refs.push(...textures);
+        }
+
+        // 2. Entities
+        // Handle different BSP versions/structures where entities might be nested or direct
+        let entitiesList: any[] = [];
+        if (mapAny.entities) {
+            if (Array.isArray(mapAny.entities)) {
+                entitiesList = mapAny.entities;
+            } else if (Array.isArray(mapAny.entities.entities)) {
+                entitiesList = mapAny.entities.entities;
+            }
+        }
+
+        if (entitiesList.length > 0) {
+            for (const entity of entitiesList) {
+                // Check all properties for potential file paths
+                // Entities can be objects or have a properties field
+                const props = entity.properties || entity;
+
+                for (const [key, value] of Object.entries(props)) {
+                    if (typeof value === 'string') {
+                        // Check for common sound keys
+                        if (key === 'noise' || key === 'sound' || key === 'message') {
+                            refs.push(value);
+                            // Also push a detailed ref for better context if possible, but be careful not to break simple matching
+                            // Actually, let's append a special format string that we can parse later,
+                            // but keep the simple one too for simple matching?
+                            // No, duplicate entries might be annoying.
+                            // Let's just use the special format and update findTextureUsage/findSoundUsage to handle it?
+                            // That might break findTextureUsage if it expects exact string match.
+                            // Better: Push BOTH. But de-duplicate?
+                            // Or better: update findSoundUsage to look for this special format.
+                            refs.push(`entity:${key}|${entity.classname}|${value}`);
+                        }
+                        // Or check for file extensions
+                        else if (value.toLowerCase().endsWith('.wav') || value.toLowerCase().endsWith('.pcx') || value.toLowerCase().endsWith('.tga') || value.toLowerCase().endsWith('.md2')) {
+                            refs.push(value);
+                        }
+                    }
+                }
+            }
         }
       }
     } catch (e) {

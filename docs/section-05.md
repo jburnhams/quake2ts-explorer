@@ -402,9 +402,9 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Trim silence from start/end
   - Resample to different rate
 
-- [x] **6.6**: Add sound usage tracking (Stub)
+- [x] **6.6**: Add sound usage tracking
   - **Library Enhancement Needed**: Cross-reference API
-  - Show which entities use this sound (Stubbed)
+  - Show which entities use this sound
   - List maps where sound is used
 
 **File References**:

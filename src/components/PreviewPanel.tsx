@@ -162,6 +162,7 @@ export function PreviewPanel({ parsedFile, filePath, pakService, onClassnamesLoa
           <SoundAnalyzer
             audio={parsedFile.audio}
             fileName={filePath.split('/').pop() || 'unknown'}
+            pakService={pakService}
           />
         );
       case 'txt':
