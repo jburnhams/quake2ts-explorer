@@ -17,6 +17,7 @@ export type CommandHandler = (args: string[]) => void;
 
 class ConsoleService {
   private commands = new Map<string, CommandHandler>();
+  private helpTexts = new Map<string, string>();
   private logs: ConsoleLog[] = [];
   private history: string[] = [];
   private historyIndex = -1;
@@ -26,19 +27,38 @@ class ConsoleService {
 
   constructor() {
     // Register basic built-in commands
-    this.registerCommand('help', this.handleHelp.bind(this));
-    this.registerCommand('clear', this.clearLogs.bind(this));
-    this.registerCommand('echo', (args) => this.log(args.join(' ')));
+    this.registerCommand('help', this.handleHelp.bind(this), 'List available commands');
+    this.registerCommand('clear', this.clearLogs.bind(this), 'Clear console logs');
+    this.registerCommand('echo', (args) => this.log(args.join(' ')), 'Print text to console');
   }
 
   // --- Command Management ---
 
-  registerCommand(name: string, handler: CommandHandler): void {
-    this.commands.set(name.toLowerCase(), handler);
+  registerCommand(name: string, handler: CommandHandler, helpText?: string): void {
+    const lowerName = name.toLowerCase();
+    this.commands.set(lowerName, handler);
+    if (helpText) {
+      this.helpTexts.set(lowerName, helpText);
+    }
   }
 
   unregisterCommand(name: string): void {
-    this.commands.delete(name.toLowerCase());
+    const lowerName = name.toLowerCase();
+    this.commands.delete(lowerName);
+    this.helpTexts.delete(lowerName);
+  }
+
+  getSuggestions(prefix: string): string[] {
+    const lowerPrefix = prefix.toLowerCase();
+    if (!lowerPrefix) return [];
+
+    return Array.from(this.commands.keys())
+      .filter(cmd => cmd.startsWith(lowerPrefix))
+      .sort();
+  }
+
+  getHelpText(command: string): string | undefined {
+    return this.helpTexts.get(command.toLowerCase());
   }
 
   executeCommand(input: string): void {
