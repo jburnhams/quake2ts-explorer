@@ -11,10 +11,10 @@ export class GizmoRenderer {
     private indexBuffer: WebGLBuffer | null = null;
 
     // Axis colors
-    private static X_COLOR = vec4.fromValues(1, 0, 0, 1);
-    private static Y_COLOR = vec4.fromValues(0, 1, 0, 1);
-    private static Z_COLOR = vec4.fromValues(0, 0, 1, 1);
-    private static HOVER_COLOR = vec4.fromValues(1, 1, 0, 1);
+    private X_COLOR: vec4;
+    private Y_COLOR: vec4;
+    private Z_COLOR: vec4;
+    private HOVER_COLOR: vec4;
 
     private hoveredAxis: GizmoAxis = null;
     private activeAxis: GizmoAxis = null;
@@ -29,6 +29,10 @@ export class GizmoRenderer {
 
     constructor(gl: WebGL2RenderingContext) {
         this.gl = gl;
+        this.X_COLOR = vec4.fromValues(1, 0, 0, 1);
+        this.Y_COLOR = vec4.fromValues(0, 1, 0, 1);
+        this.Z_COLOR = vec4.fromValues(0, 0, 1, 1);
+        this.HOVER_COLOR = vec4.fromValues(1, 1, 0, 1);
         this.init();
     }
 
@@ -126,17 +130,17 @@ export class GizmoRenderer {
         if (this.uOriginLoc) gl.uniform3fv(this.uOriginLoc, position as Float32List);
 
         // Draw X
-        const xColor = (this.activeAxis === 'x' || this.hoveredAxis === 'x') ? GizmoRenderer.HOVER_COLOR : GizmoRenderer.X_COLOR;
+        const xColor = (this.activeAxis === 'x' || this.hoveredAxis === 'x') ? this.HOVER_COLOR : this.X_COLOR;
         if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, xColor as Float32List);
         gl.drawArrays(gl.LINES, 0, 2);
 
         // Draw Y
-        const yColor = (this.activeAxis === 'y' || this.hoveredAxis === 'y') ? GizmoRenderer.HOVER_COLOR : GizmoRenderer.Y_COLOR;
+        const yColor = (this.activeAxis === 'y' || this.hoveredAxis === 'y') ? this.HOVER_COLOR : this.Y_COLOR;
         if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, yColor as Float32List);
         gl.drawArrays(gl.LINES, 2, 2);
 
         // Draw Z
-        const zColor = (this.activeAxis === 'z' || this.hoveredAxis === 'z') ? GizmoRenderer.HOVER_COLOR : GizmoRenderer.Z_COLOR;
+        const zColor = (this.activeAxis === 'z' || this.hoveredAxis === 'z') ? this.HOVER_COLOR : this.Z_COLOR;
         if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, zColor as Float32List);
         gl.drawArrays(gl.LINES, 4, 2);
 
