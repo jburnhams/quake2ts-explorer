@@ -1,8 +1,8 @@
 import {
-  type TraceFunction,
-  type PointContentsFunction,
+  type PmoveTraceFn,
+  type PmovePointContentsFn,
   type UserCommand,
-  type PlayerState,
+  type PmoveState,
   type PmoveTraceResult,
   Vec3
 } from 'quake2ts/shared';
@@ -11,11 +11,11 @@ import {
   ClientPrediction,
   type PredictionState,
   type PredictionSettings
-} from 'quake2ts/cgame';
+} from 'quake2ts/client';
 
 export interface PredictionServiceConfig {
-  trace: TraceFunction;
-  pointContents: PointContentsFunction;
+  trace: PmoveTraceFn;
+  pointContents: PmovePointContentsFn;
   settings?: Partial<PredictionSettings>;
 }
 

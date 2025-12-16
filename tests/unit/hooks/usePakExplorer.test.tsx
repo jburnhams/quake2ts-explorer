@@ -275,7 +275,7 @@ describe('usePakExplorer', () => {
             render(0.5);
         });
         expect(result.current.gameStateSnapshot).toEqual({
-            playerState: undefined,
+            time: 123,
             configstrings: new Map()
         });
     });

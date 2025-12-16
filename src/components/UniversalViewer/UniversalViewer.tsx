@@ -28,7 +28,7 @@ import { performanceService } from '@/src/services/performanceService';
 import { SurfaceFlags } from '../SurfaceFlags';
 import { ScreenshotOptions } from '@/src/services/screenshotService';
 import { getFileName } from '../../utils/helpers';
-import { PlayerState } from 'quake2ts/shared';
+import { GameStateSnapshot } from '@/src/services/gameService';
 import { GameHUD } from '../GameHUD';
 import { PostProcessor, PostProcessOptions, defaultPostProcessOptions } from '../../utils/postProcessing';
 import { PostProcessSettings } from '../PostProcessSettings';
@@ -50,7 +50,7 @@ export interface UniversalViewerProps {
   onEntitySelected?: (entity: any) => void;
   onAdapterReady?: (adapter: ViewerAdapter) => void;
   showControls?: boolean;
-  playerState?: PlayerState;
+  gameState?: GameStateSnapshot;
   configstrings?: Map<number, string>;
   isGameMode?: boolean;
   activeSurfaceFilter?: string;
@@ -74,7 +74,7 @@ export function UniversalViewer({
   onEntitySelected,
   onAdapterReady,
   showControls = true,
-  playerState,
+  gameState,
   configstrings,
   isGameMode = false,
   activeSurfaceFilter,
@@ -1222,9 +1222,9 @@ export function UniversalViewer({
        )}
        <div className="md2-canvas-container" style={{ width: '100%', height: '100%' }}>
          <canvas ref={canvasRef} className="md2-viewer-canvas" style={{ width: '100%', height: '100%' }} />
-         {isGameMode && playerState && configstrings && (
+         {isGameMode && gameState && configstrings && (
            <GameHUD
-               playerState={playerState}
+               gameState={gameState}
                configstrings={configstrings}
                pakService={pakService}
            />
