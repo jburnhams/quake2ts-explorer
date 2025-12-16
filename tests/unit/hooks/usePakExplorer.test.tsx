@@ -63,7 +63,8 @@ jest.mock('../../../src/services/gameService', () => ({
         start: jest.fn(),
         shutdown: jest.fn(),
         tick: jest.fn(),
-        getSnapshot: jest.fn().mockReturnValue({ time: 123 })
+        getSnapshot: jest.fn().mockReturnValue({ time: 123 }),
+        getConfigStrings: jest.fn().mockReturnValue(new Map())
     })
 }));
 
@@ -273,7 +274,10 @@ describe('usePakExplorer', () => {
         act(() => {
             render(0.5);
         });
-        expect(result.current.gameStateSnapshot).toEqual({ time: 123 });
+        expect(result.current.gameStateSnapshot).toEqual({
+            playerState: undefined,
+            configstrings: new Map()
+        });
     });
 
     it('handles game mode start failure', async () => {

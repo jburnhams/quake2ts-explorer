@@ -54,6 +54,7 @@ interface GameSimulation {
   stop(): void;
   tick(step: FixedStepContext, cmd: UserCommand): void;
   getSnapshot(): GameStateSnapshot;
+  getConfigStrings(): Map<number, string>;
   shutdown(): void;
   createSave(description: string): GameSaveFile;
   loadSave(save: GameSaveFile): void;
@@ -253,6 +254,10 @@ class GameServiceImpl implements GameSimulation, GameImports {
     }
 
     throw new Error("No game snapshot available");
+  }
+
+  getConfigStrings(): Map<number, string> {
+      return this.configStrings;
   }
 
   createSave(description: string): GameSaveFile {

@@ -61,6 +61,8 @@ jest.mock('../../src/components/Console', () => ({
 describe('App Component Coverage', () => {
   const mockHandleTreeSelect = jest.fn();
   const mockSetViewMode = jest.fn();
+  const mockStartGameMode = jest.fn();
+  const mockStopGameMode = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -75,12 +77,20 @@ describe('App Component Coverage', () => {
       loading: false,
       error: null,
       viewMode: 'merged',
+      gameMode: 'browser',
+      isPaused: false,
+      gameStateSnapshot: null,
       handleFileSelect: jest.fn(),
       handleTreeSelect: mockHandleTreeSelect,
       hasFile: jest.fn(),
       dismissError: jest.fn(),
       removePak: jest.fn(),
       setViewMode: mockSetViewMode,
+      startGameMode: mockStartGameMode,
+      stopGameMode: mockStopGameMode,
+      togglePause: jest.fn(),
+      pauseGame: jest.fn(),
+      resumeGame: jest.fn(),
     });
   });
 
@@ -126,6 +136,7 @@ describe('App Component Coverage', () => {
     mapCallback(['testmap']);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Loading map: maps/testmap.bsp'), LogLevel.INFO);
     expect(mockHandleTreeSelect).toHaveBeenCalledWith('maps/testmap.bsp');
+    expect(mockStartGameMode).toHaveBeenCalledWith('testmap');
 
     mapCallback(['testmap.bsp']);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Loading map: maps/testmap.bsp'), LogLevel.INFO);
@@ -133,7 +144,7 @@ describe('App Component Coverage', () => {
     // Test quit command
     quitCallback();
     expect(consoleService.log).toHaveBeenCalledWith('Returning to browser...', LogLevel.INFO);
-    expect(mockSetViewMode).toHaveBeenCalledWith('merged');
+    expect(mockStopGameMode).toHaveBeenCalled();
 
     // Test save command
     await saveCallback(['1']); // Missing name

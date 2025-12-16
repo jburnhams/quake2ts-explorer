@@ -25,7 +25,7 @@ export interface UsePakExplorerResult {
   error: string | null;
   gameMode: GameMode;
   isPaused: boolean;
-  gameStateSnapshot: any | null;
+  gameStateSnapshot: { playerState: any, configstrings: Map<number, string> } | null;
   viewMode: ViewMode;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
@@ -339,7 +339,10 @@ export function usePakExplorer(): UsePakExplorerResult {
              if (gameSimulationRef.current) {
                  const snapshot = gameSimulationRef.current.getSnapshot();
                  if (snapshot) {
-                     setGameStateSnapshot(snapshot);
+                     setGameStateSnapshot({
+                         playerState: (snapshot as any).playerState || (snapshot as any).ps,
+                         configstrings: gameSimulationRef.current.getConfigStrings()
+                     });
                  }
              }
         }
