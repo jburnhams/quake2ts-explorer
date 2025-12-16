@@ -40,6 +40,7 @@ import { EntityEditorService } from '@/src/services/entityEditorService';
 import { CameraSettings, DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
 import { CameraSettingsPanel } from '../CameraSettingsPanel';
 import { CinematicPath, CameraKeyframe } from '@/src/utils/cameraPath';
+import { DemoStats } from '../DemoStats';
 
 export interface UniversalViewerProps {
   parsedFile: ParsedFile;
@@ -93,6 +94,7 @@ export function UniversalViewer({
   const [hoveredSurfaceProps, setHoveredSurfaceProps] = useState<any | null>(null);
   const [showFrameInfo, setShowFrameInfo] = useState(false);
   const [showStats, setShowStats] = useState(false);
+  const [showDemoStats, setShowDemoStats] = useState(false);
   const [stats, setStats] = useState<RenderStatistics | null>(null);
   const [fps, setFps] = useState(0);
   const [minFps, setMinFps] = useState(0);
@@ -466,6 +468,10 @@ export function UniversalViewer({
 
         if (e.code === 'KeyF') {
             setShowFrameInfo(prev => !prev);
+        }
+
+        if (e.code === 'KeyS' && adapter?.getDemoController) {
+            setShowDemoStats(prev => !prev);
         }
 
         if (e.code === 'F12' || e.code === 'PrintScreen') {
@@ -1166,6 +1172,13 @@ export function UniversalViewer({
        {showFrameInfo && adapter && adapter.getDemoController && adapter.getDemoController() && (
           <FrameInfo controller={adapter.getDemoController()!} />
        )}
+       {showDemoStats && adapter && adapter.getDemoController && adapter.getDemoController() && (
+           <DemoStats
+               controller={adapter.getDemoController()!}
+               visible={showDemoStats}
+               onClose={() => setShowDemoStats(false)}
+           />
+       )}
        {(hoveredSurfaceProps || activeSurfaceFilter) && (
            <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 50 }}>
                <SurfaceFlags
@@ -1292,6 +1305,8 @@ export function UniversalViewer({
             onLightingSettings={() => setShowLightingControls(true)}
             onPostProcessSettings={() => setShowPostProcessSettings(true)}
             onCameraSettings={() => setShowCameraSettings(!showCameraSettings)}
+            showDemoStats={showDemoStats}
+            onToggleDemoStats={adapter?.getDemoController ? () => setShowDemoStats(prev => !prev) : undefined}
          />
        )}
        <LightingControls

@@ -54,7 +54,12 @@ describe('ViewerControls Interaction Coverage', () => {
     debugMode: DebugMode.None,
     setDebugMode: mockSetDebugMode,
     setShowStats: mockSetShowStats,
-    showStats: false
+    showStats: false,
+    onScreenshot: jest.fn(),
+    onMetadata: jest.fn(),
+    onLightingSettings: jest.fn(),
+    onPostProcessSettings: jest.fn(),
+    onCameraSettings: jest.fn(),
   };
 
   beforeEach(() => {
@@ -154,5 +159,31 @@ describe('ViewerControls Interaction Coverage', () => {
       render(<ViewerControls {...defaultProps} cameraMode="free" />);
       fireEvent.click(screen.getByText('Mode: Free Look'));
       expect(mockSetCameraMode).toHaveBeenCalledWith('orbit');
+  });
+
+  // New tests for Demo Stats Button
+  it('renders Demo Stats button when onToggleDemoStats is provided', () => {
+      const onToggleDemoStats = jest.fn();
+      render(<ViewerControls {...defaultProps} onToggleDemoStats={onToggleDemoStats} />);
+
+      const button = screen.getByTitle(/Toggle Demo Stats Overlay/i);
+      expect(button).toBeInTheDocument();
+
+      fireEvent.click(button);
+      expect(onToggleDemoStats).toHaveBeenCalled();
+  });
+
+  it('highlights Demo Stats button when stats are visible', () => {
+      render(<ViewerControls {...defaultProps} onToggleDemoStats={jest.fn()} showDemoStats={true} />);
+
+      const button = screen.getByTitle(/Toggle Demo Stats Overlay/i);
+      expect(button).toHaveStyle('background-color: #444');
+  });
+
+  it('does not render Demo Stats button when onToggleDemoStats is missing', () => {
+      render(<ViewerControls {...defaultProps} onToggleDemoStats={undefined} />);
+
+      const button = screen.queryByTitle(/Toggle Demo Stats Overlay/i);
+      expect(button).not.toBeInTheDocument();
   });
 });

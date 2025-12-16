@@ -43,6 +43,8 @@ interface ViewerControlsProps {
   onLightingSettings?: () => void;
   onPostProcessSettings?: () => void;
   onCameraSettings?: () => void;
+  showDemoStats?: boolean;
+  onToggleDemoStats?: () => void;
 }
 
 export function ViewerControls({
@@ -79,7 +81,9 @@ export function ViewerControls({
   onLightingSettings,
   onPostProcessSettings,
   onMetadata,
-  onCameraSettings
+  onCameraSettings,
+  showDemoStats,
+  onToggleDemoStats
 }: ViewerControlsProps) {
 
   const formatTime = (seconds: number) => {
@@ -286,6 +290,15 @@ export function ViewerControls({
                 <button onClick={onMetadata} style={{ flex: '1 1 40%' }} title="Edit Metadata">
                     📝 Metadata
                 </button>
+              )}
+              {onToggleDemoStats && (
+                  <button
+                      onClick={onToggleDemoStats}
+                      style={{ flex: '1 1 40%', backgroundColor: showDemoStats ? '#444' : undefined }}
+                      title="Toggle Demo Stats Overlay (S)"
+                  >
+                      📊 Stats
+                  </button>
               )}
               {onStartRecording && onStopRecording && (
                 <button
