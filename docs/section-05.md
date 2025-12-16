@@ -43,7 +43,7 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
 #### Subtasks
 
 - [x] **1.1**: Create `src/components/TextureAtlas.tsx`
-  - Replace/extend `ImagePreview` for selected textures
+  - Replace/extend `ImagePreview.tsx` for selected textures
   - Display texture at multiple zoom levels (25%, 50%, 100%, 200%, 400%)
   - Pixel grid overlay at high zoom
   - Pan and zoom controls
@@ -286,9 +286,9 @@ Transform the application into a comprehensive asset analysis toolkit for Quake 
   - Show distribution chart (bar graph)
   - Identify most common entity types
 
-- [x] **4.6**: Add entity export (Partial: JSON only)
+- [x] **4.6**: Add entity export
   - Export selected entities as JSON
-  - Export entire entity lump as ENT file (Pending)
+  - Export entire entity lump as ENT file (Completed)
   - Import ENT file (for map editor)
 
 **File References**:

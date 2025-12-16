@@ -53,10 +53,15 @@ describe('EntityDatabase Component', () => {
       scanAllMaps: jest.fn().mockImplementation((cb) => {
         if (cb) cb(0, 1, 'maps/map1.bsp');
         return Promise.resolve(mockEntities);
-      })
+      }),
+      generateEntFile: jest.fn().mockReturnValue('mock-ent-content')
     };
 
     (EntityService as jest.Mock).mockImplementation(() => mockEntityService);
+
+    // Mock URL.createObjectURL and URL.revokeObjectURL
+    global.URL.createObjectURL = jest.fn();
+    global.URL.revokeObjectURL = jest.fn();
   });
 
   afterEach(() => {
@@ -146,5 +151,18 @@ describe('EntityDatabase Component', () => {
     const rows = screen.getAllByText(/map[12]\.bsp/); // Get map cells to check order indirectly if needed, or just rely on react state update.
     // Given the simplicity, basic interaction is enough.
     expect(classnameHeader).toHaveClass('sort-desc');
+  });
+
+  it('triggers ENT export when button is clicked', async () => {
+    await act(async () => {
+      render(<EntityDatabase pakService={mockPakService} />);
+    });
+
+    const exportBtn = screen.getByText('Export ENT');
+    fireEvent.click(exportBtn);
+
+    expect(mockEntityService.generateEntFile).toHaveBeenCalled();
+    expect(global.URL.createObjectURL).toHaveBeenCalled();
+    expect(global.URL.revokeObjectURL).toHaveBeenCalled();
   });
 });

@@ -124,4 +124,23 @@ export class EntityService {
 
     return stats;
   }
+
+  /**
+   * Generates a string content in Quake .ent format (text)
+   */
+  generateEntFile(entities: EntityRecord[]): string {
+    const lines: string[] = [];
+
+    for (const ent of entities) {
+      lines.push('{');
+      for (const [key, value] of Object.entries(ent.properties)) {
+        // Escape quotes in value
+        const escapedValue = String(value).replace(/"/g, '\\"');
+        lines.push(`"${key}" "${escapedValue}"`);
+      }
+      lines.push('}');
+    }
+
+    return lines.join('\n');
+  }
 }
