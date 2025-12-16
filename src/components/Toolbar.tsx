@@ -10,9 +10,10 @@ export interface ToolbarProps {
   onViewModeChange: (mode: ViewMode) => void;
   onOpenEntityDatabase?: () => void;
   onOpenPakManager?: () => void;
+  onOpenDemoBrowser?: () => void;
 }
 
-export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase, onOpenPakManager }: ToolbarProps) {
+export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewModeChange, onOpenEntityDatabase, onOpenPakManager, onOpenDemoBrowser }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
 
@@ -40,22 +41,10 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
     }
   };
 
-  const handleRecordToggle = () => {
+  const handleRecordToggle = async () => {
     if (isRecording) {
-        const data = demoRecorderService.stopRecording();
-        if (data) {
-            // Prompt download
-            // Cast data to any or ensure it is treated as a BlobPart (Uint8Array is valid in browser but Typescript might be picky about SharedArrayBuffer)
-            const blob = new Blob([data as unknown as BlobPart], { type: 'application/octet-stream' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `demo_${new Date().toISOString().replace(/[:.]/g, '-')}.dm2`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        }
+        await demoRecorderService.stopRecording();
+        // Saving handled by service auto-save
         setIsRecording(false);
     } else {
         demoRecorderService.startRecording(`demo_${Date.now()}.dm2`);
@@ -111,6 +100,15 @@ export function Toolbar({ onFileSelect, pakCount, fileCount, viewMode, onViewMod
         >
           {isRecording ? "🔴 Stop Rec" : "⚪ Rec Demo"}
         </button>
+        {onOpenDemoBrowser && (
+          <button
+            className="toolbar-button"
+            onClick={onOpenDemoBrowser}
+            data-testid="open-demo-browser-button"
+          >
+            Demos
+          </button>
+        )}
         <input
           ref={fileInputRef}
           type="file"

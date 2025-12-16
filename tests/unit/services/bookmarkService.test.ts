@@ -112,6 +112,57 @@ describe('BookmarkService', () => {
     expect(parsed.bookmarks[0].name).toBe('Persisted');
   });
 
+  it('should export bookmarks to JSON', () => {
+    service.addBookmark(demoId, { name: 'Export Me', frame: 100, timeSeconds: 10 });
+    const json = service.exportBookmarks(demoId);
+    const parsed = JSON.parse(json);
+    expect(parsed.demoId).toBe(demoId);
+    expect(parsed.bookmarks).toHaveLength(1);
+    expect(parsed.bookmarks[0].name).toBe('Export Me');
+  });
+
+  it('should import bookmarks from JSON', () => {
+    const importData = JSON.stringify({
+      demoId: 'other-demo', // ID in file doesn't matter, we import into current demoId
+      bookmarks: [
+        { name: 'Imported', frame: 500, timeSeconds: 50 }
+      ]
+    });
+
+    service.importBookmarks(demoId, importData);
+    const bookmarks = service.getBookmarks(demoId);
+    expect(bookmarks).toHaveLength(1);
+    expect(bookmarks[0].name).toBe('Imported');
+    expect(bookmarks[0].id).toBeDefined();
+  });
+
+  it('should merge imported bookmarks without duplicating existing ones (by name+frame)', () => {
+    service.addBookmark(demoId, { name: 'Existing', frame: 100, timeSeconds: 10 });
+
+    const importData = JSON.stringify({
+      bookmarks: [
+        { name: 'Existing', frame: 100, timeSeconds: 10 }, // Duplicate
+        { name: 'New', frame: 200, timeSeconds: 20 }
+      ]
+    });
+
+    service.importBookmarks(demoId, importData);
+    const bookmarks = service.getBookmarks(demoId);
+
+    expect(bookmarks).toHaveLength(2);
+    expect(bookmarks.find(b => b.name === 'Existing')).toBeDefined();
+    expect(bookmarks.find(b => b.name === 'New')).toBeDefined();
+  });
+
+  it('should throw error on invalid import JSON', () => {
+     expect(() => service.importBookmarks(demoId, '{ invalid json ')).toThrow();
+  });
+
+  it('should throw error on invalid bookmark structure', () => {
+    const invalidData = JSON.stringify({ bookmarks: 'not-an-array' });
+    expect(() => service.importBookmarks(demoId, invalidData)).toThrow();
+  });
+
   it('extractClip should return null (stub)', async () => {
     const buffer = new ArrayBuffer(8);
     const result = await service.extractClip(buffer, 0, 10);

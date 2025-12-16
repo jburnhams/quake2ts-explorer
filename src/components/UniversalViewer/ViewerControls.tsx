@@ -40,6 +40,8 @@ interface ViewerControlsProps {
   recordingTime?: number;
   recordingSizeEstimate?: number;
   onMetadata?: () => void;
+  onLightingSettings?: () => void;
+  onPostProcessSettings?: () => void;
 }
 
 export function ViewerControls({
@@ -74,8 +76,9 @@ export function ViewerControls({
   recordingTime = 0,
   recordingSizeEstimate,
   onLightingSettings,
+  onPostProcessSettings,
   onMetadata
-}: ViewerControlsProps & { onLightingSettings?: () => void }) {
+}: ViewerControlsProps) {
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -270,6 +273,11 @@ export function ViewerControls({
               {onLightingSettings && (
                   <button onClick={onLightingSettings} style={{ flex: '1 1 40%' }} title="Lighting Settings">
                       💡 Light
+                  </button>
+              )}
+              {onPostProcessSettings && (
+                  <button onClick={onPostProcessSettings} style={{ flex: '1 1 40%' }} title="Post Processing">
+                      ✨ FX
                   </button>
               )}
               {onMetadata && (

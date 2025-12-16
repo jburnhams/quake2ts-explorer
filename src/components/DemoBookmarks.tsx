@@ -86,6 +86,36 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
     loadBookmarks();
   };
 
+  const handleExport = () => {
+    const json = bookmarkService.exportBookmarks(demoId);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bookmarks-${demoId}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      if (content) {
+        try {
+          bookmarkService.importBookmarks(demoId, content);
+          loadBookmarks();
+        } catch (err) {
+          console.error('Import failed', err);
+          alert('Failed to import bookmarks. Invalid file format.');
+        }
+      }
+    };
+    reader.readAsText(file);
+  };
+
   return (
     <div className="demo-bookmarks-container">
       <div className="bookmark-controls" style={{ display: 'flex', gap: '5px' }}>
@@ -112,6 +142,8 @@ export const DemoBookmarks: React.FC<DemoBookmarksProps> = ({ controller, demoId
              onJumpTo={handleJumpTo}
              onDelete={handleDelete}
              onEdit={handleEdit}
+             onExport={handleExport}
+             onImport={handleImport}
            />
         </div>
       )}

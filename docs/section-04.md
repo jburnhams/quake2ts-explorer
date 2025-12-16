@@ -214,7 +214,7 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - [x] Resolution multiplier (1x, 2x, 4x for high-res captures)
   - [x] Include HUD toggle (capture with or without UI overlays)
 
-- [ ] **3.6**: Implement burst mode (optional)
+- [x] **3.6**: Implement burst mode (optional)
   - Capture multiple screenshots rapidly
   - Useful for creating animations
   - Save all as ZIP file
@@ -306,14 +306,14 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
   - Pass to renderer as uniform or post-process multiplier
   - **Library Enhancement Needed**: Brightness adjustment API (Partially implemented via color modulation)
 
-- [ ] **5.3**: Implement gamma correction
+- [x] **5.3**: Implement gamma correction
   - Slider: 0.5 to 3.0
   - Default: 1.0 (linear)
   - Gamma curve affects midtones
   - Apply in fragment shader or post-process
   - **Note**: Requires shader modification (Library Enhancement Needed)
 
-- [ ] **5.4**: Implement light style overrides
+- [x] **5.4**: Implement light style overrides
   - Quake II uses light styles for flickering/pulsing lights
   - Allow overriding light style patterns
   - Freeze animated lights for static screenshots
@@ -352,28 +352,28 @@ Expose and extend rendering capabilities from the quake2ts library to provide de
 
 #### Subtasks
 
-- [ ] **6.1**: Create post-processing framework
+- [x] **6.1**: Create post-processing framework
   - Render scene to framebuffer texture
   - Apply fragment shader to full-screen quad
   - Display final result
 
-- [ ] **6.2**: Implement bloom effect
+- [x] **6.2**: Implement bloom effect
   - Extract bright pixels (threshold)
   - Gaussian blur
   - Composite back over scene
   - Intensity slider
 
-- [ ] **6.3**: Implement FXAA (anti-aliasing)
+- [x] **6.3**: Implement FXAA (anti-aliasing)
   - Apply FXAA shader as post-process
   - Smooth jagged edges
   - Toggle on/off
 
-- [ ] **6.4**: Implement color grading
+- [x] **6.4**: Implement color grading
   - Adjust hue, saturation, contrast
   - Use LUT (lookup table) textures for advanced grading
   - Presets: Neutral, Warm, Cool, Desaturated
 
-- [ ] **6.5**: Add post-process settings panel
+- [x] **6.5**: Add post-process settings panel
   - Enable/disable each effect
   - Adjust parameters
   - Save presets

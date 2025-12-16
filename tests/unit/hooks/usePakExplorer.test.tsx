@@ -1,7 +1,10 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { usePakExplorer } from '../../../src/hooks/usePakExplorer';
 import { indexedDBService } from '../../../src/services/indexedDBService';
-import { PakService, getPakService } from '../../../src/services/pakService';
+import { PakService } from '../../../src/services/pakService';
+import { createGameSimulation } from '../../../src/services/gameService';
+import { createGameLoop } from '../../../src/utils/gameLoop';
+import { initInputController, cleanupInputController, generateUserCommand } from '../../../src/services/inputService';
 
 // Setup mock methods holder
 const mockPakServiceMethods = {
@@ -54,12 +57,42 @@ jest.mock('../../../src/services/pakService', () => {
     };
 });
 
+// Mock GameService
+jest.mock('../../../src/services/gameService', () => ({
+    createGameSimulation: jest.fn().mockResolvedValue({
+        start: jest.fn(),
+        shutdown: jest.fn(),
+        tick: jest.fn(),
+        getSnapshot: jest.fn().mockReturnValue({ time: 123 }),
+        getConfigStrings: jest.fn().mockReturnValue(new Map())
+    })
+}));
+
+// Mock GameLoop
+jest.mock('../../../src/utils/gameLoop', () => ({
+    createGameLoop: jest.fn().mockReturnValue({
+        start: jest.fn(),
+        stop: jest.fn(),
+        pause: jest.fn(),
+        resume: jest.fn()
+    })
+}));
+
+// Mock InputService
+jest.mock('../../../src/services/inputService', () => ({
+    initInputController: jest.fn(),
+    cleanupInputController: jest.fn(),
+    generateUserCommand: jest.fn().mockReturnValue({})
+}));
+
+
 // Mock fetch for built-in paks
 global.fetch = jest.fn();
 
 describe('usePakExplorer', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        // Setup successful fetch default to avoid init errors in unrelated tests
         (global.fetch as jest.Mock).mockResolvedValue({
             ok: false,
         });
@@ -200,5 +233,188 @@ describe('usePakExplorer', () => {
         const { unmount } = renderHook(() => usePakExplorer());
         unmount();
         // If logic is correct, no error logged/thrown
+    });
+
+    // --- New Tests for Game Mode ---
+
+    it('starts game mode successfully and executes loop', async () => {
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        await act(async () => {
+            await result.current.startGameMode('demo1');
+        });
+
+        // Ensure async tasks complete
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        expect(createGameSimulation).toHaveBeenCalled();
+        expect(initInputController).toHaveBeenCalled();
+        expect(createGameLoop).toHaveBeenCalled();
+        expect(result.current.gameMode).toBe('game');
+
+        // Check loop callbacks
+        const calls = (createGameLoop as jest.Mock).mock.calls;
+        expect(calls.length).toBeGreaterThan(0);
+        const [simulate, render] = calls[calls.length - 1]; // Use last call
+
+        // Mock tick
+        const mockTick = (await createGameSimulation(null as any, '')).tick;
+
+        // Run simulation step
+        act(() => {
+            simulate({ deltaMs: 16 });
+        });
+        expect(generateUserCommand).toHaveBeenCalled();
+        expect(mockTick).toHaveBeenCalled();
+
+        // Run render step
+        act(() => {
+            render(0.5);
+        });
+        expect(result.current.gameStateSnapshot).toEqual({
+            playerState: undefined,
+            configstrings: new Map()
+        });
+    });
+
+    it('handles game mode start failure', async () => {
+        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        (createGameSimulation as jest.Mock).mockRejectedValue(new Error('Game init failed'));
+
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        // Clear any previous errors from init
+        act(() => { result.current.dismissError(); });
+
+        await act(async () => {
+            await result.current.startGameMode('demo1');
+        });
+
+        expect(result.current.error).toBe('Game init failed');
+        expect(result.current.gameMode).toBe('browser');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('stops game mode cleanly', async () => {
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        // Start then stop
+        await act(async () => {
+            await result.current.startGameMode('demo1');
+        });
+
+        act(() => {
+            result.current.stopGameMode();
+        });
+
+        expect(result.current.gameMode).toBe('browser');
+        expect(cleanupInputController).toHaveBeenCalled();
+    });
+
+    it('toggles pause state', async () => {
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        act(() => {
+            result.current.pauseGame();
+        });
+        expect(result.current.isPaused).toBe(true);
+
+        act(() => {
+            result.current.resumeGame();
+        });
+        expect(result.current.isPaused).toBe(false);
+
+        act(() => {
+            result.current.togglePause();
+        });
+        expect(result.current.isPaused).toBe(true);
+    });
+
+    // --- New Tests for Built-in Paks ---
+
+    it('loads built-in paks successfully', async () => {
+        // Mock fetch for HEAD and GET requests
+        (global.fetch as jest.Mock).mockImplementation((url) => {
+            if (url === 'pak.pak' || url === 'pak0.pak') {
+                return Promise.resolve({
+                    ok: true,
+                    arrayBuffer: () => Promise.resolve(new ArrayBuffer(10))
+                });
+            }
+            return Promise.resolve({ ok: false });
+        });
+
+        const { result } = renderHook(() => usePakExplorer());
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        // Expect calls for pak.pak and pak0.pak
+        expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledTimes(2);
+        expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledWith('pak.pak', expect.any(ArrayBuffer), undefined, false);
+        expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledWith('pak0.pak', expect.any(ArrayBuffer), undefined, false);
+    });
+
+    it('loadFromUrl handles successful fetch', async () => {
+        (global.fetch as jest.Mock).mockResolvedValue({
+            ok: true,
+            arrayBuffer: () => Promise.resolve(new ArrayBuffer(10))
+        });
+
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        await act(async () => {
+            await result.current.loadFromUrl('http://example.com/test.pak');
+        });
+
+        expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledWith('test.pak', expect.any(ArrayBuffer), undefined, false);
+    });
+
+    it('loadFromUrl handles fetch error', async () => {
+         (global.fetch as jest.Mock).mockResolvedValue({
+             ok: false,
+             statusText: 'Not Found'
+         });
+
+         const { result } = renderHook(() => usePakExplorer());
+         await waitFor(() => expect(result.current.loading).toBe(false));
+
+         await act(async () => {
+             await result.current.loadFromUrl('http://example.com/bad.pak');
+         });
+
+         expect(result.current.error).toContain('Failed to fetch');
+    });
+
+    it('dismisses error', async () => {
+        const { result } = renderHook(() => usePakExplorer());
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        act(() => {
+            // Manually set error via a failed op first? or just rely on state setter being exposed?
+            // Since we can't set error directly, simulate a failure.
+        });
+
+        // Let's use loadFromUrl to cause error
+        (global.fetch as jest.Mock).mockResolvedValue({ ok: false, statusText: 'Err' });
+        await act(async () => {
+            await result.current.loadFromUrl('bad');
+        });
+        expect(result.current.error).toBeTruthy();
+
+        act(() => {
+            result.current.dismissError();
+        });
+        expect(result.current.error).toBeNull();
     });
 });

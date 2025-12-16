@@ -68,6 +68,8 @@ export const SpeedGraph: React.FC<SpeedGraphProps> = ({
 
     return (
         <canvas
+            role="img"
+            aria-label="Speed Graph"
             ref={canvasRef}
             width={width}
             height={height}
