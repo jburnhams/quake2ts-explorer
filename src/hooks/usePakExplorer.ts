@@ -340,7 +340,7 @@ export function usePakExplorer(): UsePakExplorerResult {
                  const snapshot = gameSimulationRef.current.getSnapshot();
                  if (snapshot) {
                      setGameStateSnapshot({
-                         playerState: snapshot.playerState,
+                         playerState: (snapshot as any).playerState || (snapshot as any).ps,
                          configstrings: gameSimulationRef.current.getConfigStrings()
                      });
                  }
