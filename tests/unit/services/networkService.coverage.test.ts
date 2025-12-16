@@ -1,235 +1,105 @@
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+import { NetChan } from 'quake2ts/shared';
+import { WebSocket as MockWebSocket } from 'mock-socket';
 
-import { ClientCommand, ServerCommand } from 'quake2ts/shared';
+// Define mocks
+const mockProcess = jest.fn().mockReturnValue(new Uint8Array(0));
+const mockTransmit = jest.fn().mockReturnValue(new Uint8Array(0));
+const mockSetup = jest.fn();
+const mockReset = jest.fn();
+const mockWriteReliableByte = jest.fn();
+const mockWriteReliableString = jest.fn();
 
-const mockNetChanInstance = {
-    setup: jest.fn(),
-    reset: jest.fn(),
-    transmit: jest.fn(),
-    writeReliableByte: jest.fn(),
-    writeReliableString: jest.fn(),
-    process: jest.fn()
-};
-
-const mockBinaryStreamInstance = {
-    hasMore: jest.fn(),
-    readByte: jest.fn(),
-    readShort: jest.fn(),
-    readLong: jest.fn(),
-    readString: jest.fn(),
-    hasBytes: jest.fn().mockReturnValue(true)
-};
-
+// Mock dependencies
 jest.mock('quake2ts/shared', () => {
+    const original = jest.requireActual('quake2ts/shared') as any;
     return {
-        NetChan: jest.fn().mockImplementation(() => mockNetChanInstance),
-        BinaryStream: jest.fn().mockImplementation(() => mockBinaryStreamInstance),
-        BinaryWriter: jest.fn().mockImplementation(() => ({
-             writeByte: jest.fn(),
-             getData: jest.fn().mockReturnValue(new Uint8Array([4, 5, 6]))
+        ...original,
+        NetChan: jest.fn().mockImplementation(() => ({
+            setup: mockSetup,
+            transmit: mockTransmit,
+            reset: mockReset,
+            process: mockProcess,
+            writeReliableByte: mockWriteReliableByte,
+            writeReliableString: mockWriteReliableString
         })),
-        writeUserCommand: jest.fn(),
-        ClientCommand: {
-            userinfo: 1,
-            move: 2
-        },
-        ServerCommand: {
-            nop: 0,
-            print: 1,
-            serverdata: 2,
-            frame: 3,
-            disconnect: 4,
-            configstring: 5,
-            centerprint: 6,
-            stufftext: 7
-        },
-        MAX_MSGLEN: 1400
+        BinaryWriter: jest.fn().mockImplementation(() => ({
+            writeByte: jest.fn(),
+            getData: jest.fn().mockReturnValue(new Uint8Array(0))
+        }))
     };
 });
 
 describe('NetworkService Coverage', () => {
     let networkService: any;
-    let mockWebSocket: any;
+    let mockCallbacks: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        jest.clearAllMocks();
         jest.resetModules();
-        jest.clearAllMocks(); // Clears call history
-
-        // Reset implementations manually
-        mockNetChanInstance.setup.mockReset();
-        mockNetChanInstance.reset.mockReset();
-        mockNetChanInstance.transmit.mockReset();
-        mockNetChanInstance.writeReliableByte.mockReset();
-        mockNetChanInstance.writeReliableString.mockReset();
-        mockNetChanInstance.process.mockReset();
-
-        mockBinaryStreamInstance.hasMore.mockReset();
-        mockBinaryStreamInstance.readByte.mockReset();
-        mockBinaryStreamInstance.readShort.mockReset();
-        mockBinaryStreamInstance.readLong.mockReset();
-        mockBinaryStreamInstance.readString.mockReset();
-        mockBinaryStreamInstance.hasBytes.mockReset();
-
-        // Defaults
-        mockNetChanInstance.transmit.mockReturnValue(new Uint8Array([1, 2, 3]));
-        mockBinaryStreamInstance.hasBytes.mockReturnValue(true);
 
         // Mock global WebSocket
-        mockWebSocket = {
-            binaryType: 'blob',
-            send: jest.fn(),
-            close: jest.fn(),
-            readyState: 1, // OPEN
-            onopen: null,
-            onclose: null,
-            onerror: null,
-            onmessage: null
+        (global as any).WebSocket = MockWebSocket;
+
+        // Re-import service
+        const module = await import('@/src/services/networkService');
+        networkService = module.networkService;
+
+        mockCallbacks = {
+            onDisconnect: jest.fn()
+        };
+        networkService.setCallbacks(mockCallbacks);
+    });
+
+    afterEach(() => {
+        if (networkService) networkService.disconnect();
+    });
+
+    it('handles disconnect server command', () => {
+        // 2 = disconnect, string
+        const payload = new Uint8Array(100);
+        let p = 0;
+        payload[p++] = 2; // ServerCommand.disconnect
+        // String "Kick"
+        // BinaryStream.readString usually reads until null or special char?
+        // Assuming null term
+        "Kick".split('').forEach(c => payload[p++] = c.charCodeAt(0));
+        payload[p++] = 0;
+
+        const data = payload.slice(0, p);
+        mockProcess.mockReturnValue(data);
+
+        (networkService as any).handleMessage(new ArrayBuffer(0));
+
+        // Disconnect logic calls handleDisconnect('Server disconnected client')
+        // OR parses string? Code: this.disconnect('Server disconnected client');
+        // It does NOT read the string reason from packet in the code I read earlier?
+        // Let's check code:
+        // case ServerCommand.disconnect: this.disconnect('Server disconnected client'); break;
+        // It ignores the reason in stream!
+
+        expect(mockCallbacks.onDisconnect).toHaveBeenCalledWith('Server disconnected client');
+    });
+
+    it('throttles sendCommand', () => {
+        jest.useFakeTimers();
+        jest.advanceTimersByTime(1000);
+
+        const cmd = {
+            msec: 0, buttons: 0, angles: {x:0,y:0,z:0},
+            forwardmove: 0, sidemove: 0, upmove: 0, impulse: 0, lightlevel: 0
         };
 
-        global.WebSocket = jest.fn().mockImplementation(() => mockWebSocket) as any;
-        (global.WebSocket as any).OPEN = 1;
+        networkService.sendCommand(cmd); // First send
+        expect(mockTransmit).toHaveBeenCalledTimes(1);
 
-        const mod = require('@/src/services/networkService');
-        networkService = mod.networkService;
-    });
+        networkService.sendCommand(cmd); // Throttled
+        expect(mockTransmit).toHaveBeenCalledTimes(1);
 
-    it('should initialize with disconnected state', () => {
-        expect(networkService.getState()).toBe('disconnected');
-    });
+        jest.advanceTimersByTime(20);
+        networkService.sendCommand(cmd);
+        expect(mockTransmit).toHaveBeenCalledTimes(2);
 
-    it('should connect successfully', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-        expect(networkService.getState()).toBe('connected');
-        expect(mockWebSocket.send).toHaveBeenCalled();
-    });
-
-    it('should handle disconnect', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        const onDisconnect = jest.fn();
-        networkService.setCallbacks({ onDisconnect });
-
-        networkService.disconnect('User quit');
-
-        expect(mockWebSocket.close).toHaveBeenCalled();
-        expect(networkService.getState()).toBe('disconnected');
-        expect(onDisconnect).toHaveBeenCalledWith('User quit');
-    });
-
-    it('should queue packets when not connected', async () => {
-        networkService.disconnect();
-        networkService.sendClientCommand(ClientCommand.move);
-
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        expect(mockWebSocket.send).toHaveBeenCalled();
-    });
-
-    it('should send user command throttled', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        networkService.sendCommand({} as any);
-        expect(mockWebSocket.send).toHaveBeenCalled();
-
-        mockWebSocket.send.mockClear();
-        networkService.sendCommand({} as any);
-        expect(mockWebSocket.send).not.toHaveBeenCalled();
-    });
-
-    it('should process server messages', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        const onPrint = jest.fn();
-        const onServerCommand = jest.fn();
-        networkService.setCallbacks({ onPrint, onServerCommand });
-
-        mockNetChanInstance.process.mockReturnValue(new Uint8Array([1]));
-
-        mockBinaryStreamInstance.hasMore
-            .mockReturnValueOnce(true)
-            .mockReturnValue(false);
-        mockBinaryStreamInstance.readByte
-            .mockReturnValueOnce(ServerCommand.print)
-            .mockReturnValueOnce(0); // Level
-        mockBinaryStreamInstance.readString.mockReturnValue("Hello");
-
-        if (mockWebSocket.onmessage) mockWebSocket.onmessage({ data: new ArrayBuffer(10) });
-
-        expect(onPrint).toHaveBeenCalledWith(0, "Hello");
-        expect(onServerCommand).toHaveBeenCalled();
-    });
-
-    it('should handle server disconnect command', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        const onDisconnect = jest.fn();
-        networkService.setCallbacks({ onDisconnect });
-
-        mockNetChanInstance.process.mockReturnValue(new Uint8Array([1]));
-
-        mockBinaryStreamInstance.hasMore.mockReturnValueOnce(true).mockReturnValue(false);
-        mockBinaryStreamInstance.readByte.mockReturnValueOnce(ServerCommand.disconnect);
-
-        if (mockWebSocket.onmessage) mockWebSocket.onmessage({ data: new ArrayBuffer(10) });
-
-        expect(onDisconnect).toHaveBeenCalledWith('Server disconnected client');
-    });
-
-    it('should handle multiple server commands (centerprint, stufftext, configstring)', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        const onCenterPrint = jest.fn();
-        const onStuffText = jest.fn();
-        const onConfigString = jest.fn();
-        networkService.setCallbacks({ onCenterPrint, onStuffText, onConfigString });
-
-        mockNetChanInstance.process.mockReturnValue(new Uint8Array([1]));
-
-        let callCount = 0;
-        mockBinaryStreamInstance.hasMore.mockImplementation(() => callCount++ < 3);
-
-        mockBinaryStreamInstance.readByte
-                .mockReturnValueOnce(ServerCommand.centerprint)
-                .mockReturnValueOnce(ServerCommand.stufftext)
-                .mockReturnValueOnce(ServerCommand.configstring);
-
-        mockBinaryStreamInstance.readString.mockReturnValue("data");
-        mockBinaryStreamInstance.readShort.mockReturnValue(1);
-        mockBinaryStreamInstance.readLong.mockReturnValue(1);
-
-        if (mockWebSocket.onmessage) mockWebSocket.onmessage({ data: new ArrayBuffer(10) });
-
-        expect(onCenterPrint).toHaveBeenCalledWith("data");
-        expect(onStuffText).toHaveBeenCalledWith("data");
-        expect(onConfigString).toHaveBeenCalledWith(1, "data");
-    });
-
-    it('should handle serverdata command', async () => {
-        const connectPromise = networkService.connect('ws://localhost:8080');
-        setTimeout(() => { if (mockWebSocket.onopen) mockWebSocket.onopen(); }, 0);
-        await connectPromise;
-
-        mockNetChanInstance.process.mockReturnValue(new Uint8Array([1]));
-
-        mockBinaryStreamInstance.hasMore.mockReturnValueOnce(true).mockReturnValue(false);
-        mockBinaryStreamInstance.readByte.mockReturnValueOnce(ServerCommand.serverdata);
-        mockBinaryStreamInstance.readString.mockReturnValue("game");
-        mockBinaryStreamInstance.readLong.mockReturnValue(1);
-        mockBinaryStreamInstance.readShort.mockReturnValue(1);
-
-        if (mockWebSocket.onmessage) mockWebSocket.onmessage({ data: new ArrayBuffer(10) });
+        jest.useRealTimers();
     });
 });

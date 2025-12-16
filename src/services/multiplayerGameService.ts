@@ -1,15 +1,13 @@
 import {
   type FixedStepContext,
-  type GameFrameResult,
   type VirtualFileSystem,
-  type BspMap,
   AssetManager
 } from 'quake2ts/engine';
 
 import {
   type GameSimulation,
-  type GameStateSnapshot,
-  type GameSaveFile
+  type GameSaveFile,
+  type GameStateSnapshot as GameSnapshot
 } from './gameService';
 
 import {
@@ -20,19 +18,20 @@ import {
   pointContents,
   type CollisionTraceParams,
   CollisionEntityIndex,
-  type Entity,
   type CollisionEntityLink,
   type CollisionPlane,
-  Vec3
+  Vec3,
+  type PmoveTraceResult,
+  CONTENTS_SOLID
 } from 'quake2ts/shared';
+import { type Entity } from 'quake2ts/game';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
 import { networkService, type GameStateSnapshot as NetSnapshot } from './networkService';
 import { predictionService } from './predictionService';
-import { inputService } from './inputService';
 
 export class MultiplayerGameService implements GameSimulation {
-  private latestSnapshot: GameStateSnapshot | null = null;
+  private latestSnapshot: NetSnapshot | null = null;
   private predictedState: PlayerState | null = null;
   private isRunning: boolean = false;
   private assetManager: AssetManager | null = null;
@@ -101,20 +100,54 @@ export class MultiplayerGameService implements GameSimulation {
     this.predictedState = predicted;
   }
 
-  public getSnapshot(): GameStateSnapshot {
-    if (!this.latestSnapshot) {
-        return {
-            time: 0,
-            playerState: this.predictedState || ({} as PlayerState),
-            entities: [],
-            events: []
-        };
-    }
+  public getSnapshot(): GameSnapshot {
+    const ps = this.predictedState || this.latestSnapshot?.playerState || ({} as PlayerState);
 
+    // Map PlayerState to GameStateSnapshot (flattened)
     return {
-        ...this.latestSnapshot,
-        playerState: this.predictedState || this.latestSnapshot.playerState
-    };
+        time: this.latestSnapshot?.time || 0,
+        gravity: { x: 0, y: 0, z: -800 },
+        origin: ps.origin || { x: 0, y: 0, z: 0 },
+        velocity: ps.velocity || { x: 0, y: 0, z: 0 },
+        viewangles: ps.viewAngles || { x: 0, y: 0, z: 0 },
+        pmFlags: ps.pm_flags || 0,
+        pmType: ps.pm_type || 0,
+        waterlevel: ps.waterLevel || 0,
+        deltaAngles: { x: 0, y: 0, z: 0 },
+
+        stats: ps.stats || [],
+        health: (ps.stats && ps.stats[1]) || 0,
+        armor: (ps.stats && ps.stats[4]) || 0,
+        ammo: (ps.stats && ps.stats[2]) || 0,
+
+        blend: ps.blend || [0, 0, 0, 0],
+        pickupIcon: ps.pickupIcon,
+        damageAlpha: ps.damageAlpha || 0,
+        damageIndicators: ps.damageIndicators || [],
+
+        kick_angles: ps.kick_angles || { x: 0, y: 0, z: 0 },
+        kick_origin: ps.kick_origin || { x: 0, y: 0, z: 0 },
+        gunoffset: ps.gunoffset || { x: 0, y: 0, z: 0 },
+        gunangles: ps.gunangles || { x: 0, y: 0, z: 0 },
+        gunindex: ps.gunindex || 0,
+        pm_time: ps.pm_time || 0,
+        gun_frame: ps.gun_frame || 0,
+        rdflags: ps.rdflags || 0,
+        fov: ps.fov || 90,
+        renderfx: ps.renderfx || 0,
+
+        // World / Level
+        level: {} as any,
+        entities: {
+            activeCount: this.latestSnapshot?.entities.length || 0,
+            worldClassname: 'worldspawn'
+        },
+        packetEntities: this.latestSnapshot?.entities || []
+    } as unknown as GameSnapshot;
+  }
+
+  public getConfigStrings(): Map<number, string> {
+      return new Map();
   }
 
   public createSave(description: string): GameSaveFile {
@@ -126,12 +159,7 @@ export class MultiplayerGameService implements GameSimulation {
   }
 
   private onServerSnapshot(netSnapshot: NetSnapshot): void {
-    this.latestSnapshot = {
-        time: netSnapshot.time,
-        playerState: netSnapshot.playerState,
-        entities: netSnapshot.entities,
-        events: []
-    };
+    this.latestSnapshot = netSnapshot;
 
     // Update prediction with proper server time
     predictionService.onServerFrame(netSnapshot.playerState as any, 0, netSnapshot.time);
@@ -143,18 +171,15 @@ export class MultiplayerGameService implements GameSimulation {
   }
 
   // --- Collision Trace for Prediction ---
-  // Mirrors GameServiceImpl logic
-  private trace(start: Vec3, mins: Vec3 | null, maxs: Vec3 | null, end: Vec3, passent: Entity | null, contentmask: number): any {
+  // Matches PmoveTraceFn
+  private trace(start: Vec3, end: Vec3, mins?: Vec3, maxs?: Vec3): PmoveTraceResult {
     if (!this.collisionModel) {
         return {
             allsolid: false,
             startsolid: false,
             fraction: 1.0,
             endpos: end,
-            plane: { normal: { x: 0, y: 1, z: 0 }, dist: 0, type: 0, signbits: 0 },
-            surfaceFlags: 0,
-            contents: 0,
-            ent: null
+            // plane: ... PmoveTraceResult expects planeNormal?
         };
     }
 
@@ -165,12 +190,21 @@ export class MultiplayerGameService implements GameSimulation {
         mins: mins || undefined,
         maxs: maxs || undefined,
         headnode: 0,
-        contentMask: contentmask
+        contentMask: CONTENTS_SOLID // Default mask
     };
 
-    return traceBox(traceParams);
-    // Note: We skip entity trace for prediction usually, or need to replicate entity linking locally.
-    // Standard Q2 client prediction mostly traces against world.
+    const result = traceBox(traceParams);
+
+    // Convert to PmoveTraceResult
+    return {
+        allsolid: result.allsolid,
+        startsolid: result.startsolid,
+        fraction: result.fraction,
+        endpos: result.endpos,
+        planeNormal: result.plane?.normal, // Adapt plane
+        surfaceFlags: result.surfaceFlags,
+        contents: result.contents
+    };
   }
 
   private pointContents(point: Vec3): number {

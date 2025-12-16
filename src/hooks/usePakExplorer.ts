@@ -8,7 +8,7 @@ import {
 } from '../services/pakService';
 import { indexedDBService } from '../services/indexedDBService';
 import { createGameLoop, GameLoop } from '../utils/gameLoop';
-import { createGameSimulation, GameSimulation } from '../services/gameService';
+import { createGameSimulation, GameSimulation, GameStateSnapshot } from '../services/gameService';
 import { initInputController, cleanupInputController, generateUserCommand } from '../services/inputService';
 
 export type GameMode = 'browser' | 'game';
@@ -25,7 +25,7 @@ export interface UsePakExplorerResult {
   error: string | null;
   gameMode: GameMode;
   isPaused: boolean;
-  gameStateSnapshot: { playerState: any, configstrings: Map<number, string> } | null;
+  gameStateSnapshot: (GameStateSnapshot & { configstrings: Map<number, string> }) | null;
   viewMode: ViewMode;
   handleFileSelect: (files: FileList) => Promise<void>;
   handleTreeSelect: (path: string) => Promise<void>;
@@ -340,7 +340,7 @@ export function usePakExplorer(): UsePakExplorerResult {
                  const snapshot = gameSimulationRef.current.getSnapshot();
                  if (snapshot) {
                      setGameStateSnapshot({
-                         playerState: (snapshot as any).playerState || (snapshot as any).ps,
+                         ...snapshot,
                          configstrings: gameSimulationRef.current.getConfigStrings()
                      });
                  }

@@ -5,6 +5,17 @@ import { VirtualFileSystem } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
 
 // Mock dependencies
+jest.mock('quake2ts/client', () => ({
+    ClientPrediction: jest.fn().mockImplementation(() => ({
+        setPredictionEnabled: jest.fn(),
+        enqueueCommand: jest.fn(),
+        setAuthoritative: jest.fn(),
+        getPredictionError: jest.fn().mockReturnValue({x:0,y:0,z:0}),
+        decayError: jest.fn(),
+        getPredictedState: jest.fn()
+    }))
+}));
+
 jest.mock('quake2ts/engine', () => ({
   VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
   AssetManager: jest.fn().mockImplementation(() => ({
@@ -40,7 +51,13 @@ jest.mock('quake2ts/shared', () => ({
     traceBox: jest.fn().mockReturnValue({ fraction: 1.0 }),
     pointContents: jest.fn().mockReturnValue(0),
     Vec3: {},
-    CollisionPlane: {}
+    CollisionPlane: {},
+    NetChan: jest.fn().mockImplementation(() => ({
+        setup: jest.fn(),
+        transmit: jest.fn(),
+        reset: jest.fn(),
+        process: jest.fn()
+    }))
 }));
 
 describe('GameService Console Commands', () => {

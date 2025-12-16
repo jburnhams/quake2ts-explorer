@@ -4,6 +4,17 @@ import { createGame } from 'quake2ts/game';
 import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
 
 // Mocks
+jest.mock('quake2ts/client', () => ({
+    ClientPrediction: jest.fn().mockImplementation(() => ({
+        setPredictionEnabled: jest.fn(),
+        enqueueCommand: jest.fn(),
+        setAuthoritative: jest.fn(),
+        getPredictionError: jest.fn().mockReturnValue({x:0,y:0,z:0}),
+        decayError: jest.fn(),
+        getPredictedState: jest.fn()
+    }))
+}));
+
 jest.mock('quake2ts/engine', () => {
   return {
     VirtualFileSystem: jest.fn().mockImplementation(() => ({})),

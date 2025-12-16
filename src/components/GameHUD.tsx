@@ -1,15 +1,16 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { PlayerState, PlayerStat } from 'quake2ts/shared';
+import { PlayerStat } from 'quake2ts/shared';
+import { GameStateSnapshot } from '@/src/services/gameService';
 import { PakService } from '@/src/services/pakService';
 import './GameHUD.css';
 
 interface GameHUDProps {
-  playerState: PlayerState;
+  gameState: GameStateSnapshot;
   configstrings: Map<number, string>;
   pakService: PakService;
 }
 
-export function GameHUD({ playerState, configstrings, pakService }: GameHUDProps) {
+export function GameHUD({ gameState, configstrings, pakService }: GameHUDProps) {
   const [damageFlash, setDamageFlash] = useState(false);
   const [pickupFlash, setPickupFlash] = useState(false);
   const [lastHealth, setLastHealth] = useState(0);
@@ -17,18 +18,18 @@ export function GameHUD({ playerState, configstrings, pakService }: GameHUDProps
   const [ammoIconUrl, setAmmoIconUrl] = useState<string | null>(null);
   const [armorIconUrl, setArmorIconUrl] = useState<string | null>(null);
 
-  const health = playerState.stats[PlayerStat.STAT_HEALTH] || 0;
-  const ammo = playerState.stats[PlayerStat.STAT_AMMO] || 0;
-  const armor = playerState.stats[PlayerStat.STAT_ARMOR] || 0;
-  const weaponIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
-  const ammoIconIndex = playerState.stats[PlayerStat.STAT_AMMO_ICON];
-  const armorIconIndex = playerState.stats[PlayerStat.STAT_ARMOR_ICON];
+  const health = gameState.stats[PlayerStat.STAT_HEALTH] || 0;
+  const ammo = gameState.stats[PlayerStat.STAT_AMMO] || 0;
+  const armor = gameState.stats[PlayerStat.STAT_ARMOR] || 0;
+  const weaponIconIndex = gameState.stats[PlayerStat.STAT_SELECTED_ICON];
+  const ammoIconIndex = gameState.stats[PlayerStat.STAT_AMMO_ICON];
+  const armorIconIndex = gameState.stats[PlayerStat.STAT_ARMOR_ICON];
 
   // Note: STAT_SELECTED_ICON (6) is usually the icon.
   // I'll stick to PlayerStat enum.
   // If icons are missing, I'll fallback to text.
 
-  const selectedIconIndex = playerState.stats[PlayerStat.STAT_SELECTED_ICON];
+  const selectedIconIndex = gameState.stats[PlayerStat.STAT_SELECTED_ICON];
 
   // Load icons
   useEffect(() => {
