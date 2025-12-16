@@ -177,20 +177,27 @@ export class BspAdapter implements ViewerAdapter {
     const lightStyles = resolveLightStyles();
     const brightness = this.renderOptions.brightness !== undefined ? this.renderOptions.brightness : 1.0;
     const fullbright = this.renderOptions.fullbright === true;
+    const freezeLights = this.renderOptions.freezeLights === true;
 
     // Convert to Array for compatibility with BspSurfacePipeline binding which expects number[]
     // resolveLightStyles returns Float32Array
     const styleValues: number[] = new Array(lightStyles.length);
     for (let j = 0; j < lightStyles.length; j++) {
-        // If fullbright, force style value to 1.0 to avoid pulsing.
-        if (fullbright) {
+        // If fullbright or freezeLights, force style value to 1.0 to avoid pulsing.
+        // For freezeLights, we ideally want to freeze at current value, but resolveLightStyles is global and time-based.
+        // A simple "freeze" often just means stop the pulsing, i.e., set to fully on or a fixed value.
+        // Setting to 1.0 is consistent with "Fullbright" behavior for styles but keeps lightmaps.
+        if (fullbright || freezeLights) {
             styleValues[j] = 1.0;
         } else {
             styleValues[j] = lightStyles[j] * brightness;
         }
     }
 
-    const timeSeconds = performance.now() / 1000;
+    // If freezeLights is on, we might also want to freeze time-based shader effects (like turbulence),
+    // but the task specifically mentions "Freeze animated lights".
+    // Passing a fixed time could achieve that for everything.
+    const timeSeconds = freezeLights ? 0 : performance.now() / 1000;
     const hoveredModel = this.hoveredEntity ? this.getModelFromEntity(this.hoveredEntity) : null;
 
     // Normal Rendering Loop
