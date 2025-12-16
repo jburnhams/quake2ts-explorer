@@ -58,6 +58,18 @@ jest.mock('quake2ts/engine', () => {
     };
 });
 
+// Mock GizmoRenderer
+jest.mock('../../../../src/components/UniversalViewer/adapters/GizmoRenderer', () => {
+    return {
+        GizmoRenderer: jest.fn().mockImplementation(() => ({
+            render: jest.fn(),
+            intersect: jest.fn(),
+            setHoveredAxis: jest.fn(),
+            setActiveAxis: jest.fn()
+        }))
+    };
+});
+
 jest.mock('../../../../src/components/UniversalViewer/ViewerControls', () => ({
   ViewerControls: () => <div data-testid="viewer-controls" />,
 }));

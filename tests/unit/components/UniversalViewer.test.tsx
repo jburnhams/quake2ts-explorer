@@ -25,7 +25,12 @@ jest.mock('quake2ts/engine', () => {
                 clearColor: jest.fn(), clear: jest.fn(), enable: jest.fn(), drawElements: jest.fn(), viewport: jest.fn(), activeTexture: jest.fn(),
                 generateMipmap: jest.fn(),
                 TRIANGLES: 0, COLOR_BUFFER_BIT: 0, DEPTH_BUFFER_BIT: 0, DEPTH_TEST: 0, CULL_FACE: 0, UNSIGNED_SHORT: 0, RGBA: 0,
-                UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0
+                UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0,
+                createShader: jest.fn(), shaderSource: jest.fn(), compileShader: jest.fn(), getShaderParameter: jest.fn(() => true),
+                createProgram: jest.fn(), attachShader: jest.fn(), linkProgram: jest.fn(),
+                getUniformLocation: jest.fn(), createVertexArray: jest.fn(), bindVertexArray: jest.fn(),
+                createBuffer: jest.fn(), bindBuffer: jest.fn(), bufferData: jest.fn(), enableVertexAttribArray: jest.fn(),
+                vertexAttribPointer: jest.fn(), drawArrays: jest.fn(), uniformMatrix4fv: jest.fn(), uniform3fv: jest.fn(), uniform4fv: jest.fn()
             },
         }),
         Camera: jest.fn().mockImplementation(() => ({
@@ -90,9 +95,18 @@ jest.mock('gl-matrix', () => {
             cross: jest.fn(),
             scale: jest.fn(),
             add: jest.fn(),
+            sub: jest.fn(),
+            dot: jest.fn(),
+            length: jest.fn(),
+            scaleAndAdd: jest.fn(),
             copy: jest.fn(),
             clone: jest.fn().mockImplementation(v => new Float32Array(v)),
             set: jest.fn(),
+        },
+        vec4: {
+            create: jest.fn().mockReturnValue(new Float32Array(4)),
+            fromValues: jest.fn().mockReturnValue(new Float32Array(4)),
+            transformMat4: jest.fn(),
         }
     };
 });
