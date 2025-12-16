@@ -30,6 +30,11 @@ import { ScreenshotOptions } from '@/src/services/screenshotService';
 import { getFileName } from '../../utils/helpers';
 import { PlayerState } from 'quake2ts/shared';
 import { GameHUD } from '../GameHUD';
+import { PostProcessor, PostProcessOptions, defaultPostProcessOptions } from '../../utils/postProcessing';
+import { PostProcessSettings } from '../PostProcessSettings';
+import postProcessVert from '../../shaders/postProcess.vert?raw';
+import postProcessFrag from '../../shaders/postProcess.frag?raw';
+
 import '../../styles/md2Viewer.css';
 
 export interface UniversalViewerProps {
@@ -131,6 +136,9 @@ export function UniversalViewer({
       ambient: 0.1,
       fullbright: false
   });
+  const [showPostProcessSettings, setShowPostProcessSettings] = useState(false);
+  const [postProcessOptions, setPostProcessOptions] = useState<PostProcessOptions>(defaultPostProcessOptions);
+  const postProcessorRef = useRef<PostProcessor | null>(null);
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -213,9 +221,21 @@ export function UniversalViewer({
                  }
              }
 
-             gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+             // Handle post-processing for screenshot (needs resize)
+             if (postProcessorRef.current && postProcessOptions.enabled) {
+                 postProcessorRef.current.resize(newWidth, newHeight);
+                 postProcessorRef.current.bind();
+             } else {
+                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+             }
+
              if (adapter) {
                 adapter.render(gl, camera, viewMatrix);
+             }
+
+             if (postProcessorRef.current && postProcessOptions.enabled) {
+                 postProcessorRef.current.unbind();
+                 postProcessorRef.current.render(postProcessOptions);
              }
         }
 
@@ -233,7 +253,7 @@ export function UniversalViewer({
         if (multiplier > 1) {
             canvas.width = originalWidth;
             canvas.height = originalHeight;
-            // Restore CSS (usually handled by CSS file or parent, but let's reset to be safe or empty to let auto work)
+            // Restore CSS
             canvas.style.width = '100%';
             canvas.style.height = '100%';
 
@@ -255,8 +275,21 @@ export function UniversalViewer({
                      mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
                  }
              }
+
+             if (postProcessorRef.current && postProcessOptions.enabled) {
+                 postProcessorRef.current.resize(originalWidth, originalHeight);
+                 postProcessorRef.current.bind();
+             } else {
+                 gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+             }
+
              if (adapter) {
                  adapter.render(gl, camera, viewMatrix);
+             }
+
+             if (postProcessorRef.current && postProcessOptions.enabled) {
+                 postProcessorRef.current.unbind();
+                 postProcessorRef.current.render(postProcessOptions);
              }
         }
     }
@@ -283,6 +316,10 @@ export function UniversalViewer({
           glContext.gl.viewport(0, 0, options.width, options.height);
           camera.aspect = options.width / options.height;
           if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+
+          if (postProcessorRef.current) {
+              postProcessorRef.current.resize(options.width, options.height);
+          }
       }
 
       // Handle time limit
@@ -318,6 +355,9 @@ export function UniversalViewer({
                  glContext.gl.viewport(0, 0, canvas.width, canvas.height);
                  camera.aspect = canvas.width / canvas.height;
                  if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+                 if (postProcessorRef.current) {
+                    postProcessorRef.current.resize(canvas.width, canvas.height);
+                 }
              }
           }
       });
@@ -524,10 +564,28 @@ export function UniversalViewer({
         const cam = new Camera();
         cam.fov = 60;
         setCamera(cam);
+
+        // Init PostProcessor
+        const processor = new PostProcessor(context.gl);
+        try {
+            processor.init(postProcessVert, postProcessFrag);
+            processor.resize(canvasRef.current.width, canvasRef.current.height);
+            postProcessorRef.current = processor;
+        } catch (err) {
+            console.error("Failed to init post processor:", err);
+        }
+
      } catch (e) {
         console.error("WebGL Init Failed", e);
         setError("Failed to initialize WebGL");
      }
+
+     return () => {
+        if (postProcessorRef.current) {
+            postProcessorRef.current.cleanup();
+            postProcessorRef.current = null;
+        }
+     };
   }, []);
 
   // Initialize Adapter
@@ -884,6 +942,13 @@ export function UniversalViewer({
                }
           }
 
+          // Handle Post Processing
+          const usePostProcess = postProcessorRef.current && postProcessOptions.enabled;
+
+          if (usePostProcess && postProcessorRef.current) {
+              postProcessorRef.current.bind();
+          }
+
           gl.clearColor(0.15, 0.15, 0.2, 1.0);
           gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
           gl.enable(gl.DEPTH_TEST);
@@ -895,6 +960,11 @@ export function UniversalViewer({
           const renderEnd = performance.now();
           performanceService.endMeasure('render');
           const renderTime = renderEnd - renderStart;
+
+          if (usePostProcess && postProcessorRef.current) {
+              postProcessorRef.current.unbind();
+              postProcessorRef.current.render(postProcessOptions);
+          }
 
           // Collect stats if enabled
           if (showStats && currentTime - lastStatsUpdate > statsUpdateInterval) {
@@ -958,7 +1028,7 @@ export function UniversalViewer({
           running = false;
           cancelAnimationFrame(frameId);
       };
-  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode]);
+  }, [adapter, glContext, camera, orbit, isPlaying, speed, cameraMode, postProcessOptions]);
 
   // Resize Handler
   useEffect(() => {
@@ -974,6 +1044,9 @@ export function UniversalViewer({
       camera.aspect = canvas.width / canvas.height;
       if ((camera as any).updateMatrices) {
           (camera as any).updateMatrices();
+      }
+      if (postProcessorRef.current) {
+          postProcessorRef.current.resize(canvas.width, canvas.height);
       }
     };
 
@@ -1019,6 +1092,12 @@ export function UniversalViewer({
             isOpen={showVideoSettings}
             onClose={() => setShowVideoSettings(false)}
             onStart={handleStartRecordingWithOptions}
+       />
+       <PostProcessSettings
+            isOpen={showPostProcessSettings}
+            onClose={() => setShowPostProcessSettings(false)}
+            options={postProcessOptions}
+            onChange={setPostProcessOptions}
        />
        {showFlash && (
           <div data-testid="screenshot-flash" style={{
@@ -1078,6 +1157,7 @@ export function UniversalViewer({
             recordingTime={recordingDuration}
             recordingSizeEstimate={isRecording ? (recordingDuration * recordingBitrate) / 8 : undefined}
             onLightingSettings={() => setShowLightingControls(true)}
+            onPostProcessSettings={() => setShowPostProcessSettings(true)}
          />
        )}
        <LightingControls
