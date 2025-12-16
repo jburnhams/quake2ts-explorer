@@ -110,4 +110,38 @@ describe('PathInterpolator', () => {
         interpolator.getStateAtTime(15, pos, rot);
         expect(pos[0]).toBeCloseTo(50);
     });
+
+    it('handles yaw wrapping (shortest path)', () => {
+        const k1 = createKeyframe(0, 0, 0, 0);
+        k1.rotation = new Float32Array([0, 10, 0]); // Yaw 10
+
+        const k2 = createKeyframe(10, 0, 0, 0);
+        k2.rotation = new Float32Array([0, 350, 0]); // Yaw 350
+
+        const path: CinematicPath = {
+            name: 'test',
+            loop: false,
+            keyframes: [k1, k2]
+        };
+        const interpolator = new PathInterpolator(path);
+        const pos = new Float32Array(3);
+        const rot = new Float32Array(3);
+
+        // Halfway should be 0 (implementation relative to start)
+        interpolator.getStateAtTime(5, pos, rot);
+        expect(rot[1]).toBeCloseTo(0);
+
+        // Reverse case: 350 -> 10
+        const path2: CinematicPath = {
+            name: 'test2',
+            loop: false,
+            keyframes: [
+                { ...k1, rotation: new Float32Array([0, 350, 0]) },
+                { ...k2, rotation: new Float32Array([0, 10, 0]) }
+            ]
+        };
+        const interpolator2 = new PathInterpolator(path2);
+        interpolator2.getStateAtTime(5, pos, rot);
+        expect(rot[1]).toBeCloseTo(360);
+    });
 });

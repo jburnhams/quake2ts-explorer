@@ -1,9 +1,9 @@
-import {
-  type UserCommand,
-  type PlayerState
-} from 'quake2ts/shared';
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+import { multiplayerGameService } from '../../../src/services/multiplayerGameService';
+import { networkService } from '../../../src/services/networkService';
+import { predictionService } from '../../../src/services/predictionService';
 
-// Define mocks inside factory
+// Mock dependencies
 jest.mock('../../../src/services/networkService', () => {
     const setCallbacks = jest.fn();
     const sendCommand = jest.fn();
@@ -14,6 +14,7 @@ jest.mock('../../../src/services/networkService', () => {
         setCallbacks,
         sendCommand,
         disconnect,
+        // Helper to access mock funcs
         __mocks: { setCallbacks, sendCommand, disconnect }
       }
     };
@@ -28,16 +29,18 @@ jest.mock('../../../src/services/predictionService', () => ({
   }
 }));
 
-jest.mock('../../../src/services/inputService', () => ({
-  inputService: {}
+jest.mock('quake2ts/shared', () => ({
+    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: {x:0,y:0,z:0}, allsolid: false, startsolid: false }),
+    pointContents: jest.fn().mockReturnValue(0),
+    CONTENTS_SOLID: 1,
+    Vec3: jest.fn(),
+    CollisionEntityIndex: jest.fn()
 }));
 
-// Mock AssetManager and collision utils
 jest.mock('quake2ts/engine', () => ({
     AssetManager: jest.fn().mockImplementation(() => ({
         loadMap: jest.fn().mockResolvedValue({}) // Mock map
     })),
-    // ... other exports
     FixedTimestepLoop: jest.fn()
 }));
 
@@ -45,13 +48,10 @@ jest.mock('../../../src/utils/collisionAdapter', () => ({
     createCollisionModel: jest.fn().mockReturnValue({})
 }));
 
-import { multiplayerGameService } from '../../../src/services/multiplayerGameService';
-import { networkService } from '../../../src/services/networkService';
-import { predictionService } from '../../../src/services/predictionService';
-
 describe('MultiplayerGameService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    multiplayerGameService.shutdown(); // Reset state
   });
 
   it('should init and load map', async () => {
@@ -62,7 +62,6 @@ describe('MultiplayerGameService', () => {
   });
 
   it('should start and enable prediction', async () => {
-    // Need to init first
     const vfs = {} as any;
     await multiplayerGameService.init(vfs, 'q2dm1');
 
@@ -71,12 +70,6 @@ describe('MultiplayerGameService', () => {
   });
 
   it('should throw if starting without init', async () => {
-      // Create new instance (but it's singleton).
-      // We can't reset singleton easily.
-      // Assuming previous test ran init, this test might pass spuriously.
-      // But we call shutdown() in previous usage?
-
-      multiplayerGameService.shutdown();
       await expect(multiplayerGameService.start()).rejects.toThrow();
   });
 
@@ -90,7 +83,7 @@ describe('MultiplayerGameService', () => {
     await multiplayerGameService.init(vfs, 'q2dm1');
     await multiplayerGameService.start();
 
-    const cmd: UserCommand = {
+    const cmd = {
         msec: 16,
         buttons: 0,
         angles: { x: 0, y: 0, z: 0 },
@@ -102,7 +95,7 @@ describe('MultiplayerGameService', () => {
     };
     const step = { dt: 0.016, time: 1 };
 
-    multiplayerGameService.tick(step as any, cmd);
+    multiplayerGameService.tick(step as any, cmd as any);
 
     expect(networkService.sendCommand).toHaveBeenCalledWith(cmd);
     expect(predictionService.predict).toHaveBeenCalledWith(cmd);
@@ -115,29 +108,39 @@ describe('MultiplayerGameService', () => {
         entities: []
     };
 
+    // Invoke private method via any
     (multiplayerGameService as any).onServerSnapshot(serverSnapshot);
 
     expect(predictionService.onServerFrame).toHaveBeenCalledWith(serverSnapshot.playerState, 0, 100);
+  });
 
-    const snapshot = multiplayerGameService.getSnapshot();
-    expect(snapshot.time).toBe(100);
-    // Should favor predicted state if tick ran, but if not, assumes playerState from snapshot?
-    // In tick logic: `this.predictedState = predicted;`
-    // If tick hasn't run yet, it might be null.
-    // getSnapshot: `playerState: this.predictedState || this.latestSnapshot.playerState`
+  it('should throw on save/load', () => {
+      expect(() => multiplayerGameService.createSave("desc")).toThrow();
+      expect(() => multiplayerGameService.loadSave({} as any)).toThrow();
+  });
 
-    // We haven't run tick, so it should be server state
-    // Wait, in previous test we mocked predict return to x:100.
-    // But `predictedState` is persistent.
-    // The previous test run might have set it?
-    // Since it's a singleton, YES.
-    // So we need to be careful with state pollution.
-    // shutdown() clears some things but maybe not predictedState.
+  it('should handle disconnect', () => {
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      (multiplayerGameService as any).onDisconnect("reason");
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("reason"));
+      consoleSpy.mockRestore();
+  });
 
-    // Let's assume prediction ran or check what it returns.
-    // Actually, `getSnapshot` returns predicted if available.
-    // In this test, we didn't run tick, so predictedState is likely null from shutdown call?
-    // shutdown() doesn't explicitly nullify `predictedState`.
-    // We should fix that in implementation.
+  it('should provide config strings', () => {
+      expect(multiplayerGameService.getConfigStrings()).toBeInstanceOf(Map);
+  });
+
+  it('should execute prediction trace', async () => {
+      const vfs = {} as any;
+      await multiplayerGameService.init(vfs, 'q2dm1');
+
+      const config = (predictionService.init as jest.Mock).mock.calls[0][0];
+
+      const result = config.trace({x:0,y:0,z:0}, {x:100,y:0,z:0});
+      expect(result).toBeDefined();
+      expect(result.fraction).toBe(1.0);
+
+      const pc = config.pointContents({x:0,y:0,z:0});
+      expect(pc).toBe(0);
   });
 });

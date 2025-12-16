@@ -12,6 +12,7 @@ const mockObjectStore = {
   getAll: jest.fn(),
   delete: jest.fn(),
   index: jest.fn(),
+  createIndex: jest.fn(),
 };
 
 const mockIndex = {
@@ -72,6 +73,12 @@ describe('DemoStorageService', () => {
     mockObjectStore.get.mockReturnValue(mockIDBRequest);
     mockObjectStore.delete.mockReturnValue(mockIDBRequest);
     mockIndex.getAll.mockReturnValue(mockIDBRequest);
+  });
+
+  const createRequest = () => ({
+      onsuccess: null as any,
+      onerror: null as any,
+      result: null as any
   });
 
   const initDB = async () => {
@@ -135,5 +142,59 @@ describe('DemoStorageService', () => {
 
     await deletePromise;
     expect(mockObjectStore.delete).toHaveBeenCalledWith('test-id');
+  });
+
+  it('creates object store on upgrade', async () => {
+    const initPromise = demoStorageService.initDB();
+
+    mockDB.objectStoreNames.contains.mockReturnValue(false);
+
+    mockOpenRequest.result = mockDB;
+    mockOpenRequest.onupgradeneeded({ target: mockOpenRequest } as any);
+
+    expect(mockDB.createObjectStore).toHaveBeenCalledWith('demos', { keyPath: 'id' });
+
+    mockOpenRequest.onsuccess({ target: mockOpenRequest } as any);
+    await initPromise;
+  });
+
+  it('retrieves a single demo', async () => {
+    await initDB();
+    const demo = { id: 'test-id', name: 'demo' };
+    mockIDBRequest.result = demo;
+
+    const promise = demoStorageService.getDemo('test-id');
+    mockIDBRequest.onsuccess();
+
+    const result = await promise;
+    expect(result).toBe(demo);
+  });
+
+  it('updates demo metadata', async () => {
+    await initDB();
+    const demo = { id: 'test-id', name: 'demo' };
+
+    // Create distinct requests for get and put
+    const getReq = createRequest();
+    const putReq = createRequest();
+
+    mockObjectStore.get.mockReturnValueOnce(getReq);
+    mockObjectStore.put.mockReturnValueOnce(putReq);
+
+    const promise = demoStorageService.updateDemoMetadata('test-id', { mapName: 'base1' });
+
+    // Get succeeds
+    getReq.result = demo;
+    getReq.onsuccess();
+
+    // Put happens inside get callback
+    // Wait for microtasks?
+    await Promise.resolve();
+
+    // Put succeeds
+    expect(mockObjectStore.put).toHaveBeenCalledWith(expect.objectContaining({ mapName: 'base1' }));
+    putReq.onsuccess();
+
+    await promise;
   });
 });

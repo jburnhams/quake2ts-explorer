@@ -44,3 +44,18 @@ This document outlines suggested improvements for the `quake2ts` library to faci
 
 - [ ] **`InputController`**
     - [ ] Expose `getBoundKeys(command)` to reverse lookup bindings for UI display.
+
+## Testing Improvements (From Implementation Experience)
+
+- [ ] **Protocol & Network Testing**
+    - [ ] **`ClientConnection` Class**: Encapsulate the server message parsing loop (switch-case on `ServerCommand`) into a testable class in the library.
+        - `class ClientConnection { handleMessage(data: ArrayBuffer): void; on(event, callback): void; }`
+        - Allows testing protocol handling without mocking `WebSocket` or `NetChan` internals.
+    - [ ] **`MockNetworkTransport`**: Export a mock transport layer that implements `NetChan` interfaces but records packets for inspection.
+
+- [ ] **Rendering & WebGL**
+    - [ ] **`TestRenderer`**: Provide a headless or mock WebGL2 context/renderer in `@quake2ts/test-utils` that mirrors the engine's expectations.
+    - [ ] **`PostProcessing` Pipeline**: Move `PostProcessor` logic (quad rendering, shader compilation) into `quake2ts/engine`'s render system to avoid raw WebGL calls in the app.
+
+- [ ] **Input Management**
+    - [ ] **InputController Lifecycle**: Make `InputController` a standard class (constructor/dispose) rather than relying on global `initInputController`/`cleanupInputController` functions. This simplifies isolated unit testing.
