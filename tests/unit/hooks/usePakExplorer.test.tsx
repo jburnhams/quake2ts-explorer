@@ -103,13 +103,8 @@ describe('usePakExplorer', () => {
     it('initializes with default state', async () => {
         const { result } = renderHook(() => usePakExplorer());
 
-        await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
-        });
-
-        await waitFor(() => {
-             expect(result.current.loading).toBe(false);
-        });
+        await waitFor(() => expect(result.current.loading).toBe(true));
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(result.current.pakCount).toBe(0);
         expect(result.current.fileCount).toBe(0);
@@ -122,13 +117,8 @@ describe('usePakExplorer', () => {
 
         const { result } = renderHook(() => usePakExplorer());
 
-        await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
-        });
-
-        await waitFor(() => {
-            expect(result.current.loading).toBe(false);
-        });
+        await waitFor(() => expect(result.current.loading).toBe(true));
+        await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(mockPakServiceMethods.loadPakFile).toHaveBeenCalled();
     });
@@ -198,10 +188,7 @@ describe('usePakExplorer', () => {
 
         const { result } = renderHook(() => usePakExplorer());
 
-        await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
-        });
-
+        await waitFor(() => expect(result.current.loading).toBe(true));
         await waitFor(() => expect(result.current.loading).toBe(false));
 
         expect(result.current.error).toBe('Failed to initialize application data');

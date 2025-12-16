@@ -94,4 +94,20 @@ describe('GameLoop', () => {
     jest.advanceTimersByTime(20);
     expect(mockLoop.pump).toHaveBeenCalled();
   });
+
+  it('should execute simulation and render callbacks', () => {
+    const simulate = jest.fn();
+    const render = jest.fn();
+    createGameLoop(simulate, render);
+
+    // Get the config passed to FixedTimestepLoop
+    const config = (FixedTimestepLoop as jest.Mock).mock.calls[0][0];
+
+    // Call them
+    config.simulate({});
+    expect(simulate).toHaveBeenCalled();
+
+    config.render({});
+    expect(render).toHaveBeenCalled();
+  });
 });

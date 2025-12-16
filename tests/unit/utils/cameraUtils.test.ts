@@ -135,4 +135,31 @@ describe('cameraUtils - FreeCamera', () => {
         expect(newState.position[1]).toBeCloseTo(0);
         expect(newState.position[2]).toBeCloseTo(0);
     });
+
+    it('should move backward and strafe (Y-up)', () => {
+        const state = { ...initialState }; // Facing -Z
+        const inputs = {
+            forward: false,
+            backward: true,
+            left: true,
+            right: false,
+            deltaX: 0,
+            deltaY: 0
+        };
+        const dt = 1.0;
+        const speed = 10.0;
+
+        // Backward: +Z (10)
+        // Left: -X (-10) if Right is +X.
+        // Wait, cross product logic:
+        // Forward: -Z (0, 0, -1). Up: +Y (0, 1, 0).
+        // Right = Forward x Up = (-Z) x (+Y) = (0,0,-1) x (0,1,0) = (1, 0, 0) = +X.
+        // So Left is -X.
+
+        const newState = updateFreeCamera(state, inputs, dt, speed, 0.002, false);
+
+        expect(newState.position[0]).toBeCloseTo(-10); // Left
+        expect(newState.position[1]).toBeCloseTo(0);
+        expect(newState.position[2]).toBeCloseTo(10);  // Backward
+    });
 });
