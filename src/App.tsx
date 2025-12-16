@@ -19,6 +19,8 @@ import { usePakExplorer } from './hooks/usePakExplorer';
 import { GameMenu } from './components/GameMenu';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
+import { SettingsPanel } from './components/SettingsPanel';
+import { settingsService } from './services/settingsService';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
@@ -60,7 +62,77 @@ function App() {
   const [showPakManager, setShowPakManager] = useState(false);
   const [showDemoBrowser, setShowDemoBrowser] = useState(false);
   const [showServerBrowser, setShowServerBrowser] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
+
+  // Initialize with settings
+  useEffect(() => {
+    const settings = settingsService.getSettings();
+
+    // Auto-load pak.pak logic could go here or in usePakExplorer
+    // But usePakExplorer already handles it via arguments or internal logic
+    // We might need to pass settings to usePakExplorer if it's dynamic
+
+    if (settings.general.confirmBeforeClose) {
+      window.onbeforeunload = (e) => {
+        if (pakCount > 0) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      };
+    }
+
+    return () => {
+      window.onbeforeunload = null;
+    };
+  }, [pakCount]);
+
+  // Subscribe to settings changes
+  useEffect(() => {
+    const applySettings = (settings: any) => {
+      // Accessibility Settings application
+      if (settings.accessibility.highContrast) {
+        document.body.classList.add('high-contrast');
+      } else {
+        document.body.classList.remove('high-contrast');
+      }
+
+      if (settings.accessibility.largeFont) {
+        document.body.classList.add('large-font');
+      } else {
+        document.body.classList.remove('large-font');
+      }
+
+      if (settings.accessibility.reduceMotion) {
+        document.body.classList.add('reduce-motion');
+      } else {
+        document.body.classList.remove('reduce-motion');
+      }
+
+      document.body.classList.remove('color-blind-deuteranopia', 'color-blind-protanopia', 'color-blind-tritanopia');
+      if (settings.accessibility.colorBlindMode !== 'none') {
+          document.body.classList.add(`color-blind-${settings.accessibility.colorBlindMode}`);
+      }
+
+      // General Settings
+      if (settings.general.confirmBeforeClose) {
+         window.onbeforeunload = (e) => {
+          if (pakCount > 0) {
+            e.preventDefault();
+            e.returnValue = '';
+          }
+        };
+      } else {
+        window.onbeforeunload = null;
+      }
+    };
+
+    // Initial apply
+    applySettings(settingsService.getSettings());
+
+    const unsubscribe = settingsService.subscribe(applySettings);
+    return unsubscribe;
+  }, [pakCount]);
 
   // Toggle console with backtick
   useEffect(() => {
@@ -226,6 +298,7 @@ function App() {
             onOpenPakManager={() => setShowPakManager(true)}
             onOpenDemoBrowser={() => setShowDemoBrowser(true)}
             onOpenServerBrowser={() => setShowServerBrowser(true)}
+            onOpenSettings={() => setShowSettings(true)}
           />
         )}
         {showPakManager && (
@@ -244,6 +317,11 @@ function App() {
           <ServerBrowser
             onConnect={handleServerConnect}
             onClose={() => setShowServerBrowser(false)}
+          />
+        )}
+        {showSettings && (
+          <SettingsPanel
+            onClose={() => setShowSettings(false)}
           />
         )}
         <Console isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
