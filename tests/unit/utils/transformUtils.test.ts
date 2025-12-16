@@ -25,13 +25,6 @@ describe('TransformUtils', () => {
             const lineOrigin = vec3.fromValues(10, 0, 0);
             const lineDir = vec3.fromValues(0, 1, 0); // Line along Y at X=10
 
-            // Ray (Z-axis) and Line (Y-axis at X=10) are skew lines.
-            // Closest point on line to ray?
-            // Ray passes through (0,0,z). Line passes through (10,y,0).
-            // Distance is always >= 10.
-            // Closest points: (0,0,0) on ray and (10,0,0) on line.
-            // t should be 0.
-
             const result = TransformUtils.projectRayToLine(ray, lineOrigin, lineDir);
             expect(result.t).toBeCloseTo(0);
             expect(result.point[0]).toBeCloseTo(10);
@@ -48,9 +41,40 @@ describe('TransformUtils', () => {
             const lineDir = vec3.fromValues(1, 0, 0);
 
             const result = TransformUtils.projectRayToLine(ray, lineOrigin, lineDir);
-            // Parallel logic returns origin and t=0
             expect(result.t).toBe(0);
             expect(result.point).toEqual(lineOrigin);
+        });
+    });
+
+    describe('projectRayToPlane', () => {
+        it('calculates intersection of ray and plane', () => {
+            const ray = {
+                origin: [0, 0, 10] as [number, number, number], // 10 units above origin
+                direction: [0, 0, -1] as [number, number, number] // Pointing down
+            };
+            const planeOrigin = vec3.fromValues(0, 0, 0);
+            const planeNormal = vec3.fromValues(0, 0, 1); // XY plane
+
+            const result = TransformUtils.projectRayToPlane(ray, planeNormal, planeOrigin);
+            expect(result).not.toBeNull();
+            if (result) {
+                expect(result.t).toBeCloseTo(10);
+                expect(result.point[0]).toBeCloseTo(0);
+                expect(result.point[1]).toBeCloseTo(0);
+                expect(result.point[2]).toBeCloseTo(0);
+            }
+        });
+
+        it('returns null if ray is parallel to plane', () => {
+            const ray = {
+                origin: [0, 0, 10] as [number, number, number],
+                direction: [1, 0, 0] as [number, number, number] // Parallel to XY plane
+            };
+            const planeOrigin = vec3.fromValues(0, 0, 0);
+            const planeNormal = vec3.fromValues(0, 0, 1);
+
+            const result = TransformUtils.projectRayToPlane(ray, planeNormal, planeOrigin);
+            expect(result).toBeNull();
         });
     });
 });

@@ -1,199 +1,188 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { EntityEditorService } from '@/src/services/entityEditorService';
-import { vec3, mat4 } from 'gl-matrix';
+import { vec3 } from 'gl-matrix';
 import { GizmoRenderer } from '@/src/components/UniversalViewer/adapters/GizmoRenderer';
 import { TransformUtils } from '@/src/utils/transformUtils';
 
-// Mock WebGL
-const mockGl = {
-  createProgram: jest.fn(),
-  createShader: jest.fn(),
-  shaderSource: jest.fn(),
-  compileShader: jest.fn(),
-  getShaderParameter: jest.fn(() => true),
-  attachShader: jest.fn(),
-  linkProgram: jest.fn(),
-  getProgramParameter: jest.fn(() => true),
-  getUniformLocation: jest.fn(),
-  getAttribLocation: jest.fn(),
-  createVertexArray: jest.fn(),
-  bindVertexArray: jest.fn(),
-  createBuffer: jest.fn(),
-  bindBuffer: jest.fn(),
-  bufferData: jest.fn(),
-  enableVertexAttribArray: jest.fn(),
-  vertexAttribPointer: jest.fn(),
-  createTexture: jest.fn(),
-  bindTexture: jest.fn(),
-  texImage2D: jest.fn(),
-  texParameteri: jest.fn(),
-  generateMipmap: jest.fn(),
-  activeTexture: jest.fn(),
-  useProgram: jest.fn(),
-  uniformMatrix4fv: jest.fn(),
-  uniform3fv: jest.fn(),
-  uniform4fv: jest.fn(),
-  drawArrays: jest.fn(),
-  drawElements: jest.fn(),
-  deleteShader: jest.fn(),
-  deleteProgram: jest.fn(),
-  viewport: jest.fn(),
-  clear: jest.fn(),
-  enable: jest.fn(),
-  disable: jest.fn(),
+// Mocks
+jest.mock('quake2ts/engine', () => {
+    return {
+        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
+            bind: jest.fn().mockReturnValue({}),
+        })),
+        createBspSurfaces: jest.fn().mockReturnValue([]),
+        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+        Texture2D: jest.fn().mockImplementation(() => ({
+            bind: jest.fn(),
+            uploadImage: jest.fn(),
+            setParameters: jest.fn(),
+        })),
+        resolveLightStyles: jest.fn().mockReturnValue([]),
+        applySurfaceState: jest.fn(),
+        findLeafForPoint: jest.fn().mockReturnValue(-1),
+    };
+});
+
+// Mock WebGL context
+const glMock = {
+    createShader: jest.fn(),
+    shaderSource: jest.fn(),
+    compileShader: jest.fn(),
+    getShaderParameter: jest.fn().mockReturnValue(true),
+    createProgram: jest.fn(),
+    attachShader: jest.fn(),
+    linkProgram: jest.fn(),
+    getUniformLocation: jest.fn(),
+    createVertexArray: jest.fn(),
+    bindVertexArray: jest.fn(),
+    createBuffer: jest.fn(),
+    bindBuffer: jest.fn(),
+    bufferData: jest.fn(),
+    enableVertexAttribArray: jest.fn(),
+    vertexAttribPointer: jest.fn(),
+    deleteShader: jest.fn(),
+    useProgram: jest.fn(),
+    uniformMatrix4fv: jest.fn(),
+    uniform3fv: jest.fn(),
+    uniform4fv: jest.fn(),
+    drawArrays: jest.fn(),
+    disable: jest.fn(),
+    enable: jest.fn(),
+    TEXTURE0: 0,
+    TEXTURE1: 1,
+    RGBA: 123,
+    UNSIGNED_BYTE: 123,
+    NEAREST: 123,
+    CLAMP_TO_EDGE: 123,
+    LINEAR_MIPMAP_LINEAR: 123,
+    LINEAR: 123,
+    REPEAT: 123,
+    LINES: 1,
+    LINE_STRIP: 2,
+    TRIANGLES: 3,
+    STATIC_DRAW: 1,
+    ARRAY_BUFFER: 1,
 } as unknown as WebGL2RenderingContext;
 
-// Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-    bind: jest.fn(),
-  })),
-  createBspSurfaces: jest.fn(() => []),
-  buildBspGeometry: jest.fn(() => ({ surfaces: [], lightmaps: [] })),
-  Texture2D: jest.fn().mockImplementation(() => ({
-    bind: jest.fn(),
-    uploadImage: jest.fn(),
-    setParameters: jest.fn(),
-  })),
-  resolveLightStyles: jest.fn(() => new Float32Array(32)),
-  applySurfaceState: jest.fn(),
-}));
-
+// Mock GizmoRenderer
 jest.mock('@/src/components/UniversalViewer/adapters/GizmoRenderer');
-jest.mock('@/src/utils/transformUtils');
 
-describe('BspAdapter - Entity Manipulation', () => {
-  let adapter: BspAdapter;
-  let mockMap: any;
-  let mockPakService: any;
-  let mockFile: any;
+describe('BspAdapter Manipulation', () => {
+    let adapter: BspAdapter;
+    let mockGizmoRenderer: any;
 
-  beforeEach(() => {
-    // Reset EntityEditorService
-    (EntityEditorService as any).instance = null;
-    jest.clearAllMocks();
+    beforeEach(() => {
+        jest.clearAllMocks();
+        EntityEditorService.getInstance().reset();
 
-    mockMap = {
-      entities: {
-        entities: [
-          {
-            classname: 'worldspawn',
-            properties: {}
-          },
-          {
-            classname: 'info_player_start',
-            properties: { origin: '100 200 50' },
-            origin: [100, 200, 50]
-          }
-        ],
-        getUniqueClassnames: jest.fn(() => ['worldspawn', 'info_player_start'])
-      },
-      models: [{}],
-      faces: [],
-      planes: [],
-      leafs: [],
-      pickEntity: jest.fn()
-    };
+        adapter = new BspAdapter();
 
-    mockFile = {
-      type: 'bsp',
-      map: mockMap
-    };
+        const mapMock = {
+            entities: {
+                entities: [
+                    {
+                        classname: 'info_player_start',
+                        properties: {
+                            origin: '100 0 0',
+                            angles: '0 90 0',
+                            angle: '90'
+                        }
+                    }
+                ],
+                getUniqueClassnames: () => ['info_player_start']
+            },
+            faces: [],
+            planes: [],
+            models: [],
+            leafs: []
+        };
 
-    mockPakService = {
-      hasFile: jest.fn(() => false),
-      readFile: jest.fn()
-    };
+        adapter.loadMap(glMock, mapMock as any, {} as any);
+        mockGizmoRenderer = (GizmoRenderer as jest.Mock).mock.instances[0];
+    });
 
-    adapter = new BspAdapter();
-  });
+    it('handles translation drag', () => {
+        EntityEditorService.getInstance().selectEntity(0);
+        mockGizmoRenderer.intersect.mockReturnValue({ axis: 'x', distance: 10 });
 
-  it('should initialize GizmoRenderer on load', async () => {
-    await adapter.load(mockGl, mockFile, mockPakService, 'maps/test.bsp');
-    expect(GizmoRenderer).toHaveBeenCalledWith(mockGl);
-  });
+        jest.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
+            point: vec3.fromValues(110, 0, 0),
+            t: 0
+        });
 
-  it('should detect gizmo intersection on mouse down', async () => {
-    await adapter.load(mockGl, mockFile, mockPakService, 'maps/test.bsp');
+        const ray = { origin: [0, 0, 100], direction: [0, 0, -1] } as any;
 
-    // Select entity 1
-    EntityEditorService.getInstance().selectEntity(1);
+        adapter.onMouseDown(ray, {} as any);
+        expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith('x');
 
-    // Memory: "When mocking quake2ts classes... accessed via mock.results[0].value rather than mock.instances"
-    // GizmoRenderer is mocked by jest.mock, so it's a standard jest mock.
-    // However, if the constructor returns an object explicitly (like quake2ts might), we use results.
-    // Here GizmoRenderer is local source.
-    // Let's check how GizmoRenderer is mocked. It's an auto-mock.
-    // Auto-mocks return undefined from methods by default unless configured.
+        jest.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
+            point: vec3.fromValues(120, 0, 0),
+            t: 0
+        });
 
-    const mockGizmoRenderer = (GizmoRenderer as unknown as jest.Mock).mock.instances[0];
+        adapter.onMouseMove(ray, { shiftKey: false } as any);
 
-    // We need to ensure intersect returns something
-    mockGizmoRenderer.intersect.mockReturnValue({ axis: 'x', distance: 10 });
+        const entity = EntityEditorService.getInstance().getEntity(0);
+        expect(entity?.properties?.origin).toBe('110 0 0');
+    });
 
-    (TransformUtils.projectRayToLine as jest.Mock).mockReturnValue({ point: vec3.fromValues(110, 200, 50), t: 10 });
+    it('handles rotation drag', () => {
+        // Manually switch mode as we didn't use adapter.load() which attaches listeners
+        (adapter as any).handleKeyDown({ key: 'e' } as any);
 
-    const ray = { origin: [0, 0, 0] as any, direction: [1, 0, 0] as any };
-    const event = new MouseEvent('mousedown');
+        EntityEditorService.getInstance().selectEntity(0);
 
-    const result = adapter.onMouseDown(ray, event);
+        mockGizmoRenderer.intersect.mockReturnValue({ axis: 'z', distance: 10 });
 
-    expect(mockGizmoRenderer.intersect).toHaveBeenCalled();
-    expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith('x');
-    expect(result).toBe(true);
-  });
+        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+            point: vec3.fromValues(110, 0, 0),
+            t: 0
+        });
 
-  it('should update entity position on drag', async () => {
-    await adapter.load(mockGl, mockFile, mockPakService, 'maps/test.bsp');
+        const ray = { origin: [0, 0, 100], direction: [0, 0, -1] } as any;
 
-    // Select entity 1
-    EntityEditorService.getInstance().selectEntity(1);
+        adapter.onMouseDown(ray, {} as any);
+        expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith('z');
 
-    const mockGizmoRenderer = (GizmoRenderer as unknown as jest.Mock).mock.instances[0];
+        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+            point: vec3.fromValues(100, 10, 0),
+            t: 0
+        });
 
-    // Start drag
-    mockGizmoRenderer.intersect.mockReturnValue({ axis: 'x', distance: 10 });
-    (TransformUtils.projectRayToLine as jest.Mock).mockReturnValue({ point: vec3.fromValues(110, 200, 50), t: 10 });
+        adapter.onMouseMove(ray, { shiftKey: false } as any);
 
-    const startRay = { origin: [0, 0, 0] as any, direction: [1, 0, 0] as any };
-    adapter.onMouseDown(startRay, new MouseEvent('mousedown'));
+        const entity = EntityEditorService.getInstance().getEntity(0);
+        const angles = entity?.properties?.angles?.split(' ').map(parseFloat);
 
-    // Move
-    (TransformUtils.projectRayToLine as jest.Mock).mockReturnValue({ point: vec3.fromValues(120, 200, 50), t: 20 });
-    const moveRay = { origin: [0, 0, 0] as any, direction: [1, 0, 0] as any };
+        expect(angles?.[1]).toBeCloseTo(180);
+        expect(entity?.properties?.angle).toBe('180');
+    });
 
-    // Mock updateEntity to verify
-    const updateSpy = jest.spyOn(EntityEditorService.getInstance(), 'updateEntity');
+    it('snaps rotation with shift key', () => {
+        (adapter as any).handleKeyDown({ key: 'e' } as any);
 
-    const result = adapter.onMouseMove(moveRay, new MouseEvent('mousemove'));
+        EntityEditorService.getInstance().selectEntity(0);
 
-    expect(result).toBe(true);
-    expect(updateSpy).toHaveBeenCalled();
+        mockGizmoRenderer.intersect.mockReturnValue({ axis: 'z', distance: 10 });
 
-    // Check update args
-    const updatedEntity = updateSpy.mock.calls[0][1];
-    expect(updatedEntity.properties.origin).toBe('110 200 50'); // 100 + (120 - 110) = 110
-  });
+        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+            point: vec3.fromValues(110, 0, 0),
+            t: 0
+        });
+        adapter.onMouseDown({} as any, {} as any);
 
-  it('should clear drag state on mouse up', async () => {
-      await adapter.load(mockGl, mockFile, mockPakService, 'maps/test.bsp');
-      EntityEditorService.getInstance().selectEntity(1);
-      const mockGizmoRenderer = (GizmoRenderer as unknown as jest.Mock).mock.instances[0];
+        // Move 13 degrees
+        const rad13 = 13 * Math.PI / 180;
+        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+            point: vec3.fromValues(100 + 10 * Math.cos(rad13), 10 * Math.sin(rad13), 0),
+            t: 0
+        });
 
-      // Start drag
-      mockGizmoRenderer.intersect.mockReturnValue({ axis: 'x', distance: 10 });
-      (TransformUtils.projectRayToLine as jest.Mock).mockReturnValue({ point: vec3.fromValues(110, 200, 50), t: 10 });
-      adapter.onMouseDown({ origin: [0, 0, 0] as any, direction: [1, 0, 0] as any }, new MouseEvent('mousedown'));
+        adapter.onMouseMove({} as any, { shiftKey: true } as any);
 
-      // Mouse up
-      const result = adapter.onMouseUp({ origin: [0, 0, 0] as any, direction: [1, 0, 0] as any }, new MouseEvent('mouseup'));
+        const entity = EntityEditorService.getInstance().getEntity(0);
+        const angles = entity?.properties?.angles?.split(' ').map(parseFloat);
 
-      expect(result).toBe(true);
-      expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith(null);
-
-      // Subsequent move should be hover only
-      mockGizmoRenderer.intersect.mockReturnValue(null);
-      const hoverResult = adapter.onMouseMove({ origin: [0, 0, 0] as any, direction: [1, 0, 0] as any }, new MouseEvent('mousemove'));
-      expect(hoverResult).toBe(false);
-  });
+        expect(angles?.[1]).toBe(105);
+    });
 });

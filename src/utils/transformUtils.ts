@@ -33,4 +33,29 @@ export class TransformUtils {
       if (gridSize <= 0) return value;
       return Math.round(value / gridSize) * gridSize;
   }
+
+  // Projects a ray onto a plane defined by a normal and a point on the plane (origin)
+  static projectRayToPlane(ray: Ray, planeNormal: vec3, planeOrigin: vec3): { point: vec3, t: number } | null {
+      const rayDir = vec3.fromValues(ray.direction[0], ray.direction[1], ray.direction[2]);
+      const rayOrigin = vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]);
+
+      const denom = vec3.dot(planeNormal, rayDir);
+
+      if (Math.abs(denom) < 0.000001) {
+          return null; // Parallel
+      }
+
+      const p0l0 = vec3.create();
+      vec3.sub(p0l0, planeOrigin, rayOrigin);
+      const t = vec3.dot(p0l0, planeNormal) / denom;
+
+      if (t < 0) return null; // Behind the ray origin? Actually useful to return intersection even if behind?
+      // For gizmo interaction we typically want t > 0, but dragging logic might handle negative if camera is inside...
+      // Let's return intersection regardless of sign? No, usually forward only.
+
+      const point = vec3.create();
+      vec3.scaleAndAdd(point, rayOrigin, rayDir, t);
+
+      return { point, t };
+  }
 }
