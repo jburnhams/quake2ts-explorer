@@ -5,6 +5,8 @@ import { mat4, vec3 } from 'gl-matrix';
 import { BspAdapter } from './BspAdapter';
 import { CameraMode } from '@/src/types/cameraMode';
 import { OrbitState, FreeCameraState, updateFreeCamera, computeCameraPosition } from '@/src/utils/cameraUtils';
+import { CameraSettings, DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
+import { CinematicPath, PathInterpolator, CameraKeyframe } from '@/src/utils/cameraPath';
 
 export class Dm2Adapter implements ViewerAdapter {
   private controller: DemoPlaybackController | null = null;
@@ -17,7 +19,11 @@ export class Dm2Adapter implements ViewerAdapter {
   // Camera states
   private freeCamera: FreeCameraState = { position: vec3.create(), rotation: vec3.create() };
   private orbitCamera: OrbitState = { radius: 200, theta: 0, phi: Math.PI / 4, target: vec3.create() };
-  private thirdPersonDistance = 100;
+  private cameraSettings: CameraSettings = DEFAULT_CAMERA_SETTINGS;
+
+  // Cinematic Path
+  private cinematicPath: CinematicPath | null = null;
+  private pathInterpolator: PathInterpolator | null = null;
 
   // Smooth stepping
   private isStepping = false;
@@ -121,7 +127,7 @@ export class Dm2Adapter implements ViewerAdapter {
                     );
 
                     // Move camera back along negative forward vector
-                    vec3.scale(viewOffset, forward, -this.thirdPersonDistance);
+                    vec3.scale(viewOffset, forward, -this.cameraSettings.thirdPersonDistance);
                     vec3.add(this.cameraPosition, playerOrigin, viewOffset);
                     this.cameraPosition[2] += 22; // Add eye height
 
@@ -180,9 +186,15 @@ export class Dm2Adapter implements ViewerAdapter {
                  break;
 
             case CameraMode.Cinematic:
-                 // TODO: Implement cinematic paths
-                 if (playerOrigin) vec3.copy(this.cameraPosition, playerOrigin);
-                 if (playerAngles) vec3.copy(this.cameraAngles, playerAngles);
+                 if (this.pathInterpolator) {
+                     // Get time from controller
+                     const time = this.controller.getCurrentTime();
+                     this.pathInterpolator.getStateAtTime(time, this.cameraPosition, this.cameraAngles);
+                 } else {
+                     // Fallback to first person if no path
+                     if (playerOrigin) vec3.copy(this.cameraPosition, playerOrigin);
+                     if (playerAngles) vec3.copy(this.cameraAngles, playerAngles);
+                 }
                  break;
         }
     }
@@ -234,6 +246,23 @@ export class Dm2Adapter implements ViewerAdapter {
   setCameraMode(mode: CameraMode) {
       this.cameraMode = mode;
       // Note: Logic for initializing free/orbit camera state when switching is now handled by UniversalViewer
+  }
+
+  setCameraSettings(settings: CameraSettings) {
+      this.cameraSettings = settings;
+      if (this.controller) {
+          // If we support adjusting playback speed for cinematic mode here, we could use settings.cinematicSpeed
+          // But controller playback speed is usually handled by UI "Speed" slider.
+          // However, we could enforce cinematic speed if in cinematic mode.
+          if (this.cameraMode === CameraMode.Cinematic) {
+              this.controller.setSpeed(settings.cinematicSpeed);
+          }
+      }
+  }
+
+  setCinematicPath(path: CinematicPath | null) {
+      this.cinematicPath = path;
+      this.pathInterpolator = path ? new PathInterpolator(path) : null;
   }
 
   useZUp() { return true; }

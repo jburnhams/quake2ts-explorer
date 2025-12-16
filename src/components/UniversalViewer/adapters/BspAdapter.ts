@@ -1,12 +1,14 @@
 import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity, findLeafForPoint } from 'quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
-import { RenderOptions, ViewerAdapter, Ray } from './types';
+import { RenderOptions, ViewerAdapter, Ray, PickOptions } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
+import { GizmoRenderer } from './GizmoRenderer';
 import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
 import { createCollisionModel } from '@/src/utils/collisionAdapter';
 import { CollisionModel } from 'quake2ts/shared';
+import { EntityEditorService, SelectionMode } from '@/src/services/entityEditorService';
 
 export class BspAdapter implements ViewerAdapter {
   private pipeline: BspSurfacePipeline | null = null;
@@ -24,6 +26,7 @@ export class BspAdapter implements ViewerAdapter {
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
   private collisionModel: CollisionModel | null = null;
+  private gizmoRenderer: GizmoRenderer | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type === 'bsp') {
@@ -49,8 +52,15 @@ export class BspAdapter implements ViewerAdapter {
   async loadMap(gl: WebGL2RenderingContext, map: BspMap, pakService: PakService) {
     this.gl = gl;
     this.map = map;
+
+    // Initialize EntityEditorService with map entities
+    if (this.map.entities && this.map.entities.entities) {
+        EntityEditorService.getInstance().setEntities(this.map.entities.entities);
+    }
+
     this.pipeline = new BspSurfacePipeline(gl);
     this.debugRenderer = new DebugRenderer(gl);
+    this.gizmoRenderer = new GizmoRenderer(gl);
     this.surfaces = createBspSurfaces(map);
     this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
 
@@ -105,11 +115,53 @@ export class BspAdapter implements ViewerAdapter {
     // Static map
   }
 
-  pickEntity(ray: Ray): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
+  pickEntity(ray: Ray, options?: PickOptions): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
     if (!this.map) return null;
+
+    // Check Gizmo intersection first if something is selected
+    const selectedEntities = EntityEditorService.getInstance().getSelectedEntities();
+    if (selectedEntities.length > 0 && this.gizmoRenderer) {
+        const entity = selectedEntities[0];
+        if (entity.properties && entity.properties.origin) {
+            const parts = entity.properties.origin.split(' ').map(parseFloat);
+            if (parts.length === 3 && !parts.some(isNaN)) {
+                const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                const hit = this.gizmoRenderer.intersect(ray, origin);
+                if (hit) {
+                    // Hit gizmo axis.
+                    // We need to return something indicating a Gizmo hit or just consume it.
+                    // But pickEntity returns Entity data.
+                    // Maybe we should handle this logic in UniversalViewer by checking if pickEntity returns a special "Gizmo" object?
+                    // Or we handle the interaction start here?
+                    // Let's return the entity but set a flag or let the caller know.
+                    // Actually, for now, let's just update the Gizmo state (active axis)
+                    this.gizmoRenderer.setHoveredAxis(hit.axis);
+
+                    // Return the selected entity as "picked" so we don't deselect it
+                    return { entity, model: null, distance: hit.distance };
+                } else {
+                    this.gizmoRenderer.setHoveredAxis(null);
+                }
+            }
+        }
+    }
+
     const result = this.map.pickEntity(ray);
+
     if (result) {
+        // Find index of entity in the list
+        if (this.map.entities && this.map.entities.entities) {
+             const index = this.map.entities.entities.indexOf(result.entity);
+             if (index !== -1) {
+                  const mode = options?.multiSelect ? SelectionMode.Toggle : SelectionMode.Single;
+                  EntityEditorService.getInstance().selectEntity(index, mode);
+             }
+        }
         return result;
+    } else {
+        if (!options?.multiSelect) {
+            EntityEditorService.getInstance().deselectAll();
+        }
     }
     return null;
   }
@@ -295,28 +347,50 @@ export class BspAdapter implements ViewerAdapter {
     }
 
     // Debug Rendering
-    if (this.debugMode !== DebugMode.None && this.debugRenderer && this.map) {
+    if (this.debugRenderer && this.map) {
         this.debugRenderer.clear();
 
-        if (this.debugMode === DebugMode.BoundingBoxes) {
-            this.map.entities.entities.forEach(entity => {
-                const model = this.getModelFromEntity(entity);
-                if (model) {
-                    this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
-                } else if (entity.properties && entity.properties.origin) {
-                    // For point entities without a brush model, draw a small box at origin
-                    // Origin string format "x y z"
-                    const parts = entity.properties.origin.split(' ').map(parseFloat);
-                    if (parts.length === 3 && !parts.some(isNaN)) {
-                        const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
-                        const size = 16;
-                        const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
-                        const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
-                        this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1)); // Green for point entities
-                    }
+        // Always render selected entity highlights
+        const selectedEntities = EntityEditorService.getInstance().getSelectedEntities();
+        selectedEntities.forEach(entity => {
+            const model = this.getModelFromEntity(entity);
+            if (model) {
+                // Brush entity: use model bounds
+                // Render a yellow selection box
+                this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(1, 1, 0, 1));
+            } else if (entity.properties && entity.properties.origin) {
+                // Point entity: use origin + default size
+                const parts = entity.properties.origin.split(' ').map(parseFloat);
+                if (parts.length === 3 && !parts.some(isNaN)) {
+                    const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                    const size = 20; // Slightly larger for selection
+                    const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
+                    const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
+                    this.debugRenderer?.addBox(min, max, vec4.fromValues(1, 1, 0, 1));
                 }
-            });
-        }
+            }
+        });
+
+        if (this.debugMode !== DebugMode.None) {
+            if (this.debugMode === DebugMode.BoundingBoxes) {
+                this.map.entities.entities.forEach(entity => {
+                    // Skip if already drawn as selected to avoid Z-fighting? Or just draw over.
+                    // Let's draw everything for now.
+                    const model = this.getModelFromEntity(entity);
+                    if (model) {
+                        this.debugRenderer?.addBox(model.min, model.max, vec4.fromValues(0, 1, 0, 1));
+                    } else if (entity.properties && entity.properties.origin) {
+                        const parts = entity.properties.origin.split(' ').map(parseFloat);
+                        if (parts.length === 3 && !parts.some(isNaN)) {
+                            const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                            const size = 16;
+                            const min = vec3.fromValues(origin[0] - size/2, origin[1] - size/2, origin[2] - size/2);
+                            const max = vec3.fromValues(origin[0] + size/2, origin[1] + size/2, origin[2] + size/2);
+                            this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 1)); // Green for point entities
+                        }
+                    }
+                });
+            }
 
         if (this.debugMode === DebugMode.Normals) {
              this.surfaces.forEach(surface => {
@@ -396,6 +470,25 @@ export class BspAdapter implements ViewerAdapter {
         }
 
         this.debugRenderer.render(mvp);
+      }
+    }
+
+    // Render Gizmo
+    if (this.gizmoRenderer) {
+        const selectedEntities = EntityEditorService.getInstance().getSelectedEntities();
+        if (selectedEntities.length > 0) {
+             const entity = selectedEntities[0];
+             if (entity.properties && entity.properties.origin) {
+                 const parts = entity.properties.origin.split(' ').map(parseFloat);
+                 if (parts.length === 3 && !parts.some(isNaN)) {
+                     const origin = vec3.fromValues(parts[0], parts[1], parts[2]);
+                     // Disable depth test for gizmo so it draws on top?
+                     gl.disable(gl.DEPTH_TEST);
+                     this.gizmoRenderer.render(origin, mvp);
+                     gl.enable(gl.DEPTH_TEST);
+                 }
+             }
+        }
     }
   }
 

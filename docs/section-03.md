@@ -298,12 +298,12 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Collision detection: Don't place camera inside walls
   - Smooth camera following (lag slightly for cinematic feel)
 
-- [ ] **5.5**: Implement cinematic camera paths
+- [x] **5.5**: Implement cinematic camera paths
   - Define camera path as array of keyframes (position, target, time)
   - Interpolate between keyframes using splines
   - Editor for creating camera paths (optional, advanced feature)
 
-- [ ] **5.6**: Add camera settings
+- [x] **5.6**: Add camera settings
   - Third-person distance slider
   - Third-person FOV
   - Free cam movement speed
@@ -406,7 +406,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Allow adding custom tags (e.g., "speedrun", "frag movie", "tournament")
   - Filter demos by tags in demo browser
 
-- [ ] **7.4**: Implement demo search
+- [x] **7.4**: Implement demo search
   - Search demos by name, tags, map
   - Sort by date, duration, size
   - Display in demo browser

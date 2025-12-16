@@ -105,13 +105,13 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
 
 #### Subtasks
 
-- [ ] **2.1**: Create `src/services/predictionService.ts`
+- [x] **2.1**: Create `src/services/predictionService.ts`
   - Import `ClientPrediction` from `@quake2ts/client`
   - Export `initPrediction(trace: TraceFunction, pointContents: PointContentsFunction): void`
   - Export `predict(serverState: PlayerState, commands: UserCommand[]): PredictionState`
   - Export `getMispredictionCount(): number`
 
-- [ ] **2.2**: Implement prediction integration
+- [x] **2.2**: Implement prediction integration
   - Store last N user commands (command history buffer, typically 32)
   - When server snapshot arrives:
     - Extract authoritative `PlayerState`
@@ -126,7 +126,7 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
   - Large corrections: Smoothly interpolate to correct position if error < threshold
   - High latency: Cap prediction time to prevent spiral of death
 
-- [ ] **2.4**: Integrate with game loop
+- [x] **2.4**: Integrate with game loop
   - Modify `src/utils/gameLoop.ts` to use prediction instead of local game simulation
   - In `simulate()` callback:
     - Generate UserCommand

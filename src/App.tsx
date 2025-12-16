@@ -239,7 +239,7 @@ function App() {
                           parsedFile={parsedFile}
                           pakService={pakService}
                           filePath={selectedPath || ''}
-                          playerState={gameStateSnapshot?.playerState}
+                          gameState={gameStateSnapshot || undefined}
                           configstrings={gameStateSnapshot?.configstrings} // Need to expose this from snapshot or hook
                           isGameMode={true}
                           showControls={false}
