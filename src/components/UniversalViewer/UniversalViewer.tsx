@@ -187,6 +187,27 @@ export function UniversalViewer({
 
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Helper to calculate current view matrix
+  const getCurrentViewMatrix = () => {
+      if (!camera) return null;
+      const viewMatrix = mat4.create();
+      const useZUp = adapter?.useZUp ? adapter.useZUp() : false;
+
+      if (adapter?.hasCameraControl && adapter.hasCameraControl()) {
+          // Picking generally not supported in demo/playback mode or if adapter controls camera rigidly
+          return null;
+      }
+
+      if (cameraMode === 'free') {
+           computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
+      } else {
+           const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
+           const up = useZUp ? [0, 0, 1] : [0, 1, 0];
+           mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
+      }
+      return viewMatrix;
+  };
+
   const handleScreenshot = async (options: ScreenshotOptions = { format: 'png' }) => {
     if (!canvasRef.current || !glContext || !camera) return;
 
@@ -228,14 +249,8 @@ export function UniversalViewer({
                      mat4.copy(viewMatrix, camera.viewMatrix as mat4);
                  }
              } else {
-                 const useZUp = adapter?.useZUp ? adapter.useZUp() : false;
-                 if (cameraMode === 'free') {
-                     computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
-                 } else {
-                     const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
-                     const up = useZUp ? [0, 0, 1] : [0, 1, 0];
-                     mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
-                 }
+                 const vm = getCurrentViewMatrix();
+                 if (vm) mat4.copy(viewMatrix, vm);
              }
 
              // Handle post-processing for screenshot (needs resize)
@@ -283,14 +298,8 @@ export function UniversalViewer({
              if (adapter && adapter.hasCameraControl && adapter.hasCameraControl() && camera.viewMatrix) {
                  mat4.copy(viewMatrix, camera.viewMatrix as mat4);
              } else {
-                 const useZUp = adapter?.useZUp ? adapter.useZUp() : false;
-                 if (cameraMode === 'free') {
-                     computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
-                 } else {
-                     const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
-                     const up = useZUp ? [0, 0, 1] : [0, 1, 0];
-                     mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
-                 }
+                 const vm = getCurrentViewMatrix();
+                 if (vm) mat4.copy(viewMatrix, vm);
              }
 
              if (postProcessorRef.current && postProcessOptions.enabled) {
@@ -533,6 +542,19 @@ export function UniversalViewer({
 
     const handleMouseDown = (e: MouseEvent) => {
         if (e.button === 0) { // Left click
+
+            // Intercept with adapter if applicable
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            const viewMatrix = getCurrentViewMatrix();
+            if (viewMatrix && camera && adapter && adapter.onMouseDown) {
+                const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+                if (adapter.onMouseDown(pickRay, e)) {
+                    return; // Adapter consumed event
+                }
+            }
+
             mouseState.current.isDragging = true;
             mouseState.current.lastX = e.clientX;
             mouseState.current.lastY = e.clientY;
@@ -541,6 +563,25 @@ export function UniversalViewer({
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+        // Adapter MouseMove interaction (e.g., hover effects, gizmo drag)
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const viewMatrix = getCurrentViewMatrix();
+
+        // Always pass move to adapter first for hover/drag logic
+        if (viewMatrix && camera && adapter && adapter.onMouseMove) {
+            const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+            if (adapter.onMouseMove(pickRay, e)) {
+                 // Adapter consumed move event (e.g. dragging gizmo)
+                 // We should probably NOT update camera if adapter consumed it
+                 // But wait, if dragging gizmo, we definitely don't want camera to move.
+                 // If we are just hovering, we might want to allow camera movement?
+                 // But adapter returns true if it "handled" it.
+                 // If gizmo is being dragged, onMouseMove should return true.
+            }
+        }
+
         if (mouseState.current.isDragging) {
             const dx = e.clientX - mouseState.current.lastX;
             const dy = e.clientY - mouseState.current.lastY;
@@ -554,7 +595,17 @@ export function UniversalViewer({
         }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
+        // Adapter MouseUp
+        const rect = canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        const viewMatrix = getCurrentViewMatrix();
+        if (viewMatrix && camera && adapter && adapter.onMouseUp) {
+            const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
+            adapter.onMouseUp(pickRay, e);
+        }
+
         mouseState.current.isDragging = false;
     };
 
@@ -567,7 +618,7 @@ export function UniversalViewer({
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, []);
+  }, [camera, adapter, cameraMode, orbit, freeCamera]); // Dependencies for getCurrentViewMatrix
 
   // Initialize GL and Camera
   useEffect(() => {
@@ -828,25 +879,6 @@ export function UniversalViewer({
     const canvas = canvasRef.current;
     if (!canvas || !adapter || !adapter.pickEntity || !camera) return;
 
-    const getCurrentViewMatrix = () => {
-        const viewMatrix = mat4.create();
-        const useZUp = adapter.useZUp ? adapter.useZUp() : false;
-
-        if (adapter.hasCameraControl && adapter.hasCameraControl()) {
-            // Picking generally not supported in demo/playback mode or if adapter controls camera rigidly
-            return null;
-        }
-
-        if (cameraMode === 'free') {
-             computeFreeCameraViewMatrix(freeCameraRef.current, viewMatrix, useZUp);
-        } else {
-             const eye = useZUp ? computeCameraPositionZUp(orbitRef.current) : computeCameraPosition(orbitRef.current);
-             const up = useZUp ? [0, 0, 1] : [0, 1, 0];
-             mat4.lookAt(viewMatrix, eye, orbitRef.current.target, up as vec3);
-        }
-        return viewMatrix;
-    };
-
     const handleMouseMove = (e: MouseEvent) => {
         if (mouseState.current.isDragging) return;
 
@@ -878,6 +910,11 @@ export function UniversalViewer({
 
     const handleClick = (e: MouseEvent) => {
         if (mouseState.current.isDragging || mouseState.current.hasMoved) return;
+
+        // Ensure we don't pick if adapter consumed the mouse down (e.g. Gizmo click)
+        // But handleClick fires after mouseUp.
+        // If we clicked a gizmo, adapter.pickEntity logic inside BspAdapter already handles it?
+        // Wait, BspAdapter.pickEntity updates selection.
 
         const rect = canvas.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -1176,19 +1213,8 @@ export function UniversalViewer({
                         const rot = vec3.create(); // In degrees
 
                         // Determine current camera pos/rot
-                        // If we are in Free/Orbit, use our state. If first person, use adapter's.
-                        // Actually better to ask adapter for current camera if possible, or use the last render camera.
                         if (camera.position) vec3.copy(pos, camera.position);
                         if (camera.angles) vec3.copy(rot, camera.angles);
-
-                        // If we are in Free mode, the camera angles might be radians from freeCamera state.
-                        // But UniversalViewer converts them to degrees for camera.angles before render.
-                        // Wait, adapter.render updates camera.angles from adapter's logic.
-                        // If free mode, UniversalViewer updates camera.angles from freeCameraRef.
-                        // But freeCamera uses radians in rotation[].
-                        // Loop:
-                        // this.cameraAngles[0] = this.freeCamera.rotation[0] * (180 / Math.PI);
-                        // camera.angles is likely in degrees.
 
                         const keyframe: CameraKeyframe = {
                             time,
