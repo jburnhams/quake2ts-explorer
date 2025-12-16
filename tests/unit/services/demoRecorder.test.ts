@@ -1,5 +1,6 @@
 // tests/unit/services/demoRecorder.test.ts
 import { demoRecorderService } from '../../../src/services/demoRecorder';
+import { demoStorageService } from '../../../src/services/demoStorageService';
 import { DemoRecorder } from 'quake2ts/engine';
 
 const mockRecordMessage = jest.fn();
@@ -18,13 +19,20 @@ jest.mock('quake2ts/engine', () => {
     };
 });
 
+// Mock demoStorageService
+jest.mock('../../../src/services/demoStorageService', () => ({
+  demoStorageService: {
+    saveDemo: jest.fn().mockResolvedValue('demo-id')
+  }
+}));
+
 describe('DemoRecorderService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Stop any existing recording to reset state
-    if (demoRecorderService.isRecording()) {
-        demoRecorderService.stopRecording();
-    }
+    // We need to access private state or just ensure we are clean
+    // The service is a singleton, so we rely on stopRecording clearing it.
+    // However, stopRecording is async now.
   });
 
   it('starts recording', () => {
@@ -38,14 +46,13 @@ describe('DemoRecorderService', () => {
       expect(demoRecorderService.isRecording()).toBe(true);
   });
 
-  it('stops recording and returns data', () => {
+  it('stops recording and saves data', async () => {
       demoRecorderService.startRecording('test.dm2');
-      const data = demoRecorderService.stopRecording();
+      const data = await demoRecorderService.stopRecording();
       expect(data).toEqual(new Uint8Array([1, 2, 3]));
       expect(mockStopRecording).toHaveBeenCalled();
+      expect(demoStorageService.saveDemo).toHaveBeenCalledWith('test.dm2', data);
 
-      // After stop, the internal recorder is null, so isRecording should return false
-      // regardless of what the mock returns (because recorder is null)
       expect(demoRecorderService.isRecording()).toBe(false);
   });
 

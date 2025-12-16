@@ -10,6 +10,7 @@ import { EntityMetadata } from './components/EntityMetadata';
 import { EntityDatabase } from './components/EntityDatabase';
 import { PakOrderManager } from './components/PakOrderManager';
 import { Console } from './components/Console';
+import { DemoBrowser } from './components/DemoBrowser';
 import { consoleService, LogLevel } from './services/consoleService';
 import { saveService } from './services/saveService';
 import { usePakExplorer } from './hooks/usePakExplorer';
@@ -42,6 +43,7 @@ function App() {
   const [selectedEntity, setSelectedEntity] = useState<any | null>(null);
   const [showEntityDb, setShowEntityDb] = useState(false);
   const [showPakManager, setShowPakManager] = useState(false);
+  const [showDemoBrowser, setShowDemoBrowser] = useState(false);
   const [isConsoleOpen, setIsConsoleOpen] = useState(false);
 
   // Toggle console with backtick
@@ -145,6 +147,15 @@ function App() {
     setHiddenClassnames(newHidden);
   };
 
+  const handlePlayDemo = (demo: any) => {
+    // Logic to play demo
+    // We probably need to implement a "load demo" function in usePakExplorer or similar
+    // For now we just close the browser and log
+    console.log("Play demo:", demo.name);
+    setShowDemoBrowser(false);
+    // TODO: Implement actual demo playback trigger
+  };
+
   return (
     <DropZone onDrop={handleFileSelect}>
       <div className="app" data-testid="app">
@@ -156,11 +167,18 @@ function App() {
           onViewModeChange={setViewMode}
           onOpenEntityDatabase={() => setShowEntityDb(true)}
           onOpenPakManager={() => setShowPakManager(true)}
+          onOpenDemoBrowser={() => setShowDemoBrowser(true)}
         />
         {showPakManager && (
           <PakOrderManager
             pakService={pakService}
             onClose={() => setShowPakManager(false)}
+          />
+        )}
+        {showDemoBrowser && (
+          <DemoBrowser
+            onPlayDemo={handlePlayDemo}
+            onClose={() => setShowDemoBrowser(false)}
           />
         )}
         <Console isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
