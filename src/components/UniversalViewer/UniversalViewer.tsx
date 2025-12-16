@@ -36,6 +36,7 @@ import postProcessVert from '../../shaders/postProcess.vert?raw';
 import postProcessFrag from '../../shaders/postProcess.frag?raw';
 
 import '../../styles/md2Viewer.css';
+import { EntityEditorService } from '@/src/services/entityEditorService';
 
 export interface UniversalViewerProps {
   parsedFile: ParsedFile;
@@ -137,6 +138,15 @@ export function UniversalViewer({
       fullbright: false,
       freezeLights: false
   });
+  const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>([]);
+
+  useEffect(() => {
+    // Subscribe to EntityEditorService updates
+    const unsubscribe = EntityEditorService.getInstance().subscribe(() => {
+        setSelectedEntityIds(EntityEditorService.getInstance().getSelectedEntityIds());
+    });
+    return unsubscribe;
+  }, []);
   const [showPostProcessSettings, setShowPostProcessSettings] = useState(false);
   const [postProcessOptions, setPostProcessOptions] = useState<PostProcessOptions>(defaultPostProcessOptions);
   const postProcessorRef = useRef<PostProcessor | null>(null);
@@ -860,7 +870,8 @@ export function UniversalViewer({
 
         const pickRay = createPickingRay(camera, viewMatrix, { x, y }, { width: rect.width, height: rect.height });
 
-        const result = adapter.pickEntity!(pickRay);
+        const multiSelect = e.ctrlKey || e.metaKey;
+        const result = adapter.pickEntity!(pickRay, { multiSelect });
         if (onEntitySelected) {
             onEntitySelected(result ? result.entity : null);
         }

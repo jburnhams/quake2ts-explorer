@@ -24,6 +24,11 @@ jest.mock('gl-matrix', () => ({
     create: () => new Float32Array(16),
     lookAt: () => {},
     copy: () => {}
+  },
+  vec4: {
+    create: () => new Float32Array([0, 0, 0, 0]),
+    fromValues: (x: number, y: number, z: number, w: number) => new Float32Array([x, y, z, w]),
+    transformMat4: () => {}
   }
 }));
 
