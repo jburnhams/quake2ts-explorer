@@ -6,6 +6,7 @@ const baseConfig = {
     '^(\\.{1,2}/.*)\\.js$': '$1',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/utils/styleMock.js',
     '\\?raw$': '<rootDir>/tests/utils/fileMock.js',
+    '\\?worker$': '<rootDir>/tests/utils/workerMock.js', // Mock worker imports
     '^quake2ts$': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
     '^quake2ts/engine$': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
     '^quake2ts/game$': '<rootDir>/node_modules/quake2ts/packages/game/dist/esm/index.js',
