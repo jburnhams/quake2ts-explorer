@@ -134,7 +134,8 @@ export function UniversalViewer({
       brightness: 1.0,
       gamma: 1.0,
       ambient: 0.1,
-      fullbright: false
+      fullbright: false,
+      freezeLights: false
   });
   const [showPostProcessSettings, setShowPostProcessSettings] = useState(false);
   const [postProcessOptions, setPostProcessOptions] = useState<PostProcessOptions>(defaultPostProcessOptions);
@@ -690,7 +691,8 @@ export function UniversalViewer({
           brightness: lightingOptions.brightness,
           gamma: lightingOptions.gamma,
           ambient: lightingOptions.ambient,
-          fullbright: lightingOptions.fullbright
+          fullbright: lightingOptions.fullbright,
+          freezeLights: lightingOptions.freezeLights
       };
 
       // Also try to call setLightingOptions if it exists (hypothetical API)
@@ -699,6 +701,39 @@ export function UniversalViewer({
       }
 
       adapter.setRenderOptions(options);
+    }
+
+    // Also update post-process options to sync gamma if using post-process
+    if (postProcessorRef.current) {
+         // Sync gamma from lighting options to post process options
+         if (lightingOptions.gamma !== 1.0) {
+             // If gamma is not default, we MUST enable post-process
+             setPostProcessOptions(prev => {
+                 if (prev.gamma === lightingOptions.gamma && prev.enabled) return prev;
+                 return {
+                     ...prev,
+                     gamma: lightingOptions.gamma,
+                     enabled: true
+                 };
+             });
+         } else if (postProcessOptions.enabled && postProcessOptions.gamma !== 1.0) {
+             // If gamma was previously changed (via sync) and is now 1.0, we might want to disable
+             // post-process IF no other effects are active.
+             setPostProcessOptions(prev => {
+                 // Check if other effects are active
+                 const otherEffectsActive = prev.bloomEnabled || prev.fxaaEnabled ||
+                                            prev.contrast !== 1.0 || prev.saturation !== 1.0 ||
+                                            prev.brightness !== 1.0;
+
+                 if (prev.gamma === 1.0 && prev.enabled === otherEffectsActive) return prev;
+
+                 return {
+                     ...prev,
+                     gamma: 1.0,
+                     enabled: otherEffectsActive
+                 };
+             });
+         }
     }
   }, [adapter, renderMode, renderColor, lightingOptions]);
 

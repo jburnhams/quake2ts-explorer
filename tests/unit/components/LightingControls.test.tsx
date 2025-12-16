@@ -8,7 +8,8 @@ describe('LightingControls', () => {
         brightness: 1.0,
         gamma: 1.0,
         ambient: 0.1,
-        fullbright: false
+        fullbright: false,
+        freezeLights: false
     };
 
     const mockOnChange = jest.fn();
@@ -46,6 +47,7 @@ describe('LightingControls', () => {
         expect(screen.getByText(/Gamma:/)).toBeInTheDocument();
         expect(screen.getByText(/Ambient Light:/)).toBeInTheDocument();
         expect(screen.getByText(/Fullbright Mode:/)).toBeInTheDocument();
+        expect(screen.getByText(/Freeze Animated Lights:/)).toBeInTheDocument();
     });
 
     it('calls onChange when brightness changes', () => {
@@ -57,17 +59,6 @@ describe('LightingControls', () => {
                 onClose={mockOnClose}
             />
         );
-
-        // Find the brightness input (first range input or by label nearby)
-        // Since labels contain the value, we can find by text match?
-        // Or cleaner: getByRole doesn't distinguish ranges easily without aria-label.
-        // But the component uses <label> text </label> <input>.
-        // Let's assume order or add aria-labels if needed.
-        // For now, let's find input associated with label implicitly or by value?
-        // Actually, the structure is <div><label>Brightness: 1.00</label><input></div>
-        // Testing-library philosophy: query by label text. But the input is not nested in label in my code.
-        // Code: <label>...</label><input>
-        // I can use `getAllByRole('slider')`.
 
         const sliders = screen.getAllByRole('slider'); // ranges are sliders
         const brightnessSlider = sliders[0]; // Assuming order: Brightness, Gamma, Ambient
@@ -90,12 +81,35 @@ describe('LightingControls', () => {
             />
         );
 
-        const checkbox = screen.getByRole('checkbox');
-        fireEvent.click(checkbox);
+        const checkboxes = screen.getAllByRole('checkbox');
+        // Assuming Fullbright is the first checkbox
+        const fullbrightCheckbox = checkboxes[0];
+        fireEvent.click(fullbrightCheckbox);
 
         expect(mockOnChange).toHaveBeenCalledWith({
             ...defaultOptions,
             fullbright: true
+        });
+    });
+
+    it('calls onChange when freeze lights toggles', () => {
+        render(
+            <LightingControls
+                isOpen={true}
+                options={defaultOptions}
+                onChange={mockOnChange}
+                onClose={mockOnClose}
+            />
+        );
+
+        const checkboxes = screen.getAllByRole('checkbox');
+        // Assuming Freeze Lights is the second checkbox
+        const freezeCheckbox = checkboxes[1];
+        fireEvent.click(freezeCheckbox);
+
+        expect(mockOnChange).toHaveBeenCalledWith({
+            ...defaultOptions,
+            freezeLights: true
         });
     });
 
@@ -119,7 +133,7 @@ describe('LightingControls', () => {
         render(
             <LightingControls
                 isOpen={true}
-                options={{ brightness: 2.0, gamma: 2.0, ambient: 0.5, fullbright: true }}
+                options={{ brightness: 2.0, gamma: 2.0, ambient: 0.5, fullbright: true, freezeLights: true }}
                 onChange={mockOnChange}
                 onClose={mockOnClose}
             />
