@@ -1,14 +1,19 @@
 import { vec3, vec4, mat4 } from 'gl-matrix';
 import { Ray } from './types';
+import { TransformUtils } from '@/src/utils/transformUtils';
 
 export type GizmoAxis = 'x' | 'y' | 'z' | null;
+export type GizmoMode = 'translate' | 'rotate' | 'scale';
 
 export class GizmoRenderer {
     private gl: WebGL2RenderingContext;
     private program: WebGLProgram | null = null;
     private vao: WebGLVertexArrayObject | null = null;
     private vertexBuffer: WebGLBuffer | null = null;
-    private indexBuffer: WebGLBuffer | null = null;
+
+    // Rotate Ring VAO
+    private rotateVao: WebGLVertexArrayObject | null = null;
+    private rotateVertexBuffer: WebGLBuffer | null = null;
 
     // Axis colors
     private X_COLOR: vec4;
@@ -18,9 +23,11 @@ export class GizmoRenderer {
 
     private hoveredAxis: GizmoAxis = null;
     private activeAxis: GizmoAxis = null;
+    private mode: GizmoMode = 'translate';
 
     private static AXIS_LENGTH = 32;
-    private static AXIS_THICKNESS = 2; // Visual thickness (lines) or hit radius
+    private static RING_RADIUS = 32;
+    private static RING_SEGMENTS = 64;
 
     // Uniform locations
     private uMvpLoc: WebGLUniformLocation | null = null;
@@ -39,7 +46,6 @@ export class GizmoRenderer {
     private init() {
         const gl = this.gl;
 
-        // Simple shader for colored lines/triangles
         const vsSource = `#version 300 es
             layout(location = 0) in vec3 a_position;
 
@@ -77,10 +83,9 @@ export class GizmoRenderer {
             this.uColorLoc = gl.getUniformLocation(this.program, 'u_color');
         }
 
-        // Geometry: 3 lines for axes
-        // We'll draw lines: (0,0,0)->(L,0,0), (0,0,0)->(0,L,0), (0,0,0)->(0,0,L)
+        // --- Translate Geometry (Lines) ---
         const L = GizmoRenderer.AXIS_LENGTH;
-        const vertices = new Float32Array([
+        const translateVertices = new Float32Array([
             0, 0, 0,  L, 0, 0, // X
             0, 0, 0,  0, L, 0, // Y
             0, 0, 0,  0, 0, L  // Z
@@ -91,7 +96,49 @@ export class GizmoRenderer {
 
         this.vertexBuffer = gl.createBuffer();
         gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-        gl.bufferData(gl.ARRAY_BUFFER, vertices, gl.STATIC_DRAW);
+        gl.bufferData(gl.ARRAY_BUFFER, translateVertices, gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
+
+
+        // --- Rotate Geometry (Rings) ---
+        // X-Ring: Circle in YZ plane
+        // Y-Ring: Circle in XZ plane
+        // Z-Ring: Circle in XY plane
+        const segments = GizmoRenderer.RING_SEGMENTS;
+        const radius = GizmoRenderer.RING_RADIUS;
+        const ringVertices = [];
+
+        // X-Ring (YZ plane) - Indices 0 to 2*segments-1
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const y = Math.cos(theta) * radius;
+            const z = Math.sin(theta) * radius;
+            ringVertices.push(0, y, z);
+        }
+
+        // Y-Ring (XZ plane) - Indices 2*segments+2 ...
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const x = Math.cos(theta) * radius;
+            const z = Math.sin(theta) * radius;
+            ringVertices.push(x, 0, z);
+        }
+
+        // Z-Ring (XY plane)
+        for (let i = 0; i <= segments; i++) {
+            const theta = (i / segments) * Math.PI * 2;
+            const x = Math.cos(theta) * radius;
+            const y = Math.sin(theta) * radius;
+            ringVertices.push(x, y, 0);
+        }
+
+        this.rotateVao = gl.createVertexArray();
+        gl.bindVertexArray(this.rotateVao);
+
+        this.rotateVertexBuffer = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, this.rotateVertexBuffer);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(ringVertices), gl.STATIC_DRAW);
         gl.enableVertexAttribArray(0);
         gl.vertexAttribPointer(0, 3, gl.FLOAT, false, 0, 0);
 
@@ -119,44 +166,75 @@ export class GizmoRenderer {
         this.activeAxis = axis;
     }
 
+    setMode(mode: GizmoMode) {
+        this.mode = mode;
+    }
+
     render(position: vec3, viewProjection: mat4) {
-        if (!this.program || !this.vao) return;
+        if (!this.program) return;
         const gl = this.gl;
 
         gl.useProgram(this.program);
-        gl.bindVertexArray(this.vao);
-
         if (this.uMvpLoc) gl.uniformMatrix4fv(this.uMvpLoc, false, viewProjection as Float32List);
         if (this.uOriginLoc) gl.uniform3fv(this.uOriginLoc, position as Float32List);
 
-        // Draw X
-        const xColor = (this.activeAxis === 'x' || this.hoveredAxis === 'x') ? this.HOVER_COLOR : this.X_COLOR;
-        if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, xColor as Float32List);
-        gl.drawArrays(gl.LINES, 0, 2);
+        if (this.mode === 'translate' && this.vao) {
+            gl.bindVertexArray(this.vao);
+            // Draw X
+            const xColor = (this.activeAxis === 'x' || this.hoveredAxis === 'x') ? this.HOVER_COLOR : this.X_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, xColor as Float32List);
+            gl.drawArrays(gl.LINES, 0, 2);
 
-        // Draw Y
-        const yColor = (this.activeAxis === 'y' || this.hoveredAxis === 'y') ? this.HOVER_COLOR : this.Y_COLOR;
-        if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, yColor as Float32List);
-        gl.drawArrays(gl.LINES, 2, 2);
+            // Draw Y
+            const yColor = (this.activeAxis === 'y' || this.hoveredAxis === 'y') ? this.HOVER_COLOR : this.Y_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, yColor as Float32List);
+            gl.drawArrays(gl.LINES, 2, 2);
 
-        // Draw Z
-        const zColor = (this.activeAxis === 'z' || this.hoveredAxis === 'z') ? this.HOVER_COLOR : this.Z_COLOR;
-        if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, zColor as Float32List);
-        gl.drawArrays(gl.LINES, 4, 2);
+            // Draw Z
+            const zColor = (this.activeAxis === 'z' || this.hoveredAxis === 'z') ? this.HOVER_COLOR : this.Z_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, zColor as Float32List);
+            gl.drawArrays(gl.LINES, 4, 2);
+        } else if (this.mode === 'rotate' && this.rotateVao) {
+            gl.bindVertexArray(this.rotateVao);
+            const count = GizmoRenderer.RING_SEGMENTS + 1;
+
+            // Draw X Ring
+            const xColor = (this.activeAxis === 'x' || this.hoveredAxis === 'x') ? this.HOVER_COLOR : this.X_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, xColor as Float32List);
+            gl.drawArrays(gl.LINE_STRIP, 0, count);
+
+            // Draw Y Ring
+            const yColor = (this.activeAxis === 'y' || this.hoveredAxis === 'y') ? this.HOVER_COLOR : this.Y_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, yColor as Float32List);
+            gl.drawArrays(gl.LINE_STRIP, count, count);
+
+            // Draw Z Ring
+            const zColor = (this.activeAxis === 'z' || this.hoveredAxis === 'z') ? this.HOVER_COLOR : this.Z_COLOR;
+            if (this.uColorLoc) gl.uniform4fv(this.uColorLoc, zColor as Float32List);
+            gl.drawArrays(gl.LINE_STRIP, count * 2, count);
+        }
 
         gl.bindVertexArray(null);
     }
 
-    // Raycast against the 3 axes (approximated as capsules or boxes)
     intersect(ray: Ray, origin: vec3): { axis: GizmoAxis, distance: number } | null {
-        const threshold = 2.0; // Hit radius around the line
-        const L = GizmoRenderer.AXIS_LENGTH;
+        if (this.mode === 'translate') {
+            return this.intersectTranslate(ray, origin);
+        } else if (this.mode === 'rotate') {
+            return this.intersectRotate(ray, origin);
+        }
+        return null;
+    }
 
+    private intersectTranslate(ray: Ray, origin: vec3): { axis: GizmoAxis, distance: number } | null {
+        const threshold = 2.0;
+        const L = GizmoRenderer.AXIS_LENGTH;
         let bestAxis: GizmoAxis = null;
         let bestDist = Infinity;
 
-        // X Axis: Segment (0,0,0) to (L,0,0) relative to origin
         const start = origin;
+
+        // X Axis
         const endX = vec3.fromValues(origin[0] + L, origin[1], origin[2]);
         const distX = this.distRaySegment(ray, start, endX);
         if (distX.dist < threshold && distX.t < bestDist) {
@@ -186,9 +264,50 @@ export class GizmoRenderer {
         return null;
     }
 
-    // Distance between ray and line segment
+    private intersectRotate(ray: Ray, origin: vec3): { axis: GizmoAxis, distance: number } | null {
+        // Intersect with planes defined by rings
+        const threshold = 4.0; // wider tolerance for rings
+        const R = GizmoRenderer.RING_RADIUS;
+        let bestAxis: GizmoAxis = null;
+        let bestDist = Infinity;
+
+        // X-Ring: Plane Normal (1,0,0) [YZ Plane]
+        const hitX = TransformUtils.projectRayToPlane(ray, vec3.fromValues(1,0,0), origin);
+        if (hitX) {
+            const dist = vec3.distance(hitX.point, origin);
+            if (Math.abs(dist - R) < threshold && hitX.t < bestDist) {
+                bestDist = hitX.t;
+                bestAxis = 'x';
+            }
+        }
+
+        // Y-Ring: Plane Normal (0,1,0) [XZ Plane]
+        const hitY = TransformUtils.projectRayToPlane(ray, vec3.fromValues(0,1,0), origin);
+        if (hitY) {
+            const dist = vec3.distance(hitY.point, origin);
+            if (Math.abs(dist - R) < threshold && hitY.t < bestDist) {
+                bestDist = hitY.t;
+                bestAxis = 'y';
+            }
+        }
+
+        // Z-Ring: Plane Normal (0,0,1) [XY Plane]
+        const hitZ = TransformUtils.projectRayToPlane(ray, vec3.fromValues(0,0,1), origin);
+        if (hitZ) {
+            const dist = vec3.distance(hitZ.point, origin);
+            if (Math.abs(dist - R) < threshold && hitZ.t < bestDist) {
+                bestDist = hitZ.t;
+                bestAxis = 'z';
+            }
+        }
+
+        if (bestAxis) {
+            return { axis: bestAxis, distance: bestDist };
+        }
+        return null;
+    }
+
     private distRaySegment(ray: Ray, s0: vec3, s1: vec3): { dist: number, t: number } {
-        // http://geomalgorithms.com/a07-_distance.html
         const u = vec3.create(); vec3.sub(u, s1, s0);
         const v = vec3.fromValues(ray.direction[0], ray.direction[1], ray.direction[2]);
         const w = vec3.create(); vec3.sub(w, s0, vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]));
@@ -202,7 +321,7 @@ export class GizmoRenderer {
 
         let sc, tc;
 
-        if (D < 0.000001) { // Parallel
+        if (D < 0.000001) {
             sc = 0.0;
             tc = (b > c ? d / b : e / c);
         } else {
@@ -210,34 +329,15 @@ export class GizmoRenderer {
             tc = (a * e - b * d) / D;
         }
 
-        // Clip to segment
         if (sc < 0) sc = 0;
         else if (sc > 1) sc = 1;
 
-        // Recompute tc
-        tc = (b > c ? d / b : e / c); // Wait, if we clamp sc, we might need to re-solve for tc?
-        // For gizmo picking precision isn't critical, but let's be decent.
-        // Actually, simpler: finding closest point on segment to ray line.
+        tc = (b > c ? d / b : e / c);
 
-        // P(sc) = s0 + sc * u
-        // Q(tc) = r0 + tc * v
-        // vector = P - Q. length is distance.
-
-        // Let's use a simpler check: distance from point on ray to line segment
-        // Or distance between two lines.
-
-        // Since we know t (distance along ray) is what matters for depth sorting:
-        // We want the point on the ray that is closest to the segment.
-
-        // Vector from ray origin to closest point on segment
         const dP = vec3.create();
         const P = vec3.create(); vec3.scaleAndAdd(P, s0, u, sc);
-
-        // Project P onto ray to find t
         vec3.sub(dP, P, vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]));
-        const t = vec3.dot(dP, v); // Assuming v is normalized
-
-        // Point on ray
+        const t = vec3.dot(dP, v);
         const Q = vec3.create(); vec3.scaleAndAdd(Q, vec3.fromValues(ray.origin[0], ray.origin[1], ray.origin[2]), v, t);
 
         const distVec = vec3.create(); vec3.sub(distVec, P, Q);

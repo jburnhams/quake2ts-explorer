@@ -71,11 +71,11 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
   - [x] Update entity `origin` property in real-time
   - [ ] Show coordinates as tooltip while dragging
 
-- [ ] **1.5**: Implement entity rotation
-  - Click and drag rotation ring to rotate around axis
-  - Snap to 15° increments (configurable)
-  - Update entity `angles` property
-  - Show angle as tooltip
+- [x] **1.5**: Implement entity rotation
+  - [x] Click and drag rotation ring to rotate around axis
+  - [x] Snap to 15° increments (configurable)
+  - [x] Update entity `angles` property
+  - [ ] Show angle as tooltip (optional enhancement)
 
 - [ ] **1.6**: Implement entity duplication
   - Ctrl+D to duplicate selected entities

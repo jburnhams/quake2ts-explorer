@@ -4,7 +4,7 @@ import { RenderOptions, ViewerAdapter, Ray, PickOptions } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
-import { GizmoRenderer, GizmoAxis } from './GizmoRenderer';
+import { GizmoRenderer, GizmoAxis, GizmoMode } from './GizmoRenderer';
 import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
 import { EntityEditorService, SelectionMode } from '@/src/services/entityEditorService';
 import { TransformUtils } from '@/src/utils/transformUtils';
@@ -25,15 +25,19 @@ export class BspAdapter implements ViewerAdapter {
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
   private gizmoRenderer: GizmoRenderer | null = null;
+  private gizmoMode: GizmoMode = 'translate';
 
   // Task 1.4: Configurable snap size, default 16
   private gridSnap: number = 16;
+  private rotationSnap: number = 15; // 15 degrees
 
   private dragState: {
       activeAxis: GizmoAxis;
       startRayPoint: vec3;
       originalEntityOrigin: vec3;
+      originalEntityAngles: vec3;
       entityIndex: number;
+      startAngle?: number; // For rotation
   } | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
@@ -55,7 +59,26 @@ export class BspAdapter implements ViewerAdapter {
     });
 
     await this.loadMap(gl, this.map, pakService);
+
+    // Add key listeners for gizmo modes
+    window.addEventListener('keydown', this.handleKeyDown);
   }
+
+  private handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if input is focused (simple check)
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      if (e.key.toLowerCase() === 'w') {
+          this.gizmoMode = 'translate';
+          this.gizmoRenderer?.setMode('translate');
+      } else if (e.key.toLowerCase() === 'e') {
+          this.gizmoMode = 'rotate';
+          this.gizmoRenderer?.setMode('rotate');
+      } else if (e.key.toLowerCase() === 'r') {
+          this.gizmoMode = 'scale';
+          this.gizmoRenderer?.setMode('scale');
+      }
+  };
 
   async loadMap(gl: WebGL2RenderingContext, map: BspMap, pakService: PakService) {
     this.gl = gl;
@@ -119,6 +142,10 @@ export class BspAdapter implements ViewerAdapter {
 
   setGridSnap(size: number) {
       this.gridSnap = size;
+  }
+
+  setRotationSnap(degrees: number) {
+      this.rotationSnap = degrees;
   }
 
   pickEntity(ray: Ray, options?: PickOptions): { entity: BspEntity; model: any; distance: number; faceIndex?: number } | null {
@@ -209,24 +236,73 @@ export class BspAdapter implements ViewerAdapter {
           }
       }
 
+      // Get initial angles
+      let angles = vec3.create();
+      if (entity.properties && entity.properties.angles) {
+          const parts = entity.properties.angles.split(' ').map(parseFloat);
+          if (parts.length === 3 && !parts.some(isNaN)) {
+              vec3.set(angles, parts[0], parts[1], parts[2]);
+          }
+      } else if (entity.properties && entity.properties.angle) {
+           const angle = parseFloat(entity.properties.angle);
+           if (!isNaN(angle)) {
+               // angle usually means yaw (rotation around Z), but check quake logic.
+               // It's often: 0 = East, 90 = North.
+               vec3.set(angles, 0, angle, 0);
+           }
+      }
+
       const hit = this.gizmoRenderer.intersect(ray, origin);
       if (hit) {
           this.gizmoRenderer.setActiveAxis(hit.axis);
 
-          // Calculate point on axis line closest to ray
-          const axisDir = vec3.create();
-          if (hit.axis === 'x') vec3.set(axisDir, 1, 0, 0);
-          if (hit.axis === 'y') vec3.set(axisDir, 0, 1, 0);
-          if (hit.axis === 'z') vec3.set(axisDir, 0, 0, 1);
+          if (this.gizmoMode === 'translate') {
+              // Calculate point on axis line closest to ray
+              const axisDir = vec3.create();
+              if (hit.axis === 'x') vec3.set(axisDir, 1, 0, 0);
+              if (hit.axis === 'y') vec3.set(axisDir, 0, 1, 0);
+              if (hit.axis === 'z') vec3.set(axisDir, 0, 0, 1);
 
-          const projection = TransformUtils.projectRayToLine(ray, origin, axisDir);
+              const projection = TransformUtils.projectRayToLine(ray, origin, axisDir);
 
-          this.dragState = {
-              activeAxis: hit.axis,
-              startRayPoint: projection.point,
-              originalEntityOrigin: vec3.clone(origin),
-              entityIndex: entityIndex
-          };
+              this.dragState = {
+                  activeAxis: hit.axis,
+                  startRayPoint: projection.point,
+                  originalEntityOrigin: vec3.clone(origin),
+                  originalEntityAngles: vec3.clone(angles),
+                  entityIndex: entityIndex
+              };
+          } else if (this.gizmoMode === 'rotate') {
+             // Calculate initial angle on plane
+             // Plane Normal depends on axis
+             let planeNormal = vec3.create();
+             if (hit.axis === 'x') vec3.set(planeNormal, 1, 0, 0); // YZ Plane
+             if (hit.axis === 'y') vec3.set(planeNormal, 0, 1, 0); // XZ Plane
+             if (hit.axis === 'z') vec3.set(planeNormal, 0, 0, 1); // XY Plane
+
+             const hitPoint = TransformUtils.projectRayToPlane(ray, planeNormal, origin);
+             if (hitPoint) {
+                 // Calculate angle relative to center
+                 const rel = vec3.create();
+                 vec3.sub(rel, hitPoint.point, origin);
+
+                 // atan2 based on axis
+                 let startAngle = 0;
+                 if (hit.axis === 'x') startAngle = Math.atan2(rel[2], rel[1]); // z, y
+                 if (hit.axis === 'y') startAngle = Math.atan2(rel[2], rel[0]); // z, x (Check sign/direction?)
+                 if (hit.axis === 'z') startAngle = Math.atan2(rel[1], rel[0]); // y, x
+
+                 this.dragState = {
+                     activeAxis: hit.axis,
+                     startRayPoint: hitPoint.point, // Not really used for rotation logic but keeping consistent
+                     originalEntityOrigin: vec3.clone(origin),
+                     originalEntityAngles: vec3.clone(angles),
+                     entityIndex: entityIndex,
+                     startAngle: startAngle
+                 };
+             }
+          }
+
           return true; // Consumed
       }
       return false;
@@ -253,39 +329,96 @@ export class BspAdapter implements ViewerAdapter {
 
       // Dragging Logic
       if (this.dragState) {
-          const { activeAxis, startRayPoint, originalEntityOrigin, entityIndex } = this.dragState;
-          const axisDir = vec3.create();
-          if (activeAxis === 'x') vec3.set(axisDir, 1, 0, 0);
-          if (activeAxis === 'y') vec3.set(axisDir, 0, 1, 0);
-          if (activeAxis === 'z') vec3.set(axisDir, 0, 0, 1);
+          const { activeAxis, startRayPoint, originalEntityOrigin, entityIndex, originalEntityAngles, startAngle } = this.dragState;
 
-          const projection = TransformUtils.projectRayToLine(ray, originalEntityOrigin, axisDir);
+          if (this.gizmoMode === 'translate') {
+            const axisDir = vec3.create();
+            if (activeAxis === 'x') vec3.set(axisDir, 1, 0, 0);
+            if (activeAxis === 'y') vec3.set(axisDir, 0, 1, 0);
+            if (activeAxis === 'z') vec3.set(axisDir, 0, 0, 1);
 
-          // Delta vector
-          const delta = vec3.create();
-          vec3.sub(delta, projection.point, startRayPoint);
+            const projection = TransformUtils.projectRayToLine(ray, originalEntityOrigin, axisDir);
 
-          // Apply delta to original origin
-          const newOrigin = vec3.create();
-          vec3.add(newOrigin, originalEntityOrigin, delta);
+            // Delta vector
+            const delta = vec3.create();
+            vec3.sub(delta, projection.point, startRayPoint);
 
-          // Grid Snap
-          if (event.shiftKey) {
-               newOrigin[0] = TransformUtils.snap(newOrigin[0], this.gridSnap);
-               newOrigin[1] = TransformUtils.snap(newOrigin[1], this.gridSnap);
-               newOrigin[2] = TransformUtils.snap(newOrigin[2], this.gridSnap);
-          }
+            // Apply delta to original origin
+            const newOrigin = vec3.create();
+            vec3.add(newOrigin, originalEntityOrigin, delta);
 
-          // Update Entity
-          const entity = EntityEditorService.getInstance().getEntity(entityIndex);
-          if (entity) {
-               const updatedEntity = { ...entity };
-               if (!updatedEntity.properties) updatedEntity.properties = {};
-               updatedEntity.properties.origin = `${newOrigin[0]} ${newOrigin[1]} ${newOrigin[2]}`;
-               // Cast to any to bypass strict type check for now, as BspEntity definition might vary
-               (updatedEntity as any).origin = [newOrigin[0], newOrigin[1], newOrigin[2]];
+            // Grid Snap
+            if (event.shiftKey) {
+                newOrigin[0] = TransformUtils.snap(newOrigin[0], this.gridSnap);
+                newOrigin[1] = TransformUtils.snap(newOrigin[1], this.gridSnap);
+                newOrigin[2] = TransformUtils.snap(newOrigin[2], this.gridSnap);
+            }
 
-               EntityEditorService.getInstance().updateEntity(entityIndex, updatedEntity);
+            // Update Entity
+            const entity = EntityEditorService.getInstance().getEntity(entityIndex);
+            if (entity) {
+                const updatedEntity = { ...entity };
+                if (!updatedEntity.properties) updatedEntity.properties = {};
+                updatedEntity.properties.origin = `${newOrigin[0]} ${newOrigin[1]} ${newOrigin[2]}`;
+                // Cast to any to bypass strict type check for now, as BspEntity definition might vary
+                (updatedEntity as any).origin = [newOrigin[0], newOrigin[1], newOrigin[2]];
+
+                EntityEditorService.getInstance().updateEntity(entityIndex, updatedEntity);
+            }
+          } else if (this.gizmoMode === 'rotate' && startAngle !== undefined) {
+             let planeNormal = vec3.create();
+             if (activeAxis === 'x') vec3.set(planeNormal, 1, 0, 0);
+             if (activeAxis === 'y') vec3.set(planeNormal, 0, 1, 0);
+             if (activeAxis === 'z') vec3.set(planeNormal, 0, 0, 1);
+
+             const hitPoint = TransformUtils.projectRayToPlane(ray, planeNormal, originalEntityOrigin);
+             if (hitPoint) {
+                 const rel = vec3.create();
+                 vec3.sub(rel, hitPoint.point, originalEntityOrigin);
+
+                 let currentAngle = 0;
+                 if (activeAxis === 'x') currentAngle = Math.atan2(rel[2], rel[1]);
+                 if (activeAxis === 'y') currentAngle = Math.atan2(rel[2], rel[0]);
+                 if (activeAxis === 'z') currentAngle = Math.atan2(rel[1], rel[0]);
+
+                 let deltaAngle = currentAngle - startAngle;
+                 // Convert to degrees
+                 let deltaDeg = deltaAngle * (180 / Math.PI);
+
+                 // Snap
+                 if (event.shiftKey) {
+                     deltaDeg = Math.round(deltaDeg / this.rotationSnap) * this.rotationSnap;
+                 }
+
+                 const newAngles = vec3.clone(originalEntityAngles);
+
+                 // If rotating around Z (Yaw):
+                 if (activeAxis === 'z') newAngles[1] += deltaDeg;
+                 // If rotating around Y (Pitch):
+                 if (activeAxis === 'y') newAngles[0] += deltaDeg;
+                 // If rotating around X (Roll):
+                 if (activeAxis === 'x') newAngles[2] += deltaDeg;
+
+                 // Normalize 0-360
+                 for(let i=0; i<3; i++) {
+                     while(newAngles[i] < 0) newAngles[i] += 360;
+                     while(newAngles[i] >= 360) newAngles[i] -= 360;
+                 }
+
+                 const entity = EntityEditorService.getInstance().getEntity(entityIndex);
+                 if (entity) {
+                    const updatedEntity = { ...entity };
+                    if (!updatedEntity.properties) updatedEntity.properties = {};
+                    updatedEntity.properties.angles = `${newAngles[0]} ${newAngles[1]} ${newAngles[2]}`;
+
+                    // Also update 'angle' if it exists and we rotated yaw
+                    if (updatedEntity.properties.angle && activeAxis === 'z') {
+                        updatedEntity.properties.angle = `${Math.round(newAngles[1])}`;
+                    }
+
+                    EntityEditorService.getInstance().updateEntity(entityIndex, updatedEntity);
+                 }
+             }
           }
 
           return true;
@@ -300,6 +433,14 @@ export class BspAdapter implements ViewerAdapter {
           return true;
       }
       return false;
+  }
+
+  cleanup(): void {
+    window.removeEventListener('keydown', this.handleKeyDown);
+    this.textures.forEach(t => {
+      // t.dispose()?
+    });
+    this.textures.clear();
   }
 
   highlightLightmapSurfaces(atlasIndex: number) {
@@ -567,11 +708,17 @@ export class BspAdapter implements ViewerAdapter {
     }
   }
 
-  cleanup(): void {
-    this.textures.forEach(t => {
-      // t.dispose()?
-    });
-    this.textures.clear();
+  useZUp() { return true; }
+
+  setRenderOptions(options: RenderOptions) {
+    this.renderOptions = options;
+  }
+
+  setHiddenClasses(hidden: Set<string>) {
+    this.hiddenClassnames = hidden;
+    if (this.gl && this.map && this.surfaces.length > 0) {
+        this.geometry = buildBspGeometry(this.gl, this.surfaces, this.map, { hiddenClassnames: hidden });
+    }
   }
 
   getUniqueClassnames(): string[] {
@@ -597,18 +744,5 @@ export class BspAdapter implements ViewerAdapter {
       }
 
       return { width, height, surfaceCount };
-  }
-
-  useZUp() { return true; }
-
-  setRenderOptions(options: RenderOptions) {
-    this.renderOptions = options;
-  }
-
-  setHiddenClasses(hidden: Set<string>) {
-    this.hiddenClassnames = hidden;
-    if (this.gl && this.map && this.surfaces.length > 0) {
-        this.geometry = buildBspGeometry(this.gl, this.surfaces, this.map, { hiddenClassnames: hidden });
-    }
   }
 }
