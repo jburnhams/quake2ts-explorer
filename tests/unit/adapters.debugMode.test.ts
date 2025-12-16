@@ -36,7 +36,7 @@ jest.mock('quake2ts/engine', () => ({
     Md3SurfaceMesh: jest.fn(),
     createAnimationState: jest.fn(),
     advanceAnimation: jest.fn(),
-    computeFrameBlend: jest.fn().mockReturnValue({}),
+    computeFrameBlend: jest.fn().mockReturnValue({ frame0: 0, frame1: 0, lerp: 0 }),
     parsePcx: jest.fn().mockReturnValue({}),
     pcxToRgba: jest.fn().mockReturnValue({}),
     parseWal: jest.fn(),
@@ -137,6 +137,29 @@ describe('Adapter Debug Modes', () => {
 
              expect(mockDebugRendererInstance.addBox).toHaveBeenCalled();
         });
+
+        it('renders collision hulls in DebugMode.CollisionHulls', async () => {
+             const adapter = new BspAdapter();
+             const map = {
+                 entities: { entities: [], getUniqueClassnames: jest.fn() },
+                 models: [],
+                 faces: [],
+                 planes: [],
+                 leafs: [
+                     { contents: 1, mins: [0,0,0], maxs: [10,10,10] }, // Solid
+                     { contents: 32, mins: [20,20,20], maxs: [30,30,30] } // Water
+                 ]
+             };
+             const file = { type: 'bsp', map: map } as any;
+
+             await adapter.load(mockGl, file, mockPakService, 'test.bsp');
+             adapter.setDebugMode(DebugMode.CollisionHulls);
+
+             adapter.render(mockGl, { projectionMatrix: mat4.create() } as any, mat4.create());
+
+             // Expect at least two boxes (Solid and Water)
+             expect(mockDebugRendererInstance.addBox).toHaveBeenCalledTimes(2);
+        });
     });
 
     describe('Md2Adapter', () => {
@@ -149,6 +172,34 @@ describe('Adapter Debug Modes', () => {
 
             expect(mockDebugRendererInstance.addBox).toHaveBeenCalled();
             expect(mockDebugRendererInstance.render).toHaveBeenCalled();
+        });
+
+        it('renders normals in DebugMode.Normals', async () => {
+            const adapter = new Md2Adapter();
+            // Mock a simple triangle model
+            const file = {
+                type: 'md2',
+                model: {
+                    skins: [],
+                    header: { numFrames: 1 },
+                    frames: [{
+                        scale: [1,1,1], translate: [0,0,0],
+                        vertices: [[0,0,0], [10,0,0], [0,10,0]] // Triangle
+                    }],
+                    triangles: [[0, 1, 2]]
+                },
+                animations: []
+            } as any;
+
+            await adapter.load(mockGl, file, mockPakService, 'test.md2');
+            // Mock animState to ensure we have a frame
+            (adapter as any).animState = { sequence: {}, time: 0 };
+            (adapter as any).model = file.model;
+
+            adapter.setDebugMode(DebugMode.Normals);
+            adapter.render(mockGl, { projectionMatrix: mat4.create() } as any, mat4.create());
+
+            expect(mockDebugRendererInstance.addLine).toHaveBeenCalled();
         });
     });
 

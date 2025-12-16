@@ -419,6 +419,39 @@ export class BspAdapter implements ViewerAdapter {
             }
         }
 
+        if (this.debugMode === DebugMode.CollisionHulls) {
+            // Visualize collision hulls (leafs with content)
+            // CONTENTS_SOLID = 1
+            // CONTENTS_WINDOW = 2
+            // CONTENTS_AUX = 4
+            // CONTENTS_LAVA = 8
+            // CONTENTS_SLIME = 16
+            // CONTENTS_WATER = 32
+            // CONTENTS_MIST = 64
+
+            // Iterate all leaves
+            this.map.leafs.forEach(leaf => {
+                const contents = leaf.contents;
+                if (contents & 1) { // SOLID
+                     const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                     const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                     this.debugRenderer?.addBox(min, max, vec4.fromValues(1, 0, 0, 0.5)); // Red for solid
+                } else if (contents & 8) { // LAVA
+                     const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                     const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                     this.debugRenderer?.addBox(min, max, vec4.fromValues(1, 0.5, 0, 0.5)); // Orange for lava
+                } else if (contents & 16) { // SLIME
+                     const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                     const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                     this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 1, 0, 0.5)); // Green for slime
+                } else if (contents & 32) { // WATER
+                     const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                     const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                     this.debugRenderer?.addBox(min, max, vec4.fromValues(0, 0, 1, 0.5)); // Blue for water
+                }
+            });
+        }
+
         this.debugRenderer.render(mvp);
       }
     }
