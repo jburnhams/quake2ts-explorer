@@ -10,6 +10,8 @@ import {
   PlayerState,
   EntityState
 } from 'quake2ts/shared';
+import { ServerInfo } from '../types/serverInfo';
+import { CS_NAME, CS_MAPNAME, CS_MAXCLIENTS, CS_PLAYERSKINS } from './protocolConstants';
 
 // Define types not directly exported or needing adaptation
 export interface GameStateSnapshot {
@@ -182,6 +184,131 @@ class NetworkService {
       const delay = 20 + Math.random() * 80;
       await new Promise(resolve => setTimeout(resolve, delay));
       return Math.round(delay);
+  }
+
+  public async queryServer(address: string): Promise<ServerInfo> {
+    const info: Partial<ServerInfo> = {
+      address,
+      ping: 0,
+      players: 0,
+      maxPlayers: 0,
+      map: '',
+      name: '',
+      gamemode: ''
+    };
+
+    return new Promise((resolve, reject) => {
+      const startTime = performance.now();
+      const ws = new WebSocket(address);
+      ws.binaryType = 'arraybuffer';
+
+      const timeout = setTimeout(() => {
+        ws.close();
+        if (info.name && info.map) {
+            // Return what we have if timeout occurs but we got basic info
+            resolve(info as ServerInfo);
+        } else {
+            reject(new Error('Query timeout'));
+        }
+      }, 5000);
+
+      // Temporary NetChan for this query
+      const queryNetChan = new NetChan();
+      queryNetChan.setup(Math.floor(Math.random() * 65536));
+
+      ws.onopen = () => {
+        info.ping = Math.round(performance.now() - startTime);
+        // Send initial connection packet
+        const writer = new BinaryWriter(128);
+        // We manually construct a reliable packet with just the header or minimal info
+        // But NetChan expects full handshake.
+        // For query, we just wait for serverdata and configstrings.
+        // Sending userinfo triggers the server to send state.
+        queryNetChan.writeReliableByte(ClientCommand.userinfo);
+        queryNetChan.writeReliableString(`\\name\\Query\\fov\\90`);
+        const packet = queryNetChan.transmit();
+        ws.send(packet);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const payload = queryNetChan.process(new Uint8Array(event.data as ArrayBuffer));
+          if (payload) {
+            const stream = new BinaryStream(payload);
+            while (stream.hasMore()) {
+              const cmd = stream.readByte() as ServerCommand;
+              // Re-use logic for parsing specific commands, but handle unknowns by aborting to prevent desync
+
+              if (cmd === ServerCommand.serverdata) {
+                const protocol = stream.readLong();
+                const serverCount = stream.readLong();
+                const attractLoop = stream.readByte();
+                const gameDir = stream.readString();
+                if (stream.hasBytes(2)) {
+                    stream.readShort(); // playerNum
+                }
+                info.gamemode = gameDir;
+              } else if (cmd === ServerCommand.configstring) {
+                const index = stream.readShort();
+                const value = stream.readString();
+
+                if (index === CS_NAME) info.name = value;
+                if (index === CS_MAPNAME) info.map = value;
+                if (index === CS_MAXCLIENTS) info.maxPlayers = parseInt(value, 10);
+
+                // Track player count via CS_PLAYERSKINS range (1312 - 1567)
+                // Assuming max 256 clients for standard Q2
+                if (index >= CS_PLAYERSKINS && index < CS_PLAYERSKINS + 256) {
+                    if (value && value.length > 0) {
+                        info.players = (info.players || 0) + 1;
+                    }
+                }
+
+                // If we have basic info and some time has passed, or we detect end of configstrings (e.g., CS_MAXCLIENTS is usually last of the globals before arrays)
+                // but playerskins come later.
+                // We rely on timeout to catch stragglers or a sufficient amount of data.
+                // But we can resolve early if we are just pinging and got name/map.
+                // However, for player count, we need to wait a bit more.
+                // For now, let's keep the timeout based resolution or check if we have received a 'frame' command which usually follows configstrings in gamestate.
+              } else if (cmd === ServerCommand.print) {
+                  stream.readByte(); // level
+                  stream.readString(); // text
+              } else if (cmd === ServerCommand.centerprint) {
+                  stream.readString();
+              } else if (cmd === ServerCommand.stufftext) {
+                  stream.readString();
+              } else if (cmd === ServerCommand.frame) {
+                  // If we receive a frame, we have definitely finished the initial gamestate download
+                  clearTimeout(timeout);
+                  ws.close();
+                  resolve(info as ServerInfo);
+                  return;
+              } else if (cmd === ServerCommand.nop) {
+                  // do nothing
+              } else {
+                // Unknown command encountered. Since we cannot safely skip it without knowing its length/format,
+                // and because it might contain variable data, we must abort parsing this packet to avoid
+                // interpreting arguments as commands.
+                // However, we still have whatever info we gathered so far.
+                break;
+              }
+            }
+          }
+        } catch (e) {
+          // Ignore parsing errors during query
+        }
+      };
+
+      ws.onerror = () => {
+        clearTimeout(timeout);
+        reject(new Error('Connection failed'));
+      };
+
+      ws.onclose = () => {
+        // If closed before resolve, and we have some info, maybe resolve?
+        // But usually we want full info.
+      };
+    });
   }
 
   private sendPacket(data: Uint8Array): void {

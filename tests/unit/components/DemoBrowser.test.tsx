@@ -42,10 +42,17 @@ describe('DemoBrowser', () => {
 
   it('renders loading state initially', async () => {
     // Delay resolution
-    (demoStorageService.getDemos as jest.Mock).mockReturnValue(new Promise(() => {}));
+    let resolvePromise: (value: any) => void;
+    const promise = new Promise(resolve => { resolvePromise = resolve; });
+    (demoStorageService.getDemos as jest.Mock).mockReturnValue(promise);
 
     render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
+
+    // Clean up promise to avoid act warning
+    await React.act(async () => {
+        resolvePromise([]);
+    });
   });
 
   it('renders demo list', async () => {

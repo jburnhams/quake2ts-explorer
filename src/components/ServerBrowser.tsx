@@ -53,13 +53,15 @@ export function ServerBrowser({ onConnect, onClose, initialServers = [] }: Serve
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
-    // Update pings for existing servers
+    // Query info for all servers
     const updatedServers = await Promise.all(servers.map(async (server) => {
         try {
-            const newPing = await networkService.ping(server.address);
-            return { ...server, ping: newPing };
+            // Use queryServer to get full info if available, falling back to existing data if query fails partial
+            const info = await networkService.queryServer(server.address);
+            return info;
         } catch (e) {
-            return { ...server, ping: 999 };
+            // If query fails completely, mark as high ping/offline but keep known address
+            return { ...server, ping: 999, players: 0 };
         }
     }));
     setServers(updatedServers);

@@ -183,18 +183,18 @@ Implement **Pattern 5: Multiplayer Client** from `docs/usage.md`. This adds netw
     - Fallback: Hardcoded server list or community-maintained JSON
   - Option 3: LAN broadcast discovery (WebRTC data channels)
 
-- [ ] **3.3**: Implement server ping
+- [x] **3.3**: Implement server ping
   - Send UDP-like ping packet via WebSocket
   - Measure round-trip time
   - Display latency in milliseconds
   - Color-code by latency (green <50ms, yellow <100ms, red >100ms)
 
-- [ ] **3.4**: Implement server info query
+- [x] **3.4**: Implement server info query
   - Query server for metadata (name, map, players, rules)
   - Parse response and populate table
   - Handle query timeout (mark server as offline)
 
-- [ ] **3.5**: Handle connection flow
+- [x] **3.5**: Handle connection flow
   - Click "Connect" button
   - Show connecting dialog with progress
   - Call `networkService.connect(serverUrl)`

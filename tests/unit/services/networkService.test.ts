@@ -209,4 +209,133 @@ describe('NetworkService', () => {
       const p = await pPromise;
       expect(p).toBeGreaterThanOrEqual(20);
   });
+
+  it('should query server info successfully', async () => {
+    // Setup a mock WebSocket for the query
+    const ws = new MockWebSocket('ws://localhost:27910');
+    (global as any).WebSocket = jest.fn(() => ws);
+
+    // Mock NetChan for the query specifically
+    // Since queryServer creates its own NetChan internally, we rely on the jest.mock above
+    // to intercept it.
+
+    // We need to access the NetChan instance created inside queryServer.
+    // The jest.mock implementation returns a new mock object each time NetChan is instantiated.
+    // We can capture it if we spy on it, or we can just mock process return value globally
+    // since we control when onmessage fires.
+
+    const queryPromise = networkService.queryServer('ws://localhost:27910');
+
+    // Simulate connection open
+    ws.onopen!();
+
+    // Construct a mock server packet with serverdata and configstrings
+    // CS_NAME=0, CS_MAPNAME=31, CS_MAXCLIENTS=30
+
+    // We need to inject data that the MockNetChan.process returns
+    // Since our mock implementation of process returns [1, 2, 3] by default (see top of file),
+    // we need to override it for this test case. But `process` is a method on the instance.
+    // We can use mockImplementationOnce on the class mock constructor?
+    // The current mock setup is: NetChan: jest.fn().mockImplementation(() => ({ ... }))
+
+    // Let's grab the last created NetChan mock instance
+    const MockNetChan = require('quake2ts/shared').NetChan;
+    const mockQueryNetChan = MockNetChan.mock.results[MockNetChan.mock.calls.length - 1].value;
+
+    // Prepare response packet data
+    const writer = new BinaryWriter();
+
+    // ServerData
+    writer.writeByte(ServerCommand.serverdata);
+    writer.writeLong(34); // protocol
+    writer.writeLong(1); // serverCount
+    writer.writeByte(0); // attractLoop
+    writer.writeString('baseq2'); // gameDir
+    writer.writeShort(0); // playerNum
+
+    // ConfigStrings - Order matches standard protocol (global first, then players)
+    // CS_MAXCLIENTS (30)
+    writer.writeByte(ServerCommand.configstring);
+    writer.writeShort(30);
+    writer.writeString('16');
+
+    // CS_NAME (0)
+    writer.writeByte(ServerCommand.configstring);
+    writer.writeShort(0);
+    writer.writeString('My Server');
+
+    // CS_MAPNAME (31)
+    writer.writeByte(ServerCommand.configstring);
+    writer.writeShort(31);
+    writer.writeString('q2dm1');
+
+    // CS_PLAYERSKINS (1312 + i) - Simulate 2 players
+    // Player 1
+    writer.writeByte(ServerCommand.configstring);
+    writer.writeShort(1312 + 0);
+    writer.writeString('male/grunt');
+
+    // Player 2
+    writer.writeByte(ServerCommand.configstring);
+    writer.writeShort(1312 + 1);
+    writer.writeString('female/athena');
+
+    // Frame (signals end of gamestate)
+    writer.writeByte(ServerCommand.frame);
+    writer.writeLong(1); // serverFrame
+    writer.writeLong(0); // deltaFrame
+
+    // Mock process to return this data
+    mockQueryNetChan.process.mockReturnValue(writer.getData());
+
+    // Simulate receiving message
+    ws.onmessage!({ data: new ArrayBuffer(0) });
+
+    // Assert
+    const info = await queryPromise;
+    expect(info).toMatchObject({
+        address: 'ws://localhost:27910',
+        name: 'My Server',
+        map: 'q2dm1',
+        maxPlayers: 16,
+        gamemode: 'baseq2',
+        players: 2
+    });
+
+    expect(ws.close).toHaveBeenCalled();
+  });
+
+  it('should handle query timeout', async () => {
+    const ws = new MockWebSocket('ws://localhost:27910');
+    (global as any).WebSocket = jest.fn(() => ws);
+
+    const queryPromise = networkService.queryServer('ws://localhost:27910');
+
+    // Simulate connection but no message
+    // Note: If we don't await this, the advanceTimers might run before onopen in real loop,
+    // but in jest fake timers environment, sync callbacks should be fine.
+    // However, if the promise rejection happens inside a timeout callback,
+    // we must ensure that rejection is caught by the test expectation.
+
+    ws.onopen!();
+
+    // Advance timers past timeout (5000ms)
+    // We use a try-catch block or .catch to handle the promise if we want to suppress the unhandled rejection warning
+    // but expect(...).rejects should handle it.
+    // The issue might be that advanceTimersByTimeAsync triggers the rejection
+    // which happens *before* we await `expect(queryPromise)`.
+    // Wait, queryPromise is a pending promise. When we advance time, it rejects.
+    // If nothing has a .catch on it YET, node might complain about unhandled rejection?
+    // But we attach the handler in the next line.
+
+    // Let's try wrapping the advance and expect together or ensure order is correct.
+    // Actually, advanceTimersByTimeAsync is async. The timeout callback fires.
+    // The promise rejects.
+
+    const timerPromise = jest.advanceTimersByTimeAsync(6000);
+    await expect(queryPromise).rejects.toThrow('Query timeout');
+    await timerPromise;
+
+    expect(ws.close).toHaveBeenCalled();
+  });
 });
