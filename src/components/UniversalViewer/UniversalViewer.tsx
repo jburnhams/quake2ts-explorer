@@ -41,6 +41,7 @@ import { CameraSettings, DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSetti
 import { CameraSettingsPanel } from '../CameraSettingsPanel';
 import { CinematicPath, CameraKeyframe } from '@/src/utils/cameraPath';
 import { DemoStats } from '../DemoStats';
+import { settingsService } from '@/src/services/settingsService';
 
 export interface UniversalViewerProps {
   parsedFile: ParsedFile;
@@ -147,6 +148,36 @@ export function UniversalViewer({
       freezeLights: false
   });
   const [selectedEntityIds, setSelectedEntityIds] = useState<number[]>([]);
+
+  // Settings integration
+  useEffect(() => {
+    const unsubscribe = settingsService.subscribe((settings) => {
+        // Apply camera settings
+        if (camera) {
+            camera.fov = settings.graphics.fov;
+            if ((camera as any).updateMatrices) (camera as any).updateMatrices();
+        }
+
+        // Post-processing AA
+        setPostProcessOptions(prev => ({
+            ...prev,
+            fxaaEnabled: settings.graphics.antialiasing === 'fxaa',
+            // MSAA is handled by context creation usually, hard to change at runtime without recreation
+        }));
+    });
+
+    // Initial apply
+    const settings = settingsService.getSettings();
+    if (camera) {
+        camera.fov = settings.graphics.fov;
+    }
+    setPostProcessOptions(prev => ({
+        ...prev,
+        fxaaEnabled: settings.graphics.antialiasing === 'fxaa'
+    }));
+
+    return unsubscribe;
+  }, [camera]);
 
   useEffect(() => {
     // Subscribe to EntityEditorService updates
@@ -630,13 +661,18 @@ export function UniversalViewer({
   useEffect(() => {
      if (!canvasRef.current) return;
      try {
+        const settings = settingsService.getSettings();
         const context = createWebGLContext(canvasRef.current, {
-            contextAttributes: { depth: true, antialias: true, preserveDrawingBuffer: true }
+            contextAttributes: {
+                depth: true,
+                antialias: settings.graphics.antialiasing === 'msaa',
+                preserveDrawingBuffer: true
+            }
         });
         setGlContext(context);
 
         const cam = new Camera();
-        cam.fov = 60;
+        cam.fov = settings.graphics.fov;
         setCamera(cam);
 
         // Init PostProcessor

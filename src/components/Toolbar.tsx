@@ -12,6 +12,7 @@ export interface ToolbarProps {
   onOpenPakManager?: () => void;
   onOpenDemoBrowser?: () => void;
   onOpenServerBrowser?: () => void;
+  onOpenSettings?: () => void;
 }
 
 export function Toolbar({
@@ -23,7 +24,8 @@ export function Toolbar({
   onOpenEntityDatabase,
   onOpenPakManager,
   onOpenDemoBrowser,
-  onOpenServerBrowser
+  onOpenServerBrowser,
+  onOpenSettings
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -127,6 +129,16 @@ export function Toolbar({
             data-testid="open-server-browser-button"
           >
             Multiplayer
+          </button>
+        )}
+        {onOpenSettings && (
+          <button
+            className="toolbar-button"
+            onClick={onOpenSettings}
+            data-testid="open-settings-button"
+            title="Settings"
+          >
+            ⚙️
           </button>
         )}
         <input
