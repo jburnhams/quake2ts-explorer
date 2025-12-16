@@ -6,6 +6,8 @@ import { DebugMode } from '@/src/types/debugMode';
 import { DebugRenderer } from './DebugRenderer';
 import { GizmoRenderer } from './GizmoRenderer';
 import { getSurfaceFlagNames } from '@/src/utils/surfaceFlagParser';
+import { createCollisionModel } from '@/src/utils/collisionAdapter';
+import { CollisionModel } from 'quake2ts/shared';
 import { EntityEditorService, SelectionMode } from '@/src/services/entityEditorService';
 
 export class BspAdapter implements ViewerAdapter {
@@ -23,6 +25,7 @@ export class BspAdapter implements ViewerAdapter {
   private activeSurfaceFlagFilter: string | null = null;
   private debugMode: DebugMode = DebugMode.None;
   private debugRenderer: DebugRenderer | null = null;
+  private collisionModel: CollisionModel | null = null;
   private gizmoRenderer: GizmoRenderer | null = null;
 
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
@@ -60,6 +63,12 @@ export class BspAdapter implements ViewerAdapter {
     this.gizmoRenderer = new GizmoRenderer(gl);
     this.surfaces = createBspSurfaces(map);
     this.geometry = buildBspGeometry(gl, this.surfaces, map, { hiddenClassnames: this.hiddenClassnames });
+
+    try {
+        this.collisionModel = createCollisionModel(map);
+    } catch (e) {
+        console.warn('Failed to create collision model for debug visualization', e);
+    }
 
     // Initialize white texture for fullbright/lighting-only modes
     this.whiteTexture = new Texture2D(gl);
@@ -417,6 +426,47 @@ export class BspAdapter implements ViewerAdapter {
                      }
                  }
             }
+        }
+
+        if (this.debugMode === DebugMode.CollisionHulls && this.collisionModel) {
+             // CONTENTS_SOLID = 1
+             // CONTENTS_WINDOW = 2
+             // CONTENTS_AUX = 4
+             // CONTENTS_LAVA = 8
+             // CONTENTS_SLIME = 16
+             // CONTENTS_WATER = 32
+             // CONTENTS_MIST = 64
+
+             // Iterate through all leaves and draw their bounds if they have interesting contents
+             for (const leaf of this.collisionModel.leaves) {
+                 if (leaf.contents & 1) { // SOLID (Red)
+                      // Leaves don't store bounds directly in CollisionModel (only in BspMap)
+                      // We need to use map data or reconstruct.
+                      // Using map data is easier if we have leaf index mapping.
+                      // But CollisionModel.leaves order matches BspMap.leafs
+                 }
+             }
+
+             // Alternative: Draw map leafs based on map data directly
+             if (this.map && this.map.leafs) {
+                 this.map.leafs.forEach(leaf => {
+                     // Check contents
+                     const contents = leaf.contents;
+                     let color: vec4 | null = null;
+
+                     if (contents & 1) color = vec4.fromValues(1, 0, 0, 0.2); // Solid - Red
+                     else if (contents & 32) color = vec4.fromValues(0, 0, 1, 0.2); // Water - Blue
+                     else if (contents & 16) color = vec4.fromValues(0, 1, 0, 0.2); // Slime - Green
+                     else if (contents & 8) color = vec4.fromValues(1, 0.5, 0, 0.2); // Lava - Orange
+                     else if (contents & 64) color = vec4.fromValues(0.8, 0.8, 0.8, 0.1); // Mist - White
+
+                     if (color) {
+                         const min = vec3.fromValues(leaf.mins[0], leaf.mins[1], leaf.mins[2]);
+                         const max = vec3.fromValues(leaf.maxs[0], leaf.maxs[1], leaf.maxs[2]);
+                         this.debugRenderer?.addBox(min, max, color);
+                     }
+                 });
+             }
         }
 
         this.debugRenderer.render(mvp);
