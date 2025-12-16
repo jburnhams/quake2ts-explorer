@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import './SoundAnalyzer.css';
 import { WaveformCanvas } from './WaveformCanvas';
 import { FrequencySpectrum } from './FrequencySpectrum';
+import type { PakService } from '../services/pakService';
+import { AssetCrossRefService, AssetUsage } from '../services/assetCrossRefService';
 
 interface SoundAnalyzerProps {
   audio: {
@@ -11,13 +13,16 @@ interface SoundAnalyzerProps {
     samples: Int16Array | Float32Array;
   };
   fileName: string;
+  pakService?: PakService;
 }
 
-export function SoundAnalyzer({ audio, fileName }: SoundAnalyzerProps) {
+export function SoundAnalyzer({ audio, fileName, pakService }: SoundAnalyzerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [analyser, setAnalyser] = useState<AnalyserNode | null>(null);
+  const [usageInfo, setUsageInfo] = useState<AssetUsage[]>([]);
+  const [analyzingUsage, setAnalyzingUsage] = useState(false);
 
   // Zoom and Scroll state
   const [zoom, setZoom] = useState(1);
@@ -125,11 +130,24 @@ export function SoundAnalyzer({ audio, fileName }: SoundAnalyzerProps) {
       return () => cancelAnimationFrame(raf);
   }, [isPlaying, audioBuffer, zoom, scrollOffset]);
 
-  const getUsageInfo = () => {
-      // Stub for usage tracking
-      // In a real implementation, this would query a central asset database or index
-      return { count: 0, locations: [] };
-  };
+  useEffect(() => {
+    if (!pakService) return;
+
+    const analyzeUsage = async () => {
+        setAnalyzingUsage(true);
+        try {
+            const crossRefService = new AssetCrossRefService(pakService.getVfs());
+            const usages = await crossRefService.findSoundUsage(fileName);
+            setUsageInfo(usages);
+        } catch (e) {
+            console.error('Failed to analyze sound usage', e);
+        } finally {
+            setAnalyzingUsage(false);
+        }
+    };
+
+    analyzeUsage();
+  }, [fileName, pakService]);
 
   const handleExportWav = () => {
       if (!audioBuffer) return;
@@ -354,9 +372,23 @@ export function SoundAnalyzer({ audio, fileName }: SoundAnalyzerProps) {
           </div>
            <div className="sound-info-item">
               <span className="sound-info-label">Usage:</span>
-              <span>{getUsageInfo().count} references</span>
+              <span>{analyzingUsage ? 'Scanning...' : `${usageInfo.length} references`}</span>
           </div>
       </div>
+
+      {usageInfo.length > 0 && (
+          <div className="sound-usage-list">
+              <h4>Referenced in:</h4>
+              <ul>
+                  {usageInfo.map((usage, i) => (
+                      <li key={i}>
+                          <span className="usage-path">{usage.path}</span>
+                          {usage.details && <span className="usage-details"> ({usage.details})</span>}
+                      </li>
+                  ))}
+              </ul>
+          </div>
+      )}
     </div>
   );
 }

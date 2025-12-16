@@ -162,4 +162,31 @@ describe('AssetCrossRefService', () => {
     const usages = await service.findTextureUsage('models/skin.pcx');
     expect(usages).toHaveLength(1);
   });
+
+  it('should find sound usage in BSP entities', async () => {
+    mockVfs.findByExtension.mockImplementation((ext) => {
+      if (ext === 'bsp') return [{ path: 'maps/test.bsp' }] as any;
+      return [];
+    });
+    mockVfs.readFile.mockReturnValue(new Uint8Array(10));
+
+    // Mock BSP with entities
+    (parseBsp as jest.Mock).mockReturnValue({
+      entities: {
+          entities: [
+              { classname: 'worldspawn' },
+              { classname: 'target_speaker', noise: 'sound/world/test.wav', origin: '0 0 0' },
+              { classname: 'func_door', message: 'sound/doors/dr1_strt.wav' }
+          ]
+      },
+      textures: [] // No textures relevant here
+    });
+
+    const usages = await service.findSoundUsage('sound/world/test.wav');
+
+    expect(usages.length).toBeGreaterThan(0);
+    expect(usages[0].path).toBe('maps/test.bsp');
+    // We expect "classname: target_speaker" because the new logic prioritizes detailed matches
+    expect(usages[0].details).toContain('classname: target_speaker');
+  });
 });
