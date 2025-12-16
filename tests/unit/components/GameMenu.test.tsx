@@ -2,6 +2,16 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GameMenu } from '../../../src/components/GameMenu';
 
+// Mock SaveLoadDialog to verify it gets rendered
+jest.mock('../../../src/components/SaveLoadDialog', () => ({
+  SaveLoadDialog: ({ mode, onClose }: { mode: string, onClose: () => void }) => (
+    <div data-testid="save-load-dialog">
+      Dialog Mode: {mode}
+      <button onClick={onClose}>Close Dialog</button>
+    </div>
+  )
+}));
+
 describe('GameMenu', () => {
   const mockResume = jest.fn();
   const mockSave = jest.fn();
@@ -42,13 +52,30 @@ describe('GameMenu', () => {
     fireEvent.click(screen.getByText('Resume Game'));
     expect(mockResume).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByText('Save Game'));
-    expect(mockSave).toHaveBeenCalledTimes(1);
-
-    fireEvent.click(screen.getByText('Load Game'));
-    expect(mockLoad).toHaveBeenCalledTimes(1);
-
     fireEvent.click(screen.getByText('Quit to Browser'));
     expect(mockQuit).toHaveBeenCalledTimes(1);
+  });
+
+  it('opens save/load dialog when buttons are clicked', () => {
+    render(
+      <GameMenu
+        onResume={mockResume}
+        onSave={mockSave}
+        onLoad={mockLoad}
+        onQuit={mockQuit}
+      />
+    );
+
+    // Save
+    fireEvent.click(screen.getByText('Save Game'));
+    expect(screen.getByTestId('save-load-dialog')).toHaveTextContent('Dialog Mode: save');
+
+    // Close it
+    fireEvent.click(screen.getByText('Close Dialog'));
+    expect(screen.queryByTestId('save-load-dialog')).not.toBeInTheDocument();
+
+    // Load
+    fireEvent.click(screen.getByText('Load Game'));
+    expect(screen.getByTestId('save-load-dialog')).toHaveTextContent('Dialog Mode: load');
   });
 });

@@ -417,16 +417,16 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
 
 #### Subtasks
 
-- [ ] **7.1**: Modify `src/App.tsx`
+- [x] **7.1**: Modify `src/App.tsx`
   - Add state for current mode: `'browser' | 'game'`
   - Conditionally render browser UI or game UI based on mode
 
-- [ ] **7.2**: Create "Play" button for BSP files
+- [x] **7.2**: Create "Play" button for BSP files
   - Modify `src/components/PreviewPanel.tsx`
   - Add "Play Map" button when BSP file selected
   - Button calls `setMode('game')` and `startGameMode(selectedFile)`
 
-- [ ] **7.3**: Create in-game menu overlay
+- [x] **7.3**: Create in-game menu overlay
   - Pause game when menu opened (ESC key)
   - Show menu options:
     - Resume
@@ -436,12 +436,12 @@ Implement **Pattern 4: Single Player Game** from `docs/usage.md`. This adds full
     - Return to Browser
   - Blur background, show menu centered
 
-- [ ] **7.4**: Handle mode transitions
+- [x] **7.4**: Handle mode transitions
   - Browser → Game: Initialize game service, start loop, capture input
   - Game → Browser: Stop loop, shutdown game, release pointer lock
   - Clean up resources on transition
 
-- [ ] **7.5**: Add loading screen
+- [x] **7.5**: Add loading screen
   - Show progress when loading map assets
   - Display map name, loading bar
   - Hide when game ready
