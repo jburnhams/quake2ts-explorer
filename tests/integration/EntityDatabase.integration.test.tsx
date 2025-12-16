@@ -15,8 +15,8 @@ jest.mock('quake2ts/engine', () => ({
   parseBsp: jest.fn().mockReturnValue({
     entities: {
       entities: [
-        { classname: 'worldspawn', properties: { message: 'Integration Test Map' } },
-        { classname: 'info_player_start', properties: { origin: '100 0 0' } }
+        { classname: 'worldspawn', properties: { classname: 'worldspawn', message: 'Integration Test Map' } },
+        { classname: 'info_player_start', properties: { classname: 'info_player_start', origin: '100 0 0' } }
       ]
     }
   }),

@@ -133,10 +133,18 @@ export class EntityService {
 
     for (const ent of entities) {
       lines.push('{');
+      // Ensure classname is present (it might not be in properties depending on parser)
+      let hasClassname = false;
+
       for (const [key, value] of Object.entries(ent.properties)) {
+        if (key === 'classname') hasClassname = true;
         // Escape quotes in value
         const escapedValue = String(value).replace(/"/g, '\\"');
         lines.push(`"${key}" "${escapedValue}"`);
+      }
+
+      if (!hasClassname && ent.classname) {
+         lines.push(`"classname" "${ent.classname}"`);
       }
       lines.push('}');
     }
