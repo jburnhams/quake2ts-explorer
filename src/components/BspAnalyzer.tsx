@@ -15,6 +15,7 @@ export interface BspAnalyzerProps {
   onClassnamesLoaded?: (classnames: string[]) => void;
   hiddenClassnames?: Set<string>;
   onEntitySelected?: (entity: any) => void;
+  onPlay?: () => void;
 }
 
 type TabType = 'overview' | 'geometry' | 'lightmaps' | 'visibility' | 'entities' | 'optimization';
@@ -138,7 +139,7 @@ function getVisibilityStats(map: BspMap): VisibilityStats {
     };
 }
 
-export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hiddenClassnames, onEntitySelected }: BspAnalyzerProps) {
+export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hiddenClassnames, onEntitySelected, onPlay }: BspAnalyzerProps) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [adapter, setAdapter] = useState<ViewerAdapter | null>(null);
   const [surfaceFlagFilter, setSurfaceFlagFilter] = useState<string | null>(null);
@@ -186,6 +187,26 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
                  <span>{stats.textureUsage.length}</span>
               </div>
             </div>
+            {onPlay && (
+              <div style={{ marginTop: '20px' }}>
+                <button
+                  className="bsp-play-button"
+                  onClick={onPlay}
+                  style={{
+                    padding: '10px 20px',
+                    fontSize: '16px',
+                    backgroundColor: '#8b3a3a',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    width: '100%'
+                  }}
+                >
+                  ▶ Play Map
+                </button>
+              </div>
+            )}
           </div>
         );
       case 'geometry':
