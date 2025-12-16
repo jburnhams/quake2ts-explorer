@@ -79,6 +79,11 @@ export interface ViewerAdapter {
   pickEntity?(ray: Ray, options?: PickOptions): any;
   setHoveredEntity?(entity: any): void;
 
+  // Interaction
+  onMouseDown?(ray: Ray, event: MouseEvent): boolean;
+  onMouseMove?(ray: Ray, event: MouseEvent): boolean;
+  onMouseUp?(ray: Ray, event: MouseEvent): boolean;
+
   // Debugging
   setDebugMode?(mode: DebugMode): void;
 

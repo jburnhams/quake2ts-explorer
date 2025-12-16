@@ -65,11 +65,11 @@ Provide basic map editing capabilities for entity manipulation and prototyping. 
     - Scale (boxes for uniform/non-uniform scaling)
   - Switch modes with W (translate), E (rotate), R (scale) keys
 
-- [ ] **1.4**: Implement entity translation
-  - Click and drag axis arrow to move along that axis
-  - Shift+drag for grid snapping (configurable snap size: 1, 8, 16, 32 units)
-  - Update entity `origin` property in real-time
-  - Show coordinates as tooltip while dragging
+- [x] **1.4**: Implement entity translation
+  - [x] Click and drag axis arrow to move along that axis
+  - [x] Shift+drag for grid snapping (configurable snap size: 1, 8, 16, 32 units)
+  - [x] Update entity `origin` property in real-time
+  - [ ] Show coordinates as tooltip while dragging
 
 - [ ] **1.5**: Implement entity rotation
   - Click and drag rotation ring to rotate around axis
