@@ -1,5 +1,4 @@
 import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
-import { NetChan } from 'quake2ts/shared';
 import { WebSocket as MockWebSocket } from 'mock-socket';
 
 // Define mocks
@@ -25,7 +24,22 @@ jest.mock('quake2ts/shared', () => {
         })),
         BinaryWriter: jest.fn().mockImplementation(() => ({
             writeByte: jest.fn(),
+            writeShort: jest.fn(),
+            writeLong: jest.fn(),
+            writeString: jest.fn(),
+            writeAngle16: jest.fn(),
+            writeFloat: jest.fn(),
             getData: jest.fn().mockReturnValue(new Uint8Array(0))
+        })),
+        BinaryStream: jest.fn().mockImplementation(() => ({
+            readByte: jest.fn().mockReturnValue(original.ServerCommand.disconnect),
+            readShort: jest.fn().mockReturnValue(0),
+            readLong: jest.fn().mockReturnValue(0),
+            readString: jest.fn().mockReturnValue(""),
+            hasMore: jest.fn()
+                .mockReturnValueOnce(true)
+                .mockReturnValue(false),
+            hasBytes: jest.fn().mockReturnValue(true)
         }))
     };
 });
@@ -56,27 +70,12 @@ describe('NetworkService Coverage', () => {
     });
 
     it('handles disconnect server command', () => {
-        // 2 = disconnect, string
-        const payload = new Uint8Array(100);
-        let p = 0;
-        payload[p++] = 2; // ServerCommand.disconnect
-        // String "Kick"
-        // BinaryStream.readString usually reads until null or special char?
-        // Assuming null term
-        "Kick".split('').forEach(c => payload[p++] = c.charCodeAt(0));
-        payload[p++] = 0;
+        (networkService as any).state = 'connected';
 
-        const data = payload.slice(0, p);
-        mockProcess.mockReturnValue(data);
+        const payload = new Uint8Array([2]);
+        mockProcess.mockReturnValue(payload);
 
         (networkService as any).handleMessage(new ArrayBuffer(0));
-
-        // Disconnect logic calls handleDisconnect('Server disconnected client')
-        // OR parses string? Code: this.disconnect('Server disconnected client');
-        // It does NOT read the string reason from packet in the code I read earlier?
-        // Let's check code:
-        // case ServerCommand.disconnect: this.disconnect('Server disconnected client'); break;
-        // It ignores the reason in stream!
 
         expect(mockCallbacks.onDisconnect).toHaveBeenCalledWith('Server disconnected client');
     });
