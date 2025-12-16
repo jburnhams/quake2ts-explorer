@@ -43,6 +43,16 @@
   border-radius: 3px;
 }
 
+.timeline-selection {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(255, 165, 0, 0.5); /* Orange semi-transparent */
+    border-radius: 3px;
+    z-index: 1;
+    pointer-events: none;
+}
+
 .timeline-scrubber {
   position: absolute;
   top: 50%;
@@ -79,6 +89,31 @@
   align-items: center;
   padding: 0 10px 4px 10px;
   font-size: 11px;
+}
+
+.clip-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.selection-info {
+    color: #ffa500;
+}
+
+.extract-btn {
+    background: #ffa500;
+    border: none;
+    color: black;
+    border-radius: 3px;
+    padding: 2px 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.extract-btn:hover {
+    background: #ffb733;
 }
 
 .time-display {

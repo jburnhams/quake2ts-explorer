@@ -1292,6 +1292,42 @@ export function UniversalViewer({
                         controller.seekToFrame(frame);
                     }
                 }}
+                onExtractClip={async (start, end) => {
+                    // Start clip extraction
+                    try {
+                         const buffer = (adapter as any).getDemoBuffer ? (adapter as any).getDemoBuffer() : null;
+                         if (!buffer) {
+                             throw new Error("Cannot access demo data for extraction");
+                         }
+
+                         // Convert start/end seconds to frames if needed, or pass seconds
+                         // BookmarkService.extractClip expects frames currently
+                         const controller = adapter.getDemoController!();
+                         if (!controller) {
+                             throw new Error("Demo controller not available");
+                         }
+                         const startFrame = controller.timeToFrame(start);
+                         const endFrame = controller.timeToFrame(end);
+
+                         const result = await bookmarkService.extractClip(buffer, startFrame, endFrame);
+
+                         if (result) {
+                             // Download the clip
+                             const blob = new Blob([result], { type: 'application/octet-stream' });
+                             const url = URL.createObjectURL(blob);
+                             const a = document.createElement('a');
+                             a.href = url;
+                             a.download = `clip_${startFrame}-${endFrame}.dm2`;
+                             a.click();
+                             URL.revokeObjectURL(url);
+                         } else {
+                             alert("Clip extraction failed or not supported.");
+                         }
+                    } catch (e) {
+                         console.error("Extraction error:", e);
+                         alert("Failed to extract clip: " + (e instanceof Error ? e.message : String(e)));
+                    }
+                }}
             />
           </>
        )}

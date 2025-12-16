@@ -351,7 +351,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
   - Edit name/notes
   - Delete bookmark
 
-- [ ] **6.4**: Implement clip extraction
+- [x] **6.4**: Implement clip extraction
   - Select start and end frames on timeline (drag to select range)
   - "Extract Clip" button
   - Creates new demo file from frame range

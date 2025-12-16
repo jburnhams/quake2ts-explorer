@@ -5,18 +5,24 @@ import './DemoTimeline.css';
 
 interface DemoTimelineProps {
   controller: DemoPlaybackController;
-  bookmarks: Bookmark[]; // Add bookmarks prop
+  bookmarks: Bookmark[];
   onBookmarkClick?: (frame: number) => void;
+  onExtractClip?: (start: number, end: number) => void;
 }
 
-export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: DemoTimelineProps) {
+export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick, onExtractClip }: DemoTimelineProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [currentFrame, setCurrentFrame] = useState(0);
   const [totalFrames, setTotalFrames] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
+  const [isSelecting, setIsSelecting] = useState(false);
   const [hoverTime, setHoverTime] = useState<number | null>(null);
   const [events, setEvents] = useState<DemoEvent[]>([]);
+
+  // Selection state
+  const [selectionStart, setSelectionStart] = useState<number | null>(null);
+  const [selectionEnd, setSelectionEnd] = useState<number | null>(null);
 
   // Zoom state
   const [zoomLevel, setZoomLevel] = useState(1); // 1 = 100% (fit to width), 2 = 200%, etc.
@@ -45,7 +51,7 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
     }
 
     const update = () => {
-      if (!isDragging) {
+      if (!isDragging && !isSelecting) {
         setCurrentTime(controller.getCurrentTime());
         setCurrentFrame(controller.getCurrentFrame());
       }
@@ -57,11 +63,11 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
     return () => {
       cancelAnimationFrame(rafRef.current);
     };
-  }, [controller, isDragging]);
+  }, [controller, isDragging, isSelecting]);
 
   // Adjust zoom offset to keep current time visible if moving out of view
   useEffect(() => {
-      if (isDragging) return;
+      if (isDragging || isSelecting) return;
 
       const visibleDuration = duration / zoomLevel;
       if (currentTime < zoomOffset) {
@@ -69,7 +75,7 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
       } else if (currentTime > zoomOffset + visibleDuration) {
           setZoomOffset(Math.min(duration - visibleDuration, currentTime - visibleDuration * 0.9));
       }
-  }, [currentTime, zoomLevel, zoomOffset, duration, isDragging]);
+  }, [currentTime, zoomLevel, zoomOffset, duration, isDragging, isSelecting]);
 
   const getTimeFromClientX = (clientX: number, rect: DOMRect) => {
       const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
@@ -95,18 +101,45 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
     }
   };
 
+  const handleSelectionDrag = (e: React.MouseEvent | MouseEvent) => {
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const time = getTimeFromClientX(e.clientX, rect);
+      setSelectionEnd(time);
+  };
+
   const handleMouseDown = (e: React.MouseEvent) => {
       // Only seek on left click
       if (e.button !== 0) return;
 
-      setIsDragging(true);
-      handleSeek(e);
+      if (!trackRef.current) return;
+      const rect = trackRef.current.getBoundingClientRect();
+      const time = getTimeFromClientX(e.clientX, rect);
+
+      if (e.shiftKey) {
+          // Start selection
+          setIsSelecting(true);
+          setSelectionStart(time);
+          setSelectionEnd(time);
+      } else {
+          // Normal seek
+          setIsDragging(true);
+          handleSeek(e);
+
+          // Clear selection on normal click unless shift is held
+          if (selectionStart !== null) {
+              setSelectionStart(null);
+              setSelectionEnd(null);
+          }
+      }
   };
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (isDragging) {
         handleSeek(e);
+      } else if (isSelecting) {
+          handleSelectionDrag(e);
       }
     };
 
@@ -118,10 +151,19 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
             controller.seekToTime(time);
         }
         setIsDragging(false);
+      } else if (isSelecting) {
+          setIsSelecting(false);
+          // Ensure start < end
+          if (selectionStart !== null && selectionEnd !== null) {
+              if (selectionStart > selectionEnd) {
+                  setSelectionStart(selectionEnd);
+                  setSelectionEnd(selectionStart);
+              }
+          }
       }
     };
 
-    if (isDragging) {
+    if (isDragging || isSelecting) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);
     }
@@ -130,7 +172,7 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging, controller, zoomLevel, zoomOffset, duration]);
+  }, [isDragging, isSelecting, controller, zoomLevel, zoomOffset, duration, selectionStart, selectionEnd]);
 
   const handleMouseMoveTrack = (e: React.MouseEvent) => {
       if (!trackRef.current) return;
@@ -197,6 +239,12 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
       return ((time - zoomOffset) / visibleDuration) * 100;
   };
 
+  const handleExtractClip = () => {
+      if (selectionStart !== null && selectionEnd !== null && onExtractClip) {
+          onExtractClip(Math.min(selectionStart, selectionEnd), Math.max(selectionStart, selectionEnd));
+      }
+  };
+
   return (
     <div className="demo-timeline" onWheel={handleWheel}>
       {/* Thumbnails placeholder - shown when hovering */}
@@ -226,6 +274,17 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
       >
         <div className="timeline-track">
             {/* Viewport markers/ticks could go here */}
+
+            {/* Selection Range */}
+            {selectionStart !== null && selectionEnd !== null && (
+                <div
+                    className="timeline-selection"
+                    style={{
+                        left: `${getLeftPercent(Math.min(selectionStart, selectionEnd))}%`,
+                        width: `${Math.abs(getLeftPercent(selectionEnd) - getLeftPercent(selectionStart))}%`
+                    }}
+                />
+            )}
 
             {/* Progress Bar */}
             <div
@@ -299,6 +358,22 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick }: De
           <span className="time-sep">/</span>
           <span className="time-total">{formatTime(duration)}</span>
         </div>
+
+        {/* Clip Extraction Controls */}
+        {selectionStart !== null && selectionEnd !== null && (
+            <div className="clip-controls">
+                <span className="selection-info">
+                    {formatTime(Math.min(selectionStart, selectionEnd))} - {formatTime(Math.max(selectionStart, selectionEnd))}
+                </span>
+                <button
+                    className="extract-btn"
+                    onClick={handleExtractClip}
+                    title="Extract clip from selected range"
+                >
+                    Extract Clip
+                </button>
+            </div>
+        )}
 
         {/* Zoom controls */}
         <div className="zoom-display">
