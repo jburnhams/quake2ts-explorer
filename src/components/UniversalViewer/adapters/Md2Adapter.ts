@@ -126,8 +126,65 @@ export class Md2Adapter implements ViewerAdapter {
         }
 
         if (this.debugMode === DebugMode.Normals) {
-             // We can access vertices from the meshBuffers if mapped, or re-compute.
-             // Visualizing normals is complex without direct vertex access in this loop.
+             // Draw triangle normals
+             if (this.model && this.animState) {
+                 const blend = computeFrameBlend(this.animState);
+                 const frame0 = this.model.frames[blend.frame0];
+                 const frame1 = this.model.frames[blend.frame1];
+
+                 if (frame0 && frame1) {
+                     // We iterate triangles, compute face centers and normals
+                     // This is slow in JS but acceptable for debug
+                     const triangles = this.model.triangles;
+                     const verts0 = frame0.vertices;
+                     const verts1 = frame1.vertices;
+
+                     const getVec = (frameVerts: readonly any[], index: number) => {
+                         const v = frameVerts[index];
+                         // Md2Vertex has { position: {x,y,z}, normal: {x,y,z} }
+                         return v.position;
+                     };
+
+                     for (let i = 0; i < triangles.length; i++) {
+                         const tri = triangles[i];
+                         // Md2Triangle has vertexIndices: [n, n, n]
+                         // Get vertices for frame0 and frame1
+                         const v0_0 = getVec(verts0, tri.vertexIndices[0]);
+                         const v1_0 = getVec(verts0, tri.vertexIndices[1]);
+                         const v2_0 = getVec(verts0, tri.vertexIndices[2]);
+
+                         const v0_1 = getVec(verts1, tri.vertexIndices[0]);
+                         const v1_1 = getVec(verts1, tri.vertexIndices[1]);
+                         const v2_1 = getVec(verts1, tri.vertexIndices[2]);
+
+                         // Convert to vec3 for gl-matrix if they are plain objects
+                         const toGlVec3 = (v: any) => vec3.fromValues(v.x, v.y, v.z);
+
+                         // Lerp positions
+                         const p0 = vec3.create(); vec3.lerp(p0, toGlVec3(v0_0), toGlVec3(v0_1), blend.lerp);
+                         const p1 = vec3.create(); vec3.lerp(p1, toGlVec3(v1_0), toGlVec3(v1_1), blend.lerp);
+                         const p2 = vec3.create(); vec3.lerp(p2, toGlVec3(v2_0), toGlVec3(v2_1), blend.lerp);
+
+                         // Compute center
+                         const center = vec3.create();
+                         vec3.add(center, p0, p1);
+                         vec3.add(center, center, p2);
+                         vec3.scale(center, center, 1/3);
+
+                         // Compute normal from triangle
+                         const edge1 = vec3.create(); vec3.subtract(edge1, p1, p0);
+                         const edge2 = vec3.create(); vec3.subtract(edge2, p2, p0);
+                         const normal = vec3.create();
+                         vec3.cross(normal, edge1, edge2);
+                         vec3.normalize(normal, normal);
+
+                         const end = vec3.create();
+                         vec3.scaleAndAdd(end, center, normal, 5); // 5 unit long normal
+
+                         this.debugRenderer?.addLine(center, end, vec4.fromValues(0, 1, 1, 1)); // Cyan
+                     }
+                 }
+             }
         }
 
         this.debugRenderer.render(mvp);
