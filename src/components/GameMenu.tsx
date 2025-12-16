@@ -23,7 +23,7 @@ export function GameMenu({ onResume, onSave, onLoad, onQuit }: GameMenuProps) {
       const data = await demoRecorderService.stopRecording();
       if (data) {
         // In a real app we'd prompt for download or save
-        const blob = new Blob([data], { type: 'application/octet-stream' });
+        const blob = new Blob([data as any], { type: 'application/octet-stream' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
