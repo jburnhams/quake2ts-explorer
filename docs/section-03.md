@@ -356,7 +356,7 @@ Extend the existing demo playback implementation (Pattern 3, already partially i
     - **Library Enhancement Needed**: `extractDemoRange(demo: Uint8Array, start: number, end: number): Uint8Array`
   - Download or save to browser storage
 
-- [ ] **6.5**: Add bookmark export/import
+- [x] **6.5**: Add bookmark export/import
   - Export bookmarks as JSON file
   - Import bookmarks from JSON
   - Share bookmarks with others for same demo file
