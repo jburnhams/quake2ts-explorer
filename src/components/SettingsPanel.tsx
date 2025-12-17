@@ -8,6 +8,7 @@ import { AudioSettingsTab } from './settings/AudioSettings';
 import { ControlsSettingsTab } from './settings/ControlsSettings';
 import { AccessibilitySettingsTab } from './settings/AccessibilitySettings';
 import { AdvancedSettingsTab } from './settings/AdvancedSettings';
+import { KeybindingEditor } from './KeybindingEditor';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -18,6 +19,7 @@ export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanel
   const [activeTab, setActiveTab] = useState<keyof AppSettings>(initialTab);
   const [settings, setSettings] = useState<AppSettings>(settingsService.getSettings());
   const [hasChanges, setHasChanges] = useState(false);
+  const [showKeybindings, setShowKeybindings] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -82,7 +84,7 @@ export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanel
           <ControlsSettingsTab
             settings={settings.controls}
             onChange={(updates) => handleUpdate('controls', updates)}
-            onOpenKeybindings={() => { /* TODO: Open Keybinding Editor */ }}
+            onOpenKeybindings={() => setShowKeybindings(true)}
           />
         );
       case 'accessibility':
@@ -103,6 +105,10 @@ export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanel
         return <div>Unknown tab</div>;
     }
   };
+
+  if (showKeybindings) {
+    return <KeybindingEditor onClose={() => setShowKeybindings(false)} />;
+  }
 
   return (
     <div className="settings-overlay" data-testid="settings-overlay">

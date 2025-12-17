@@ -109,7 +109,6 @@ export function ControlsSettingsTab({ settings, onChange, onOpenKeybindings }: C
             <button
                 className="btn btn-secondary"
                 onClick={onOpenKeybindings}
-                disabled // Task 2
             >
                 Configure Bindings...
             </button>
