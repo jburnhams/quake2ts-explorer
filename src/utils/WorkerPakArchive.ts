@@ -37,7 +37,7 @@ export class WorkerPakArchive implements PakArchive {
     getEntries(): any[] {
         return Array.from(this.entries.entries()).map(([name, entry]) => ({
             name,
-            size: entry.length,
+            length: entry.length, // PakDirectoryEntry expects length
             offset: entry.offset
         }));
     }
