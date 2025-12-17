@@ -1,5 +1,6 @@
 import React from 'react';
 import { GeneralSettings } from '@/src/types/settings';
+import { ThemeSelector } from '../ThemeSelector';
 
 interface GeneralSettingsTabProps {
   settings: GeneralSettings;
@@ -35,6 +36,8 @@ export function GeneralSettingsTab({ settings, onChange }: GeneralSettingsTabPro
             </select>
           </div>
         </div>
+
+        <ThemeSelector />
 
         <div className="setting-item">
           <div className="setting-label">

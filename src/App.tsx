@@ -21,6 +21,7 @@ import { LoadingScreen } from './components/LoadingScreen';
 import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
 import { SettingsPanel } from './components/SettingsPanel';
 import { settingsService } from './services/settingsService';
+import { themeService } from './services/themeService';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
