@@ -1,5 +1,18 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
+// Mock worker service first to avoid import issues
+jest.mock('@/src/services/workerService', () => ({
+    workerService: {
+        getPakParser: jest.fn(() => ({
+            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+                entries: new Map(),
+                buffer,
+                name
+            }))
+        }))
+    }
+}));
+
 // Mock quake2ts/engine with configurable file lists
 let mockFileList: Array<{ path: string; size: number; sourcePak: string }> = [];
 
@@ -18,7 +31,11 @@ jest.mock('quake2ts/engine', () => ({
     return {
       mountPak: jest.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
         // Use the internal name (ID) for sourcePak
-        for (const entry of archive.listEntries()) {
+        // In the WorkerPakArchive, listEntries might return empty if not mocked properly,
+        // but here we are mocking VFS behavior based on archive.
+        // If we use WorkerPakArchive, we need to ensure it has listEntries or VFS handles it.
+        const entries = typeof archive.listEntries === 'function' ? archive.listEntries() : [];
+        for (const entry of entries) {
           files.set(entry.name, {
             path: entry.name,
             size: entry.length,
@@ -72,6 +89,7 @@ jest.mock('quake2ts/engine', () => ({
 }));
 
 import { PakService } from '@/src/services/pakService';
+import { workerService } from '@/src/services/workerService';
 
 describe('PakService.buildFileTree - Comprehensive Tests', () => {
   let service: PakService;
@@ -79,6 +97,14 @@ describe('PakService.buildFileTree - Comprehensive Tests', () => {
   beforeEach(() => {
     mockFileList = [];
     service = new PakService();
+    // Update the mock worker to return entries matching mockFileList
+    (workerService.getPakParser as jest.Mock).mockReturnValue({
+        parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+            entries: new Map(mockFileList.map(f => [f.path, { name: f.path, offset: 0, length: f.size }])),
+            buffer,
+            name
+        }))
+    });
   });
 
   describe('empty PAK handling', () => {

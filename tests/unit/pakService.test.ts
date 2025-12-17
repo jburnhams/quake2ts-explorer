@@ -1,5 +1,24 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 
+// Mock worker service first to avoid import issues
+jest.mock('@/src/services/workerService', () => ({
+    workerService: {
+        getPakParser: jest.fn(() => ({
+            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+                entries: new Map([
+                    ['test.txt', { name: 'test.txt', offset: 0, length: 100 }],
+                    ['pics/test.pcx', { name: 'pics/test.pcx', offset: 100, length: 200 }],
+                    ['models/test.md2', { name: 'models/test.md2', offset: 300, length: 500 }],
+                    ['sprites/test.sp2', { name: 'sprites/test.sp2', offset: 800, length: 100 }],
+                    ['maps/test.bsp', { name: 'maps/test.bsp', offset: 1200, length: 2000 }],
+                ]),
+                buffer,
+                name
+            }))
+        }))
+    }
+}));
+
 // Mock quake2ts/engine before importing pakService
 jest.mock('quake2ts/engine', () => ({
   PakArchive: {
@@ -27,10 +46,12 @@ jest.mock('quake2ts/engine', () => ({
     const files = new Map<string, { path: string; size: number; sourcePak: string }>();
     return {
       mountPak: jest.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
-        for (const entry of archive.listEntries()) {
+        // Handle both standard PakArchive (mocked above) and WorkerPakArchive
+        const entries = typeof archive.listEntries === 'function' ? archive.listEntries() : [];
+        for (const entry of entries) {
           files.set(entry.name, {
             path: entry.name,
-            size: entry.length,
+            size: entry.length || 0,
             sourcePak: archive.name,
           });
         }
