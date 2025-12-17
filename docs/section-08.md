@@ -200,7 +200,7 @@ Polish the user experience with professional-grade interface design, accessibili
 
 #### Subtasks
 
-- [ ] **3.1**: Create theme system
+- [x] **3.1**: Create theme system
   - Define theme structure in `src/types/theme.ts`:
     ```typescript
     interface Theme {
@@ -223,14 +223,14 @@ Polish the user experience with professional-grade interface design, accessibili
     }
     ```
 
-- [ ] **3.2**: Implement built-in themes
+- [x] **3.2**: Implement built-in themes
   - Create `src/themes/`:
     - `darkTheme.ts` (current theme)
     - `lightTheme.ts` (light variant)
     - `highContrastTheme.ts` (accessibility)
     - `dracula.ts`, `nord.ts`, etc. (popular themes)
 
-- [ ] **3.3**: Create theme service
+- [x] **3.3**: Create theme service
   - `src/services/themeService.ts`
   - `loadTheme(themeId: string): void`
   - Apply CSS custom properties:
@@ -243,7 +243,7 @@ Polish the user experience with professional-grade interface design, accessibili
     ```
   - Update all components to use CSS variables
 
-- [ ] **3.4**: Add theme selector UI
+- [x] **3.4**: Add theme selector UI
   - Dropdown in settings
   - Live preview (changes apply immediately)
   - Thumbnail preview for each theme

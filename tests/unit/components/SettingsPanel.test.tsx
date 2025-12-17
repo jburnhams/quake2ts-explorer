@@ -96,7 +96,8 @@ describe('SettingsPanel', () => {
     expect(saveButton).toBeDisabled();
 
     // Find the select for defaultMode
-    const modeSelect = screen.getAllByRole('combobox')[1]; // Second select (first is language)
+    // We use getByDisplayValue because getByRole index is fragile (affected by ThemeSelector)
+    const modeSelect = screen.getByDisplayValue('File Browser');
     fireEvent.change(modeSelect, { target: { value: 'last-used' } });
 
     expect(saveButton).toBeEnabled();
