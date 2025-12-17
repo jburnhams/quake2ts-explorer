@@ -13,14 +13,27 @@ interface PakParserWorkerApi {
 }
 
 class WorkerService {
-  private pakParserWorker: Remote<PakParserWorkerApi> | null = null;
+  private workers: Remote<PakParserWorkerApi>[] = [];
+  private poolSize = 4;
+  private currentWorkerIndex = 0;
+
+  constructor(poolSize: number = 4) {
+      this.poolSize = poolSize;
+  }
 
   getPakParser(): Remote<PakParserWorkerApi> {
-    if (!this.pakParserWorker) {
-      const worker = new PakParserWorker();
-      this.pakParserWorker = wrap<PakParserWorkerApi>(worker);
+    // Lazy initialization
+    if (this.workers.length < this.poolSize) {
+        const worker = new PakParserWorker();
+        const api = wrap<PakParserWorkerApi>(worker);
+        this.workers.push(api);
+        return api;
     }
-    return this.pakParserWorker;
+
+    // Round-robin selection
+    const worker = this.workers[this.currentWorkerIndex];
+    this.currentWorkerIndex = (this.currentWorkerIndex + 1) % this.poolSize;
+    return worker;
   }
 }
 

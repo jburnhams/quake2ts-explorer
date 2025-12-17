@@ -1,10 +1,5 @@
-import { workerService } from '@/src/services/workerService';
+import { workerService } from '../../../src/services/workerService';
 import { jest, describe, it, expect } from '@jest/globals';
-
-// Use the exact path that resolves with moduleNameMapper or relative path
-// The issue is likely the query parameter ?worker in jest.mock
-// We already have a mock for ?worker in jest.base.config.js, so we might not need to explicit mock it here if we just want it to exist.
-// But comlink wrap expects a certain interface.
 
 describe('WorkerService', () => {
   it('should create a worker instance on first access', () => {
@@ -13,9 +8,11 @@ describe('WorkerService', () => {
     expect(worker).toBeDefined();
   });
 
-  it('should return the same worker instance on subsequent calls', () => {
+  // Since we implemented a pool, it might not return the same worker immediately if poolSize > 1
+  it('should return different workers for subsequent calls (round robin)', () => {
     const worker1 = workerService.getPakParser();
     const worker2 = workerService.getPakParser();
-    expect(worker1).toBe(worker2);
+    // Assuming poolSize > 1
+    expect(worker1).not.toBe(worker2);
   });
 });

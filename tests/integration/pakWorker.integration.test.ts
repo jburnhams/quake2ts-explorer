@@ -1,10 +1,10 @@
-import { workerService } from '@/src/services/workerService';
+import { workerService } from '../../src/services/workerService';
 import { PakArchive } from 'quake2ts/engine';
-import { PakService } from '@/src/services/pakService';
-import { WorkerPakArchive } from '@/src/utils/WorkerPakArchive';
+import { PakService } from '../../src/services/pakService';
+import { WorkerPakArchive } from '../../src/utils/WorkerPakArchive';
 
 // Mock dependencies
-jest.mock('@/src/services/workerService');
+jest.mock('../../src/services/workerService');
 
 describe('PakService with Worker Integration', () => {
     let pakService: PakService;

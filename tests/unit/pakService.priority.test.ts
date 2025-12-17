@@ -1,10 +1,10 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { PakService } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
-import { workerService } from '@/src/services/workerService';
+import { workerService } from '../../src/services/workerService';
 
 // Mock worker service to return immediate result
-jest.mock('@/src/services/workerService', () => ({
+jest.mock('../../src/services/workerService', () => ({
     workerService: {
         getPakParser: jest.fn(() => ({
             parsePak: jest.fn(async (name: string) => ({
