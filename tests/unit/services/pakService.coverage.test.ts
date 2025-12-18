@@ -2,7 +2,7 @@
 import { PakService, getPakService, resetPakService } from '@/src/services/pakService';
 import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
 import { MOD_PRIORITY } from '@/src/types/modInfo';
-import { describe, it, expect, beforeEach } from '@jest/globals';
+import { describe, it, expect, beforeEach, jest } from '@jest/globals';
 
 // Mock dependencies
 jest.mock('quake2ts/engine', () => {
@@ -36,34 +36,66 @@ jest.mock('quake2ts/engine', () => {
 
 jest.mock('@/src/services/workerService', () => {
     const { jest } = require('@jest/globals');
+
+    const mockAssetWorker = {
+        processPcx: jest.fn(),
+        processWal: jest.fn(),
+        processTga: jest.fn(),
+        processMd2: jest.fn(),
+        processMd3: jest.fn(),
+        processSp2: jest.fn(),
+        processWav: jest.fn(),
+        processBsp: jest.fn()
+    };
+
+    const mockPakParser = {
+        parsePak: jest.fn()
+    };
+
     return {
         workerService: {
-            getPakParser: jest.fn().mockReturnValue({
-                parsePak: jest.fn()
-            }),
-            getAssetProcessor: jest.fn().mockReturnValue({
-                processPcx: jest.fn(),
-                processWal: jest.fn(),
-                processTga: jest.fn(),
-                processMd2: jest.fn(),
-                processMd3: jest.fn(),
-                processSp2: jest.fn(),
-                processWav: jest.fn(),
-                processBsp: jest.fn()
-            })
+            getPakParser: jest.fn().mockReturnValue(mockPakParser),
+            getAssetProcessor: jest.fn().mockReturnValue(mockAssetWorker),
+            executeAssetProcessorTask: jest.fn(async (cb: any) => cb(mockAssetWorker)),
+            executePakParserTask: jest.fn(async (cb: any) => cb(mockPakParser)),
+            // Expose mocks for test access
+            _mockAssetWorker: mockAssetWorker,
+            _mockPakParser: mockPakParser
         }
+    };
+});
+
+jest.mock('@/src/services/cacheService', () => {
+    const { jest } = require('@jest/globals');
+    return {
+        cacheService: {
+            get: jest.fn(),
+            set: jest.fn().mockResolvedValue(undefined)
+        },
+        CACHE_STORES: { PAK_INDEX: 'pak-index' }
     };
 });
 
 describe('PakService Coverage', () => {
     let service: PakService;
     let mockVfs: any;
+    let mockAssetWorker: any;
+    let mockCacheService: any;
+    let mockPakParser: any;
 
     beforeEach(() => {
         resetPakService();
         jest.clearAllMocks();
         service = getPakService();
         mockVfs = service.getVfs();
+
+        // Get the mock worker to inspect calls
+        const { workerService } = require('@/src/services/workerService');
+        mockAssetWorker = workerService._mockAssetWorker;
+        mockPakParser = workerService._mockPakParser;
+
+        const { cacheService } = require('@/src/services/cacheService');
+        mockCacheService = cacheService;
     });
 
     it('should handle unloadPak with VFS rebuild fallback', () => {
@@ -118,22 +150,18 @@ describe('PakService Coverage', () => {
 
     it('should parse MD2 via worker', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
-        const { workerService } = require('@/src/services/workerService');
-        const mockWorker = workerService.getAssetProcessor();
-        mockWorker.processMd2.mockResolvedValue({ type: 'md2', model: {}, animations: [] });
+        mockAssetWorker.processMd2.mockResolvedValue({ type: 'md2', model: {}, animations: [] });
 
         const result = await service.parseFile('models/test.md2');
 
         expect(result.type).toBe('md2');
-        expect(mockWorker.processMd2).toHaveBeenCalled();
+        expect(mockAssetWorker.processMd2).toHaveBeenCalled();
     });
 
     it('should handle worker failure and fallback to main thread for MD2', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        const { workerService } = require('@/src/services/workerService');
-        const mockWorker = workerService.getAssetProcessor();
-        mockWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+        mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
         const { parseMd2, groupMd2Animations } = require('quake2ts/engine');
         parseMd2.mockReturnValue({});
@@ -148,9 +176,7 @@ describe('PakService Coverage', () => {
     it('should handle failure in both worker and fallback', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        const { workerService } = require('@/src/services/workerService');
-        const mockWorker = workerService.getAssetProcessor();
-        mockWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+        mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
         const { parseMd2 } = require('quake2ts/engine');
         parseMd2.mockImplementation(() => { throw new Error("Fallback Fail"); });
@@ -175,5 +201,38 @@ describe('PakService Coverage', () => {
         expect(tree.children).toHaveLength(1);
         expect(tree.children![0].name).toBe('pak1.pak');
         expect(tree.children![0].children![0].name).toBe('file1.txt');
+    });
+
+    it('should use cached pak index if available', async () => {
+        mockCacheService.get.mockResolvedValue(new Map()); // Cache hit
+        const file = {
+            arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(100)),
+            name: 'test.pak'
+        } as unknown as File;
+
+        await service.loadPakFile(file);
+
+        expect(mockCacheService.get).toHaveBeenCalled();
+        expect(mockPakParser.parsePak).not.toHaveBeenCalled();
+    });
+
+    it('should parse and cache pak if not in cache', async () => {
+        mockCacheService.get.mockResolvedValue(null); // Cache miss
+        mockPakParser.parsePak.mockResolvedValue({
+            entries: new Map(),
+            buffer: new ArrayBuffer(0),
+            name: 'test.pak'
+        });
+
+        const file = {
+            arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(100)),
+            name: 'test.pak'
+        } as unknown as File;
+
+        await service.loadPakFile(file);
+
+        expect(mockCacheService.get).toHaveBeenCalled();
+        expect(mockPakParser.parsePak).toHaveBeenCalled();
+        expect(mockCacheService.set).toHaveBeenCalled();
     });
 });

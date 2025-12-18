@@ -30,8 +30,9 @@ describe('Asset Worker Integration', () => {
             animations: []
         });
 
-        (workerService.getAssetProcessor as jest.Mock).mockReturnValue({
-            processMd2: mockProcessMd2
+        (workerService.executeAssetProcessorTask as jest.Mock).mockImplementation(async (cb: any) => {
+            const api = { processMd2: mockProcessMd2 };
+            return cb(api);
         });
 
         // PakService.parseFile calls readFile.
@@ -49,8 +50,9 @@ describe('Asset Worker Integration', () => {
 
         const mockProcessMd2 = jest.fn().mockRejectedValue(new Error("Worker fail"));
 
-        (workerService.getAssetProcessor as jest.Mock).mockReturnValue({
-            processMd2: mockProcessMd2
+        (workerService.executeAssetProcessorTask as jest.Mock).mockImplementation(async (cb: any) => {
+            const api = { processMd2: mockProcessMd2 };
+            return cb(api);
         });
 
         // Real quake2ts parseMd2 will fail on empty/bad buffer

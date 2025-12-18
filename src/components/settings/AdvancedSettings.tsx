@@ -1,6 +1,7 @@
 import React from 'react';
 import { AdvancedSettings } from '@/src/types/settings';
 import { settingsService } from '@/src/services/settingsService';
+import { cacheService } from '@/src/services/cacheService';
 
 interface AdvancedSettingsTabProps {
   settings: AdvancedSettings;
@@ -12,19 +13,43 @@ export function AdvancedSettingsTab({ settings, onChange }: AdvancedSettingsTabP
     onChange({ [key]: value });
   };
 
+  const handleClearCache = async () => {
+    try {
+      await cacheService.clearAll();
+      alert('Cache cleared successfully.');
+    } catch (e) {
+      console.error('Failed to clear cache', e);
+      alert('Failed to clear cache.');
+    }
+  };
+
   const handleClearData = async () => {
     if (confirm('DANGER: This will delete all saved games, demos, settings, and cached files. This action cannot be undone. Are you sure?')) {
         try {
             // Clear localStorage (except critical if needed, but "Reset all data" implies all)
             localStorage.clear();
 
+            // Close connections to allow deletion
+            cacheService.close();
+
             // Clear IndexedDB (paks, etc)
-            const dbs = ['Quake2TS', 'Quake2TS-Saves', 'Quake2TS-Demos']; // Known DB names
-            for (const dbName of dbs) {
+            const dbs = ['Quake2TS', 'Quake2TS-Saves', 'Quake2TS-Demos', 'quake2ts-cache']; // Known DB names
+
+            await Promise.all(dbs.map(dbName => new Promise<void>((resolve) => {
                 const req = indexedDB.deleteDatabase(dbName);
-                req.onerror = () => console.error(`Failed to delete database ${dbName}`);
-                req.onsuccess = () => console.log(`Deleted database ${dbName}`);
-            }
+                req.onerror = () => {
+                    console.error(`Failed to delete database ${dbName}`);
+                    resolve();
+                };
+                req.onsuccess = () => {
+                    console.log(`Deleted database ${dbName}`);
+                    resolve();
+                };
+                req.onblocked = () => {
+                    console.warn(`Database ${dbName} deletion blocked`);
+                    resolve();
+                };
+            })));
 
             alert('All data cleared. The application will now reload.');
             window.location.reload();
@@ -100,6 +125,18 @@ export function AdvancedSettingsTab({ settings, onChange }: AdvancedSettingsTabP
               value={settings.cacheSizeLimit}
               onChange={(e) => handleChange('cacheSizeLimit', parseInt(e.target.value))}
             />
+          </div>
+        </div>
+
+        <div className="setting-item">
+          <div className="setting-label">
+            <span className="setting-name">Clear Cache</span>
+            <span className="setting-description">Free up storage space by deleting cached assets</span>
+          </div>
+          <div className="setting-control">
+             <button className="btn btn-secondary" onClick={handleClearCache}>
+                 Clear Cache
+             </button>
           </div>
         </div>
 

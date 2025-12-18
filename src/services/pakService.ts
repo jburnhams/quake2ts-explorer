@@ -1,5 +1,6 @@
 import { MOD_PRIORITY } from '../types/modInfo';
 import { workerService } from './workerService';
+import { cacheService, CACHE_STORES } from './cacheService';
 import { WorkerPakArchive } from '../utils/WorkerPakArchive';
 import {
   PakArchive,
@@ -145,6 +146,7 @@ export interface MountedPak {
   archive: PakArchive;
   isUser: boolean;
   priority: number;
+  hash?: string;
 }
 
 export type ViewMode = 'merged' | 'by-pak';
@@ -164,42 +166,66 @@ export class PakService {
 
   async loadPakFile(file: File, id?: string, isUser: boolean = true, priority: number = 100): Promise<PakArchive> {
     const buffer = await file.arrayBuffer();
-    const pakId = id || crypto.randomUUID();
-
-    try {
-      const result = await workerService.getPakParser().parsePak(pakId, buffer);
-
-      // @ts-ignore
-      const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
-      this.mountPak(archive, pakId, file.name, isUser, priority);
-      return archive;
-    } catch (error) {
-      console.warn('Worker parsing failed, falling back to main thread', error);
-      const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-      this.mountPak(archive, pakId, file.name, isUser, priority);
-      return archive;
-    }
+    return this.loadPakInternal(file.name, buffer, id, isUser, priority);
   }
 
   async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false, priority: number = 0): Promise<PakArchive> {
+    return this.loadPakInternal(name, buffer, id, isUser, priority);
+  }
+
+  private async loadPakInternal(name: string, buffer: ArrayBuffer, id: string | undefined, isUser: boolean, priority: number): Promise<PakArchive> {
     const pakId = id || crypto.randomUUID();
 
+    // Try to load from cache
+    let hash: string | null = null;
     try {
-      const result = await workerService.getPakParser().parsePak(pakId, buffer);
+      const size = buffer.byteLength;
+      // Read first 64KB for hash computation
+      const chunk = new Uint8Array(buffer, 0, Math.min(size, 64 * 1024));
+
+      // Compute SHA-256 hash
+      const hashBuffer = await crypto.subtle.digest('SHA-256', chunk);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Combine with size and name for uniqueness
+      hash = `${hashHex}_${size}_${name}`;
+
+      const cachedEntries = await cacheService.get<Map<string, any>>(CACHE_STORES.PAK_INDEX, hash);
+      if (cachedEntries) {
+        // @ts-ignore
+        const archive = new WorkerPakArchive(name, buffer, cachedEntries) as unknown as PakArchive;
+        this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
+        return archive;
+      }
+    } catch (e) {
+      console.warn('Cache lookup failed', e);
+    }
+
+    try {
+      const result = await workerService.executePakParserTask(api => api.parsePak(pakId, buffer));
+
+      // Cache the result
+      if (hash) {
+        cacheService.set(CACHE_STORES.PAK_INDEX, hash, result.entries).catch(e =>
+          console.warn('Failed to cache pak index', e)
+        );
+      }
+
       // @ts-ignore
       const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
-      this.mountPak(archive, pakId, name, isUser, priority);
+      this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     } catch (error) {
       console.warn('Worker parsing failed, falling back to main thread', error);
       const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-      this.mountPak(archive, pakId, name, isUser, priority);
+      this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     }
   }
 
-  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number) {
-    this.paks.set(id, { id, name, archive, isUser, priority });
+  private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number, hash?: string) {
+    this.paks.set(id, { id, name, archive, isUser, priority, hash });
     this.vfs.mountPak(archive, priority);
     this.tryLoadPalette();
   }
@@ -320,45 +346,64 @@ export class PakService {
   }
 
   async parseFile(path: string): Promise<ParsedFile> {
+    const fileType = getFileType(path);
+
+    // Check cache for expensive assets
+    let cacheKey: string | null = null;
+    if (['md2', 'md3', 'bsp'].includes(fileType)) {
+      const stat = this.vfs.stat(path);
+      if (stat) {
+        const pak = this.paks.get(stat.sourcePak);
+        if (pak && pak.hash) {
+          cacheKey = `${pak.hash}:${path}`;
+          try {
+            const cached = await cacheService.get<ParsedFile>(CACHE_STORES.ASSET_METADATA, cacheKey);
+            if (cached) return cached;
+          } catch (e) { /* ignore */ }
+        }
+      }
+    }
+
     const data = await this.readFile(path);
     const buffer = toArrayBuffer(data);
-    const fileType = getFileType(path);
 
     if (fileType === 'txt' || fileType === 'dm2' || fileType === 'unknown') {
          return this.parseFileFallback(path, buffer, fileType, data);
     }
 
     try {
-      const worker = workerService.getAssetProcessor();
       let result: any;
 
       switch (fileType) {
         case 'pcx':
-          result = await worker.processPcx(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processPcx(buffer));
           break;
         case 'wal':
-          result = await worker.processWal(buffer, this.palette);
+          result = await workerService.executeAssetProcessorTask(api => api.processWal(buffer, this.palette));
           break;
         case 'tga':
-          result = await worker.processTga(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processTga(buffer));
           break;
         case 'md2':
-          result = await worker.processMd2(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processMd2(buffer));
           break;
         case 'md3':
-          result = await worker.processMd3(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processMd3(buffer));
           break;
         case 'sp2':
-          result = await worker.processSp2(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processSp2(buffer));
           break;
         case 'wav':
-          result = await worker.processWav(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processWav(buffer));
           break;
         case 'bsp':
-          result = await worker.processBsp(buffer);
+          result = await workerService.executeAssetProcessorTask(api => api.processBsp(buffer));
           break;
         default:
            return this.parseFileFallback(path, buffer, fileType, data);
+      }
+      if (cacheKey && result) {
+        cacheService.set(CACHE_STORES.ASSET_METADATA, cacheKey, result).catch(e => console.warn(e));
       }
       return result as ParsedFile;
     } catch (e) {
