@@ -3,6 +3,31 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FileTree } from '@/src/components/FileTree';
 import type { TreeNode } from '@/src/services/pakService';
+import React from 'react';
+
+// Mock AutoSizer to render children with fixed dimensions
+jest.mock('react-virtualized-auto-sizer', () => {
+  return ({ children }: any) => {
+    return children({ height: 500, width: 500 });
+  };
+});
+
+// Mock react-window (v2) to render all items
+jest.mock('react-window', () => {
+  const React = require('react');
+  return {
+    List: ({ rowComponent, rowProps, rowCount }: any) => {
+      const Row = rowComponent;
+      return (
+        <div data-testid="virtual-list">
+          {Array.from({ length: rowCount }).map((_, index) => (
+            <Row key={index} index={index} style={{}} {...rowProps} />
+          ))}
+        </div>
+      );
+    },
+  };
+});
 
 const mockTree: TreeNode = {
   name: 'root',
