@@ -10,6 +10,56 @@ interface DemoTimelineProps {
   onExtractClip?: (start: number, end: number) => void;
 }
 
+const ThumbnailStrip = React.memo(({ duration, zoomLevel, zoomOffset, width }: { duration: number, zoomLevel: number, zoomOffset: number, width: number }) => {
+  const visibleDuration = duration / zoomLevel;
+
+  // Calculate interval to get roughly 100px per thumbnail
+  let interval = 1;
+  if (width > 0 && visibleDuration > 0) {
+      const pixelsPerSecond = width / visibleDuration;
+      const targetInterval = 100 / pixelsPerSecond;
+
+      const intervals = [1, 2, 5, 10, 15, 30, 60];
+      interval = intervals.find(i => i >= targetInterval) || 60;
+  }
+
+  const startIdx = Math.floor(zoomOffset / interval);
+  const endIdx = Math.ceil((zoomOffset + visibleDuration) / interval);
+
+  const thumbnails = [];
+  for (let i = startIdx; i < endIdx; i++) {
+      const time = i * interval;
+      if (time > duration) break;
+
+      const leftPercent = ((time - zoomOffset) / visibleDuration) * 100;
+      const widthPercent = (interval / visibleDuration) * 100;
+
+      // Don't render if completely out of view (sanity check)
+      if (leftPercent + widthPercent < 0 || leftPercent > 100) continue;
+
+      thumbnails.push(
+          <div
+            key={time}
+            className="timeline-thumbnail"
+            style={{
+                left: `${leftPercent}%`,
+                width: `${widthPercent}%`
+            }}
+          >
+              <div className="thumb-placeholder">
+                  {Math.floor(time)}s
+              </div>
+          </div>
+      );
+  }
+
+  return (
+    <div className="thumbnail-strip">
+        {thumbnails}
+    </div>
+  );
+});
+
 export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick, onExtractClip }: DemoTimelineProps) {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -30,6 +80,24 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick, onEx
 
   const trackRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef<number>(0);
+
+  const [trackWidth, setTrackWidth] = useState(0);
+
+  // Measure width
+  useEffect(() => {
+    const handleResize = () => {
+        if (trackRef.current) {
+            setTrackWidth(trackRef.current.clientWidth);
+        }
+    };
+    window.addEventListener('resize', handleResize);
+    // Initial measurement
+    handleResize();
+    // Also try slightly later in case layout shifts
+    setTimeout(handleResize, 100);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Format time as mm:ss.ms
   const formatTime = (seconds: number) => {
@@ -272,9 +340,9 @@ export function DemoTimeline({ controller, bookmarks = [], onBookmarkClick, onEx
         onMouseLeave={handleMouseLeaveTrack}
         title={hoverTime !== null ? formatTime(hoverTime) : ''}
       >
-        <div className="timeline-track">
-            {/* Viewport markers/ticks could go here */}
+        <ThumbnailStrip duration={duration} zoomLevel={zoomLevel} zoomOffset={zoomOffset} width={trackWidth} />
 
+        <div className="timeline-track">
             {/* Selection Range */}
             {selectionStart !== null && selectionEnd !== null && (
                 <div

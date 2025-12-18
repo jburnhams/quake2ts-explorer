@@ -1,5 +1,6 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
+import { List, RowComponentProps } from 'react-window';
+import AutoSizer from 'react-virtualized-auto-sizer';
 import { PakService } from '../services/pakService';
 import { EntityService, EntityRecord } from '../services/entityService';
 import { EntityInspector } from './EntityInspector';
@@ -11,6 +12,35 @@ interface EntityDatabaseProps {
 
 type SortField = 'classname' | 'targetname' | 'mapName' | 'index';
 type SortOrder = 'asc' | 'desc';
+
+interface RowData {
+  entities: EntityRecord[];
+  selectedId: string | undefined;
+  onSelect: (ent: EntityRecord) => void;
+}
+
+const Row = ({ index, style, entities, selectedId, onSelect }: RowComponentProps<RowData>) => {
+  const ent = entities[index];
+
+  return (
+    <div style={style}>
+      <div
+        className={`entity-row ${selectedId === ent.id ? 'selected' : ''}`}
+        onClick={() => onSelect(ent)}
+        style={{ height: '100%', display: 'flex', alignItems: 'center' }}
+      >
+        <div className="entity-cell cell-classname" title={ent.classname}>{ent.classname}</div>
+        <div className="entity-cell cell-targetname" title={ent.targetname || ''}>{ent.targetname || '-'}</div>
+        <div className="entity-cell cell-origin">
+          {ent.origin
+            ? `${ent.origin.x.toFixed(0)}, ${ent.origin.y.toFixed(0)}, ${ent.origin.z.toFixed(0)}`
+            : '-'}
+        </div>
+        <div className="entity-cell cell-map" title={ent.mapName}>{ent.mapName}</div>
+      </div>
+    </div>
+  );
+};
 
 export const EntityDatabase: React.FC<EntityDatabaseProps> = ({ pakService }) => {
   const [loading, setLoading] = useState(false);
@@ -110,6 +140,12 @@ export const EntityDatabase: React.FC<EntityDatabaseProps> = ({ pakService }) =>
     return sortOrder === 'asc' ? 'sort-asc' : 'sort-desc';
   };
 
+  const itemData: RowData = {
+    entities: sortedEntities,
+    selectedId: selectedEntity?.id,
+    onSelect: setSelectedEntity
+  };
+
   return (
     <div className="entity-database-container">
       {loading && (
@@ -198,26 +234,21 @@ export const EntityDatabase: React.FC<EntityDatabaseProps> = ({ pakService }) =>
             </div>
           </div>
 
-          <div className="entity-table-body">
+          <div className="entity-table-body" style={{ flex: 1, overflow: 'hidden' }}>
             {sortedEntities.length === 0 ? (
                <div className="empty-state">No entities found matching criteria</div>
             ) : (
-              sortedEntities.map(ent => (
-                <div
-                  key={ent.id}
-                  className={`entity-row ${selectedEntity?.id === ent.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedEntity(ent)}
-                >
-                  <div className="entity-cell cell-classname" title={ent.classname}>{ent.classname}</div>
-                  <div className="entity-cell cell-targetname" title={ent.targetname || ''}>{ent.targetname || '-'}</div>
-                  <div className="entity-cell cell-origin">
-                    {ent.origin
-                      ? `${ent.origin.x.toFixed(0)}, ${ent.origin.y.toFixed(0)}, ${ent.origin.z.toFixed(0)}`
-                      : '-'}
-                  </div>
-                  <div className="entity-cell cell-map" title={ent.mapName}>{ent.mapName}</div>
-                </div>
-              ))
+              <AutoSizer>
+                {({ height, width }) => (
+                  <List<RowData>
+                    style={{ height, width }}
+                    rowCount={sortedEntities.length}
+                    rowHeight={35}
+                    rowProps={itemData}
+                    rowComponent={Row}
+                  />
+                )}
+              </AutoSizer>
             )}
           </div>
         </div>

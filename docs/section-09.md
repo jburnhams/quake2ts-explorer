@@ -165,18 +165,18 @@ Optimize application performance to ensure smooth experience even with large PAK
 
 #### Subtasks
 
-- [ ] **3.1**: Implement virtual file tree
+- [x] **3.1**: Implement virtual file tree
   - Modify `src/components/FileTree.tsx`
-  - Use `react-window` or `react-virtualized`
+  - Use `react-window`
   - Render only visible tree nodes
   - Calculate heights dynamically (tree nodes have varying heights)
 
-- [ ] **3.2**: Implement virtual entity list
+- [x] **3.2**: Implement virtual entity list
   - For entity database (Section 05)
   - Render only visible rows in table
   - Support variable row heights (for expanded details)
 
-- [ ] **3.3**: Implement virtual timeline
+- [x] **3.3**: Implement virtual timeline
   - For demo timeline (Section 03)
   - Render only visible thumbnails
   - Load thumbnails on-demand as user scrolls
