@@ -68,7 +68,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - Thumbnail generation for demo timeline (Section 03)
   - Model geometry processing
 
-- [ ] **1.5**: Create search/indexing worker
+- [x] **1.5**: Create search/indexing worker
   - `src/workers/indexer.worker.ts`
   - Build search index for file tree
   - Cross-reference assets (Section 05)

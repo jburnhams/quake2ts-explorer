@@ -15,4 +15,11 @@ describe('WorkerService', () => {
     // Assuming poolSize > 1
     expect(worker1).not.toBe(worker2);
   });
+
+  it('should return singleton indexer worker', () => {
+    const indexer1 = workerService.getIndexer();
+    const indexer2 = workerService.getIndexer();
+    expect(indexer1).toBeDefined();
+    expect(indexer1).toBe(indexer2);
+  });
 });
