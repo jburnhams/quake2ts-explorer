@@ -4,11 +4,19 @@ import { render, screen, fireEvent, act, waitFor } from '@testing-library/react'
 import { TextureAtlas } from '../../../src/components/TextureAtlas';
 import { AssetCrossRefService } from '../../../src/services/assetCrossRefService';
 import { pakService } from '../../../src/services/pakService';
+import { thumbnailService } from '../../../src/services/thumbnailService';
 import { Md2Model, Md3Model } from 'quake2ts/engine';
 
 // Mock dependencies
 jest.mock('../../../src/services/assetCrossRefService');
 jest.mock('../../../src/services/pakService');
+jest.mock('../../../src/services/thumbnailService', () => ({
+  thumbnailService: {
+    getThumbnail: jest.fn(),
+    saveThumbnail: jest.fn(),
+    generateThumbnail: jest.fn()
+  }
+}));
 
 // Mock HTMLCanvasElement.getContext
 const mockContext = {
@@ -131,5 +139,18 @@ describe('TextureAtlas', () => {
     render(<TextureAtlas {...defaultProps} palette={palette} />);
 
     expect(screen.getByTestId('palette-grid')).toBeInTheDocument();
+  });
+
+  it('caches thumbnail on load', async () => {
+    (thumbnailService.getThumbnail as jest.Mock).mockResolvedValue(undefined);
+    (thumbnailService.generateThumbnail as jest.Mock).mockResolvedValue(new Blob(['thumb']));
+
+    render(<TextureAtlas {...defaultProps} />);
+
+    await waitFor(() => {
+        expect(thumbnailService.getThumbnail).toHaveBeenCalledWith('texture:test.pcx');
+        expect(thumbnailService.generateThumbnail).toHaveBeenCalled();
+        expect(thumbnailService.saveThumbnail).toHaveBeenCalledWith('texture:test.pcx', expect.any(Blob));
+    });
   });
 });

@@ -125,7 +125,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - If hit: Load index from cache (instant)
   - If miss: Parse PAK, store index in cache
 
-- [ ] **2.4**: Implement thumbnail caching
+- [x] **2.4**: Implement thumbnail caching
   - When generating thumbnails (demo timeline, texture atlas)
   - Store as base64 or Blob in IndexedDB
   - Load from cache on subsequent views
@@ -137,7 +137,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - Cache entity lists
   - Invalidate on PAK change
 
-- [ ] **2.6**: Add cache management UI
+- [x] **2.6**: Add cache management UI
   - Settings panel: Show cache size per store
   - "Clear Cache" button per store
   - "Clear All" button

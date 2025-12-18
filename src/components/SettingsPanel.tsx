@@ -8,15 +8,18 @@ import { AudioSettingsTab } from './settings/AudioSettings';
 import { ControlsSettingsTab } from './settings/ControlsSettings';
 import { AccessibilitySettingsTab } from './settings/AccessibilitySettings';
 import { AdvancedSettingsTab } from './settings/AdvancedSettings';
+import { CacheSettingsTab } from './settings/CacheSettings';
 import { KeybindingEditor } from './KeybindingEditor';
+
+type SettingsTab = keyof AppSettings | 'cache';
 
 interface SettingsPanelProps {
   onClose: () => void;
-  initialTab?: keyof AppSettings;
+  initialTab?: SettingsTab;
 }
 
 export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanelProps) {
-  const [activeTab, setActiveTab] = useState<keyof AppSettings>(initialTab);
+  const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
   const [settings, setSettings] = useState<AppSettings>(settingsService.getSettings());
   const [hasChanges, setHasChanges] = useState(false);
   const [showKeybindings, setShowKeybindings] = useState(false);
@@ -101,6 +104,8 @@ export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanel
             onChange={(updates) => handleUpdate('advanced', updates)}
           />
         );
+      case 'cache':
+        return <CacheSettingsTab />;
       default:
         return <div>Unknown tab</div>;
     }
@@ -163,6 +168,13 @@ export function SettingsPanel({ onClose, initialTab = 'general' }: SettingsPanel
               data-testid="tab-advanced"
             >
               Advanced
+            </button>
+            <button
+              className={`settings-tab-button ${activeTab === 'cache' ? 'active' : ''}`}
+              onClick={() => setActiveTab('cache')}
+              data-testid="tab-cache"
+            >
+              Cache
             </button>
           </nav>
 

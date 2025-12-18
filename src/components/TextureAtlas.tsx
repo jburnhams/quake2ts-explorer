@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import './TextureAtlas.css';
 import { AssetCrossRefService, AssetUsage } from '../services/assetCrossRefService';
 import { pakService, ParsedMd2, ParsedMd3 } from '../services/pakService';
+import { thumbnailService } from '../services/thumbnailService';
 
 export interface TextureAtlasProps {
   rgba: Uint8Array;
@@ -60,7 +61,27 @@ export function TextureAtlas({ rgba, width, height, format, name, palette, mipma
     const imageData = ctx.createImageData(width, height);
     imageData.data.set(rgba);
     ctx.putImageData(imageData, 0, 0);
-  }, [rgba, width, height]);
+
+    // Cache thumbnail
+    const cacheThumbnail = async () => {
+       const key = `texture:${name}`;
+       try {
+           // We don't need to check exists really, set overwrites and updates LRU
+           // But checking avoids re-generation CPU cost
+           const exists = await thumbnailService.getThumbnail(key);
+           if (!exists) {
+               const thumb = await thumbnailService.generateThumbnail(canvas);
+               if (thumb) {
+                   await thumbnailService.saveThumbnail(key, thumb);
+               }
+           }
+       } catch (e) {
+           console.warn('Failed to cache thumbnail', e);
+       }
+    };
+    cacheThumbnail();
+
+  }, [rgba, width, height, name]);
 
   // Handle usage selection and UV extraction
   useEffect(() => {
