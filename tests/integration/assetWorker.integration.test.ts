@@ -1,0 +1,62 @@
+
+import { workerService } from '../../src/services/workerService';
+import { PakService, getPakService, resetPakService } from '../../src/services/pakService';
+import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
+jest.mock('../../src/services/workerService');
+
+describe('Asset Worker Integration', () => {
+    let service: PakService;
+
+    beforeEach(() => {
+        resetPakService();
+        service = getPakService();
+        jest.clearAllMocks();
+    });
+
+    it('should process MD2 using asset worker', async () => {
+        const dummyBuffer = new ArrayBuffer(100);
+
+        // Mock VFS to return file content
+        const mockReadFile = jest.fn().mockResolvedValue(new Uint8Array(dummyBuffer));
+        // We need to spy on or mock vfs methods. vfs is public.
+        service.vfs.readFile = mockReadFile;
+        service.vfs.stat = jest.fn().mockReturnValue({ path: 'models/test.md2', size: 100, sourcePak: 'id1' });
+
+        // Mock worker response
+        const mockProcessMd2 = jest.fn().mockResolvedValue({
+            type: 'md2',
+            model: { header: { numFrames: 1 } },
+            animations: []
+        });
+
+        (workerService.getAssetProcessor as jest.Mock).mockReturnValue({
+            processMd2: mockProcessMd2
+        });
+
+        // PakService.parseFile calls readFile.
+        const result = await service.parseFile('models/test.md2');
+
+        expect(mockProcessMd2).toHaveBeenCalled();
+        expect(result.type).toBe('md2');
+    });
+
+    it('should fallback if worker fails', async () => {
+        const dummyBuffer = new ArrayBuffer(100);
+
+        const mockReadFile = jest.fn().mockResolvedValue(new Uint8Array(dummyBuffer));
+        service.vfs.readFile = mockReadFile;
+
+        const mockProcessMd2 = jest.fn().mockRejectedValue(new Error("Worker fail"));
+
+        (workerService.getAssetProcessor as jest.Mock).mockReturnValue({
+            processMd2: mockProcessMd2
+        });
+
+        // Real quake2ts parseMd2 will fail on empty/bad buffer
+        const result = await service.parseFile('models/test.md2');
+
+        expect(mockProcessMd2).toHaveBeenCalled();
+        expect(result.type).toBe('unknown');
+    });
+});

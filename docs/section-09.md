@@ -25,9 +25,10 @@ Optimize application performance to ensure smooth experience even with large PAK
 - Basic asset caching in `pakService.ts`
 - React.lazy for some code splitting
 - Performance metrics in Section 04 (display only)
+- Web Worker for PAK parsing
+- Web Worker for asset processing (textures, models)
 
 **Missing**:
-- Web Worker integration
 - Persistent caching (IndexedDB)
 - Lazy loading for lists
 - Memory management strategies
@@ -61,7 +62,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - Receive parsed directory
   - Show progress during parsing
 
-- [ ] **1.4**: Create asset processing worker
+- [x] **1.4**: Create asset processing worker
   - `src/workers/assetProcessor.worker.ts`
   - Process textures (palette application, mipmap generation)
   - Thumbnail generation for demo timeline (Section 03)
