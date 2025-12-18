@@ -25,8 +25,9 @@ describe('PakService with Worker Integration', () => {
             name: 'test-pak'
         });
 
-        (workerService.getPakParser as jest.Mock).mockReturnValue({
-            parsePak: mockParsePak
+        (workerService.executePakParserTask as jest.Mock).mockImplementation(async (cb: any) => {
+            const api = { parsePak: mockParsePak };
+            return cb(api);
         });
 
         const file = {
@@ -61,8 +62,9 @@ describe('PakService with Worker Integration', () => {
 
         const mockParsePak = jest.fn().mockRejectedValue(new Error('Worker crashed'));
 
-        (workerService.getPakParser as jest.Mock).mockReturnValue({
-            parsePak: mockParsePak
+        (workerService.executePakParserTask as jest.Mock).mockImplementation(async (cb: any) => {
+            const api = { parsePak: mockParsePak };
+            return cb(api);
         });
 
         const file = {
