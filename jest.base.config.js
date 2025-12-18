@@ -21,6 +21,8 @@ const baseConfig = {
     '^@quake2ts/engine$': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
     '^@quake2ts/shared$': '<rootDir>/node_modules/quake2ts/packages/shared/dist/esm/index.js',
     '^@quake2ts/server$': '<rootDir>/node_modules/quake2ts/packages/server/dist/esm/index.js',
+    '^quake2ts/test-utils$': '<rootDir>/node_modules/quake2ts/packages/test-utils/dist/index.cjs',
+    '^vitest$': '<rootDir>/tests/utils/vitestMock.js',
   },
   transform: {
     '^.+\\.(ts|tsx|js|jsx)$': [
