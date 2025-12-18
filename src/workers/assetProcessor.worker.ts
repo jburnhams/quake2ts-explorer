@@ -23,7 +23,7 @@ const processPcx = (buffer: ArrayBuffer) => {
     rgba,
     width: image.width,
     height: image.height
-  }, [rgba.buffer]);
+  }, [rgba.buffer as ArrayBuffer]);
 };
 
 const processWal = (buffer: ArrayBuffer, palette: Uint8Array | null) => {
@@ -36,11 +36,12 @@ const processWal = (buffer: ArrayBuffer, palette: Uint8Array | null) => {
     const prepared = walToRgba(texture, palette);
     if (prepared.levels && prepared.levels.length > 0) {
         rgba = prepared.levels[0].rgba;
-        mipmaps = prepared.levels;
+        mipmaps = [...prepared.levels]; // Create mutable copy
 
         for (const level of prepared.levels) {
             if (level.rgba && level.rgba.buffer) {
-                transferables.push(level.rgba.buffer);
+                // Cast to ArrayBuffer (quake2ts uses ArrayBuffer, not SharedArrayBuffer)
+                transferables.push(level.rgba.buffer as ArrayBuffer);
             }
         }
     }
@@ -64,7 +65,7 @@ const processTga = (buffer: ArrayBuffer) => {
     rgba: image.pixels,
     width: image.width,
     height: image.height
-  }, [image.pixels.buffer]);
+  }, [image.pixels.buffer as ArrayBuffer]);
 };
 
 const processMd2 = (buffer: ArrayBuffer) => {
@@ -95,7 +96,6 @@ const processSp2 = (buffer: ArrayBuffer) => {
 
 const processWav = (buffer: ArrayBuffer) => {
   const audio = parseWav(buffer);
-  // Assuming audio contains TypedArrays which are cloneable
   return {
     type: 'wav',
     audio
