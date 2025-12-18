@@ -20,16 +20,18 @@ class MockWebSocket {
 // Mock NetChan
 jest.mock('quake2ts/shared', () => {
   const actual = jest.requireActual('quake2ts/shared') as any;
+  // We can't import strictly from test-utils here easily if it's not a standard module,
+  // but we set up the alias in jest config.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { createNetChanMock } = require('quake2ts/test-utils');
   return {
     ...actual,
-    NetChan: jest.fn().mockImplementation(() => ({
-      setup: jest.fn(),
-      reset: jest.fn(),
-      transmit: jest.fn().mockReturnValue(new Uint8Array([1, 2, 3])),
-      process: jest.fn(),
-      writeReliableByte: jest.fn(),
-      writeReliableString: jest.fn(),
-    })),
+    NetChan: jest.fn().mockImplementation(() => {
+        const mock = createNetChanMock();
+        // Override default transmit to match test expectations
+        mock.transmit.mockReturnValue(new Uint8Array([1, 2, 3]));
+        return mock;
+    }),
   };
 });
 
