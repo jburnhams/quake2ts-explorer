@@ -9,6 +9,30 @@ import { VirtualFileSystem, BspMap } from 'quake2ts/engine';
 import { GameSimulation, GameStateSnapshot } from 'quake2ts/game';
 import { indexedDBService } from '../../src/services/indexedDBService';
 
+// Mock AutoSizer to render children with fixed dimensions
+jest.mock('react-virtualized-auto-sizer', () => {
+  return ({ children }: any) => {
+    return children({ height: 500, width: 500 });
+  };
+});
+
+// Mock react-window (v2) to render all items
+jest.mock('react-window', () => {
+  const React = require('react');
+  return {
+    List: ({ rowComponent, rowProps, rowCount }: any) => {
+      const Row = rowComponent;
+      return (
+        <div data-testid="virtual-list">
+          {Array.from({ length: rowCount }).map((_, index) => (
+            <Row key={index} index={index} style={{}} {...rowProps} />
+          ))}
+        </div>
+      );
+    },
+  };
+});
+
 // Mock dependencies
 jest.mock('../../src/services/pakService');
 jest.mock('../../src/services/gameService');
