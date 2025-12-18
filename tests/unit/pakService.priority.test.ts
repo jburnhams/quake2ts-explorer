@@ -6,13 +6,17 @@ import { workerService } from '../../src/services/workerService';
 // Mock worker service to return immediate result
 jest.mock('../../src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(() => ({
-            parsePak: jest.fn(async (name: string) => ({
-                entries: new Map(),
-                buffer: new ArrayBuffer(0),
-                name
-            }))
-        }))
+        getPakParser: jest.fn(),
+        executePakParserTask: jest.fn(async (cb: any) => {
+            const api = {
+                parsePak: async (id: string, buffer: ArrayBuffer) => ({
+                    entries: new Map(),
+                    buffer: new ArrayBuffer(0),
+                    name: id
+                })
+            };
+            return cb(api);
+        })
     }
 }));
 

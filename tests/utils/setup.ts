@@ -55,6 +55,14 @@ if (!global.crypto.getRandomValues) {
     };
 }
 
+// Mock crypto.subtle
+if (!global.crypto.subtle) {
+    // @ts-ignore
+    global.crypto.subtle = {
+        digest: jest.fn().mockResolvedValue(new ArrayBuffer(32))
+    };
+}
+
 // Ensure performance API is initialized
 if (typeof performance === 'undefined') {
     // @ts-ignore

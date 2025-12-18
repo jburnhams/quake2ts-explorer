@@ -74,7 +74,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - Cross-reference assets (Section 05)
   - Return queryable index
 
-- [ ] **1.6**: Handle worker errors
+- [x] **1.6**: Handle worker errors
   - Timeout detection (kill worker if unresponsive)
   - Fallback to main thread if worker fails
   - Error reporting to user
@@ -103,7 +103,7 @@ Optimize application performance to ensure smooth experience even with large PAK
 
 #### Subtasks
 
-- [ ] **2.1**: Design cache schema
+- [x] **2.1**: Design cache schema
   - Database: `quake2ts-explorer`
   - Object stores:
     - `pak-index`: PAK file metadata and directory (keyed by file hash)
@@ -111,7 +111,7 @@ Optimize application performance to ensure smooth experience even with large PAK
     - `asset-metadata`: Parsed asset metadata (keyed by asset path)
     - `demo-index`: Demo frame indexes (keyed by demo file hash)
 
-- [ ] **2.2**: Create IndexedDB service
+- [x] **2.2**: Create IndexedDB service
   - `src/services/cacheService.ts`
   - `init(): Promise<IDBDatabase>`
   - `set(store: string, key: string, value: any): Promise<void>`
@@ -119,7 +119,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - `delete(store: string, key: string): Promise<void>`
   - `clear(store: string): Promise<void>`
 
-- [ ] **2.3**: Implement PAK index caching
+- [x] **2.3**: Implement PAK index caching
   - On PAK load, compute hash (e.g., SHA-256 of first 64KB + file size)
   - Check cache for existing index
   - If hit: Load index from cache (instant)
@@ -131,7 +131,7 @@ Optimize application performance to ensure smooth experience even with large PAK
   - Load from cache on subsequent views
   - Expire old thumbnails (LRU, max 100MB)
 
-- [ ] **2.5**: Implement asset metadata caching
+- [x] **2.5**: Implement asset metadata caching
   - Cache parsed MD2/MD3 animation data
   - Cache BSP statistics (from Section 05)
   - Cache entity lists
