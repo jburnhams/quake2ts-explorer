@@ -2,9 +2,11 @@
 import { PakService, getPakService, resetPakService } from '@/src/services/pakService';
 import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
 import { MOD_PRIORITY } from '@/src/types/modInfo';
+import { describe, it, expect, beforeEach } from '@jest/globals';
 
 // Mock dependencies
 jest.mock('quake2ts/engine', () => {
+    const { jest } = require('@jest/globals');
     return {
         PakArchive: {
             fromArrayBuffer: jest.fn().mockReturnValue({})
@@ -32,48 +34,56 @@ jest.mock('quake2ts/engine', () => {
     };
 });
 
+jest.mock('@/src/services/workerService', () => {
+    const { jest } = require('@jest/globals');
+    return {
+        workerService: {
+            getPakParser: jest.fn().mockReturnValue({
+                parsePak: jest.fn()
+            }),
+            getAssetProcessor: jest.fn().mockReturnValue({
+                processPcx: jest.fn(),
+                processWal: jest.fn(),
+                processTga: jest.fn(),
+                processMd2: jest.fn(),
+                processMd3: jest.fn(),
+                processSp2: jest.fn(),
+                processWav: jest.fn(),
+                processBsp: jest.fn()
+            })
+        }
+    };
+});
+
 describe('PakService Coverage', () => {
     let service: PakService;
     let mockVfs: any;
 
     beforeEach(() => {
         resetPakService();
+        jest.clearAllMocks();
         service = getPakService();
         mockVfs = service.getVfs();
-        jest.clearAllMocks();
     });
 
     it('should handle unloadPak with VFS rebuild fallback', () => {
-        // Mock VFS without unmountPak/setPriority to force rebuild path?
-        // Actually the mock above has them. Let's create a service with a "dumb" VFS.
         const dumbVfs = {
             mountPak: jest.fn(),
             hasFile: jest.fn(),
-            // No unmountPak
         } as unknown as VirtualFileSystem;
 
         const dumbService = new PakService(dumbVfs);
-
-        // Load a pak manually into state (bypassing loadPakFile which needs File)
         const archive = {};
         (dumbService as any).mountPak(archive, 'id1', 'test.pak', true, 100);
 
-        // Unload
         dumbService.unloadPak('id1');
-
-        // Should have triggered rebuild -> new VFS
-        // Since we can't easily check if VFS instance changed without exposing it,
-        // we can check if it tried to mount remaining paks (none here)
-        // or check if paks map is empty.
         expect(dumbService.getMountedPaks()).toHaveLength(0);
     });
 
     it('should update pak priority using setPriority if available', () => {
         const archive = {};
         (service as any).mountPak(archive, 'id1', 'test.pak', true, 100);
-
         service.updatePakPriority('id1', 200);
-
         expect(mockVfs.setPriority).toHaveBeenCalledWith(archive, 200);
     });
 
@@ -96,11 +106,9 @@ describe('PakService Coverage', () => {
         const { parsePcx } = require('quake2ts/engine');
         parsePcx.mockReturnValue({ palette: new Uint8Array(768) });
 
-        // Trigger palette load via mount (it calls tryLoadPalette)
         const archive = {};
         (service as any).mountPak(archive, 'id1', 'pak.pak', false, 0);
 
-        // Wait for async
         await new Promise(resolve => setTimeout(resolve, 0));
 
         expect(mockVfs.hasFile).toHaveBeenCalledWith('pics/colormap.pcx');
@@ -108,39 +116,49 @@ describe('PakService Coverage', () => {
         expect(service.getPalette()).toBeDefined();
     });
 
-    it('should handle parseFile errors for MD2', async () => {
+    it('should parse MD2 via worker', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
-        mockVfs.stat.mockReturnValue({}); // needed for getFileType? No, parseFile calls getFileType helper
-
-        // Mock getFileType via helper? It imports from utils.
-        // But we can just use a path with extension.
-
-        const { parseMd2 } = require('quake2ts/engine');
-        parseMd2.mockImplementation(() => { throw new Error("Parse Fail"); });
+        const { workerService } = require('@/src/services/workerService');
+        const mockWorker = workerService.getAssetProcessor();
+        mockWorker.processMd2.mockResolvedValue({ type: 'md2', model: {}, animations: [] });
 
         const result = await service.parseFile('models/test.md2');
-        expect(result.type).toBe('unknown');
-        expect((result as any).error).toBe('Parse Fail');
+
+        expect(result.type).toBe('md2');
+        expect(mockWorker.processMd2).toHaveBeenCalled();
     });
 
-    it('should handle parseFile errors for BSP', async () => {
+    it('should handle worker failure and fallback to main thread for MD2', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
-        const { parseBsp } = require('quake2ts/engine');
-        parseBsp.mockImplementation(() => { throw new Error("BSP Fail"); });
 
-        const result = await service.parseFile('maps/test.bsp');
-        expect(result.type).toBe('unknown');
-        expect((result as any).error).toBe('BSP Fail');
+        const { workerService } = require('@/src/services/workerService');
+        const mockWorker = workerService.getAssetProcessor();
+        mockWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+
+        const { parseMd2, groupMd2Animations } = require('quake2ts/engine');
+        parseMd2.mockReturnValue({});
+        groupMd2Animations.mockReturnValue([]);
+
+        const result = await service.parseFile('models/test.md2');
+
+        expect(result.type).toBe('md2');
+        expect(parseMd2).toHaveBeenCalled(); // Fallback called
     });
 
-    it('should handle parseFile errors for MD3', async () => {
+    it('should handle failure in both worker and fallback', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
-        const { parseMd3 } = require('quake2ts/engine');
-        parseMd3.mockImplementation(() => { throw new Error("MD3 Fail"); });
 
-        const result = await service.parseFile('models/test.md3');
+        const { workerService } = require('@/src/services/workerService');
+        const mockWorker = workerService.getAssetProcessor();
+        mockWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+
+        const { parseMd2 } = require('quake2ts/engine');
+        parseMd2.mockImplementation(() => { throw new Error("Fallback Fail"); });
+
+        const result = await service.parseFile('models/test.md2');
+
         expect(result.type).toBe('unknown');
-        expect((result as any).error).toBe('MD3 Fail');
+        expect((result as any).error).toBe('Fallback Fail');
     });
 
     it('should build file tree in by-pak mode', () => {

@@ -25,7 +25,6 @@ import {
   type TgaImage,
 } from 'quake2ts/engine';
 
-// Re-define interfaces since they're not exported from quake2ts/engine
 export interface VirtualFileHandle {
   readonly path: string;
   readonly size: number;
@@ -69,7 +68,7 @@ export interface ParsedPcx {
 export interface ParsedWal {
   type: 'wal';
   texture: WalTexture;
-  rgba: Uint8Array | null; // null if no palette loaded
+  rgba: Uint8Array | null;
   width: number;
   height: number;
   mipmaps?: { width: number; height: number; rgba: Uint8Array }[];
@@ -150,7 +149,6 @@ export interface MountedPak {
 
 export type ViewMode = 'merged' | 'by-pak';
 
-// Use helper function
 function getFileType(path: string): FileType {
   return getFileTypeHelper(path);
 }
@@ -168,18 +166,15 @@ export class PakService {
     const buffer = await file.arrayBuffer();
     const pakId = id || crypto.randomUUID();
 
-    // Use worker to parse
     try {
-      // Transfer buffer to worker and get it back
       const result = await workerService.getPakParser().parsePak(pakId, buffer);
 
-      // @ts-ignore - WorkerPakArchive matches shape but has private prop issues
+      // @ts-ignore
       const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
       this.mountPak(archive, pakId, file.name, isUser, priority);
       return archive;
     } catch (error) {
       console.warn('Worker parsing failed, falling back to main thread', error);
-      // Fallback
       const archive = PakArchive.fromArrayBuffer(pakId, buffer);
       this.mountPak(archive, pakId, file.name, isUser, priority);
       return archive;
@@ -213,40 +208,21 @@ export class PakService {
     const pak = this.paks.get(id);
     if (pak) {
         this.paks.delete(id);
-        // Fallback: If VFS doesn't support unmount, we have to rebuild.
-        // But since we are using setPriority/mountPak with priority now, we might rely on VFS logic.
-        // However, VFS interface in d.ts doesn't show unmountPak.
-        // If we can't unmount, we can't fully unload.
-        // We will assume VFS behaves correctly or we rebuild if needed.
-        // The previous logic tried to rebuild.
-        // Let's stick to using native priority features where possible.
-        // But for unload, we still lack a clear API.
-        // Rebuild is safer if we can't unmount.
         this.rebuildVfs();
     }
   }
 
   private rebuildVfs() {
-    // If VFS supports unmountPak, we use it. Otherwise we are limited.
-    // But we found out VFS supports mountPak(archive, priority) and setPriority(archive, priority).
-    // So for priority updates we don't need rebuild.
-    // For unload, we do.
-
-    // We try to unmount everything we know about.
     if ('unmountPak' in this.vfs) {
         for (const pak of this.paks.values()) {
              (this.vfs as any).unmountPak(pak.archive);
         }
     } else {
-        // If we can't unmount, we can create a new VFS but that breaks references.
-        // Or we just re-mount everything and hope VFS handles it?
-        // Let's assume rebuild via clearing is needed.
         this.vfs = new VirtualFileSystem();
     }
 
     this.palette = null;
 
-    // Sort PAKs by priority ascending (0 -> 100)
     const sortedPaks = Array.from(this.paks.values()).sort((a, b) => a.priority - b.priority);
 
     for (const pak of sortedPaks) {
@@ -287,7 +263,6 @@ export class PakService {
   private async tryLoadPalette(): Promise<void> {
     if (this.palette) return;
 
-    // Try common palette locations
     const palettePaths = ['pics/colormap.pcx', 'colormap.pcx'];
     for (const path of palettePaths) {
       if (this.vfs.hasFile(path)) {
@@ -327,7 +302,6 @@ export class PakService {
     const handle = this.vfs.stat(path);
     if (!handle) return undefined;
 
-    // Resolve user-friendly PAK name from sourcePak (which is UUID)
     const pakInfo = this.paks.get(handle.sourcePak);
     const sourcePakName = pakInfo ? pakInfo.name : handle.sourcePak;
 
@@ -350,6 +324,50 @@ export class PakService {
     const buffer = toArrayBuffer(data);
     const fileType = getFileType(path);
 
+    if (fileType === 'txt' || fileType === 'dm2' || fileType === 'unknown') {
+         return this.parseFileFallback(path, buffer, fileType, data);
+    }
+
+    try {
+      const worker = workerService.getAssetProcessor();
+      let result: any;
+
+      switch (fileType) {
+        case 'pcx':
+          result = await worker.processPcx(buffer);
+          break;
+        case 'wal':
+          result = await worker.processWal(buffer, this.palette);
+          break;
+        case 'tga':
+          result = await worker.processTga(buffer);
+          break;
+        case 'md2':
+          result = await worker.processMd2(buffer);
+          break;
+        case 'md3':
+          result = await worker.processMd3(buffer);
+          break;
+        case 'sp2':
+          result = await worker.processSp2(buffer);
+          break;
+        case 'wav':
+          result = await worker.processWav(buffer);
+          break;
+        case 'bsp':
+          result = await worker.processBsp(buffer);
+          break;
+        default:
+           return this.parseFileFallback(path, buffer, fileType, data);
+      }
+      return result as ParsedFile;
+    } catch (e) {
+      console.warn(`Worker processing failed for ${path}, falling back to main thread`, e);
+      return this.parseFileFallback(path, buffer, fileType, data);
+    }
+  }
+
+  private parseFileFallback(path: string, buffer: ArrayBuffer, fileType: FileType, data: Uint8Array): ParsedFile {
     switch (fileType) {
       case 'pcx': {
         const image = parsePcx(buffer);
@@ -363,7 +381,7 @@ export class PakService {
         if (this.palette) {
           const prepared = walToRgba(texture, this.palette);
           rgba = prepared.levels[0]?.rgba ?? null;
-          // @ts-ignore - The library type definition might be slightly different but runtime has it
+          // @ts-ignore
           mipmaps = prepared.levels;
         }
         return { type: 'wal', texture, rgba, width: texture.width, height: texture.height, mipmaps };
