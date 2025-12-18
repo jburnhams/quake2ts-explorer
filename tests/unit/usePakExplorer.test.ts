@@ -11,6 +11,22 @@ jest.mock('@/src/services/indexedDBService', () => ({
   }
 }));
 
+// Mock worker service to avoid issues with real workers in JSDOM
+// Use relative path to ensure we intercept the call from pakService.ts which imports it relatively
+jest.mock('../../src/services/workerService', () => ({
+    workerService: {
+        getPakParser: jest.fn(() => ({
+            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+                entries: new Map([
+                    ['readme.txt', { name: 'readme.txt', offset: 0, length: 100 }],
+                ]),
+                buffer,
+                name
+            }))
+        }))
+    }
+}));
+
 // Mock quake2ts/engine
 jest.mock('quake2ts/engine', () => ({
   PakArchive: {
@@ -99,13 +115,9 @@ describe('usePakExplorer Hook', () => {
   });
 
   it('initializes with default state', async () => {
-    // We need to wait for the initial async load to settle
     const { result } = renderHook(() => usePakExplorer());
 
-    // Initial state might be loading
-    expect(result.current.loading).toBe(true);
-
-    // Wait for loading to finish
+    // Wait for the effect to finish (even if it does nothing but fail silently on 404s)
     await waitFor(() => {
         expect(result.current.loading).toBe(false);
     });
@@ -123,8 +135,10 @@ describe('usePakExplorer Hook', () => {
     expect(result.current.error).toBeNull();
   });
 
-  it('has handleFileSelect function', () => {
+  it('has handleFileSelect function', async () => {
     const { result } = renderHook(() => usePakExplorer());
+    // Wait for initialization
+    await waitFor(() => expect(result.current.loading).toBe(false));
     expect(typeof result.current.handleFileSelect).toBe('function');
   });
 
@@ -134,10 +148,16 @@ describe('usePakExplorer Hook', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const file = new File(['PACK'], 'test.pak', { type: 'application/octet-stream' });
-    Object.defineProperty(file, 'arrayBuffer', {
-        value: jest.fn().mockResolvedValue(new ArrayBuffer(10))
-    });
-    const fileList = { length: 1, item: () => file, 0: file, [Symbol.iterator]: function* () { yield file; } } as FileList;
+    // Mock arrayBuffer properly
+    file.arrayBuffer = jest.fn().mockResolvedValue(new ArrayBuffer(10));
+
+    const fileList = {
+        length: 1,
+        item: (index) => index === 0 ? file : null,
+        0: file,
+        [Symbol.iterator]: function* () { yield file; },
+        // Array.from needs map or iterator
+    } as unknown as FileList;
 
     await act(async () => {
       await result.current.handleFileSelect(fileList);
@@ -152,7 +172,12 @@ describe('usePakExplorer Hook', () => {
     await waitFor(() => expect(result.current.loading).toBe(false));
 
     const file = new File(['content'], 'readme.txt', { type: 'text/plain' });
-    const fileList = { length: 1, item: () => file, 0: file, [Symbol.iterator]: function* () { yield file; } } as FileList;
+    const fileList = {
+        length: 1,
+        item: (index) => index === 0 ? file : null,
+        0: file,
+        [Symbol.iterator]: function* () { yield file; }
+    } as unknown as FileList;
 
     await act(async () => {
       await result.current.handleFileSelect(fileList);

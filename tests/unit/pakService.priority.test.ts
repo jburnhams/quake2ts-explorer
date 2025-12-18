@@ -1,6 +1,20 @@
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { PakService } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
+import { workerService } from '../../src/services/workerService';
+
+// Mock worker service to return immediate result
+jest.mock('../../src/services/workerService', () => ({
+    workerService: {
+        getPakParser: jest.fn(() => ({
+            parsePak: jest.fn(async (name: string) => ({
+                entries: new Map(),
+                buffer: new ArrayBuffer(0),
+                name
+            }))
+        }))
+    }
+}));
 
 // Mock PakArchive and VirtualFileSystem logic
 jest.mock('quake2ts/engine', () => {
@@ -8,12 +22,7 @@ jest.mock('quake2ts/engine', () => {
     PakArchive: {
       fromArrayBuffer: jest.fn((id: string, buffer: ArrayBuffer) => {
         return {
-          readFile: jest.fn((path: string) => {
-            return new TextEncoder().encode(`content-from-${id}`);
-          }),
-          has: jest.fn(() => true),
-          list: jest.fn(() => []),
-          getEntries: jest.fn(() => [])
+            // ... mocked instance for fallback path if needed
         };
       })
     },
@@ -30,15 +39,15 @@ jest.mock('quake2ts/engine', () => {
               this.paks.sort((a, b) => a.priority - b.priority);
           }
       }
-      // Keep unmountPak for legacy/fallback testing or if we decide to use it
       unmountPak(pak: any) {
          const idx = this.paks.findIndex(p => p.pak === pak);
          if (idx !== -1) this.paks.splice(idx, 1);
       }
       readFile(path: string) {
         if (this.paks.length > 0) {
-          // Return content from last mounted pak (override behavior)
-          return this.paks[this.paks.length - 1].pak.readFile(path);
+          // Check the name of the last pak
+          const lastPak = this.paks[this.paks.length - 1].pak;
+          return new TextEncoder().encode(`content-from-${lastPak.name}`);
         }
         return null;
       }
@@ -49,7 +58,6 @@ jest.mock('quake2ts/engine', () => {
     },
     parsePcx: jest.fn(() => ({ palette: new Uint8Array(768) })),
     pcxToRgba: jest.fn(),
-    // Add other exports used by PakService imports
     parseWal: jest.fn(),
     walToRgba: jest.fn(),
     parseMd2: jest.fn(),
@@ -60,9 +68,6 @@ jest.mock('quake2ts/engine', () => {
     parseTga: jest.fn(),
   };
 });
-
-// We need to import PakService AFTER the mock because it imports from quake2ts/engine at top level
-// But Jest hoisting handles this usually. However, let's just rely on standard behavior.
 
 describe('PakService Priority', () => {
     let service: PakService;

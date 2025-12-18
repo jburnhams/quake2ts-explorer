@@ -1,4 +1,6 @@
 import { MOD_PRIORITY } from '../types/modInfo';
+import { workerService } from './workerService';
+import { WorkerPakArchive } from '../utils/WorkerPakArchive';
 import {
   PakArchive,
   VirtualFileSystem,
@@ -165,17 +167,40 @@ export class PakService {
   async loadPakFile(file: File, id?: string, isUser: boolean = true, priority: number = 100): Promise<PakArchive> {
     const buffer = await file.arrayBuffer();
     const pakId = id || crypto.randomUUID();
-    // Use ID as internal name for VFS uniqueness, but store original name in metadata
-    const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, file.name, isUser, priority);
-    return archive;
+
+    // Use worker to parse
+    try {
+      // Transfer buffer to worker and get it back
+      const result = await workerService.getPakParser().parsePak(pakId, buffer);
+
+      // @ts-ignore - WorkerPakArchive matches shape but has private prop issues
+      const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
+      this.mountPak(archive, pakId, file.name, isUser, priority);
+      return archive;
+    } catch (error) {
+      console.warn('Worker parsing failed, falling back to main thread', error);
+      // Fallback
+      const archive = PakArchive.fromArrayBuffer(pakId, buffer);
+      this.mountPak(archive, pakId, file.name, isUser, priority);
+      return archive;
+    }
   }
 
   async loadPakFromBuffer(name: string, buffer: ArrayBuffer, id?: string, isUser: boolean = false, priority: number = 0): Promise<PakArchive> {
     const pakId = id || crypto.randomUUID();
-    const archive = PakArchive.fromArrayBuffer(pakId, buffer);
-    this.mountPak(archive, pakId, name, isUser, priority);
-    return archive;
+
+    try {
+      const result = await workerService.getPakParser().parsePak(pakId, buffer);
+      // @ts-ignore
+      const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
+      this.mountPak(archive, pakId, name, isUser, priority);
+      return archive;
+    } catch (error) {
+      console.warn('Worker parsing failed, falling back to main thread', error);
+      const archive = PakArchive.fromArrayBuffer(pakId, buffer);
+      this.mountPak(archive, pakId, name, isUser, priority);
+      return archive;
+    }
   }
 
   private mountPak(archive: PakArchive, id: string, name: string, isUser: boolean, priority: number) {

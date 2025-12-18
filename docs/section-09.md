@@ -43,19 +43,19 @@ Optimize application performance to ensure smooth experience even with large PAK
 
 #### Subtasks
 
-- [ ] **1.1**: Create PAK parsing worker
+- [x] **1.1**: Create PAK parsing worker
   - Create `src/workers/pakParser.worker.ts`
   - Accepts: ArrayBuffer (PAK file data)
   - Returns: PakArchive structure (directory entries)
   - Use `comlink` library for easier worker communication
 
-- [ ] **1.2**: Implement worker communication
+- [x] **1.2**: Implement worker communication
   - Create `src/services/workerService.ts`
   - Spawn worker pool (4 workers, configurable)
   - Queue tasks if all workers busy
   - Return promises for async results
 
-- [ ] **1.3**: Migrate PAK parsing to worker
+- [x] **1.3**: Migrate PAK parsing to worker
   - Modify `pakService.ts`
   - Send PAK ArrayBuffer to worker
   - Receive parsed directory
