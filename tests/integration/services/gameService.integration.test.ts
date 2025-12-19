@@ -19,7 +19,7 @@ jest.mock('quake2ts/engine', () => {
 
 describe('GameService Integration', () => {
   let vfs: VirtualFileSystem;
-  const PAK_PATH = path.join(process.cwd(), 'pak.pak');
+  const PAK_PATH = path.join(process.cwd(), 'public', 'pak.pak');
 
   beforeAll(() => {
     if (!fs.existsSync(PAK_PATH)) {
@@ -32,9 +32,11 @@ describe('GameService Integration', () => {
     if (!fs.existsSync(PAK_PATH)) return;
 
     vfs = new VirtualFileSystem();
-    const buffer = fs.readFileSync(PAK_PATH).buffer;
+    const nodeBuffer = fs.readFileSync(PAK_PATH);
+    const buffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
     const { PakArchive } = jest.requireActual('quake2ts/engine');
-    const archive = new PakArchive(buffer);
+    // @ts-ignore - PakArchive.fromArrayBuffer is not typed in the jest import
+    const archive = PakArchive.fromArrayBuffer('pak.pak', buffer);
     vfs.mountPak(archive);
   });
 
