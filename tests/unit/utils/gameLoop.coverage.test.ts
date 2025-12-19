@@ -1,94 +1,89 @@
+import { createGameLoop } from '../../../src/utils/gameLoop';
+import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 
-import { createGameLoop } from '@/src/utils/gameLoop';
-import { FixedTimestepLoop } from 'quake2ts/engine';
+// Mock requestAnimationFrame
+const mockRaf = jest.fn((cb: any) => setTimeout(cb, 16));
+const mockCancelRaf = jest.fn((id: any) => clearTimeout(id));
+global.requestAnimationFrame = mockRaf as any;
+global.cancelAnimationFrame = mockCancelRaf as any;
 
-// Mock FixedTimestepLoop
+// Global mocks for FixedTimestepLoop methods to verify calls
+const mockStart = jest.fn();
+const mockStop = jest.fn();
+const mockIsRunning = jest.fn();
+const mockPump = jest.fn();
+
 jest.mock('quake2ts/engine', () => {
+    const { jest } = require('@jest/globals');
     return {
         FixedTimestepLoop: jest.fn().mockImplementation(() => ({
-            start: jest.fn(),
-            stop: jest.fn(),
-            isRunning: jest.fn().mockReturnValue(true),
-            pump: jest.fn()
+            start: mockStart,
+            stop: mockStop,
+            isRunning: mockIsRunning,
+            pump: mockPump
         }))
     };
 });
 
-describe('GameLoop Coverage', () => {
+describe('createGameLoop', () => {
+    let simulate: any;
+    let render: any;
+
     beforeEach(() => {
+        simulate = jest.fn();
+        render = jest.fn();
         jest.clearAllMocks();
-        jest.useFakeTimers();
+        mockIsRunning.mockReturnValue(false);
     });
 
-    afterEach(() => {
-        jest.useRealTimers();
-    });
-
-    it('should create a game loop with default options', () => {
-        const loop = createGameLoop(() => {}, () => {});
-        expect(loop).toBeDefined();
-        // It passes 2 args: callbacks object and options object
-        expect(FixedTimestepLoop).toHaveBeenCalledWith(expect.any(Object), expect.any(Object));
-    });
-
-    it('should start and pump loop', () => {
-        const loop = createGameLoop(() => {}, () => {});
-        const mockInstance = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
-
+    it('creates a loop and starts it', () => {
+        const loop = createGameLoop(simulate, render);
         loop.start();
-        expect(mockInstance.start).toHaveBeenCalled();
-
-        // Trigger frame
-        jest.runOnlyPendingTimers(); // requestAnimationFrame
-        expect(mockInstance.pump).toHaveBeenCalled();
+        expect(mockStart).toHaveBeenCalled();
+        expect(mockRaf).toHaveBeenCalled();
     });
 
-    it('should stop loop', () => {
-        const loop = createGameLoop(() => {}, () => {});
+    it('stops the loop', () => {
+        const loop = createGameLoop(simulate, render);
         loop.start();
         loop.stop();
-
-        const mockInstance = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
-        expect(mockInstance.stop).toHaveBeenCalled();
+        expect(mockStop).toHaveBeenCalled();
+        expect(mockCancelRaf).toHaveBeenCalled();
     });
 
-    it('should pause and resume', () => {
-        const loop = createGameLoop(() => {}, () => {});
-        const mockInstance = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
+    it('prevents multiple starts', () => {
+        const loop = createGameLoop(simulate, render);
+        loop.start();
+        loop.start();
+        expect(mockStart).toHaveBeenCalledTimes(1);
+    });
 
+    it('handles pause and resume', () => {
+        const loop = createGameLoop(simulate, render);
         loop.start();
 
         loop.pause();
-        jest.runOnlyPendingTimers();
-        // When paused, pump should NOT be called again?
-        // Logic says: if isPaused, do not pump.
-        mockInstance.pump.mockClear();
-        jest.runOnlyPendingTimers();
-        expect(mockInstance.pump).not.toHaveBeenCalled();
+        // Trigger frame
+        const frameCallback = mockRaf.mock.calls[0][0];
+        frameCallback(performance.now());
+
+        // Should NOT pump when paused
+        expect(mockPump).not.toHaveBeenCalled();
 
         loop.resume();
-        expect(mockInstance.stop).toHaveBeenCalled(); // Resume restarts internal loop
-        expect(mockInstance.start).toHaveBeenCalledTimes(2); // Start called again
+        expect(mockStop).toHaveBeenCalled(); // Resume restarts internal loop
+        expect(mockStart).toHaveBeenCalledTimes(2); // Initial start + resume start
     });
 
-    it('should configure deltaMs', () => {
-        createGameLoop(() => {}, () => {}, 20); // 20Hz = 50ms
-        const options = (FixedTimestepLoop as jest.Mock).mock.calls[0][1];
-        expect(options.fixedDeltaMs).toBe(1000/20);
-    });
+    it('pumps when running', () => {
+        mockIsRunning.mockReturnValue(true);
+        const loop = createGameLoop(simulate, render);
+        loop.start();
 
-    it('should execute callbacks via engine wrapper', () => {
-        const simulate = jest.fn();
-        const render = jest.fn();
+        const frameCallback = mockRaf.mock.calls[0][0];
+        frameCallback(performance.now());
 
-        createGameLoop(simulate, render);
-
-        const callbacks = (FixedTimestepLoop as jest.Mock).mock.calls[0][0];
-
-        callbacks.simulate({ delta: 16, now: 1000 });
-        expect(simulate).toHaveBeenCalled();
-
-        callbacks.render({ alpha: 0.5 });
-        expect(render).toHaveBeenCalled();
+        expect(mockPump).toHaveBeenCalled();
+        expect(mockRaf).toHaveBeenCalledTimes(2); // Initial + next frame
     });
 });

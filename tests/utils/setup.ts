@@ -7,6 +7,10 @@ import { TextEncoder, TextDecoder } from 'util';
 global.TextEncoder = TextEncoder;
 global.TextDecoder = TextDecoder as any;
 
+if (!global.structuredClone) {
+    global.structuredClone = (val: any) => JSON.parse(JSON.stringify(val));
+}
+
 // Mock requestAnimationFrame
 if (!global.requestAnimationFrame) {
   global.requestAnimationFrame = (callback: FrameRequestCallback): number => {
@@ -144,68 +148,7 @@ HTMLCanvasElement.prototype.getContext = function (contextId: string) {
 } as any;
 
 // Mock IndexedDB
-if (typeof global.indexedDB === 'undefined') {
-  const mockIDBRequest = {
-    result: null,
-    error: null,
-    source: null,
-    transaction: null,
-    readyState: 'done',
-    onsuccess: null as ((ev: Event) => any) | null,
-    onerror: null as ((ev: Event) => any) | null,
-  };
-
-  const mockTransaction = {
-    objectStore: () => ({
-      index: () => ({
-        get: () => {
-           const req = { ...mockIDBRequest };
-           setTimeout(() => req.onsuccess && req.onsuccess({ target: req } as any), 0);
-           return req;
-        }
-      }),
-      put: () => {
-           const req = { ...mockIDBRequest };
-           setTimeout(() => req.onsuccess && req.onsuccess({ target: req } as any), 0);
-           return req;
-      },
-      getAll: () => {
-           const req = { ...mockIDBRequest, result: [] };
-           setTimeout(() => req.onsuccess && req.onsuccess({ target: req } as any), 0);
-           return req;
-      },
-      delete: () => {
-           const req = { ...mockIDBRequest };
-           setTimeout(() => req.onsuccess && req.onsuccess({ target: req } as any), 0);
-           return req;
-      }
-    }),
-  };
-
-  const mockIndexedDB = {
-    open: () => {
-      const request: any = { ...mockIDBRequest };
-      request.result = {
-        objectStoreNames: { contains: () => false },
-        createObjectStore: () => ({ createIndex: () => {} }),
-        transaction: () => mockTransaction,
-      };
-      setTimeout(() => request.onsuccess && request.onsuccess({ target: request } as any), 0);
-      return request;
-    },
-  };
-
-  Object.defineProperty(global, 'indexedDB', {
-    value: mockIndexedDB,
-    writable: true
-  });
-  if (typeof window !== 'undefined') {
-      Object.defineProperty(window, 'indexedDB', {
-        value: mockIndexedDB,
-        writable: true
-      });
-  }
-}
+import 'fake-indexeddb/auto';
 
 // Helper to install performance mocks safely
 const installPerformanceMocks = () => {

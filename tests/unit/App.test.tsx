@@ -2,6 +2,15 @@ import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import App from '../../src/App';
+import { PakService } from '../../src/services/pakService';
+
+// Mock worker service to force fallback to main thread (where we can mock PakArchive)
+jest.mock('../../src/services/workerService', () => ({
+  workerService: {
+    executePakParserTask: jest.fn().mockRejectedValue(new Error('Worker failed')),
+    executeAssetProcessorTask: jest.fn().mockResolvedValue({}),
+  }
+}));
 
 // Mock quake2ts/engine
 jest.mock('quake2ts', () => ({
@@ -78,6 +87,12 @@ jest.mock('quake2ts', () => ({
 describe('App Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    // Mock fetch to fail so built-in paks don't load, keeping pakCount 0 for tests
+    global.fetch = jest.fn(() => Promise.resolve({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found'
+    } as Response)) as jest.Mock;
   });
 
   it('renders initial state correctly', () => {
@@ -180,13 +195,14 @@ describe('App Component', () => {
 
   describe('Error handling', () => {
     it('shows error banner when PAK loading fails', async () => {
-      // Override PakArchive to throw
-      const { PakArchive } = await import('quake2ts');
-      (PakArchive.fromArrayBuffer as jest.Mock).mockImplementationOnce(() => {
-        throw new Error('Invalid PAK file');
+      render(<App />);
+
+      // Wait for initial load to finish
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-banner')).not.toBeInTheDocument();
       });
 
-      render(<App />);
+      jest.spyOn(PakService.prototype, 'loadPakFile').mockRejectedValueOnce(new Error('Invalid PAK file'));
 
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       const file = new File(['invalid'], 'bad.pak', { type: 'application/octet-stream' });
@@ -204,12 +220,14 @@ describe('App Component', () => {
 
     it('dismisses error when button clicked', async () => {
       const user = userEvent.setup();
-      const { PakArchive } = await import('quake2ts');
-      (PakArchive.fromArrayBuffer as jest.Mock).mockImplementationOnce(() => {
-        throw new Error('Invalid PAK file');
+      render(<App />);
+
+      // Wait for initial load to finish
+      await waitFor(() => {
+        expect(screen.queryByTestId('loading-banner')).not.toBeInTheDocument();
       });
 
-      render(<App />);
+      jest.spyOn(PakService.prototype, 'loadPakFile').mockRejectedValueOnce(new Error('Invalid PAK file'));
 
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       const file = new File(['invalid'], 'bad.pak', { type: 'application/octet-stream' });

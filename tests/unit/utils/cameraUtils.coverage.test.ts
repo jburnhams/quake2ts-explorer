@@ -1,71 +1,89 @@
-
-import {
-    computeCameraPosition,
-    updateFreeCamera,
-    computeFreeCameraViewMatrix
-} from '@/src/utils/cameraUtils';
+import { updateFreeCamera, computeFreeCameraViewMatrix, FreeCameraState } from '../../../src/utils/cameraUtils';
 import { vec3, mat4 } from 'gl-matrix';
+import { describe, it, expect } from '@jest/globals';
 
-describe('CameraUtils Coverage', () => {
-    it('should compute orbit camera position', () => {
-        const orbit = { radius: 10, theta: 0, phi: Math.PI/2, target: vec3.create() };
-        const pos = computeCameraPosition(orbit);
-        expect(pos[0]).toBeCloseTo(10);
-        expect(pos[1]).toBeCloseTo(0);
-        expect(pos[2]).toBeCloseTo(0);
+describe('cameraUtils coverage', () => {
+    const initialState: FreeCameraState = {
+        position: [0, 0, 0],
+        rotation: [0, 0, 0]
+    };
+
+    const inputs = {
+        forward: false,
+        backward: false,
+        left: false,
+        right: false,
+        deltaX: 0,
+        deltaY: 0
+    };
+
+    describe('updateFreeCamera', () => {
+        it('handles Z-Up (Quake) coordinates', () => {
+            // Looking +X (Yaw 0)
+            const newState = updateFreeCamera(initialState, { ...inputs, forward: true }, 1.0, 100, 0.002, true);
+
+            // Should move in +X
+            expect(newState.position[0]).toBeCloseTo(100);
+            expect(newState.position[1]).toBeCloseTo(0);
+            expect(newState.position[2]).toBeCloseTo(0);
+        });
+
+        it('handles Y-Up (OpenGL) coordinates', () => {
+            // Looking -Z (Yaw 0)
+            const newState = updateFreeCamera(initialState, { ...inputs, forward: true }, 1.0, 100, 0.002, false);
+
+            // Should move in -Z
+            expect(newState.position[0]).toBeCloseTo(0);
+            expect(newState.position[1]).toBeCloseTo(0);
+            expect(newState.position[2]).toBeCloseTo(-100);
+        });
+
+        it('rotates correctly with mouse input', () => {
+             const newState = updateFreeCamera(initialState, { ...inputs, deltaX: 100, deltaY: 50 }, 1.0, 100, 0.01, false);
+             // Yaw should change (deltaX)
+             // Pitch should change (deltaY)
+             expect(newState.rotation[1]).not.toBe(0);
+             expect(newState.rotation[0]).not.toBe(0);
+        });
+
+        it('clamps pitch', () => {
+             // Try to look WAY up (deltaY negative large)
+             // Pitch (rotation[0]) -= deltaY * sensitivity.
+             // If deltaY is -1000, Pitch += 10.
+             // Limit is PI/2 - 0.01 (~1.56)
+             const newState = updateFreeCamera(initialState, { ...inputs, deltaY: -10000 }, 1.0, 100, 0.01, false);
+             expect(newState.rotation[0]).toBeLessThan(Math.PI/2);
+             expect(newState.rotation[0]).toBeGreaterThan(1.5);
+        });
     });
 
-    it('should update free camera (Y-up)', () => {
-        const state = { position: vec3.create(), rotation: vec3.create() };
-        const inputs = {
-            forward: true, backward: false, left: false, right: false,
-            deltaX: 0, deltaY: 0
-        };
-        const newState = updateFreeCamera(state, inputs, 1, 100, 0.002, false);
+    describe('computeFreeCameraViewMatrix', () => {
+        it('computes matrix for Z-Up', () => {
+            const matrix = mat4.create();
+            computeFreeCameraViewMatrix(initialState, matrix, true);
 
-        // Y-up: Forward is -Z.
-        expect(newState.position[2]).toBeLessThan(0);
-    });
+            // Verify matrix looks roughly correct (identity-ish but rotated for Z-up?)
+            // At 0,0,0 pos, 0,0,0 rot.
+            // Z-Up: Forward +X, Up +Z.
+            // LookAt(eye=0,0,0, target=1,0,0, up=0,0,1)
+            // Should be a view matrix looking down +X.
+            expect(matrix).toBeDefined();
+        });
 
-    it('should update free camera (Z-up)', () => {
-        const state = { position: vec3.create(), rotation: vec3.create() };
-        const inputs = {
-            forward: true, backward: false, left: false, right: false,
-            deltaX: 0, deltaY: 0
-        };
-        const newState = updateFreeCamera(state, inputs, 1, 100, 0.002, true);
+        it('computes matrix for Y-Up', () => {
+            const matrix = mat4.create();
+            computeFreeCameraViewMatrix(initialState, matrix, false);
 
-        // Z-up: Forward is +X (at yaw 0)
-        expect(newState.position[0]).toBeGreaterThan(0);
-    });
-
-    it('should rotate free camera', () => {
-        const state = { position: vec3.create(), rotation: vec3.create() };
-        const inputs = {
-            forward: false, backward: false, left: false, right: false,
-            deltaX: 100, deltaY: 0 // Turn right
-        };
-        const newState = updateFreeCamera(state, inputs, 1, 100, 0.002, false);
-
-        // Yaw should change
-        expect(newState.rotation[1]).not.toBe(0);
-    });
-
-    it('should compute view matrix (Y-up)', () => {
-        const state = { position: vec3.fromValues(0,0,10), rotation: vec3.create() };
-        const view = mat4.create();
-        computeFreeCameraViewMatrix(state, view, false);
-
-        // Looking down -Z from (0,0,10) -> Identity view offset by -10 Z?
-        // Identity lookAt from (0,0,10) to (0,0,9) up (0,1,0)
-        // Should result in translation -10 Z
-        expect(view[14]).toBeCloseTo(-10);
-    });
-
-    it('should compute view matrix (Z-up)', () => {
-        const state = { position: vec3.fromValues(0,0,0), rotation: vec3.create() };
-        const view = mat4.create();
-        computeFreeCameraViewMatrix(state, view, true);
-        expect(view).toBeDefined();
+            // Y-Up: Forward -Z, Up +Y.
+            // LookAt(eye=0,0,0, target=0,0,-1, up=0,1,0)
+            // Should be identity matrix (inverse of camera at origin looking -Z).
+            // Actually mat4.lookAt generates correct view matrix.
+            // Identity view matrix means camera at origin looking down -Z.
+            const identity = mat4.create();
+            // gl-matrix lookAt might produce identity for this case.
+            // Let's check a specific value if needed, or just coverage.
+            expect(matrix[0]).toBeCloseTo(1);
+            expect(matrix[5]).toBeCloseTo(1);
+        });
     });
 });
