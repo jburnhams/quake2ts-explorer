@@ -326,9 +326,9 @@ export function SoundAnalyzer({ audio, fileName, pakService }: SoundAnalyzerProp
          </button>
 
          <div className="zoom-controls">
-             <button onClick={handleZoomOut} disabled={zoom <= 1}>-</button>
+             <button onClick={handleZoomOut} disabled={zoom <= 1} data-testid="zoom-out-btn">-</button>
              <span style={{margin: '0 8px'}}>{zoom}x</span>
-             <button onClick={handleZoomIn} disabled={zoom >= 64}>+</button>
+             <button onClick={handleZoomIn} disabled={zoom >= 64} data-testid="zoom-in-btn">+</button>
          </div>
 
          {zoom > 1 && (
