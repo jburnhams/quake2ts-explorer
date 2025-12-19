@@ -36,7 +36,7 @@ const baseConfig = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!.*(quake2ts|@wasm-audio-decoders|codec-parser|@eshaz|ogg-opus-decoder|mpg123-decoder|ogg-vorbis-decoder|react-window|react-virtualized-auto-sizer))'],
+  transformIgnorePatterns: ['node_modules/(?!.*(quake2ts|@wasm-audio-decoders|codec-parser|@eshaz|ogg-opus-decoder|mpg123-decoder|ogg-vorbis-decoder|react-window|react-virtualized-auto-sizer|jsdom|parse5))'],
   setupFilesAfterEnv: ['<rootDir>/tests/utils/setup.ts'],
   maxWorkers: 2,
   workerIdleMemoryLimit: '512MB',
