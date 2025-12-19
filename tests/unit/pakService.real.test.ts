@@ -1,3 +1,6 @@
+/**
+ * @jest-environment node
+ */
 import { describe, it, expect, jest, beforeEach } from '@jest/globals';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -32,7 +35,7 @@ jest.mock('@/src/services/workerService', () => ({
 
 import { PakService } from '@/src/services/pakService';
 
-const PAK_PATH = path.resolve(__dirname, '../../../public/pak.pak');
+const PAK_PATH = path.resolve(__dirname, '../../public/pak.pak');
 
 // Skip tests if pak.pak doesn't exist
 const describeIfPakExists = fs.existsSync(PAK_PATH) ? describe : describe.skip;

@@ -104,48 +104,56 @@ global.DataTransfer = MockDataTransfer as any;
 
 // Mock window.matchMedia
 const installMatchMedia = () => {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: jest.fn().mockImplementation(query => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addListener: jest.fn(),
-      removeListener: jest.fn(),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
-      dispatchEvent: jest.fn(),
-    })),
-  });
+  if (typeof window !== 'undefined') {
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: jest.fn().mockImplementation(query => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn(),
+      })),
+    });
+  }
 };
 
 installMatchMedia();
 
 // Mock canvas context
-HTMLCanvasElement.prototype.getContext = function (contextId: string) {
-  if (contextId === '2d') {
-    return {
-      createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
-      putImageData: () => {},
-      fillRect: () => {},
-      clearRect: () => {},
-      getImageData: () => ({ data: new Uint8ClampedArray(0) }),
-      scale: () => {},
-      translate: () => {},
-      drawImage: () => {},
-      save: () => {},
-      restore: () => {},
-      canvas: { width: 0, height: 0 },
-      beginPath: () => {},
-      moveTo: () => {},
-      lineTo: () => {},
-      stroke: () => {},
-      strokeStyle: '',
-      lineWidth: 1,
-    } as unknown as CanvasRenderingContext2D;
-  }
-  return null;
-} as any;
+if (typeof HTMLCanvasElement !== 'undefined') {
+  HTMLCanvasElement.prototype.getContext = function (contextId: string, options?: any) {
+    if (contextId === '2d') {
+      return {
+        createImageData: (w: number, h: number) => ({ data: new Uint8ClampedArray(w * h * 4) }),
+        putImageData: () => {},
+        fillRect: () => {},
+        clearRect: () => {},
+        getImageData: () => ({ data: new Uint8ClampedArray(0) }),
+        scale: () => {},
+        translate: () => {},
+        drawImage: () => {},
+        save: () => {},
+        restore: () => {},
+        canvas: { width: 0, height: 0 },
+        beginPath: () => {},
+        moveTo: () => {},
+        lineTo: () => {},
+        stroke: () => {},
+        strokeStyle: '',
+        lineWidth: 1,
+      } as unknown as CanvasRenderingContext2D;
+    }
+    if (contextId === 'webgl2') {
+      const { createMockWebGL2Context } = require('quake2ts/test-utils');
+      return createMockWebGL2Context(this);
+    }
+    return null;
+  } as any;
+}
 
 // Mock IndexedDB
 import 'fake-indexeddb/auto';

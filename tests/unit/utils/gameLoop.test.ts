@@ -110,4 +110,21 @@ describe('GameLoop', () => {
     config.render({});
     expect(render).toHaveBeenCalled();
   });
+
+  it('passes correct options to FixedTimestepLoop', () => {
+    const simulate = jest.fn();
+    const render = jest.fn();
+    createGameLoop(simulate, render, 60);
+
+    const options = (FixedTimestepLoop as jest.Mock).mock.calls[0][1];
+    expect(options.fixedDeltaMs).toBeCloseTo(1000 / 60);
+
+    // Test 'now'
+    expect(options.now()).toBeDefined();
+
+    // Test 'schedule'
+    const cb = jest.fn();
+    options.schedule(cb);
+    expect(window.requestAnimationFrame).toHaveBeenCalledWith(cb);
+  });
 });

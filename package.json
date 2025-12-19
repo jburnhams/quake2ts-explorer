@@ -27,7 +27,7 @@
     "gl-matrix": "^3.4.4",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
-    "quake2ts": "^0.0.556",
+    "quake2ts": "0.0.557",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-virtualized-auto-sizer": "^1.0.26",
@@ -59,6 +59,7 @@
     "jest-environment-jsdom": "^29.7.0",
     "jsdom": "^27.0.1",
     "mock-socket": "^9.3.1",
+    "playwright": "^1.57.0",
     "ts-jest": "^29.4.6",
     "typescript": "~5.9.3",
     "vite": "^7.1.12"
