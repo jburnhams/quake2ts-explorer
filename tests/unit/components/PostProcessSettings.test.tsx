@@ -75,4 +75,41 @@ describe('PostProcessSettings', () => {
         fireEvent.click(screen.getByText('Reset to Defaults'));
         expect(mockOnChange).toHaveBeenCalledWith(defaultPostProcessOptions);
     });
+
+    it('updates all settings via inputs', () => {
+        renderComponent({ options: { ...defaultPostProcessOptions, enabled: true } });
+
+        // Bloom Enable
+        fireEvent.click(screen.getByLabelText('Enable Bloom'));
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ bloomEnabled: true }));
+
+        // FXAA Enable
+        fireEvent.click(screen.getByLabelText('FXAA (Fast Approximate Anti-Aliasing)'));
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ fxaaEnabled: true }));
+
+        // Sliders
+        const threshold = screen.getByLabelText(/Threshold/);
+        fireEvent.change(threshold, { target: { value: '0.5' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ bloomThreshold: 0.5 }));
+
+        const intensity = screen.getByLabelText(/Intensity/);
+        fireEvent.change(intensity, { target: { value: '2.0' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ bloomIntensity: 2.0 }));
+
+        const brightness = screen.getByLabelText(/Brightness/);
+        fireEvent.change(brightness, { target: { value: '1.5' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ brightness: 1.5 }));
+
+        const contrast = screen.getByLabelText(/Contrast/);
+        fireEvent.change(contrast, { target: { value: '1.2' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ contrast: 1.2 }));
+
+        const saturation = screen.getByLabelText(/Saturation/);
+        fireEvent.change(saturation, { target: { value: '0.8' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ saturation: 0.8 }));
+
+        const gamma = screen.getByLabelText(/Gamma/);
+        fireEvent.change(gamma, { target: { value: '2.2' } });
+        expect(mockOnChange).toHaveBeenCalledWith(expect.objectContaining({ gamma: 2.2 }));
+    });
 });

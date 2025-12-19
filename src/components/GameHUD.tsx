@@ -33,35 +33,6 @@ export function GameHUD({ gameState, configstrings, pakService }: GameHUDProps) 
 
   // Load icons
   useEffect(() => {
-    const loadIcon = async (index: number, setter: (url: string | null) => void) => {
-      if (index && configstrings) {
-        // CS_IMAGES start at 544
-        const CS_IMAGES = 544;
-        const imageName = configstrings.get(CS_IMAGES + index);
-        if (imageName) {
-           try {
-             // Try loading from pak
-             // Images are usually pcx or wal.
-             // We need to resolve path. configstring usually has relative path like "pics/w_rail.pcx"
-             // pakService can read it. But we need a URL for img tag.
-             // We can use pakService.readFile to get buffer, then blob.
-             const buffer = await pakService.readFile(imageName);
-             if (buffer) {
-                 // Convert PCX/WAL to PNG blob url?
-                 // That requires decoding. pakService has methods?
-                 // pakService.loadTexture returns PreparedTexture.
-                 // This is complicated for UI. UI usually expects <img> src.
-                 // Maybe we just skip icons for now or implement a simpler text HUD first.
-                 // Or we implement an Icon component that handles decoding.
-             }
-           } catch (e) {
-             console.warn("Failed to load HUD icon", imageName);
-           }
-        }
-      }
-      setter(null);
-    };
-
     // Placeholder logic for now as decoding PCX in UI requires canvas/texture atlas logic
     // which is heavy for this component.
     // We will render text labels instead.

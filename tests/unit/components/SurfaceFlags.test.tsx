@@ -1,7 +1,8 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { SurfaceFlags, SurfaceFlagsProps } from '@/src/components/SurfaceFlags';
 import { SURF_LIGHT, SURF_SKY } from '@/src/utils/surfaceFlagParser';
+import { jest } from '@jest/globals';
 
 describe('SurfaceFlags', () => {
   it('renders empty state when no properties', () => {
@@ -52,5 +53,32 @@ describe('SurfaceFlags', () => {
 
       render(<SurfaceFlags {...props} />);
       expect(screen.getByText('None')).toBeInTheDocument();
+  });
+
+  it('calls onFilterByFlag when flag clicked', () => {
+    const onFilter = jest.fn();
+    const props: SurfaceFlagsProps = {
+      properties: {
+        textureName: 'sky',
+        flags: SURF_LIGHT,
+        value: 0
+      },
+      onFilterByFlag: onFilter
+    };
+
+    render(<SurfaceFlags {...props} />);
+    fireEvent.click(screen.getByText('LIGHT'));
+    expect(onFilter).toHaveBeenCalledWith('LIGHT');
+  });
+
+  it('renders active filter state and clears it', () => {
+      const onFilter = jest.fn();
+      render(<SurfaceFlags properties={null} activeFilter="LIGHT" onFilterByFlag={onFilter} />);
+
+      expect(screen.getByText('Filtering by:')).toBeInTheDocument();
+      expect(screen.getByText('LIGHT')).toBeInTheDocument();
+
+      fireEvent.click(screen.getByText('Clear'));
+      expect(onFilter).toHaveBeenCalledWith('LIGHT');
   });
 });
