@@ -1,8 +1,26 @@
-import { updateFreeCamera, computeFreeCameraViewMatrix, FreeCameraState } from '../../../src/utils/cameraUtils';
+import { updateFreeCamera, computeFreeCameraViewMatrix, computeCameraPosition, FreeCameraState } from '../../../src/utils/cameraUtils';
 import { vec3, mat4 } from 'gl-matrix';
 import { describe, it, expect } from '@jest/globals';
 
 describe('cameraUtils coverage', () => {
+    describe('computeCameraPosition', () => {
+        it('computes orbit position', () => {
+            // radius 10, theta 0, phi PI/2 (90deg)
+            // x = target + r * sin(phi) * cos(theta) = 0 + 10 * 1 * 1 = 10
+            // y = target + r * cos(phi) = 0 + 10 * 0 = 0
+            // z = target + r * sin(phi) * sin(theta) = 0 + 10 * 1 * 0 = 0
+            const pos = computeCameraPosition({
+                radius: 10,
+                theta: 0,
+                phi: Math.PI / 2,
+                target: [0, 0, 0]
+            });
+            expect(pos[0]).toBeCloseTo(10);
+            expect(pos[1]).toBeCloseTo(0);
+            expect(pos[2]).toBeCloseTo(0);
+        });
+    });
+
     const initialState: FreeCameraState = {
         position: [0, 0, 0],
         rotation: [0, 0, 0]

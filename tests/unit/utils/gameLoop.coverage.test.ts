@@ -13,15 +13,20 @@ const mockStop = jest.fn();
 const mockIsRunning = jest.fn();
 const mockPump = jest.fn();
 
+let capturedOpts: any;
+
 jest.mock('quake2ts/engine', () => {
     const { jest } = require('@jest/globals');
     return {
-        FixedTimestepLoop: jest.fn().mockImplementation(() => ({
-            start: mockStart,
-            stop: mockStop,
-            isRunning: mockIsRunning,
-            pump: mockPump
-        }))
+        FixedTimestepLoop: jest.fn().mockImplementation((opts) => {
+            capturedOpts = opts;
+            return {
+                start: mockStart,
+                stop: mockStop,
+                isRunning: mockIsRunning,
+                pump: mockPump
+            };
+        })
     };
 });
 
@@ -30,6 +35,7 @@ describe('createGameLoop', () => {
     let render: any;
 
     beforeEach(() => {
+        capturedOpts = null;
         simulate = jest.fn();
         render = jest.fn();
         jest.clearAllMocks();
@@ -85,5 +91,17 @@ describe('createGameLoop', () => {
 
         expect(mockPump).toHaveBeenCalled();
         expect(mockRaf).toHaveBeenCalledTimes(2); // Initial + next frame
+    });
+
+    it('wraps simulate and render callbacks', () => {
+        createGameLoop(simulate, render);
+        expect(capturedOpts).toBeDefined();
+
+        // Call the wrappers
+        capturedOpts.simulate({ deltaMs: 16 });
+        expect(simulate).toHaveBeenCalledWith({ deltaMs: 16 });
+
+        capturedOpts.render({ alpha: 0.5 });
+        expect(render).toHaveBeenCalledWith({ alpha: 0.5 });
     });
 });

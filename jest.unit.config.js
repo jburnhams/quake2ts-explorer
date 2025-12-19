@@ -12,7 +12,9 @@ const unitConfig = {
     '!src/types/cameraMode.ts',
     '!src/types/debugMode.ts',
     '!src/types/lightmap.ts',
-    '!src/types/renderStatistics.ts'
+    '!src/types/renderStatistics.ts',
+    '!src/types/serverInfo.ts',
+    '!src/types/theme.ts'
   ],
   coverageThreshold: {
     global: {

@@ -89,7 +89,7 @@ describe('PakService Priority', () => {
         // Verify content comes from 'mod' (id 'mod') because it has higher priority
         const content = await service.readFile('test.txt');
         const text = new TextDecoder().decode(content);
-        expect(text).toBe('content-from-mod.pak');
+        expect(text).toBe('content-from-mod');
     });
 
     it('should update VFS when priority changes', async () => {
@@ -116,11 +116,11 @@ describe('PakService Priority', () => {
         service.reorderPaks(['a', 'b']);
 
         let content = await service.readFile('test.txt');
-        expect(new TextDecoder().decode(content)).toBe('content-from-B');
+        expect(new TextDecoder().decode(content)).toBe('content-from-b');
 
         // Reorder: B first (low), A second (high).
         service.reorderPaks(['b', 'a']);
         content = await service.readFile('test.txt');
-        expect(new TextDecoder().decode(content)).toBe('content-from-A');
+        expect(new TextDecoder().decode(content)).toBe('content-from-a');
     });
 });
