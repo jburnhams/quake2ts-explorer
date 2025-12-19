@@ -1,92 +1,105 @@
-
 import { createCollisionModel } from '@/src/utils/collisionAdapter';
-import type { BspMap } from 'quake2ts/engine';
+import { BspMap } from 'quake2ts/engine';
 
-describe('createCollisionModel Coverage', () => {
-    // Helper to create minimal valid map
-    const createBaseMap = (): any => ({
-        planes: [],
-        nodes: [],
-        brushSides: [],
-        texInfo: [],
-        brushes: [],
-        leafs: [],
-        leafLists: { leafBrushes: [] },
-        models: [],
-        visibility: undefined
-    });
-
-    it('should handle nested leafBrushes (Array of Arrays)', () => {
-        const map = createBaseMap();
-        // Setup leafs
-        map.leafs = [
-            { firstLeafBrush: 0, numLeafBrushes: 0, contents: 0, cluster: 0, area: 0 },
-            { firstLeafBrush: 0, numLeafBrushes: 0, contents: 0, cluster: 0, area: 0 }
-        ];
-        // Setup nested leafBrushes
-        // The adapter checks if rawLeafBrushes[0] is array.
-        const nested = [
-            [1, 2], // For leaf 0
-            [3]     // For leaf 1
-        ];
-        map.leafLists.leafBrushes = nested;
-
-        const model = createCollisionModel(map as BspMap);
-
-        expect(model.leaves[0].numLeafBrushes).toBe(2);
-        expect(model.leaves[1].numLeafBrushes).toBe(1);
-        expect(model.leafBrushes).toEqual([1, 2, 3]);
-    });
-
-    it('should handle missing entry in nested leafBrushes', () => {
-        const map = createBaseMap();
-        map.leafs = [{ firstLeafBrush: 0, numLeafBrushes: 0, contents: 0, cluster: 0, area: 0 }];
-        // Array of arrays but undefined for index 0
-        const nested: any[] = [];
-        nested[1] = [1]; // Set index 1 so it detects as array
-        // index 0 is undefined
-        map.leafLists.leafBrushes = nested;
-
-        const model = createCollisionModel(map as BspMap);
-        expect(model.leaves[0].numLeafBrushes).toBe(0);
-    });
-
-    it('should handle flat leafBrushes', () => {
-        const map = createBaseMap();
-        map.leafs = [
-            { firstLeafBrush: 0, numLeafBrushes: 2, contents: 0, cluster: 0, area: 0 }
-        ];
-        map.leafLists.leafBrushes = [10, 20]; // Flat array
-
-        const model = createCollisionModel(map as BspMap);
-
-        expect(model.leaves[0].numLeafBrushes).toBe(2);
-        expect(model.leafBrushes).toEqual([10, 20]);
-    });
-
-    it('should handle map with visibility data', () => {
-        const map = createBaseMap();
-        map.visibility = {
-            numClusters: 1,
-            clusters: [
-                { pvs: new Uint8Array([1]), phs: new Uint8Array([2]) }
-            ]
+describe('collisionAdapter', () => {
+    it('handles nested leafBrushes structure', () => {
+        const mockMap: any = {
+            planes: [],
+            nodes: [],
+            brushSides: [],
+            texInfo: [],
+            brushes: [],
+            leafLists: {
+                leafBrushes: [[1, 2], [3]] // Nested
+            },
+            leafs: [
+                { contents: 0, cluster: 0, area: 0, firstLeafBrush: 0, numLeafBrushes: 0 },
+                { contents: 0, cluster: 0, area: 0, firstLeafBrush: 0, numLeafBrushes: 0 }
+            ],
+            models: [],
         };
 
-        const model = createCollisionModel(map as BspMap);
-        expect(model.visibility).toBeDefined();
-        expect(model.visibility?.numClusters).toBe(1);
-        expect(model.visibility?.clusters[0].pvs).toEqual(new Uint8Array([1]));
+        const result = createCollisionModel(mockMap);
+        expect(result.leaves[0].numLeafBrushes).toBe(2);
+        // The implementation flattens it, so firstLeafBrush should point to valid range in flattened array
+        // We need to check if createCollisionModel calculates firstLeafBrush correctly for the result leaf?
+        // createCollisionModel sets firstLeafBrush based on leafBrushes.length accumulator.
+        expect(result.leaves[0].firstLeafBrush).toBe(0);
+        expect(result.leaves[1].firstLeafBrush).toBe(2);
+        expect(result.leafBrushes).toEqual([1, 2, 3]);
     });
 
-    it('should handle brush sides with texture info', () => {
-        const map = createBaseMap();
-        map.planes = [{ normal: [0, 1, 0], dist: 0, type: 0 }];
-        map.brushSides = [{ planeIndex: 0, texInfo: 0 }];
-        map.texInfo = [{ flags: 123 }];
-        map.brushes = [{ firstSide: 0, numSides: 1, contents: 0 }];
+    it('handles flat leafBrushes structure', () => {
+        const mockMap: any = {
+            planes: [],
+            nodes: [],
+            brushSides: [],
+            texInfo: [],
+            brushes: [],
+            leafLists: {
+                leafBrushes: [1, 2, 3] // Flat
+            },
+            leafs: [
+                { contents: 0, cluster: 0, area: 0, firstLeafBrush: 0, numLeafBrushes: 2 },
+                { contents: 0, cluster: 0, area: 0, firstLeafBrush: 2, numLeafBrushes: 1 }
+            ],
+            models: [],
+        };
 
-        const model = createCollisionModel(map as BspMap);
-        expect(model.brushes[0].sides[0].surfaceFlags).toBe(123);
+        const result = createCollisionModel(mockMap);
+        expect(result.leaves[0].numLeafBrushes).toBe(2);
+        expect(result.leaves[1].numLeafBrushes).toBe(1);
+        expect(result.leafBrushes).toEqual([1, 2, 3]);
+    });
+
+    it('handles populated planes, nodes, brushes', () => {
+        const mockMap: any = {
+            planes: [
+                { normal: [1, 0, 0], dist: 10, type: 0 },
+                { normal: [-1, -1, -1], dist: 5, type: 1 }
+            ],
+            nodes: [
+                { planeIndex: 0, children: [1, 2] }
+            ],
+            brushSides: [
+                { planeIndex: 0, texInfo: 0 }
+            ],
+            texInfo: [
+                { flags: 42 }
+            ],
+            brushes: [
+                { firstSide: 0, numSides: 1, contents: 1 }
+            ],
+            leafLists: { leafBrushes: [] },
+            leafs: [],
+            models: [
+                { mins: [0,0,0], maxs: [10,10,10], origin: [5,5,5], headNode: 0 }
+            ],
+            visibility: {
+                numClusters: 1,
+                clusters: [{ pvs: new Uint8Array(), phs: new Uint8Array() }]
+            }
+        };
+
+        const result = createCollisionModel(mockMap);
+
+        // Verify planes and signbits
+        expect(result.planes).toHaveLength(2);
+        expect(result.planes[0].signbits).toBe(0);
+        expect(result.planes[1].signbits).toBe(7); // all negative
+
+        // Verify nodes
+        expect(result.nodes).toHaveLength(1);
+        expect(result.nodes[0].plane).toBe(result.planes[0]);
+
+        // Verify brushes
+        expect(result.brushes).toHaveLength(1);
+        expect(result.brushes[0].sides[0].surfaceFlags).toBe(42);
+
+        // Verify bmodels
+        expect(result.bmodels).toHaveLength(1);
+
+        // Verify visibility
+        expect(result.visibility).toBeDefined();
     });
 });

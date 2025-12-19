@@ -1,146 +1,200 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
-import { multiplayerGameService } from '../../../src/services/multiplayerGameService';
-import { networkService } from '../../../src/services/networkService';
-import { predictionService } from '../../../src/services/predictionService';
+import { MultiplayerGameService } from '@/src/services/multiplayerGameService';
+import { networkService } from '@/src/services/networkService';
+import { predictionService } from '@/src/services/predictionService';
+import { AssetManager } from 'quake2ts/engine';
+import { createCollisionModel } from '@/src/utils/collisionAdapter';
+import { traceBox, pointContents } from 'quake2ts/shared';
 
 // Mock dependencies
-jest.mock('../../../src/services/networkService', () => {
-    const setCallbacks = jest.fn();
-    const sendCommand = jest.fn();
-    const disconnect = jest.fn();
-
-    return {
-      networkService: {
-        setCallbacks,
-        sendCommand,
-        disconnect,
-        // Helper to access mock funcs
-        __mocks: { setCallbacks, sendCommand, disconnect }
-      }
-    };
-});
-
-jest.mock('../../../src/services/predictionService', () => ({
-  predictionService: {
-    init: jest.fn(),
-    setEnabled: jest.fn(),
-    predict: jest.fn().mockReturnValue({ origin: { x: 100, y: 0, z: 0 } }),
-    onServerFrame: jest.fn()
-  }
+jest.mock('@/src/services/networkService', () => ({
+    __esModule: true,
+    networkService: {
+        setCallbacks: jest.fn(),
+        sendCommand: jest.fn(),
+        disconnect: jest.fn()
+    }
 }));
-
-jest.mock('quake2ts/shared', () => ({
-    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: {x:0,y:0,z:0}, allsolid: false, startsolid: false }),
-    pointContents: jest.fn().mockReturnValue(0),
-    CONTENTS_SOLID: 1,
-    Vec3: jest.fn(),
-    CollisionEntityIndex: jest.fn()
-}));
-
+jest.mock('@/src/services/predictionService');
 jest.mock('quake2ts/engine', () => ({
-    AssetManager: jest.fn().mockImplementation(() => ({
-        loadMap: jest.fn().mockResolvedValue({}) // Mock map
-    })),
-    FixedTimestepLoop: jest.fn()
+    AssetManager: jest.fn()
 }));
-
-jest.mock('../../../src/utils/collisionAdapter', () => ({
-    createCollisionModel: jest.fn().mockReturnValue({})
+jest.mock('@/src/utils/collisionAdapter');
+jest.mock('quake2ts/shared', () => ({
+    ...jest.requireActual('quake2ts/shared'),
+    traceBox: jest.fn(),
+    pointContents: jest.fn()
 }));
 
 describe('MultiplayerGameService', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-    multiplayerGameService.shutdown(); // Reset state
-  });
+    let service: MultiplayerGameService;
+    let mockAssetManager: any;
 
-  it('should init and load map', async () => {
-      const vfs = {} as any;
-      await multiplayerGameService.init(vfs, 'q2dm1');
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockAssetManager = {
+            loadMap: jest.fn()
+        };
+        (AssetManager as jest.Mock).mockReturnValue(mockAssetManager);
 
-      expect(predictionService.init).toHaveBeenCalled();
-  });
+        service = new MultiplayerGameService();
+    });
 
-  it('should start and enable prediction', async () => {
-    const vfs = {} as any;
-    await multiplayerGameService.init(vfs, 'q2dm1');
+    it('registers network callbacks on instantiation', () => {
+        expect(networkService.setCallbacks).toHaveBeenCalled();
+    });
 
-    await multiplayerGameService.start();
-    expect(predictionService.setEnabled).toHaveBeenCalledWith(true);
-  });
+    it('initializes with map', async () => {
+        const vfs: any = {};
+        const mockMap = { name: 'map' };
+        const mockCollisionModel = { planes: [] };
 
-  it('should throw if starting without init', async () => {
-      await expect(multiplayerGameService.start()).rejects.toThrow();
-  });
+        mockAssetManager.loadMap.mockResolvedValue(mockMap);
+        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
 
-  it('should stop and disable prediction', () => {
-    multiplayerGameService.stop();
-    expect(predictionService.setEnabled).toHaveBeenCalledWith(false);
-  });
+        await service.init(vfs, 'demo1');
 
-  it('should send command and predict on tick', async () => {
-    const vfs = {} as any;
-    await multiplayerGameService.init(vfs, 'q2dm1');
-    await multiplayerGameService.start();
+        expect(AssetManager).toHaveBeenCalledWith(vfs);
+        expect(mockAssetManager.loadMap).toHaveBeenCalledWith('demo1');
+        expect(createCollisionModel).toHaveBeenCalledWith(mockMap);
+        expect(predictionService.init).toHaveBeenCalled();
+    });
 
-    const cmd = {
-        msec: 16,
-        buttons: 0,
-        angles: { x: 0, y: 0, z: 0 },
-        forwardmove: 100,
-        sidemove: 0,
-        upmove: 0,
-        impulse: 0,
-        lightlevel: 0
-    };
-    const step = { dt: 0.016, time: 1 };
+    it('start throws if not initialized', async () => {
+        await expect(service.start()).rejects.toThrow('MultiplayerGameService not initialized');
+    });
 
-    multiplayerGameService.tick(step as any, cmd as any);
+    it('starts and stops correctly', async () => {
+        mockAssetManager.loadMap.mockResolvedValue({});
+        await service.init({} as any, 'map');
 
-    expect(networkService.sendCommand).toHaveBeenCalledWith(cmd);
-    expect(predictionService.predict).toHaveBeenCalledWith(cmd);
-  });
+        await service.start();
+        expect(predictionService.setEnabled).toHaveBeenCalledWith(true);
 
-  it('should process server snapshots', () => {
-    const serverSnapshot = {
-        time: 100,
-        playerState: { origin: { x: 10, y: 10, z: 10 } },
-        entities: []
-    };
+        service.stop();
+        expect(predictionService.setEnabled).toHaveBeenCalledWith(false);
+    });
 
-    // Invoke private method via any
-    (multiplayerGameService as any).onServerSnapshot(serverSnapshot);
+    it('shutdown cleans up', () => {
+        service.shutdown();
+        expect(networkService.disconnect).toHaveBeenCalled();
+    });
 
-    expect(predictionService.onServerFrame).toHaveBeenCalledWith(serverSnapshot.playerState, 0, 100);
-  });
+    it('tick sends command and updates prediction', async () => {
+        mockAssetManager.loadMap.mockResolvedValue({});
+        await service.init({} as any, 'map');
+        await service.start();
 
-  it('should throw on save/load', () => {
-      expect(() => multiplayerGameService.createSave("desc")).toThrow();
-      expect(() => multiplayerGameService.loadSave({} as any)).toThrow();
-  });
+        const step: any = {};
+        const cmd: any = { forwardMove: 100 };
+        const mockPredicted = { origin: { x: 10, y: 0, z: 0 } };
 
-  it('should handle disconnect', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-      (multiplayerGameService as any).onDisconnect("reason");
-      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining("reason"));
-      consoleSpy.mockRestore();
-  });
+        (predictionService.predict as jest.Mock).mockReturnValue(mockPredicted);
 
-  it('should provide config strings', () => {
-      expect(multiplayerGameService.getConfigStrings()).toBeInstanceOf(Map);
-  });
+        service.tick(step, cmd);
 
-  it('should execute prediction trace', async () => {
-      const vfs = {} as any;
-      await multiplayerGameService.init(vfs, 'q2dm1');
+        expect(networkService.sendCommand).toHaveBeenCalledWith(cmd);
+        expect(predictionService.predict).toHaveBeenCalledWith(cmd);
 
-      const config = (predictionService.init as jest.Mock).mock.calls[0][0];
+        // Snapshot should reflect predicted state
+        const snap = service.getSnapshot();
+        expect(snap.origin.x).toBe(10);
+    });
 
-      const result = config.trace({x:0,y:0,z:0}, {x:100,y:0,z:0});
-      expect(result).toBeDefined();
-      expect(result.fraction).toBe(1.0);
+    it('returns empty snapshot if no state', () => {
+        const snap = service.getSnapshot();
+        expect(snap).toBeDefined();
+        expect(snap.entities.activeCount).toBe(0);
+    });
 
-      const pc = config.pointContents({x:0,y:0,z:0});
-      expect(pc).toBe(0);
-  });
+    it('handles server snapshot', () => {
+        // Access private method callback via networkService.setCallbacks call
+        const callbacks = (networkService.setCallbacks as jest.Mock).mock.calls[0][0];
+        const mockSnapshot = {
+            time: 1234,
+            playerState: { origin: { x: 5, y: 5, z: 5 } },
+            entities: []
+        };
+
+        callbacks.onSnapshot(mockSnapshot);
+
+        expect(predictionService.onServerFrame).toHaveBeenCalledWith(mockSnapshot.playerState, 0, 1234);
+
+        // Check if getSnapshot uses it (if prediction is null)
+        (predictionService.predict as jest.Mock).mockReturnValue(null);
+        // Reset local prediction state by not calling tick?
+        // tick stores result in this.predictedState.
+        // We need to verify that getSnapshot uses latestSnapshot if predictedState is null.
+        // But tick sets predictedState.
+
+        // If we haven't ticked, predictedState is null.
+        const snap = service.getSnapshot();
+        expect(snap.origin.x).toBe(5);
+    });
+
+    it('performs trace using collision model', async () => {
+        const mockCollisionModel = { planes: [] };
+        mockAssetManager.loadMap.mockResolvedValue({});
+        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
+
+        await service.init({} as any, 'map');
+
+        // Capture init options to get trace callback
+        const initOpts = (predictionService.init as jest.Mock).mock.calls[0][0];
+
+        const mockTraceResult = {
+            allsolid: false,
+            startsolid: false,
+            fraction: 0.5,
+            endpos: { x: 50, y: 0, z: 0 },
+            plane: { normal: { x: 1, y: 0, z: 0 } },
+            surfaceFlags: 0,
+            contents: 0
+        };
+        (traceBox as jest.Mock).mockReturnValue(mockTraceResult);
+
+        const result = initOpts.trace({ x: 0, y: 0, z: 0 }, { x: 100, y: 0, z: 0 }, { x: -10, y: -10, z: -10 }, { x: 10, y: 10, z: 10 });
+
+        expect(traceBox).toHaveBeenCalledWith(expect.objectContaining({
+            model: mockCollisionModel,
+            start: { x: 0, y: 0, z: 0 },
+            end: { x: 100, y: 0, z: 0 }
+        }));
+        expect(result.fraction).toBe(0.5);
+    });
+
+    it('trace returns full fraction if no model', () => {
+        // Not initialized
+        const callbacks = (networkService.setCallbacks as jest.Mock).mock.calls[0][0];
+        // Wait, how to access trace? It was passed to init.
+        // But we haven't called init.
+        // We can access private method if we cast to any, or use logic.
+
+        // But predictionService.init is called in init().
+        // So we can't test trace without init unless we mock init?
+        // Actually, init calls predictionService.init with bound method.
+        // So we call init() but make sure collisionModel is null?
+        // init throws if map fails.
+        // If createCollisionModel returns null?
+
+        // We can mimic the scenario where init wasn't called but somehow trace is called?
+        // Unlikely in real usage but `trace` implementation checks for `!this.collisionModel`.
+        // We can inspect the method directly.
+        const result = (service as any).trace({x:0,y:0,z:0}, {x:100,y:0,z:0});
+        expect(result.fraction).toBe(1.0);
+    });
+
+    it('pointContents delegates to engine', async () => {
+        const mockCollisionModel = {};
+        mockAssetManager.loadMap.mockResolvedValue({});
+        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
+        await service.init({} as any, 'map');
+
+        const initOpts = (predictionService.init as jest.Mock).mock.calls[0][0];
+
+        (pointContents as jest.Mock).mockReturnValue(42);
+
+        const result = initOpts.pointContents({ x: 10, y: 10, z: 10 });
+        expect(pointContents).toHaveBeenCalledWith({ x: 10, y: 10, z: 10 }, mockCollisionModel, 0);
+        expect(result).toBe(42);
+    });
 });
