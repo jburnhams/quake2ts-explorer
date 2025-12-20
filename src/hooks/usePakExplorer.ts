@@ -112,40 +112,40 @@ export function usePakExplorer(): UsePakExplorerResult {
 
   // Helper to load standard PAKs
   const loadBuiltInPaks = useCallback(async (signal: AbortSignal) => {
-    const paksToLoad: { name: string, url: string }[] = [];
+    let paksToLoad: string[] = [];
 
-    // Always check pak.pak
-    paksToLoad.push({ name: 'pak.pak', url: 'pak.pak' });
-
-    // Check numbered PAKs
-    let pakIndex = 0;
-    while (true) {
-        const pakName = `pak${pakIndex}.pak`;
-        const url = pakName;
-        try {
-            const headRes = await fetch(url, { method: 'HEAD', signal });
-            if (headRes.ok) {
-                paksToLoad.push({ name: pakName, url });
-                pakIndex++;
-            } else {
-                break;
-            }
-        } catch (e) {
-            break;
+    // Try to fetch manifest
+    try {
+        const manifestRes = await fetch('pak-manifest.json', { signal });
+        if (manifestRes.ok) {
+           // Ensure it's not HTML (e.g. 404 fallback)
+           const type = manifestRes.headers.get('content-type');
+           if (!type || !type.toLowerCase().includes('text/html')) {
+              const manifest = await manifestRes.json();
+              if (manifest.paks && Array.isArray(manifest.paks)) {
+                  paksToLoad = manifest.paks;
+              }
+           }
         }
-        // Safety break
-        if (pakIndex > 20) break;
+    } catch (e) {
+        console.warn("Failed to load pak-manifest.json, skipping built-in paks.");
     }
 
-    for (const pak of paksToLoad) {
+    for (const url of paksToLoad) {
         try {
-            const res = await fetch(pak.url, { signal });
+            const res = await fetch(url, { signal });
             if (res.ok) {
+                const type = res.headers.get('content-type');
+                if (type && type.toLowerCase().includes('text/html')) {
+                    console.warn(`Skipping ${url} because content-type is text/html`);
+                    continue;
+                }
                 const buffer = await res.arrayBuffer();
-                await pakService.loadPakFromBuffer(pak.name, buffer, undefined, false);
+                const name = url.split('/').pop() || url; // Simple filename extraction
+                await pakService.loadPakFromBuffer(name, buffer, undefined, false);
             }
         } catch (e) {
-            console.warn(`Failed to load built-in ${pak.name}`, e);
+            console.warn(`Failed to load built-in ${url}`, e);
         }
     }
   }, [pakService]);

@@ -325,12 +325,20 @@ describe('usePakExplorer', () => {
 
     // --- New Tests for Built-in Paks ---
 
-    it('loads built-in paks successfully', async () => {
-        // Mock fetch for HEAD and GET requests
+    it('loads built-in paks successfully from manifest', async () => {
+        // Mock fetch for manifest and paks
         (global.fetch as jest.Mock).mockImplementation((url) => {
-            if (url === 'pak.pak' || url === 'pak0.pak') {
+            if (url === 'pak-manifest.json') {
                 return Promise.resolve({
                     ok: true,
+                    headers: { get: () => 'application/json' },
+                    json: () => Promise.resolve({ paks: ['pak.pak', 'baseq2/pak0.pak'] })
+                });
+            }
+            if (url === 'pak.pak' || url === 'baseq2/pak0.pak') {
+                return Promise.resolve({
+                    ok: true,
+                    headers: { get: () => 'application/octet-stream' },
                     arrayBuffer: () => Promise.resolve(new ArrayBuffer(10))
                 });
             }
@@ -349,6 +357,36 @@ describe('usePakExplorer', () => {
         expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledTimes(2);
         expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledWith('pak.pak', expect.any(ArrayBuffer), undefined, false);
         expect(mockPakServiceMethods.loadPakFromBuffer).toHaveBeenCalledWith('pak0.pak', expect.any(ArrayBuffer), undefined, false);
+    });
+
+    it('skips paks with text/html content type', async () => {
+        (global.fetch as jest.Mock).mockImplementation((url) => {
+            if (url === 'pak-manifest.json') {
+                return Promise.resolve({
+                    ok: true,
+                    headers: { get: () => 'application/json' },
+                    json: () => Promise.resolve({ paks: ['pak.pak'] })
+                });
+            }
+            if (url === 'pak.pak') {
+                return Promise.resolve({
+                    ok: true,
+                    headers: { get: () => 'text/html' },
+                    arrayBuffer: () => Promise.resolve(new ArrayBuffer(10))
+                });
+            }
+            return Promise.resolve({ ok: false });
+        });
+
+        const { result } = renderHook(() => usePakExplorer());
+
+        await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 0));
+        });
+
+        await waitFor(() => expect(result.current.loading).toBe(false));
+
+        expect(mockPakServiceMethods.loadPakFromBuffer).not.toHaveBeenCalled();
     });
 
     it('loadFromUrl handles successful fetch', async () => {

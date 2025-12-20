@@ -30,3 +30,4 @@ coverage
 *.sw?
 pak.pak
 pak_dl.pak
+public/pak-manifest.json

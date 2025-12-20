@@ -8,8 +8,9 @@
     "node": ">=20.0.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
+    "generate-manifest": "node scripts/generate-pak-manifest.js",
+    "dev": "npm run generate-manifest && vite",
+    "build": "npm run generate-manifest && tsc && vite build",
     "preview": "vite preview",
     "test": "npm run test:unit",
     "test:unit": "NODE_OPTIONS='--max-old-space-size=2048' jest --config jest.unit.config.js --runInBand",
