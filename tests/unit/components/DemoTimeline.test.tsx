@@ -2,18 +2,15 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DemoTimeline } from '@/src/components/DemoTimeline';
 import { DemoPlaybackController, DemoEventType } from 'quake2ts/engine';
+import { createMockRAF } from 'quake2ts/test-utils';
 
 describe('DemoTimeline', () => {
   let mockController: jest.Mocked<DemoPlaybackController>;
-  let rafCallback: FrameRequestCallback;
+  let mockRaf: ReturnType<typeof createMockRAF>;
 
   beforeEach(() => {
-    // Mock requestAnimationFrame
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-      rafCallback = cb;
-      return 1;
-    });
-    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    mockRaf = createMockRAF();
+    mockRaf.enable();
 
     mockController = {
       play: jest.fn(),
@@ -37,6 +34,7 @@ describe('DemoTimeline', () => {
   });
 
   afterEach(() => {
+    mockRaf.disable();
     jest.clearAllMocks();
   });
 
@@ -58,7 +56,7 @@ describe('DemoTimeline', () => {
 
     // Trigger update loop
     act(() => {
-      rafCallback(performance.now());
+      mockRaf.tick();
     });
 
     expect(screen.getByText('Frame: 50 / 100')).toBeInTheDocument();
