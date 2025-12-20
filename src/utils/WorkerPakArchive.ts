@@ -35,11 +35,17 @@ export class WorkerPakArchive implements PakArchive {
     }
 
     getEntries(): any[] {
-        return Array.from(this.entries.entries()).map(([name, entry]) => ({
+        if (!this.entries || typeof this.entries.entries !== 'function') {
+            console.error('[WorkerPakArchive] Invalid entries map:', this.entries);
+            return [];
+        }
+        const entries = Array.from(this.entries.entries()).map(([name, entry]) => ({
             name,
-            length: entry.length, // PakDirectoryEntry expects length
+            length: entry.length ?? entry.size, // Fallback to size if length is missing
             offset: entry.offset
         }));
+        // console.log(`[WorkerPakArchive] returning ${entries.length} entries`);
+        return entries;
     }
 
     getEntry(path: string): any {
