@@ -205,6 +205,24 @@ export class PakService {
     try {
       const result = await workerService.executePakParserTask(api => api.parsePak(pakId, buffer));
 
+      console.log(`[PakService] Worker parsed ${name}:`, {
+          entriesType: typeof result.entries,
+          isMap: result.entries instanceof Map,
+          size: result.entries instanceof Map ? result.entries.size : 'N/A',
+          keys: result.entries instanceof Map ? Array.from(result.entries.keys()).slice(0, 5) : Object.keys(result.entries || {}).slice(0, 5)
+      });
+
+      let entries = result.entries;
+      if (!(entries instanceof Map)) {
+          console.warn('[PakService] Entries is not a Map, converting...');
+          if (typeof entries === 'object' && entries !== null) {
+              entries = new Map(Object.entries(entries));
+          } else {
+              console.error('[PakService] Invalid entries format:', entries);
+              entries = new Map();
+          }
+      }
+
       // Cache the result
       if (hash) {
         cacheService.set(CACHE_STORES.PAK_INDEX, hash, result.entries).catch(e =>
@@ -213,7 +231,7 @@ export class PakService {
       }
 
       // @ts-ignore
-      const archive = new WorkerPakArchive(result.name, result.buffer, result.entries) as unknown as PakArchive;
+      const archive = new WorkerPakArchive(result.name, result.buffer, entries) as unknown as PakArchive;
       this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     } catch (error) {

@@ -32,6 +32,13 @@ function App() {
 
   useEffect(() => {
     const checkAuth = async () => {
+      // Check for skipAuth param
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('skipAuth') === 'true') {
+        setIsAuthChecking(false);
+        return;
+      }
+
       const user = await authService.checkSession();
       if (user) {
         setUser(user);
