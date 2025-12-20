@@ -22,10 +22,28 @@ import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
 import { SettingsPanel } from './components/SettingsPanel';
 import { settingsService } from './services/settingsService';
 import { themeService } from './services/themeService';
+import { authService, User } from './services/authService';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
 function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const user = await authService.checkSession();
+      if (user) {
+        setUser(user);
+      }
+      // Always clear loading state. If redirecting, the page will unload anyway.
+      // If error (and no redirect), we want to show the app content (possibly without user).
+      setIsAuthChecking(false);
+    };
+
+    checkAuth();
+  }, []);
+
   const {
     pakService,
     fileTree,
@@ -300,6 +318,7 @@ function App() {
             onOpenDemoBrowser={() => setShowDemoBrowser(true)}
             onOpenServerBrowser={() => setShowServerBrowser(true)}
             onOpenSettings={() => setShowSettings(true)}
+            user={user}
           />
         )}
         {showPakManager && (
@@ -332,9 +351,9 @@ function App() {
             <button onClick={dismissError}>Dismiss</button>
           </div>
         )}
-        {loading && gameMode === 'browser' && (
+        {(loading || isAuthChecking) && gameMode === 'browser' && (
           <div className="loading-banner" data-testid="loading-banner">
-            Loading...
+            {isAuthChecking ? 'Checking authentication...' : 'Loading...'}
           </div>
         )}
         {loading && gameMode === 'game' && (

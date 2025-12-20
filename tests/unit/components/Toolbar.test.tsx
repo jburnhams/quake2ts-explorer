@@ -34,10 +34,39 @@ describe('Toolbar', () => {
         fileCount={0}
         viewMode="merged"
         onViewModeChange={mockOnViewModeChange}
+        user={null}
       />
     );
     expect(screen.getByText('Quake2TS Explorer')).toBeInTheDocument();
     expect(screen.getByText('Add PAK Files')).toBeInTheDocument();
+  });
+
+  it('renders user display when user is provided', () => {
+      const user = {
+          id: 1,
+          email: 'test@example.com',
+          name: 'Test User',
+          profile_picture: 'https://example.com/avatar.jpg',
+          is_admin: false,
+          created_at: '',
+          updated_at: '',
+          last_login_at: ''
+      };
+
+      render(
+        <Toolbar
+          onFileSelect={mockOnFileSelect}
+          pakCount={0}
+          fileCount={0}
+          viewMode="merged"
+          onViewModeChange={mockOnViewModeChange}
+          user={user}
+        />
+      );
+
+      expect(screen.getByText('Test User')).toBeInTheDocument();
+      const img = screen.getByRole('img');
+      expect(img).toHaveAttribute('src', user.profile_picture);
   });
 
   it('handles file selection', () => {
@@ -48,6 +77,7 @@ describe('Toolbar', () => {
         fileCount={0}
         viewMode="merged"
         onViewModeChange={mockOnViewModeChange}
+        user={null}
       />
     );
     const fileInput = screen.getByTestId('file-input');
@@ -65,6 +95,7 @@ describe('Toolbar', () => {
         fileCount={0}
         viewMode="merged"
         onViewModeChange={mockOnViewModeChange}
+        user={null}
       />
     );
     const recordBtn = screen.getByText('⚪ Rec Demo');
@@ -87,6 +118,7 @@ describe('Toolbar', () => {
           fileCount={0}
           viewMode="merged"
           onViewModeChange={mockOnViewModeChange}
+          user={null}
         />
       );
       const stopBtn = screen.getByText('🔴 Stop Rec');

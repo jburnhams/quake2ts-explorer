@@ -88,15 +88,36 @@ describe('App Component', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Mock fetch to fail so built-in paks don't load, keeping pakCount 0 for tests
-    global.fetch = jest.fn(() => Promise.resolve({
+    global.fetch = jest.fn((url: string) => {
+      if (url.includes('api/session')) {
+         return Promise.resolve({
+             ok: true,
+             json: () => Promise.resolve({
+                 user: {
+                     id: 1,
+                     name: 'Test User',
+                     profile_picture: 'pic.jpg'
+                 }
+             })
+         });
+      }
+      return Promise.resolve({
         ok: false,
         status: 404,
         statusText: 'Not Found'
-    } as Response)) as jest.Mock;
+    } as Response);
+    }) as jest.Mock;
   });
 
-  it('renders initial state correctly', () => {
-    render(<App />);
+  it('renders initial state correctly', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+
+    // Wait for auth check to complete
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
 
     expect(screen.getByTestId('toolbar')).toBeInTheDocument();
     expect(screen.getByTestId('file-tree')).toBeInTheDocument();
@@ -104,47 +125,85 @@ describe('App Component', () => {
     expect(screen.getByTestId('metadata-panel')).toBeInTheDocument();
   });
 
-  it('shows no PAKs loaded initially', () => {
-    render(<App />);
+  it('shows no PAKs loaded initially', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('No PAK files loaded')).toBeInTheDocument();
   });
 
-  it('shows empty file tree', () => {
-    render(<App />);
+  it('shows empty file tree', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('No files loaded')).toBeInTheDocument();
   });
 
-  it('shows select file message in preview', () => {
-    render(<App />);
+  it('shows select file message in preview', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('Select a file to preview')).toBeInTheDocument();
   });
 
-  it('shows select file message in metadata', () => {
-    render(<App />);
+  it('shows select file message in metadata', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(screen.getByText('Select a file to view details')).toBeInTheDocument();
   });
 
-  it('has file input with correct attributes', () => {
-    render(<App />);
+  it('has file input with correct attributes', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     const input = screen.getByTestId('file-input') as HTMLInputElement;
     expect(input.accept).toBe('.pak');
     expect(input.multiple).toBe(true);
   });
 
-  it('renders with drop zone', () => {
-    render(<App />);
+  it('renders with drop zone', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(screen.getByTestId('drop-zone')).toBeInTheDocument();
   });
 
-  it('has correct layout structure', () => {
+  it('has correct layout structure', async () => {
     const { container } = render(<App />);
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
     expect(container.querySelector('.app')).toBeInTheDocument();
     expect(container.querySelector('.toolbar')).toBeInTheDocument();
     expect(container.querySelector('.main-content')).toBeInTheDocument();
   });
 
-  it('has accessible semantic elements', () => {
-    render(<App />);
+  it('has accessible semantic elements', async () => {
+    await act(async () => {
+        render(<App />);
+    });
+    await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+    });
 
     // Toolbar is header
     expect(screen.getByTestId('toolbar').tagName).toBe('HEADER');
@@ -158,7 +217,12 @@ describe('App Component', () => {
 
   describe('PAK file loading', () => {
     it('shows loading banner during file load', async () => {
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
+      await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+      });
 
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       const file = new File(['PACK'], 'test.pak', { type: 'application/octet-stream' });
@@ -176,7 +240,12 @@ describe('App Component', () => {
     });
 
     it('ignores non-PAK files', async () => {
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
+      await waitFor(() => {
+        expect(screen.queryByText('Checking authentication...')).not.toBeInTheDocument();
+      });
 
       const input = screen.getByTestId('file-input') as HTMLInputElement;
       const file = new File(['content'], 'readme.txt', { type: 'text/plain' });
@@ -195,7 +264,9 @@ describe('App Component', () => {
 
   describe('Error handling', () => {
     it('shows error banner when PAK loading fails', async () => {
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       // Wait for initial load to finish
       await waitFor(() => {
@@ -220,7 +291,9 @@ describe('App Component', () => {
 
     it('dismisses error when button clicked', async () => {
       const user = userEvent.setup();
-      render(<App />);
+      await act(async () => {
+        render(<App />);
+      });
 
       // Wait for initial load to finish
       await waitFor(() => {

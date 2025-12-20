@@ -1,0 +1,19 @@
+.user-display {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+  padding-right: 10px;
+}
+
+.user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1px solid #666;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #ccc;
+}

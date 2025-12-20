@@ -1,6 +1,8 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { demoRecorderService } from '../services/demoRecorder';
 import type { ViewMode } from '../services/pakService';
+import { UserDisplay } from './UserDisplay';
+import type { User } from '../services/authService';
 
 export interface ToolbarProps {
   onFileSelect: (files: FileList) => void;
@@ -13,6 +15,7 @@ export interface ToolbarProps {
   onOpenDemoBrowser?: () => void;
   onOpenServerBrowser?: () => void;
   onOpenSettings?: () => void;
+  user: User | null;
 }
 
 export function Toolbar({
@@ -25,7 +28,8 @@ export function Toolbar({
   onOpenPakManager,
   onOpenDemoBrowser,
   onOpenServerBrowser,
-  onOpenSettings
+  onOpenSettings,
+  user
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRecording, setIsRecording] = useState(false);
@@ -141,6 +145,7 @@ export function Toolbar({
             ⚙️
           </button>
         )}
+        {user && <UserDisplay user={user} />}
         <input
           ref={fileInputRef}
           type="file"
