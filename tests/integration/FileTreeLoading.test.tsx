@@ -7,25 +7,17 @@ import * as path from 'path';
 import { jest } from '@jest/globals';
 
 // Mock dependencies
-jest.mock('@/src/services/workerService', () => {
-    // Require inside factory to avoid accessing out-of-scope variables if using babel-jest hoisting
-    // But jest object is automatically available in jest environment usually,
-    // however when using @jest/globals with ESM/TS it can be tricky in mock factories.
-    // The standard way is often just returning the object if simple.
-    // Or importing jest from @jest/globals inside if needed, but hoisting prevents that.
-    // So we use the global 'jest' if available or just simple functions.
-    // Or actually, define the mock implementation inline without 'jest.fn' inside the factory
-    // if we don't need to assert calls, OR rely on the fact that jest.fn IS available globally in typical setup.
-    // But error said "Cannot read properties of undefined (reading 'jest')".
-    // This usually means `jest` variable is not defined in the scope of the factory.
+jest.mock('@/src/services/workerService', () => ({
+    workerService: {
+        executePakParserTask: () => Promise.reject(new Error('Worker not available in JSDOM')),
+        executeAssetProcessorTask: () => Promise.reject(new Error('Worker not available in JSDOM'))
+    }
+}));
 
-    return {
-        workerService: {
-            // @ts-ignore
-            executePakParserTask: () => Promise.reject(new Error('Worker not available in JSDOM')),
-            // @ts-ignore
-            executeAssetProcessorTask: () => Promise.reject(new Error('Worker not available in JSDOM'))
-        }
+// Mock react-virtualized-auto-sizer to provide dimensions
+jest.mock('react-virtualized-auto-sizer', () => {
+    return ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) => {
+        return children({ width: 500, height: 500 });
     };
 });
 
@@ -43,15 +35,12 @@ import 'fake-indexeddb/auto';
 global.URL.createObjectURL = jest.fn(() => 'blob:mock');
 global.URL.revokeObjectURL = jest.fn();
 
-describe.skip('FileTree Loading Integration', () => {
+describe('FileTree Loading Integration', () => {
     const pakPath = path.resolve(__dirname, '../../public/pak.pak');
 
     it('should load pak.pak and display contents in sidebar', async () => {
         // Ensure skipAuth is set
         window.history.pushState({}, 'Test', '/?skipAuth=true');
-
-        // Mock fetch for 'pak-manifest.json' and 'pak.pak'
-        // Since usePakExplorer uses fetch to load built-in paks.
 
         // Read real file
         if (!fs.existsSync(pakPath)) {
@@ -76,7 +65,11 @@ describe.skip('FileTree Loading Integration', () => {
                     headers: new Headers({ 'content-type': 'application/octet-stream' })
                 } as Response);
             }
-            return Promise.reject(new Error(`Unknown fetch: ${url}`));
+            return Promise.resolve({
+                ok: false,
+                status: 404,
+                text: async () => 'Not Found'
+            } as Response);
         }) as jest.Mock;
 
         await act(async () => {
@@ -87,22 +80,19 @@ describe.skip('FileTree Loading Integration', () => {
         await waitFor(() => {
             const banner = screen.queryByTestId('loading-banner');
             expect(banner).not.toBeInTheDocument();
-        }, { timeout: 20000 });
+        }, { timeout: 30000 });
 
-        // Check for specific file in the tree (based on standard pak0 content)
-        // Usually contains 'default.cfg' or 'maps/'
-        // The tree renders items with role="treeitem" or class "tree-node"
-        // Let's look for text content.
-
+        // Check for specific file in the tree
+        // "maps" directory should be visible. Since we mocked AutoSizer, it should render.
+        // Also the pak parsing on main thread might take time, so we wait.
         await waitFor(() => {
-            // "maps" directory should be visible
-            expect(screen.getByText('maps')).toBeInTheDocument();
-            // "pics" directory should be visible
-            expect(screen.getByText('pics')).toBeInTheDocument();
-        }, { timeout: 60000 });
+            // We use queryAllByText because 'maps' might appear in multiple places or as a substring if not careful,
+            // but in the tree it should be a tree item.
+            const mapsElement = screen.queryByText('maps');
+            expect(mapsElement).toBeInTheDocument();
 
-        // Check for specific file if possible, e.g. default.cfg
-        // Note: FileTree virtualization might hide off-screen items, but default.cfg is usually near top if sorted?
-        // Directories come first usually.
+            const picsElement = screen.queryByText('pics');
+            expect(picsElement).toBeInTheDocument();
+        }, { timeout: 30000 });
     }, 60000);
 });
