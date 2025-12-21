@@ -10,12 +10,12 @@ import {
 import {
   ClientPrediction,
   type PredictionState
-} from 'quake2ts/cgame';
+} from 'quake2ts/client';
 
 import { predictionService } from '../../../src/services/predictionService';
 
 // Mock ClientPrediction
-jest.mock('quake2ts/cgame', () => {
+jest.mock('quake2ts/client', () => {
   return {
     ClientPrediction: jest.fn().mockImplementation(() => ({
       setPredictionEnabled: jest.fn(),

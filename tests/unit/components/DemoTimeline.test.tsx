@@ -10,7 +10,6 @@ describe('DemoTimeline', () => {
 
   beforeEach(() => {
     mockRaf = createMockRAF();
-    mockRaf.enable();
 
     mockController = {
       play: jest.fn(),
@@ -34,7 +33,6 @@ describe('DemoTimeline', () => {
   });
 
   afterEach(() => {
-    mockRaf.disable();
     jest.clearAllMocks();
   });
 
