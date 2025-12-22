@@ -190,7 +190,8 @@ export function usePakExplorer(): UsePakExplorerResult {
       init();
 
       return () => controller.abort();
-  }, [loadBuiltInPaks, pakService, updateTreeAndCounts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loadBuiltInPaks, pakService]);
 
   // Wrapper for loadFromUrl to support legacy/testing calls or explicit loads
   const loadFromUrl = useCallback(
