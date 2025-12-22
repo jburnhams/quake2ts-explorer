@@ -98,14 +98,14 @@ describe('PakService Priority', () => {
 
         // Current order: Mod (0), Base (10). VFS: Mod, Base. Content: Base.
         let content = await service.readFile('test.txt');
-        expect(new TextDecoder().decode(content)).toBe('content-from-base.pak');
+        expect(new TextDecoder().decode(content)).toBe('content-from-base');
 
         // Update Mod to High
         service.updatePakPriority('mod', 100);
 
         // New order: Base (10), Mod (100). VFS: Base, Mod. Content: Mod.
         content = await service.readFile('test.txt');
-        expect(new TextDecoder().decode(content)).toBe('content-from-mod.pak');
+        expect(new TextDecoder().decode(content)).toBe('content-from-mod');
     });
 
     it('should reorder PAKs manually', async () => {
