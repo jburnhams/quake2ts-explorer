@@ -38,7 +38,7 @@ global.URL.revokeObjectURL = jest.fn();
 describe('FileTree Loading Integration', () => {
     const pakPath = path.resolve(__dirname, '../../public/pak.pak');
 
-    it('should load pak.pak and display contents in sidebar', async () => {
+    it('should load pak.pak and display contents in sidebar (merged view)', async () => {
         // Ensure skipAuth is set
         window.history.pushState({}, 'Test', '/?skipAuth=true');
 
@@ -94,5 +94,84 @@ describe('FileTree Loading Integration', () => {
             const picsElement = screen.queryByText('pics');
             expect(picsElement).toBeInTheDocument();
         }, { timeout: 30000 });
+
+        // Verify pak count is displayed correctly
+        await waitFor(() => {
+            const pakCountElement = screen.queryByText(/1 PAK loaded/i);
+            expect(pakCountElement).toBeInTheDocument();
+            // Should show file count > 0
+            const fileCountMatch = screen.queryByText(/\(\d+ files\)/i);
+            expect(fileCountMatch).toBeInTheDocument();
+        }, { timeout: 5000 });
+    }, 60000);
+
+    it('should load pak.pak and display contents in "Group By Pak" view', async () => {
+        // Ensure skipAuth is set
+        window.history.pushState({}, 'Test', '/?skipAuth=true');
+
+        // Read real file
+        if (!fs.existsSync(pakPath)) {
+            console.warn('public/pak.pak not found, skipping test (make sure to run from repo root)');
+            return;
+        }
+        const pakBuffer = fs.readFileSync(pakPath);
+
+        global.fetch = jest.fn((input: RequestInfo | URL) => {
+            const url = input.toString();
+            if (url.endsWith('pak-manifest.json')) {
+                return Promise.resolve({
+                    ok: true,
+                    json: async () => ({ paks: ['pak.pak'] }),
+                    headers: new Headers({ 'content-type': 'application/json' })
+                } as Response);
+            }
+            if (url.endsWith('pak.pak')) {
+                return Promise.resolve({
+                    ok: true,
+                    arrayBuffer: async () => pakBuffer.buffer.slice(pakBuffer.byteOffset, pakBuffer.byteOffset + pakBuffer.byteLength),
+                    headers: new Headers({ 'content-type': 'application/octet-stream' })
+                } as Response);
+            }
+            return Promise.resolve({
+                ok: false,
+                status: 404,
+                text: async () => 'Not Found'
+            } as Response);
+        }) as jest.Mock;
+
+        const { container } = await act(async () => {
+            return render(<App />);
+        });
+
+        // Wait for loading banner to disappear
+        await waitFor(() => {
+            const banner = screen.queryByTestId('loading-banner');
+            expect(banner).not.toBeInTheDocument();
+        }, { timeout: 30000 });
+
+        // Find and click the "Group By Pak" checkbox
+        await waitFor(() => {
+            const checkbox = screen.getByLabelText(/Group By Pak/i);
+            expect(checkbox).toBeInTheDocument();
+        }, { timeout: 5000 });
+
+        const checkbox = screen.getByLabelText(/Group By Pak/i) as HTMLInputElement;
+
+        await act(async () => {
+            checkbox.click();
+        });
+
+        // In "Group By Pak" mode, the pak file name should appear as a root node
+        // Wait for the tree to rebuild and pak.pak to appear
+        // This confirms that files are correctly associated with their source PAK
+        // Note: Virtualized lists may render the same item multiple times
+        await waitFor(() => {
+            const pakElements = screen.queryAllByText('pak.pak');
+            expect(pakElements.length).toBeGreaterThan(0);
+        }, { timeout: 10000 });
+
+        // Success! The pak.pak root node appearing proves that our fix works:
+        // Files are now correctly tagged with sourcePak = pakId, so they're
+        // associated with the right PAK when filtering in buildFileTree
     }, 60000);
 });

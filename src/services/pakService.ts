@@ -194,7 +194,7 @@ export class PakService {
       const cachedEntries = await cacheService.get<Map<string, any>>(CACHE_STORES.PAK_INDEX, hash);
       if (cachedEntries) {
         // @ts-ignore
-        const archive = new WorkerPakArchive(name, buffer, cachedEntries) as unknown as PakArchive;
+        const archive = new WorkerPakArchive(pakId, buffer, cachedEntries) as unknown as PakArchive;
         this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
         return archive;
       }
@@ -231,7 +231,7 @@ export class PakService {
       }
 
       // @ts-ignore
-      const archive = new WorkerPakArchive(result.name, result.buffer, entries) as unknown as PakArchive;
+      const archive = new WorkerPakArchive(pakId, result.buffer, entries) as unknown as PakArchive;
       this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     } catch (error) {
