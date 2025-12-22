@@ -63,11 +63,14 @@ export function usePakExplorer(): UsePakExplorerResult {
   const gameLoopRef = useRef<GameLoop | null>(null);
 
   const updateTreeAndCounts = useCallback(() => {
+    console.log(`[usePakExplorer] updateTreeAndCounts called with viewMode=${viewMode}`);
     const tree = pakService.buildFileTree(viewMode);
+    console.log(`[usePakExplorer] tree built, root has ${tree.children?.length || 0} children`);
     setFileTree(tree);
     setPakCount(pakService.getMountedPaks().length);
     const listing = pakService.listDirectory();
     setFileCount(listing.files.length);
+    console.log(`[usePakExplorer] Updated: pakCount=${pakService.getMountedPaks().length}, fileCount=${listing.files.length}`);
   }, [pakService, viewMode]);
 
   // Handle View Mode change
