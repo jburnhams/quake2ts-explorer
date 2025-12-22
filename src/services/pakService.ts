@@ -195,6 +195,7 @@ export class PakService {
       if (cachedEntries) {
         // @ts-ignore
         const archive = new WorkerPakArchive(pakId, buffer, cachedEntries) as unknown as PakArchive;
+        console.log(`[PakService] Cache hit for ${name}, creating WorkerPakArchive with pakId=${pakId}, archive.name=${archive.name}`);
         this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
         return archive;
       }
@@ -232,11 +233,13 @@ export class PakService {
 
       // @ts-ignore
       const archive = new WorkerPakArchive(pakId, result.buffer, entries) as unknown as PakArchive;
+      console.log(`[PakService] Worker success for ${name}, creating WorkerPakArchive with pakId=${pakId}, archive.name=${archive.name}`);
       this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     } catch (error) {
       console.warn('Worker parsing failed, falling back to main thread', error);
       const archive = PakArchive.fromArrayBuffer(pakId, buffer);
+      console.log(`[PakService] Fallback for ${name}, creating PakArchive with pakId=${pakId}, archive.name=${archive.name}`);
       this.mountPak(archive, pakId, name, isUser, priority, hash || undefined);
       return archive;
     }
@@ -544,6 +547,15 @@ export class PakService {
                 }
             };
             gatherFiles();
+
+            console.log(`[PakService] Building tree for pak ${pak.name} (id=${pak.id}), found ${pakFiles.length} files`);
+            if (pakFiles.length === 0) {
+                // Debug: Check what sourcePak values files actually have
+                const allFiles = this.vfs.list().files;
+                const sampleFiles = allFiles.slice(0, 3);
+                console.log(`[PakService] No files matched! Sample files have sourcePak:`, sampleFiles.map(f => ({ path: f.path, sourcePak: f.sourcePak })));
+                console.log(`[PakService] Looking for pak.id=${pak.id}`);
+            }
 
             this.buildSubTree(pakRoot, pakFiles);
             root.children!.push(pakRoot);
