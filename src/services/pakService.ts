@@ -514,6 +514,8 @@ export class PakService {
   }
 
   buildFileTree(mode: ViewMode = 'merged'): TreeNode {
+    console.log(`[PakService] buildFileTree called with mode=${mode}, mounted paks:`, this.paks.size);
+
     const root: TreeNode = {
       name: 'root',
       path: '',
@@ -572,6 +574,8 @@ export class PakService {
             }
         };
         gatherFiles();
+
+        console.log(`[PakService] Merged mode: gathered ${allFiles.length} total files`);
 
         this.buildSubTree(root, allFiles);
     }
