@@ -15,6 +15,7 @@ export interface ToolbarProps {
   onOpenDemoBrowser?: () => void;
   onOpenServerBrowser?: () => void;
   onOpenSettings?: () => void;
+  onStoreFiles?: () => void;
   user: User | null;
 }
 
@@ -29,6 +30,7 @@ export function Toolbar({
   onOpenDemoBrowser,
   onOpenServerBrowser,
   onOpenSettings,
+  onStoreFiles,
   user
 }: ToolbarProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -89,6 +91,17 @@ export function Toolbar({
         >
             Load Order
         </button>
+        {onStoreFiles && (
+          <button
+            className="toolbar-button"
+            onClick={onStoreFiles}
+            disabled={pakCount === 0 || !user}
+            data-testid="store-files-button"
+            title={!user ? "Login required to store files" : "Upload PAK contents to Storage"}
+          >
+            Store
+          </button>
+        )}
         <div className="toolbar-separator" style={{ width: '1px', height: '20px', background: '#444', margin: '0 10px' }} />
         <label className="toolbar-toggle" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', cursor: 'pointer' }}>
           <input

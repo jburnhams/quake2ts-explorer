@@ -1,5 +1,8 @@
 const baseConfig = {
   testEnvironment: 'jsdom',
+  testEnvironmentOptions: {
+    customExportConditions: [''], // Required for MSW 2.0+ in JSDOM
+  },
   extensionsToTreatAsEsm: ['.ts', '.tsx'],
   moduleNameMapper: {
     '^@/(.*)$': '<rootDir>/$1',
@@ -7,6 +10,8 @@ const baseConfig = {
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/utils/styleMock.js',
     '\\?raw$': '<rootDir>/tests/utils/fileMock.js',
     '\\?worker$': '<rootDir>/tests/utils/workerMock.js', // Mock worker imports
+    // Force msw/node resolution to bypass export map restriction in jsdom
+    '^msw/node$': '<rootDir>/node_modules/msw/lib/node/index.js',
     '^quake2ts$': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
     '^quake2ts/engine$': '<rootDir>/node_modules/quake2ts/packages/engine/dist/esm/index.js',
     '^quake2ts/game$': '<rootDir>/node_modules/quake2ts/packages/game/dist/esm/index.js',
@@ -36,7 +41,8 @@ const baseConfig = {
       },
     ],
   },
-  transformIgnorePatterns: ['node_modules/(?!.*(quake2ts|@wasm-audio-decoders|codec-parser|@eshaz|ogg-opus-decoder|mpg123-decoder|ogg-vorbis-decoder|react-window|react-virtualized-auto-sizer|jsdom|parse5))'],
+  // Add until-async to ignore patterns whitelist (using negative lookahead)
+  transformIgnorePatterns: ['node_modules/(?!.*(quake2ts|@wasm-audio-decoders|codec-parser|@eshaz|ogg-opus-decoder|mpg123-decoder|ogg-vorbis-decoder|react-window|react-virtualized-auto-sizer|jsdom|parse5|msw|until-async|@mswjs))'],
   setupFilesAfterEnv: ['<rootDir>/tests/utils/setup.ts'],
   maxWorkers: 2,
   workerIdleMemoryLimit: '512MB',

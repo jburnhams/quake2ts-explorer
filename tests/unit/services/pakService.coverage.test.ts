@@ -217,11 +217,33 @@ describe('PakService Coverage', () => {
             name: 'test.pak'
         } as unknown as File;
 
-        // Mock crypto
-        (global as any).crypto = {
-            randomUUID: () => 'uuid',
-            subtle: { digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)) }
-        };
+        // Mock crypto safely
+        const mockRandomUUID = jest.fn().mockReturnValue('uuid');
+        const mockDigest = jest.fn().mockResolvedValue(new ArrayBuffer(32));
+
+        if (global.crypto) {
+             Object.defineProperty(global.crypto, 'randomUUID', {
+                 value: mockRandomUUID,
+                 writable: true
+             });
+             if (global.crypto.subtle) {
+                 Object.defineProperty(global.crypto.subtle, 'digest', {
+                     value: mockDigest,
+                     writable: true
+                 });
+             } else {
+                 // @ts-ignore
+                 Object.defineProperty(global.crypto, 'subtle', {
+                     value: { digest: mockDigest },
+                     writable: true
+                 });
+             }
+        } else {
+            (global as any).crypto = {
+                randomUUID: mockRandomUUID,
+                subtle: { digest: mockDigest }
+            };
+        }
 
         await service.loadPakFile(file);
 
@@ -242,10 +264,34 @@ describe('PakService Coverage', () => {
             name: 'test.pak'
         } as unknown as File;
 
-         (global as any).crypto = {
-            randomUUID: () => 'uuid',
-            subtle: { digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)) }
-        };
+        // Mock crypto safely
+        const mockRandomUUID = jest.fn().mockReturnValue('uuid');
+        const mockDigest = jest.fn().mockResolvedValue(new ArrayBuffer(32));
+
+        if (global.crypto) {
+             Object.defineProperty(global.crypto, 'randomUUID', {
+                 value: mockRandomUUID,
+                 writable: true
+             });
+             // Ensure subtle exists
+             if (!global.crypto.subtle) {
+                 // @ts-ignore
+                 Object.defineProperty(global.crypto, 'subtle', {
+                     value: { digest: mockDigest },
+                     writable: true
+                 });
+             } else {
+                 Object.defineProperty(global.crypto.subtle, 'digest', {
+                     value: mockDigest,
+                     writable: true
+                 });
+             }
+        } else {
+             (global as any).crypto = {
+                randomUUID: mockRandomUUID,
+                subtle: { digest: mockDigest }
+            };
+        }
 
         await service.loadPakFile(file);
 
