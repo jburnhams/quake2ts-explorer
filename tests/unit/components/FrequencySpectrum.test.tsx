@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { FrequencySpectrum } from '@/src/components/FrequencySpectrum';
@@ -16,7 +17,7 @@ describe('FrequencySpectrum', () => {
     beforeAll(() => {
         mockAnalyser = {
             frequencyBinCount: 128,
-            getByteFrequencyData: jest.fn((array: Uint8Array) => {
+            getByteFrequencyData: vi.fn((array: Uint8Array) => {
                 array.fill(100);
             })
         } as unknown as AnalyserNode;

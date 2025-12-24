@@ -7,83 +7,83 @@ import { CameraMode } from '@/src/types/cameraMode';
 import { DemoPlaybackController } from 'quake2ts/engine';
 
 // Mock everything
-jest.mock('@/src/components/UniversalViewer/adapters/Dm2Adapter');
-jest.mock('@/src/components/UniversalViewer/adapters/BspAdapter');
-jest.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
-jest.mock('@/src/components/UniversalViewer/adapters/Md3Adapter');
-jest.mock('@/src/utils/cameraUtils');
-jest.mock('@/src/services/screenshotService');
-jest.mock('@/src/services/performanceService', () => ({
+vi.mock('@/src/components/UniversalViewer/adapters/Dm2Adapter');
+vi.mock('@/src/components/UniversalViewer/adapters/BspAdapter');
+vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
+vi.mock('@/src/components/UniversalViewer/adapters/Md3Adapter');
+vi.mock('@/src/utils/cameraUtils');
+vi.mock('@/src/services/screenshotService');
+vi.mock('@/src/services/performanceService', () => ({
     performanceService: {
         createFpsCounter: () => ({
-            update: jest.fn(),
-            getAverageFps: jest.fn(),
-            getMinFps: jest.fn(),
-            getMaxFps: jest.fn()
+            update: vi.fn(),
+            getAverageFps: vi.fn(),
+            getMinFps: vi.fn(),
+            getMaxFps: vi.fn()
         }),
-        now: jest.fn(),
-        startMeasure: jest.fn(),
-        endMeasure: jest.fn()
+        now: vi.fn(),
+        startMeasure: vi.fn(),
+        endMeasure: vi.fn()
     }
 }));
 
-jest.mock('quake2ts/engine', () => ({
-    createWebGLContext: jest.fn().mockReturnValue({ gl: {
-        clearColor: jest.fn(),
-        clear: jest.fn(),
-        enable: jest.fn(),
-        viewport: jest.fn(),
-        createShader: jest.fn(),
-        createProgram: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+    createWebGLContext: vi.fn().mockReturnValue({ gl: {
+        clearColor: vi.fn(),
+        clear: vi.fn(),
+        enable: vi.fn(),
+        viewport: vi.fn(),
+        createShader: vi.fn(),
+        createProgram: vi.fn(),
         // Mock all required gl methods
     } }),
-    Camera: jest.fn().mockImplementation(() => ({
+    Camera: vi.fn().mockImplementation(() => ({
         position: [0,0,0],
         angles: [0,0,0],
-        updateMatrices: jest.fn()
+        updateMatrices: vi.fn()
     })),
-    DemoPlaybackController: jest.fn()
+    DemoPlaybackController: vi.fn()
 }));
 
 describe('UniversalViewer Camera Integration', () => {
     let mockPakService: PakService;
-    let mockDm2Adapter: jest.Mocked<Dm2Adapter>;
+    let mockDm2Adapter: vi.Mocked<Dm2Adapter>;
     let mockController: any;
 
     beforeEach(() => {
         mockPakService = {
-            hasFile: jest.fn(),
-            parseFile: jest.fn()
+            hasFile: vi.fn(),
+            parseFile: vi.fn()
         } as any;
 
         mockController = {
-             getCurrentFrame: jest.fn().mockReturnValue(0),
-             getFrameCount: jest.fn().mockReturnValue(100),
-             getDuration: jest.fn().mockReturnValue(10),
-             getCurrentTime: jest.fn().mockReturnValue(0),
-             getFrameData: jest.fn().mockReturnValue({}),
-             loadDemo: jest.fn(),
-             play: jest.fn(),
-             pause: jest.fn()
+             getCurrentFrame: vi.fn().mockReturnValue(0),
+             getFrameCount: vi.fn().mockReturnValue(100),
+             getDuration: vi.fn().mockReturnValue(10),
+             getCurrentTime: vi.fn().mockReturnValue(0),
+             getFrameData: vi.fn().mockReturnValue({}),
+             loadDemo: vi.fn(),
+             play: vi.fn(),
+             pause: vi.fn()
         };
 
         mockDm2Adapter = {
-            load: jest.fn().mockResolvedValue(undefined),
-            cleanup: jest.fn(),
-            update: jest.fn(),
-            render: jest.fn(),
-            hasCameraControl: jest.fn().mockReturnValue(true),
-            setCameraMode: jest.fn(),
-            getCameraUpdate: jest.fn().mockReturnValue({ position: [0,0,0], angles: [0,0,0] }),
-            getDemoController: jest.fn().mockReturnValue(mockController),
-            setRenderOptions: jest.fn(),
-            setDebugMode: jest.fn(),
-            isPlaying: jest.fn().mockReturnValue(true),
-            play: jest.fn(),
-            pause: jest.fn()
+            load: vi.fn().mockResolvedValue(undefined),
+            cleanup: vi.fn(),
+            update: vi.fn(),
+            render: vi.fn(),
+            hasCameraControl: vi.fn().mockReturnValue(true),
+            setCameraMode: vi.fn(),
+            getCameraUpdate: vi.fn().mockReturnValue({ position: [0,0,0], angles: [0,0,0] }),
+            getDemoController: vi.fn().mockReturnValue(mockController),
+            setRenderOptions: vi.fn(),
+            setDebugMode: vi.fn(),
+            isPlaying: vi.fn().mockReturnValue(true),
+            play: vi.fn(),
+            pause: vi.fn()
         } as any;
 
-        (Dm2Adapter as jest.Mock).mockImplementation(() => mockDm2Adapter);
+        (Dm2Adapter as vi.Mock).mockImplementation(() => mockDm2Adapter);
     });
 
     test('renders demo camera controls when playing DM2', async () => {

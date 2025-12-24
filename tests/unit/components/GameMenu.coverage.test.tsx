@@ -1,18 +1,19 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { GameMenu } from '@/src/components/GameMenu';
 import { demoRecorderService } from '@/src/services/demoRecorder';
 
 // Mock dependencies
-jest.mock('@/src/services/demoRecorder', () => ({
+vi.mock('@/src/services/demoRecorder', () => ({
   demoRecorderService: {
-    isRecording: jest.fn(),
-    startRecording: jest.fn(),
-    stopRecording: jest.fn(),
+    isRecording: vi.fn(),
+    startRecording: vi.fn(),
+    stopRecording: vi.fn(),
   },
 }));
 
-jest.mock('@/src/components/SaveLoadDialog', () => ({
+vi.mock('@/src/components/SaveLoadDialog', () => ({
   SaveLoadDialog: ({ mode, onClose, onActionComplete }: any) => (
     <div data-testid="save-load-dialog">
       <button onClick={onClose}>Close Dialog</button>
@@ -24,18 +25,18 @@ jest.mock('@/src/components/SaveLoadDialog', () => ({
 
 describe('GameMenu', () => {
   const mockProps = {
-    onResume: jest.fn(),
-    onSave: jest.fn(),
-    onLoad: jest.fn(),
-    onQuit: jest.fn(),
+    onResume: vi.fn(),
+    onSave: vi.fn(),
+    onLoad: vi.fn(),
+    onQuit: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(false);
+    vi.clearAllMocks();
+    (demoRecorderService.isRecording as vi.Mock).mockReturnValue(false);
     // Mock URL methods
-    global.URL.createObjectURL = jest.fn();
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.createObjectURL = vi.fn();
+    global.URL.revokeObjectURL = vi.fn();
   });
 
   it('renders menu items', () => {
@@ -90,7 +91,7 @@ describe('GameMenu', () => {
   });
 
   it('starts recording', async () => {
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(false);
+    (demoRecorderService.isRecording as vi.Mock).mockReturnValue(false);
     render(<GameMenu {...mockProps} />);
 
     const recordBtn = screen.getByText('Record Demo');
@@ -103,8 +104,8 @@ describe('GameMenu', () => {
   });
 
   it('stops recording and downloads', async () => {
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
-    (demoRecorderService.stopRecording as jest.Mock).mockResolvedValue(new Uint8Array([1, 2, 3]));
+    (demoRecorderService.isRecording as vi.Mock).mockReturnValue(true);
+    (demoRecorderService.stopRecording as vi.Mock).mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     render(<GameMenu {...mockProps} />);
 
@@ -121,8 +122,8 @@ describe('GameMenu', () => {
   });
 
   it('stops recording without download if no data', async () => {
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
-    (demoRecorderService.stopRecording as jest.Mock).mockResolvedValue(null);
+    (demoRecorderService.isRecording as vi.Mock).mockReturnValue(true);
+    (demoRecorderService.stopRecording as vi.Mock).mockResolvedValue(null);
 
     render(<GameMenu {...mockProps} />);
 
@@ -138,7 +139,7 @@ describe('GameMenu', () => {
   });
 
   it('logs unimplemented settings', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       render(<GameMenu {...mockProps} />);
       fireEvent.click(screen.getByText('Settings'));
       expect(consoleSpy).toHaveBeenCalledWith('Settings not implemented yet');

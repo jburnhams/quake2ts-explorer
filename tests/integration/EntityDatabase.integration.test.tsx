@@ -6,14 +6,14 @@ import { PakService } from '@/src/services/pakService';
 import { VirtualFileSystem } from 'quake2ts/engine';
 
 // Mock AutoSizer to render children with fixed dimensions
-jest.mock('react-virtualized-auto-sizer', () => {
+vi.mock('react-virtualized-auto-sizer', () => {
   return ({ children }: any) => {
     return children({ height: 500, width: 500 });
   };
 });
 
 // Mock react-window (v2) to render all items
-jest.mock('react-window', () => {
+vi.mock('react-window', () => {
   const React = require('react');
   return {
     List: ({ rowComponent, rowProps, rowCount }: any) => {
@@ -30,17 +30,17 @@ jest.mock('react-window', () => {
 });
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({
-      mountPak: jest.fn(),
-      findByExtension: jest.fn().mockReturnValue([
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({
+      mountPak: vi.fn(),
+      findByExtension: vi.fn().mockReturnValue([
         { path: 'maps/demo1.bsp', size: 100, sourcePak: 'pak0' }
       ]),
-      readFile: jest.fn().mockResolvedValue(new Uint8Array(100)),
-      stat: jest.fn(),
+      readFile: vi.fn().mockResolvedValue(new Uint8Array(100)),
+      stat: vi.fn(),
     })),
-    parseBsp: jest.fn().mockReturnValue({
+    parseBsp: vi.fn().mockReturnValue({
       entities: {
         entities: [
           {
@@ -61,7 +61,7 @@ describe('EntityDatabase Integration', () => {
   let pakService: PakService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     pakService = new PakService();
   });
 
@@ -96,8 +96,8 @@ describe('EntityDatabase Integration', () => {
 
   it('exports entities as ENT file', async () => {
     // Mock URL.createObjectURL
-    const mockCreateObjectURL = jest.fn();
-    const mockRevokeObjectURL = jest.fn();
+    const mockCreateObjectURL = vi.fn();
+    const mockRevokeObjectURL = vi.fn();
     global.URL.createObjectURL = mockCreateObjectURL;
     global.URL.revokeObjectURL = mockRevokeObjectURL;
 

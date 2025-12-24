@@ -1,16 +1,16 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DropZone } from '@/src/components/DropZone';
 
 describe('DropZone Component', () => {
-  let mockOnDrop: jest.Mock;
+  let mockOnDrop: vi.Mock;
 
   beforeEach(() => {
-    mockOnDrop = jest.fn();
+    mockOnDrop = vi.fn();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders children', () => {
@@ -51,8 +51,8 @@ describe('DropZone Component', () => {
     Object.defineProperty(dragEvent, 'dataTransfer', {
       value: { types: ['Files'] },
     });
-    Object.defineProperty(dragEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(dragEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(dragEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(dragEvent, 'stopPropagation', { value: vi.fn() });
 
     act(() => {
       document.dispatchEvent(dragEvent);
@@ -73,8 +73,8 @@ describe('DropZone Component', () => {
     Object.defineProperty(enterEvent, 'dataTransfer', {
       value: { types: ['Files'] },
     });
-    Object.defineProperty(enterEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(enterEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(enterEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(enterEvent, 'stopPropagation', { value: vi.fn() });
 
     act(() => {
       document.dispatchEvent(enterEvent);
@@ -84,8 +84,8 @@ describe('DropZone Component', () => {
 
     // Drag leave
     const leaveEvent = new Event('dragleave', { bubbles: true });
-    Object.defineProperty(leaveEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(leaveEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(leaveEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(leaveEvent, 'stopPropagation', { value: vi.fn() });
 
     act(() => {
       document.dispatchEvent(leaveEvent);
@@ -102,8 +102,8 @@ describe('DropZone Component', () => {
     );
 
     const dragOverEvent = new Event('dragover', { bubbles: true });
-    const preventDefault = jest.fn();
-    const stopPropagation = jest.fn();
+    const preventDefault = vi.fn();
+    const stopPropagation = vi.fn();
     Object.defineProperty(dragOverEvent, 'preventDefault', { value: preventDefault });
     Object.defineProperty(dragOverEvent, 'stopPropagation', { value: stopPropagation });
 
@@ -127,8 +127,8 @@ describe('DropZone Component', () => {
     Object.defineProperty(enterEvent, 'dataTransfer', {
       value: { types: ['Files'] },
     });
-    Object.defineProperty(enterEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(enterEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(enterEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(enterEvent, 'stopPropagation', { value: vi.fn() });
     act(() => {
       document.dispatchEvent(enterEvent);
     });
@@ -141,8 +141,8 @@ describe('DropZone Component', () => {
 
     const dropEvent = new Event('drop', { bubbles: true });
     Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer });
-    Object.defineProperty(dropEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(dropEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(dropEvent, 'stopPropagation', { value: vi.fn() });
 
     act(() => {
       document.dispatchEvent(dropEvent);
@@ -166,8 +166,8 @@ describe('DropZone Component', () => {
 
     const dropEvent = new Event('drop', { bubbles: true });
     Object.defineProperty(dropEvent, 'dataTransfer', { value: mockDataTransfer });
-    Object.defineProperty(dropEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(dropEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(dropEvent, 'stopPropagation', { value: vi.fn() });
 
     act(() => {
       document.dispatchEvent(dropEvent);
@@ -189,8 +189,8 @@ describe('DropZone Component', () => {
     Object.defineProperty(enterEvent, 'dataTransfer', {
       value: { types: ['Files'] },
     });
-    Object.defineProperty(enterEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(enterEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(enterEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(enterEvent, 'stopPropagation', { value: vi.fn() });
     act(() => {
       document.dispatchEvent(enterEvent);
     });
@@ -200,8 +200,8 @@ describe('DropZone Component', () => {
     // Drop
     const dropEvent = new Event('drop', { bubbles: true });
     Object.defineProperty(dropEvent, 'dataTransfer', { value: { files: [] } });
-    Object.defineProperty(dropEvent, 'preventDefault', { value: jest.fn() });
-    Object.defineProperty(dropEvent, 'stopPropagation', { value: jest.fn() });
+    Object.defineProperty(dropEvent, 'preventDefault', { value: vi.fn() });
+    Object.defineProperty(dropEvent, 'stopPropagation', { value: vi.fn() });
     act(() => {
       document.dispatchEvent(dropEvent);
     });
@@ -210,7 +210,7 @@ describe('DropZone Component', () => {
   });
 
   it('cleans up event listeners on unmount', () => {
-    const removeEventListenerSpy = jest.spyOn(document, 'removeEventListener');
+    const removeEventListenerSpy = vi.spyOn(document, 'removeEventListener');
 
     const { unmount } = render(
       <DropZone onDrop={mockOnDrop}>

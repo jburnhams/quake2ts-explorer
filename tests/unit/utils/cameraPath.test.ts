@@ -2,14 +2,14 @@ import { vec3 } from 'gl-matrix';
 import { CameraKeyframe, CinematicPath, PathInterpolator } from '@/src/utils/cameraPath';
 
 // Mock gl-matrix
-jest.mock('gl-matrix', () => {
-    const original = jest.requireActual('gl-matrix');
+vi.mock('gl-matrix', () => {
+    const original = vi.requireActual('gl-matrix');
     return {
         ...original,
         vec3: {
             ...original.vec3,
-            create: jest.fn(() => new Float32Array([0, 0, 0])),
-            copy: jest.fn((out, a) => {
+            create: vi.fn(() => new Float32Array([0, 0, 0])),
+            copy: vi.fn((out, a) => {
                 out[0] = a[0];
                 out[1] = a[1];
                 out[2] = a[2];
@@ -18,9 +18,9 @@ jest.mock('gl-matrix', () => {
         },
         quat: {
             ...original.quat,
-            create: jest.fn(() => new Float32Array([0, 0, 0, 1])),
-            fromEuler: jest.fn(),
-            slerp: jest.fn()
+            create: vi.fn(() => new Float32Array([0, 0, 0, 1])),
+            fromEuler: vi.fn(),
+            slerp: vi.fn()
         }
     };
 });

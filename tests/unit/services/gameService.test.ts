@@ -5,80 +5,80 @@ import { createGame } from 'quake2ts/game';
 import * as shared from 'quake2ts/shared';
 
 // Mock dependencies
-jest.mock('quake2ts/client', () => ({
-    ClientPrediction: jest.fn().mockImplementation(() => ({
-        setPredictionEnabled: jest.fn(),
-        enqueueCommand: jest.fn(),
-        setAuthoritative: jest.fn(),
-        getPredictionError: jest.fn().mockReturnValue({x:0,y:0,z:0}),
-        decayError: jest.fn(),
-        getPredictedState: jest.fn()
+vi.mock('quake2ts/client', () => ({
+    ClientPrediction: vi.fn().mockImplementation(() => ({
+        setPredictionEnabled: vi.fn(),
+        enqueueCommand: vi.fn(),
+        setAuthoritative: vi.fn(),
+        getPredictionError: vi.fn().mockReturnValue({x:0,y:0,z:0}),
+        decayError: vi.fn(),
+        getPredictedState: vi.fn()
     }))
 }));
 
-jest.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
-  AssetManager: jest.fn().mockImplementation(() => ({
-    loadMap: jest.fn().mockResolvedValue({
+vi.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
+  AssetManager: vi.fn().mockImplementation(() => ({
+    loadMap: vi.fn().mockResolvedValue({
       entities: 'mock-entities',
       leafs: [],
       nodes: [],
       models: [],
       planes: []
     }),
-    clearCache: jest.fn()
+    clearCache: vi.fn()
   }))
 }));
 
-jest.mock('quake2ts/game', () => ({
-  createGame: jest.fn().mockImplementation(() => ({
-    init: jest.fn().mockReturnValue({ state: { time: 0 } }),
-    shutdown: jest.fn(),
-    frame: jest.fn().mockReturnValue({ state: { time: 100 } }),
-    snapshot: jest.fn().mockReturnValue({ time: 0 }),
-    entities: { find: jest.fn() },
+vi.mock('quake2ts/game', () => ({
+  createGame: vi.fn().mockImplementation(() => ({
+    init: vi.fn().mockReturnValue({ state: { time: 0 } }),
+    shutdown: vi.fn(),
+    frame: vi.fn().mockReturnValue({ state: { time: 100 } }),
+    snapshot: vi.fn().mockReturnValue({ time: 0 }),
+    entities: { find: vi.fn() },
     time: 123,
-    createSave: jest.fn().mockReturnValue({ valid: true }),
-    loadSave: jest.fn()
+    createSave: vi.fn().mockReturnValue({ valid: true }),
+    loadSave: vi.fn()
   }))
 }));
 
-jest.mock('@/src/utils/collisionAdapter', () => ({
-  createCollisionModel: jest.fn().mockReturnValue({
+vi.mock('@/src/utils/collisionAdapter', () => ({
+  createCollisionModel: vi.fn().mockReturnValue({
       // Mock collision model properties if needed
   })
 }));
 
 // Mock quake2ts/shared
 const mockEntityIndexInstance = {
-    trace: jest.fn().mockReturnValue({
+    trace: vi.fn().mockReturnValue({
         allsolid: false,
         startsolid: false,
         fraction: 1.0,
         endpos: {x:0,y:0,z:0},
         entityId: null
     }),
-    link: jest.fn(),
-    gatherTriggerTouches: jest.fn().mockReturnValue([])
+    link: vi.fn(),
+    gatherTriggerTouches: vi.fn().mockReturnValue([])
 };
 
-jest.mock('quake2ts/shared', () => ({
-    CollisionEntityIndex: jest.fn().mockImplementation(() => mockEntityIndexInstance),
-    traceBox: jest.fn().mockReturnValue({
+vi.mock('quake2ts/shared', () => ({
+    CollisionEntityIndex: vi.fn().mockImplementation(() => mockEntityIndexInstance),
+    traceBox: vi.fn().mockReturnValue({
         allsolid: false,
         startsolid: false,
         fraction: 1.0,
         endpos: {x:0,y:0,z:0},
         plane: { normal: {x:0,y:0,z:1}, dist: 0 }
     }),
-    pointContents: jest.fn().mockReturnValue(0),
+    pointContents: vi.fn().mockReturnValue(0),
     Vec3: {},
     CollisionPlane: {},
-    NetChan: jest.fn().mockImplementation(() => ({
-        setup: jest.fn(),
-        transmit: jest.fn(),
-        reset: jest.fn(),
-        process: jest.fn()
+    NetChan: vi.fn().mockImplementation(() => ({
+        setup: vi.fn(),
+        transmit: vi.fn(),
+        reset: vi.fn(),
+        process: vi.fn()
     }))
 }));
 
@@ -87,7 +87,7 @@ describe('GameService', () => {
 
   beforeEach(() => {
     vfs = new VirtualFileSystem();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
@@ -98,7 +98,7 @@ describe('GameService', () => {
     const game = await createGameSimulation(vfs, 'test_map', { skill: 2 });
     expect(game).toBeDefined();
     expect(createGame).toHaveBeenCalled();
-    const options = (createGame as jest.Mock).mock.calls[0][2];
+    const options = (createGame as vi.Mock).mock.calls[0][2];
     expect(options.skill).toBe(2);
   });
 
@@ -117,7 +117,7 @@ describe('GameService', () => {
     const step = { frame: 1, deltaMs: 25, nowMs: 1000 };
     game.tick(step, cmd);
 
-    const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
+    const mockGameExports = (createGame as vi.Mock).mock.results[0].value;
     expect(mockGameExports.frame).toHaveBeenCalledWith(step, cmd);
     expect(game.getSnapshot().time).toBe(100);
   });
@@ -125,7 +125,7 @@ describe('GameService', () => {
   it('should shutdown game simulation', async () => {
     const game = await createGameSimulation(vfs, 'test_map');
     game.shutdown();
-    const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
+    const mockGameExports = (createGame as vi.Mock).mock.results[0].value;
     expect(mockGameExports.shutdown).toHaveBeenCalled();
   });
 
@@ -134,7 +134,7 @@ describe('GameService', () => {
 
     // Create Save
     const save = game.createSave('test save');
-    const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
+    const mockGameExports = (createGame as vi.Mock).mock.results[0].value;
     expect(mockGameExports.createSave).toHaveBeenCalledWith('test_map', 1, 123);
     expect(save).toEqual({ valid: true });
 
@@ -155,7 +155,7 @@ describe('GameService', () => {
   it('should implement engine host methods (soundIndex, modelIndex, imageIndex)', async () => {
       await createGameSimulation(vfs, 'test_map');
       // Access the engineHost passed to createGame
-      const engineHost = (createGame as jest.Mock).mock.calls[0][1];
+      const engineHost = (createGame as vi.Mock).mock.calls[0][1];
 
       // Test caching logic
       expect(engineHost.soundIndex('jump.wav')).toBe(1);
@@ -175,7 +175,7 @@ describe('GameService', () => {
 
   it('should implement game imports (trace)', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const imports = (createGame as jest.Mock).mock.calls[0][0];
+      const imports = (createGame as vi.Mock).mock.calls[0][0];
 
       // Test trace
       const start = { x: 0, y: 0, z: 0 };
@@ -189,7 +189,7 @@ describe('GameService', () => {
 
   it('should prefer entity hit in trace if closer', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const imports = (createGame as jest.Mock).mock.calls[0][0];
+      const imports = (createGame as vi.Mock).mock.calls[0][0];
 
       // Mock entity trace hitting something closer
       mockEntityIndexInstance.trace.mockReturnValueOnce({
@@ -204,7 +204,7 @@ describe('GameService', () => {
       });
 
       // Mock game entities
-      const mockGameExports = (createGame as jest.Mock).mock.results[0].value;
+      const mockGameExports = (createGame as vi.Mock).mock.results[0].value;
       mockGameExports.entities.find.mockReturnValue({ index: 1, id: 1 });
 
       const start = { x: 0, y: 0, z: 0 };
@@ -218,7 +218,7 @@ describe('GameService', () => {
 
   it('should implement game imports (linkentity)', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const imports = (createGame as jest.Mock).mock.calls[0][0];
+      const imports = (createGame as vi.Mock).mock.calls[0][0];
 
       const entity = {
           index: 10,
@@ -239,7 +239,7 @@ describe('GameService', () => {
 
   it('should ignore non-solid entities in linkentity', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const imports = (createGame as jest.Mock).mock.calls[0][0];
+      const imports = (createGame as vi.Mock).mock.calls[0][0];
 
       const entity = {
           solid: 0 // SOLID_NOT
@@ -252,9 +252,9 @@ describe('GameService', () => {
 
   it('should implement pointcontents', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const imports = (createGame as jest.Mock).mock.calls[0][0];
+      const imports = (createGame as vi.Mock).mock.calls[0][0];
 
-      (shared.pointContents as jest.Mock).mockReturnValue(42);
+      (shared.pointContents as vi.Mock).mockReturnValue(42);
 
       const contents = imports.pointcontents({ x: 0, y: 0, z: 0 });
       expect(contents).toBe(42);
@@ -262,15 +262,15 @@ describe('GameService', () => {
 
   it('should handle configstring updates', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const engineHost = (createGame as jest.Mock).mock.calls[0][1];
+      const engineHost = (createGame as vi.Mock).mock.calls[0][1];
 
       engineHost.configstring(1, "test config");
   });
 
   it('should handle server commands', async () => {
       await createGameSimulation(vfs, 'test_map');
-      const engineHost = (createGame as jest.Mock).mock.calls[0][1];
-      const spy = jest.spyOn(console, 'log').mockImplementation(() => {});
+      const engineHost = (createGame as vi.Mock).mock.calls[0][1];
+      const spy = vi.spyOn(console, 'log').mockImplementation(() => {});
 
       engineHost.serverCommand("map test");
       expect(spy).toHaveBeenCalledWith(expect.stringContaining("Server Command: map test"));

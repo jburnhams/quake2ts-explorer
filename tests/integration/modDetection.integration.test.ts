@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach, afterEach } from '@jest/globals';
+
 import { ModDetectionServiceImpl } from '../../src/services/modDetectionService';
 import { PakService, MountedPak } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
@@ -17,7 +17,7 @@ describe('ModDetection Integration', () => {
     modService = new ModDetectionServiceImpl();
     // We mock PakService entirely
     pakService = {
-      getMountedPaks: jest.fn<() => MountedPak[]>(),
+      getMountedPaks: vi.fn<() => MountedPak[]>(),
     } as unknown as PakService;
   });
 
@@ -64,7 +64,7 @@ describe('ModDetection Integration', () => {
     } as unknown as MountedPak;
 
     // Mock return
-    (pakService.getMountedPaks as jest.Mock).mockReturnValue([basePak, roguePak, modPak]);
+    (pakService.getMountedPaks as vi.Mock).mockReturnValue([basePak, roguePak, modPak]);
 
     // Execute
     const mods = await modService.detectMods(pakService);

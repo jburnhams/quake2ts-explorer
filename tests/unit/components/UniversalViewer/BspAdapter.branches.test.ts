@@ -1,92 +1,92 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { DebugMode } from '@/src/types/debugMode';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 // Mocks
-jest.mock('quake2ts/engine', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('quake2ts/engine', () => {
+    
     return {
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            uploadImage: jest.fn(),
-            setParameters: jest.fn()
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            uploadImage: vi.fn(),
+            setParameters: vi.fn()
         })),
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            draw: jest.fn()
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            draw: vi.fn()
         })),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
-        buildBspGeometry: jest.fn().mockReturnValue({
+        createBspSurfaces: vi.fn().mockReturnValue([]),
+        buildBspGeometry: vi.fn().mockReturnValue({
             surfaces: [],
             lightmaps: []
         }),
-        resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-        applySurfaceState: jest.fn(),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        findLeafForPoint: jest.fn(),
+        resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+        applySurfaceState: vi.fn(),
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        findLeafForPoint: vi.fn(),
         CullFaceMode: { Back: 0 },
         BlendMode: { None: 0 }
     };
 });
 
-jest.mock('@/src/utils/collisionAdapter', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/utils/collisionAdapter', () => {
+    
     return {
-        createCollisionModel: jest.fn().mockReturnValue({
-            traceBox: jest.fn(),
-            traceRay: jest.fn()
+        createCollisionModel: vi.fn().mockReturnValue({
+            traceBox: vi.fn(),
+            traceRay: vi.fn()
         })
     };
 });
 
-jest.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
+    
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            setProjectionMatrix: jest.fn(),
-            render: jest.fn(),
-            clear: jest.fn(),
-            addBox: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            setProjectionMatrix: vi.fn(),
+            render: vi.fn(),
+            clear: vi.fn(),
+            addBox: vi.fn()
         }))
     };
 });
 
-jest.mock('@/src/components/UniversalViewer/adapters/GizmoRenderer', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/components/UniversalViewer/adapters/GizmoRenderer', () => {
+    
     return {
-        GizmoRenderer: jest.fn().mockImplementation(() => ({
-            setMode: jest.fn(),
-            render: jest.fn(),
-            intersect: jest.fn(),
-            setHoveredAxis: jest.fn(),
-            setActiveAxis: jest.fn()
+        GizmoRenderer: vi.fn().mockImplementation(() => ({
+            setMode: vi.fn(),
+            render: vi.fn(),
+            intersect: vi.fn(),
+            setHoveredAxis: vi.fn(),
+            setActiveAxis: vi.fn()
         }))
     };
 });
 
-jest.mock('@/src/services/entityEditorService', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/services/entityEditorService', () => {
+    
     return {
         EntityEditorService: {
-            getInstance: jest.fn().mockReturnValue({
-                setEntities: jest.fn(),
-                getSelectedEntities: jest.fn().mockReturnValue([]),
-                getSelectedEntityIds: jest.fn().mockReturnValue([]),
-                selectEntity: jest.fn(),
-                deselectAll: jest.fn(),
-                getEntity: jest.fn(),
-                updateEntity: jest.fn()
+            getInstance: vi.fn().mockReturnValue({
+                setEntities: vi.fn(),
+                getSelectedEntities: vi.fn().mockReturnValue([]),
+                getSelectedEntityIds: vi.fn().mockReturnValue([]),
+                selectEntity: vi.fn(),
+                deselectAll: vi.fn(),
+                getEntity: vi.fn(),
+                updateEntity: vi.fn()
             })
         },
         SelectionMode: { Single: 0, Toggle: 1 } // Export SelectionMode directly
     };
 });
 
-jest.mock('@/src/utils/surfaceFlagParser', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/utils/surfaceFlagParser', () => {
+    
     return {
-        getSurfaceFlagNames: jest.fn().mockReturnValue([])
+        getSurfaceFlagNames: vi.fn().mockReturnValue([])
     };
 });
 
@@ -96,36 +96,36 @@ describe('BspAdapter Branch Coverage', () => {
 
     beforeEach(() => {
         mockGl = {
-            createShader: jest.fn(),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            createProgram: jest.fn(),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            useProgram: jest.fn(),
-            createVertexArray: jest.fn(),
-            bindVertexArray: jest.fn(),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            uniform1i: jest.fn(),
-            uniform1f: jest.fn(),
-            uniform3fv: jest.fn(),
-            uniformMatrix4fv: jest.fn(),
-            activeTexture: jest.fn(),
-            bindTexture: jest.fn(),
-            drawElements: jest.fn(),
-            enable: jest.fn(),
-            disable: jest.fn(),
-            depthFunc: jest.fn(),
-            cullFace: jest.fn(),
-            blendFuncSeparate: jest.fn(),
-            getExtension: jest.fn(),
-            generateMipmap: jest.fn(),
+            createShader: vi.fn(),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            createProgram: vi.fn(),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            useProgram: vi.fn(),
+            createVertexArray: vi.fn(),
+            bindVertexArray: vi.fn(),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            uniform1i: vi.fn(),
+            uniform1f: vi.fn(),
+            uniform3fv: vi.fn(),
+            uniformMatrix4fv: vi.fn(),
+            activeTexture: vi.fn(),
+            bindTexture: vi.fn(),
+            drawElements: vi.fn(),
+            enable: vi.fn(),
+            disable: vi.fn(),
+            depthFunc: vi.fn(),
+            cullFace: vi.fn(),
+            blendFuncSeparate: vi.fn(),
+            getExtension: vi.fn(),
+            generateMipmap: vi.fn(),
             canvas: {
                 width: 800,
                 height: 600
@@ -136,7 +136,7 @@ describe('BspAdapter Branch Coverage', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should throw error for invalid file type', async () => {
@@ -152,8 +152,8 @@ describe('BspAdapter Branch Coverage', () => {
         const mockGizmo = require('@/src/components/UniversalViewer/adapters/GizmoRenderer').GizmoRenderer.mock.instances[0];
         // @ts-ignore
         adapter.gizmoRenderer = {
-            intersect: jest.fn().mockReturnValue({ axis: 'x', distance: 10 }),
-            setHoveredAxis: jest.fn()
+            intersect: vi.fn().mockReturnValue({ axis: 'x', distance: 10 }),
+            setHoveredAxis: vi.fn()
         };
 
         // Mock selected entity
@@ -164,7 +164,7 @@ describe('BspAdapter Branch Coverage', () => {
         // @ts-ignore
         adapter.map = {
             entities: { entities: [] },
-            pickEntity: jest.fn()
+            pickEntity: vi.fn()
         };
 
         const result = adapter.pickEntity({ origin: [0,0,0], direction: [0,0,1] } as any);
@@ -175,7 +175,7 @@ describe('BspAdapter Branch Coverage', () => {
         const mockEntity = {};
         // @ts-ignore
         adapter.map = {
-            pickEntity: jest.fn().mockReturnValue({ entity: mockEntity }),
+            pickEntity: vi.fn().mockReturnValue({ entity: mockEntity }),
             entities: { entities: [mockEntity] }
         };
 
@@ -195,8 +195,8 @@ describe('BspAdapter Branch Coverage', () => {
 
         // @ts-ignore
         adapter.gizmoRenderer = {
-            intersect: jest.fn().mockReturnValue({ axis: 'z', distance: 10 }),
-            setActiveAxis: jest.fn()
+            intersect: vi.fn().mockReturnValue({ axis: 'z', distance: 10 }),
+            setActiveAxis: vi.fn()
         };
 
         // Trigger drag start
@@ -208,13 +208,13 @@ describe('BspAdapter Branch Coverage', () => {
     it('should render with fullbright and freeze lights', () => {
         // @ts-ignore
         adapter.geometry = {
-            surfaces: [{ faceIndex: 0, texture: 'tex', surfaceFlags: 0, vao: { bind: jest.fn() }, indexCount: 0 }],
+            surfaces: [{ faceIndex: 0, texture: 'tex', surfaceFlags: 0, vao: { bind: vi.fn() }, indexCount: 0 }],
             lightmaps: []
         };
         // @ts-ignore
-        adapter.pipeline = { bind: jest.fn(), draw: jest.fn() };
+        adapter.pipeline = { bind: vi.fn(), draw: vi.fn() };
         // @ts-ignore
-        adapter.whiteTexture = { bind: jest.fn() };
+        adapter.whiteTexture = { bind: vi.fn() };
 
         adapter.setRenderOptions({ fullbright: true, freezeLights: true, color: [1,1,1] });
 

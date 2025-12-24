@@ -1,17 +1,17 @@
 import { createGameLoop } from '../../../src/utils/gameLoop';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 let capturedOpts: any;
 let capturedConfig: any;
-const mockStart = jest.fn();
-const mockStop = jest.fn();
-const mockIsRunning = jest.fn();
-const mockPump = jest.fn();
+const mockStart = vi.fn();
+const mockStop = vi.fn();
+const mockIsRunning = vi.fn();
+const mockPump = vi.fn();
 
-jest.mock('quake2ts/engine', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('quake2ts/engine', () => {
+    
     return {
-        FixedTimestepLoop: jest.fn().mockImplementation((opts, config) => {
+        FixedTimestepLoop: vi.fn().mockImplementation((opts, config) => {
             capturedOpts = opts;
             capturedConfig = config;
             return {
@@ -25,8 +25,8 @@ jest.mock('quake2ts/engine', () => {
 });
 
 // Need to mock RAF too because createGameLoop calls it
-const mockRaf = jest.fn((cb: any) => 123);
-const mockCancelRaf = jest.fn();
+const mockRaf = vi.fn((cb: any) => 123);
+const mockCancelRaf = vi.fn();
 global.requestAnimationFrame = mockRaf as any;
 global.cancelAnimationFrame = mockCancelRaf as any;
 
@@ -37,7 +37,7 @@ describe('gameLoop extra coverage', () => {
         // @ts-ignore
         if (!global.performance.now) global.performance.now = () => 0;
 
-        jest.spyOn(global.performance, 'now').mockReturnValue(1000);
+        vi.spyOn(global.performance, 'now').mockReturnValue(1000);
     });
     let simulate: any;
     let render: any;
@@ -45,9 +45,9 @@ describe('gameLoop extra coverage', () => {
     beforeEach(() => {
         capturedOpts = null;
         capturedConfig = null;
-        simulate = jest.fn();
-        render = jest.fn();
-        jest.clearAllMocks();
+        simulate = vi.fn();
+        render = vi.fn();
+        vi.clearAllMocks();
         mockIsRunning.mockReturnValue(false);
     });
 
@@ -68,7 +68,7 @@ describe('gameLoop extra coverage', () => {
         expect(time).toBe(1000);
 
         // Cover 'schedule' callback
-        const cb = jest.fn();
+        const cb = vi.fn();
         capturedConfig.schedule(cb);
         expect(mockRaf).toHaveBeenCalledWith(cb);
     });

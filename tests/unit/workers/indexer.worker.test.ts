@@ -1,18 +1,18 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // Mock dependencies
-jest.mock('comlink', () => ({
-    expose: jest.fn(),
+vi.mock('comlink', () => ({
+    expose: vi.fn(),
 }));
 
 import { expose } from 'comlink';
-const mockExpose = expose as jest.Mock;
+const mockExpose = expose as vi.Mock;
 
 // Mock engine
-jest.mock('quake2ts/engine', () => ({
-    parseMd2: jest.fn(),
-    parseMd3: jest.fn(),
-    parseBsp: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+    parseMd2: vi.fn(),
+    parseMd3: vi.fn(),
+    parseBsp: vi.fn(),
 }));
 
 import '@/src/workers/indexer.worker';
@@ -23,12 +23,12 @@ describe('IndexerWorker', () => {
     const capturedApi = mockExpose.mock.calls[0]?.[0];
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         api = capturedApi;
     });
 
     it('should analyze MD2', () => {
-        (engine.parseMd2 as jest.Mock).mockReturnValue({
+        (engine.parseMd2 as vi.Mock).mockReturnValue({
             skins: ['skin.pcx', { name: 'skin2.pcx' }]
         });
         const refs = api.analyzeMd2(new ArrayBuffer(0));
@@ -39,15 +39,15 @@ describe('IndexerWorker', () => {
     });
 
     it('should handle MD2 parse error', () => {
-        (engine.parseMd2 as jest.Mock).mockImplementation(() => { throw new Error('fail'); });
-        const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        (engine.parseMd2 as vi.Mock).mockImplementation(() => { throw new Error('fail'); });
+        const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const refs = api.analyzeMd2(new ArrayBuffer(0));
         expect(refs).toEqual([]);
         expect(spy).toHaveBeenCalledWith('Failed to analyze MD2', expect.any(Error));
     });
 
     it('should analyze MD3', () => {
-        (engine.parseMd3 as jest.Mock).mockReturnValue({
+        (engine.parseMd3 as vi.Mock).mockReturnValue({
             surfaces: [
                 { shaders: [{ name: 'shader1' }] },
                 { shaders: [{ name: 'shader2' }] }
@@ -61,15 +61,15 @@ describe('IndexerWorker', () => {
     });
 
     it('should handle MD3 parse error', () => {
-        (engine.parseMd3 as jest.Mock).mockImplementation(() => { throw new Error('fail'); });
-        const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        (engine.parseMd3 as vi.Mock).mockImplementation(() => { throw new Error('fail'); });
+        const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const refs = api.analyzeMd3(new ArrayBuffer(0));
         expect(refs).toEqual([]);
         expect(spy).toHaveBeenCalledWith('Failed to analyze MD3', expect.any(Error));
     });
 
     it('should analyze BSP textures', () => {
-        (engine.parseBsp as jest.Mock).mockReturnValue({
+        (engine.parseBsp as vi.Mock).mockReturnValue({
             textures: ['tex1', { name: 'tex2' }]
         });
         const refs = api.analyzeBsp(new ArrayBuffer(0));
@@ -87,7 +87,7 @@ describe('IndexerWorker', () => {
             { classname: 'misc_test', custom: 'custom/file.tga' } // heuristic
         ];
 
-        (engine.parseBsp as jest.Mock).mockReturnValue({
+        (engine.parseBsp as vi.Mock).mockReturnValue({
             textures: [],
             entities: entities
         });
@@ -104,8 +104,8 @@ describe('IndexerWorker', () => {
     });
 
     it('should handle BSP parse error', () => {
-        (engine.parseBsp as jest.Mock).mockImplementation(() => { throw new Error('fail'); });
-        const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        (engine.parseBsp as vi.Mock).mockImplementation(() => { throw new Error('fail'); });
+        const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         const refs = api.analyzeBsp(new ArrayBuffer(0));
         expect(refs).toEqual([]);
         expect(spy).toHaveBeenCalledWith('Failed to analyze BSP', expect.any(Error));

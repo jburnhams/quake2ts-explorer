@@ -4,14 +4,14 @@ import App from '@/src/App';
 import { settingsService } from '@/src/services/settingsService';
 
 // Mock dependencies
-jest.mock('@/src/services/videoRecorder');
+vi.mock('@/src/services/videoRecorder');
 
 // Mock usePakExplorer to avoid VFS issues
-jest.mock('@/src/hooks/usePakExplorer', () => ({
+vi.mock('@/src/hooks/usePakExplorer', () => ({
   usePakExplorer: () => ({
     pakService: {
-        listDirectory: jest.fn(() => []),
-        hasFile: jest.fn(() => false),
+        listDirectory: vi.fn(() => []),
+        hasFile: vi.fn(() => false),
     },
     fileTree: { name: 'root', path: '/', isDirectory: true, children: [] },
     selectedPath: null,
@@ -23,56 +23,56 @@ jest.mock('@/src/hooks/usePakExplorer', () => ({
     error: null,
     gameMode: 'browser',
     viewMode: 'merged',
-    handleFileSelect: jest.fn(),
-    handleTreeSelect: jest.fn(),
-    hasFile: jest.fn(() => false),
-    dismissError: jest.fn(),
-    loadFromUrl: jest.fn(),
-    startGameMode: jest.fn(),
-    stopGameMode: jest.fn(),
-    togglePause: jest.fn(),
-    pauseGame: jest.fn(),
-    resumeGame: jest.fn(),
-    removePak: jest.fn(),
-    setViewMode: jest.fn(),
+    handleFileSelect: vi.fn(),
+    handleTreeSelect: vi.fn(),
+    hasFile: vi.fn(() => false),
+    dismissError: vi.fn(),
+    loadFromUrl: vi.fn(),
+    startGameMode: vi.fn(),
+    stopGameMode: vi.fn(),
+    togglePause: vi.fn(),
+    pauseGame: vi.fn(),
+    resumeGame: vi.fn(),
+    removePak: vi.fn(),
+    setViewMode: vi.fn(),
   })
 }));
 
 // Mock Engine
-jest.mock('quake2ts/engine', () => ({
-  createWebGLContext: jest.fn(() => ({
+vi.mock('quake2ts/engine', () => ({
+  createWebGLContext: vi.fn(() => ({
     gl: {
-      createShader: jest.fn(),
-      createProgram: jest.fn(),
-      linkProgram: jest.fn(),
-      attachShader: jest.fn(),
-      getProgramParameter: jest.fn(() => true),
-      useProgram: jest.fn(),
-      enable: jest.fn(),
-      clearColor: jest.fn(),
-      clear: jest.fn(),
-      viewport: jest.fn(),
-      getExtension: jest.fn(),
-      getParameter: jest.fn(),
-      createBuffer: jest.fn(),
-      bindBuffer: jest.fn(),
-      bufferData: jest.fn(),
-      createVertexArray: jest.fn(),
-      bindVertexArray: jest.fn(),
-      enableVertexAttribArray: jest.fn(),
-      vertexAttribPointer: jest.fn(),
-      drawElements: jest.fn(),
-      createTexture: jest.fn(),
-      bindTexture: jest.fn(),
-      texImage2D: jest.fn(),
-      texParameteri: jest.fn(),
-      activeTexture: jest.fn(),
-      uniform1i: jest.fn(),
-      uniform1f: jest.fn(),
-      uniform3fv: jest.fn(),
-      uniformMatrix4fv: jest.fn(),
-      getUniformLocation: jest.fn(() => ({})),
-      getAttribLocation: jest.fn(() => 0),
+      createShader: vi.fn(),
+      createProgram: vi.fn(),
+      linkProgram: vi.fn(),
+      attachShader: vi.fn(),
+      getProgramParameter: vi.fn(() => true),
+      useProgram: vi.fn(),
+      enable: vi.fn(),
+      clearColor: vi.fn(),
+      clear: vi.fn(),
+      viewport: vi.fn(),
+      getExtension: vi.fn(),
+      getParameter: vi.fn(),
+      createBuffer: vi.fn(),
+      bindBuffer: vi.fn(),
+      bufferData: vi.fn(),
+      createVertexArray: vi.fn(),
+      bindVertexArray: vi.fn(),
+      enableVertexAttribArray: vi.fn(),
+      vertexAttribPointer: vi.fn(),
+      drawElements: vi.fn(),
+      createTexture: vi.fn(),
+      bindTexture: vi.fn(),
+      texImage2D: vi.fn(),
+      texParameteri: vi.fn(),
+      activeTexture: vi.fn(),
+      uniform1i: vi.fn(),
+      uniform1f: vi.fn(),
+      uniform3fv: vi.fn(),
+      uniformMatrix4fv: vi.fn(),
+      getUniformLocation: vi.fn(() => ({})),
+      getAttribLocation: vi.fn(() => 0),
     },
     canvas: {
       width: 800,
@@ -80,19 +80,19 @@ jest.mock('quake2ts/engine', () => ({
       clientWidth: 800,
       clientHeight: 600,
       getBoundingClientRect: () => ({ top: 0, left: 0, width: 800, height: 600 }),
-      addEventListener: jest.fn(),
-      removeEventListener: jest.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
     }
   })),
-  Camera: jest.fn(() => ({
+  Camera: vi.fn(() => ({
     position: [0, 0, 0],
     angles: [0, 0, 0],
     fov: 90,
-    updateMatrices: jest.fn()
+    updateMatrices: vi.fn()
   })),
-  VirtualFileSystem: jest.fn(),
-  PakArchive: jest.fn(),
-  InputController: jest.fn(),
+  VirtualFileSystem: vi.fn(),
+  PakArchive: vi.fn(),
+  InputController: vi.fn(),
 }));
 
 // Mock localStorage
@@ -117,7 +117,7 @@ describe('Settings Integration', () => {
   beforeEach(() => {
     localStorage.clear();
     settingsService.resetToDefaults();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('persists settings to localStorage and applies them', async () => {

@@ -1,32 +1,32 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { Md2Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md2Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
 import { Md2Pipeline, Md2MeshBuffers, createAnimationState, computeFrameBlend } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    Md2Pipeline: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
+    Md2Pipeline: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
     })),
-    Md2MeshBuffers: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        update: jest.fn(),
+    Md2MeshBuffers: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        update: vi.fn(),
         indexCount: 100,
     })),
-    createAnimationState: jest.fn((seq: any) => ({ sequence: seq, time: 0 })),
-    advanceAnimation: jest.fn((state: any) => state),
-    computeFrameBlend: jest.fn((state: any) => {
+    createAnimationState: vi.fn((seq: any) => ({ sequence: seq, time: 0 })),
+    advanceAnimation: vi.fn((state: any) => state),
+    computeFrameBlend: vi.fn((state: any) => {
         const fps = state.sequence.fps || 9;
         const frame = state.sequence.start + state.time * fps;
         return { frame0: Math.floor(frame), frame1: Math.floor(frame), lerp: frame - Math.floor(frame) };
     }),
-    parsePcx: jest.fn(),
-    pcxToRgba: jest.fn(),
-    Texture2D: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        uploadImage: jest.fn(),
-        setParameters: jest.fn(),
+    parsePcx: vi.fn(),
+    pcxToRgba: vi.fn(),
+    Texture2D: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        uploadImage: vi.fn(),
+        setParameters: vi.fn(),
     })),
   };
 });
@@ -34,7 +34,7 @@ jest.mock('quake2ts/engine', () => {
 describe('Md2Adapter', () => {
   let adapter: Md2Adapter;
   let mockGl: WebGL2RenderingContext;
-  let mockPakService: jest.Mocked<PakService>;
+  let mockPakService: vi.Mocked<PakService>;
 
   beforeEach(() => {
     adapter = new Md2Adapter();
@@ -43,24 +43,24 @@ describe('Md2Adapter', () => {
         LINES: 1,
         UNSIGNED_SHORT: 2,
         TEXTURE0: 3,
-        drawElements: jest.fn(),
-        activeTexture: jest.fn(),
-        generateMipmap: jest.fn(),
-        createShader: jest.fn(),
-        createProgram: jest.fn(),
-        createBuffer: jest.fn(),
-        createVertexArray: jest.fn(),
-        bindVertexArray: jest.fn(),
-        bindBuffer: jest.fn(),
-        enableVertexAttribArray: jest.fn(),
-        vertexAttribPointer: jest.fn(),
+        drawElements: vi.fn(),
+        activeTexture: vi.fn(),
+        generateMipmap: vi.fn(),
+        createShader: vi.fn(),
+        createProgram: vi.fn(),
+        createBuffer: vi.fn(),
+        createVertexArray: vi.fn(),
+        bindVertexArray: vi.fn(),
+        bindBuffer: vi.fn(),
+        enableVertexAttribArray: vi.fn(),
+        vertexAttribPointer: vi.fn(),
     } as unknown as WebGL2RenderingContext;
     mockPakService = {
-        hasFile: jest.fn(),
-        readFile: jest.fn(),
-    } as unknown as jest.Mocked<PakService>;
+        hasFile: vi.fn(),
+        readFile: vi.fn(),
+    } as unknown as vi.Mocked<PakService>;
 
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('loads md2 model', async () => {
@@ -116,8 +116,8 @@ describe('Md2Adapter', () => {
 
       mockPakService.hasFile.mockReturnValue(true);
       mockPakService.readFile.mockResolvedValue(new Uint8Array(10));
-      (require('quake2ts/engine').parsePcx as jest.Mock).mockReturnValue({ width: 10, height: 10 });
-      (require('quake2ts/engine').pcxToRgba as jest.Mock).mockReturnValue(new Uint8Array(400));
+      (require('quake2ts/engine').parsePcx as vi.Mock).mockReturnValue({ width: 10, height: 10 });
+      (require('quake2ts/engine').pcxToRgba as vi.Mock).mockReturnValue(new Uint8Array(400));
 
       await adapter.load(mockGl, file, mockPakService, 'test.md2');
 
@@ -138,10 +138,10 @@ describe('Md2Adapter', () => {
 
       adapter.render(mockGl, camera, viewMatrix);
 
-      const pipeline = (require('quake2ts/engine').Md2Pipeline as jest.Mock).mock.results[0].value;
+      const pipeline = (require('quake2ts/engine').Md2Pipeline as vi.Mock).mock.results[0].value;
       expect(pipeline.bind).toHaveBeenCalled();
 
-      const buffers = (require('quake2ts/engine').Md2MeshBuffers as jest.Mock).mock.results[0].value;
+      const buffers = (require('quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
       expect(buffers.bind).toHaveBeenCalled();
       expect(mockGl.drawElements).toHaveBeenCalled();
   });
@@ -169,7 +169,7 @@ describe('Md2Adapter', () => {
       adapter.update(0.1);
       expect(require('quake2ts/engine').advanceAnimation).toHaveBeenCalled();
       expect(require('quake2ts/engine').computeFrameBlend).toHaveBeenCalled();
-      const buffers = (require('quake2ts/engine').Md2MeshBuffers as jest.Mock).mock.results[0].value;
+      const buffers = (require('quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
       expect(buffers.update).toHaveBeenCalled();
   });
 });

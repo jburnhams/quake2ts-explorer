@@ -7,28 +7,28 @@ import { createWebGLContext } from 'quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  createWebGLContext: jest.fn(),
-  Camera: jest.fn().mockImplementation(() => ({
+vi.mock('quake2ts/engine', () => ({
+  createWebGLContext: vi.fn(),
+  Camera: vi.fn().mockImplementation(() => ({
     fov: 60,
     aspect: 1,
     position: [0,0,0],
     angles: [0,0,0],
-    updateMatrices: jest.fn(),
+    updateMatrices: vi.fn(),
   })),
 }));
 
-jest.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
-jest.mock('@/src/services/screenshotService');
+vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
+vi.mock('@/src/services/screenshotService');
 
 // Mock DebugRenderer
-jest.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            init: jest.fn(),
-            render: jest.fn(),
-            clear: jest.fn(),
-            destroy: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            init: vi.fn(),
+            render: vi.fn(),
+            clear: vi.fn(),
+            destroy: vi.fn()
         }))
     };
 });
@@ -39,41 +39,41 @@ describe('UniversalViewer Screenshot Integration', () => {
   let mockMd2Adapter: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
+    vi.clearAllMocks();
+    vi.useFakeTimers();
 
     mockPakService = {} as PakService;
 
     mockGlContext = {
       gl: {
-        clearColor: jest.fn(),
-        clear: jest.fn(),
-        enable: jest.fn(),
-        viewport: jest.fn(),
-        createShader: jest.fn(),
-        createProgram: jest.fn(),
+        clearColor: vi.fn(),
+        clear: vi.fn(),
+        enable: vi.fn(),
+        viewport: vi.fn(),
+        createShader: vi.fn(),
+        createProgram: vi.fn(),
       }
     };
-    (createWebGLContext as jest.Mock).mockReturnValue(mockGlContext);
+    (createWebGLContext as vi.Mock).mockReturnValue(mockGlContext);
 
     mockMd2Adapter = {
-      load: jest.fn().mockResolvedValue(undefined),
-      render: jest.fn(),
-      update: jest.fn(),
-      cleanup: jest.fn(),
-      setRenderOptions: jest.fn(),
-      setDebugMode: jest.fn(),
-      isPlaying: jest.fn().mockReturnValue(true),
+      load: vi.fn().mockResolvedValue(undefined),
+      render: vi.fn(),
+      update: vi.fn(),
+      cleanup: vi.fn(),
+      setRenderOptions: vi.fn(),
+      setDebugMode: vi.fn(),
+      isPlaying: vi.fn().mockReturnValue(true),
     };
-    (Md2Adapter as jest.Mock).mockImplementation(() => mockMd2Adapter);
+    (Md2Adapter as vi.Mock).mockImplementation(() => mockMd2Adapter);
 
-    (screenshotService.captureScreenshot as jest.Mock).mockResolvedValue(new Blob(['test'], { type: 'image/png' }));
-    (screenshotService.generateScreenshotFilename as jest.Mock).mockReturnValue('screenshot.png');
-    (screenshotService.downloadScreenshot as jest.Mock).mockImplementation(() => {});
+    (screenshotService.captureScreenshot as vi.Mock).mockResolvedValue(new Blob(['test'], { type: 'image/png' }));
+    (screenshotService.generateScreenshotFilename as vi.Mock).mockReturnValue('screenshot.png');
+    (screenshotService.downloadScreenshot as vi.Mock).mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should trigger screenshot on F12 key press', async () => {
@@ -129,7 +129,7 @@ describe('UniversalViewer Screenshot Integration', () => {
 
     // Fast forward timer to remove flash
     await act(async () => {
-      jest.advanceTimersByTime(150);
+      vi.advanceTimersByTime(150);
     });
 
     // Flash should be gone

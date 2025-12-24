@@ -1,11 +1,11 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 import { PakService } from '@/src/services/pakService';
 import { cacheService, CACHE_STORES } from '@/src/services/cacheService';
 import { workerService } from '@/src/services/workerService';
 import { WorkerPakArchive } from '@/src/utils/WorkerPakArchive';
 import { thumbnailService } from '@/src/services/thumbnailService';
 
-jest.mock('@/src/services/workerService');
+vi.mock('@/src/services/workerService');
 
 describe('Caching Integration', () => {
     let service: PakService;
@@ -15,42 +15,42 @@ describe('Caching Integration', () => {
         storeData = {};
 
         const mockStore = {
-            put: jest.fn().mockImplementation((val: any) => {
+            put: vi.fn().mockImplementation((val: any) => {
                 storeData[`store:${val.key}`] = val.data;
                 const req = { onsuccess: null, onerror: null };
                 setTimeout(() => req.onsuccess && (req.onsuccess as any)({ target: req }), 0);
                 return req;
             }),
-            get: jest.fn().mockImplementation((key: string) => {
+            get: vi.fn().mockImplementation((key: string) => {
                 const data = storeData[`store:${key}`];
                 const req = { result: data ? { data } : undefined, onsuccess: null, onerror: null };
                 setTimeout(() => req.onsuccess && (req.onsuccess as any)({ target: req }), 0);
                 return req;
             }),
-            delete: jest.fn(),
-            clear: jest.fn(),
-            count: jest.fn().mockImplementation(() => {
+            delete: vi.fn(),
+            clear: vi.fn(),
+            count: vi.fn().mockImplementation(() => {
                 const req = { result: Object.keys(storeData).length, onsuccess: null, onerror: null };
                 setTimeout(() => req.onsuccess && (req.onsuccess as any)({ target: req }), 0);
                 return req;
             }),
-            createIndex: jest.fn(),
-            indexNames: { contains: jest.fn().mockReturnValue(false) }
+            createIndex: vi.fn(),
+            indexNames: { contains: vi.fn().mockReturnValue(false) }
         };
 
         // Mock IndexedDB
         const mockIDB = {
-            open: jest.fn().mockImplementation((name, version) => {
+            open: vi.fn().mockImplementation((name, version) => {
                 const request: any = {
                     result: {
                         objectStoreNames: { contains: () => false },
-                        createObjectStore: jest.fn().mockReturnValue(mockStore),
-                        transaction: jest.fn().mockReturnValue({
-                            objectStore: jest.fn().mockReturnValue(mockStore)
+                        createObjectStore: vi.fn().mockReturnValue(mockStore),
+                        transaction: vi.fn().mockReturnValue({
+                            objectStore: vi.fn().mockReturnValue(mockStore)
                         })
                     },
                     transaction: {
-                        objectStore: jest.fn().mockReturnValue(mockStore)
+                        objectStore: vi.fn().mockReturnValue(mockStore)
                     },
                     onsuccess: null,
                     onupgradeneeded: null,
@@ -79,12 +79,12 @@ describe('Caching Integration', () => {
         (cacheService as any).initPromise = null;
 
         service = new PakService();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should cache parsed PAK index', async () => {
         const dummyEntries = new Map([['file.txt', { offset: 0, length: 10 }]]);
-        (workerService.executePakParserTask as jest.Mock).mockResolvedValue({
+        (workerService.executePakParserTask as vi.Mock).mockResolvedValue({
             entries: dummyEntries,
             buffer: new ArrayBuffer(0),
             name: 'test'
@@ -99,7 +99,7 @@ describe('Caching Integration', () => {
 
         const file = {
             name: 'cache_test.pak',
-            arrayBuffer: jest.fn().mockResolvedValue(buffer)
+            arrayBuffer: vi.fn().mockResolvedValue(buffer)
         } as unknown as File;
 
         await service.loadPakFile(file);
@@ -124,7 +124,7 @@ describe('Caching Integration', () => {
 
     it('should use cached PAK index on second load', async () => {
         const dummyEntries = new Map([['cached.txt', { offset: 0, length: 10 }]]);
-        (workerService.executePakParserTask as jest.Mock).mockResolvedValue({
+        (workerService.executePakParserTask as vi.Mock).mockResolvedValue({
             entries: dummyEntries,
             buffer: new ArrayBuffer(0),
             name: 'test'
@@ -138,7 +138,7 @@ describe('Caching Integration', () => {
 
         const file = {
             name: 'cache_test.pak',
-            arrayBuffer: jest.fn().mockResolvedValue(buffer)
+            arrayBuffer: vi.fn().mockResolvedValue(buffer)
         } as unknown as File;
 
         await service.loadPakFile(file);
@@ -148,8 +148,8 @@ describe('Caching Integration', () => {
 
         expect(workerService.executePakParserTask).toHaveBeenCalledTimes(1);
 
-        (workerService.executePakParserTask as jest.Mock).mockClear();
-        (workerService.executePakParserTask as jest.Mock).mockRejectedValue(new Error('Worker should not be called'));
+        (workerService.executePakParserTask as vi.Mock).mockClear();
+        (workerService.executePakParserTask as vi.Mock).mockRejectedValue(new Error('Worker should not be called'));
 
         const archive = await service.loadPakFile(file);
 

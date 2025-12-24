@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,7 +6,7 @@ import { DemoTimeline } from '../../../src/components/DemoTimeline';
 import { DemoEventType } from 'quake2ts/engine';
 
 // Mock engine enum if not available in jest environment directly
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
   DemoEventType: {
     Death: 0,
     WeaponFire: 1,
@@ -23,11 +24,11 @@ describe('DemoTimeline Coverage', () => {
   beforeEach(() => {
     rafCallbacks = [];
     mockController = {
-      getDuration: jest.fn().mockReturnValue(120),
-      getFrameCount: jest.fn().mockReturnValue(3600),
-      getCurrentTime: jest.fn().mockReturnValue(10),
-      getCurrentFrame: jest.fn().mockReturnValue(300),
-      getDemoEvents: jest.fn().mockReturnValue([
+      getDuration: vi.fn().mockReturnValue(120),
+      getFrameCount: vi.fn().mockReturnValue(3600),
+      getCurrentTime: vi.fn().mockReturnValue(10),
+      getCurrentFrame: vi.fn().mockReturnValue(300),
+      getDemoEvents: vi.fn().mockReturnValue([
         { time: 10, type: 0, description: 'Death' },
         { time: 20, type: 1, description: 'Fire' },
         { time: 30, type: 2, description: 'Pickup' },
@@ -36,18 +37,18 @@ describe('DemoTimeline Coverage', () => {
         { time: 60, type: 5, description: 'Receive' },
         { time: 70, type: 99, description: 'Unknown' },
       ]),
-      seekToTime: jest.fn(),
+      seekToTime: vi.fn(),
     };
 
     // Mock RAF
-    const rafMock = jest.fn((cb) => {
+    const rafMock = vi.fn((cb) => {
         rafCallbacks.push(cb);
         return rafCallbacks.length;
     });
-    const cafMock = jest.fn();
+    const cafMock = vi.fn();
 
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation(rafMock);
-    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(cafMock);
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation(rafMock);
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(cafMock);
 
     // Explicitly set on global for JSDOM if needed
     (global as any).requestAnimationFrame = rafMock;
@@ -55,7 +56,7 @@ describe('DemoTimeline Coverage', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
   });
 
   const triggerRaf = () => {
@@ -97,7 +98,7 @@ describe('DemoTimeline Coverage', () => {
     const container = screen.getByText(/Frame:/).closest('.demo-timeline');
 
     // Mock getBoundingClientRect for track
-    jest.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
         left: 0, top: 0, width: 1000, height: 50, bottom: 50, right: 1000, x: 0, y: 0, toJSON: () => {}
     });
 
@@ -115,7 +116,7 @@ describe('DemoTimeline Coverage', () => {
       render(<DemoTimeline controller={mockController} bookmarks={[]} />);
       const track = screen.getByTitle('').closest('.timeline-track-container');
 
-      jest.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockReturnValue({
         left: 0, top: 0, width: 1000, height: 50, bottom: 50, right: 1000, x: 0, y: 0, toJSON: () => {}
     });
 
@@ -135,7 +136,7 @@ describe('DemoTimeline Coverage', () => {
   });
 
   test('bookmarks interaction', () => {
-      const onBookmarkClick = jest.fn();
+      const onBookmarkClick = vi.fn();
       const bookmarks = [{ id: '1', name: 'Test', timeSeconds: 15, frame: 450 }];
 
       render(<DemoTimeline controller={mockController} bookmarks={bookmarks} onBookmarkClick={onBookmarkClick} />);

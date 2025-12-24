@@ -1,10 +1,10 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 
 // Mock worker service first to avoid import issues
-jest.mock('@/src/services/workerService', () => ({
+vi.mock('@/src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(() => ({
-            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+        getPakParser: vi.fn(() => ({
+            parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => ({
                 entries: new Map(),
                 buffer,
                 name
@@ -16,9 +16,9 @@ jest.mock('@/src/services/workerService', () => ({
 // Mock quake2ts/engine with configurable file lists
 let mockFileList: Array<{ path: string; size: number; sourcePak: string }> = [];
 
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
   PakArchive: {
-    fromArrayBuffer: jest.fn((name: string) => ({
+    fromArrayBuffer: vi.fn((name: string) => ({
       name,
       entries: new Map(),
       checksum: 12345,
@@ -26,10 +26,10 @@ jest.mock('quake2ts/engine', () => ({
       listEntries: () => mockFileList.map(f => ({ name: f.path, offset: 0, length: f.size })),
     })),
   },
-  VirtualFileSystem: jest.fn().mockImplementation(() => {
+  VirtualFileSystem: vi.fn().mockImplementation(() => {
     const files = new Map<string, { path: string; size: number; sourcePak: string }>();
     return {
-      mountPak: jest.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
+      mountPak: vi.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
         // Use the internal name (ID) for sourcePak
         // In the WorkerPakArchive, listEntries might return empty if not mocked properly,
         // but here we are mocking VFS behavior based on archive.
@@ -43,13 +43,13 @@ jest.mock('quake2ts/engine', () => ({
           });
         }
       }),
-      hasFile: jest.fn((path: string) => files.has(path)),
-      stat: jest.fn((path: string) => files.get(path)),
-      readFile: jest.fn(async (path: string) => {
+      hasFile: vi.fn((path: string) => files.has(path)),
+      stat: vi.fn((path: string) => files.get(path)),
+      readFile: vi.fn(async (path: string) => {
         if (!files.has(path)) throw new Error(`File not found: ${path}`);
         return new Uint8Array(files.get(path)!.size);
       }),
-      list: jest.fn((dirPath?: string) => {
+      list: vi.fn((dirPath?: string) => {
         const prefix = dirPath ? `${dirPath}/` : '';
         const filesInDir: Array<{ path: string; size: number; sourcePak: string }> = [];
         const directories = new Set<string>();
@@ -74,18 +74,18 @@ jest.mock('quake2ts/engine', () => ({
           directories: Array.from(directories),
         };
       }),
-      findByExtension: jest.fn((ext: string) =>
+      findByExtension: vi.fn((ext: string) =>
         Array.from(files.values()).filter(f => f.path.endsWith(ext))
       ),
     };
   }),
-  parsePcx: jest.fn(() => ({ width: 64, height: 64, bitsPerPixel: 8, palette: new Uint8Array(768) })),
-  pcxToRgba: jest.fn(() => new Uint8Array(64 * 64 * 4)),
-  parseWal: jest.fn(() => ({ name: 'test', width: 64, height: 64, mipmaps: [] })),
-  walToRgba: jest.fn(() => ({ levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }] })),
-  parseMd2: jest.fn(() => ({ header: { numFrames: 10 } })),
-  parseMd3: jest.fn(() => ({ header: { numFrames: 5 } })),
-  parseWav: jest.fn(() => ({ channels: 1, sampleRate: 22050, bitsPerSample: 16, samples: new Int16Array(22050) })),
+  parsePcx: vi.fn(() => ({ width: 64, height: 64, bitsPerPixel: 8, palette: new Uint8Array(768) })),
+  pcxToRgba: vi.fn(() => new Uint8Array(64 * 64 * 4)),
+  parseWal: vi.fn(() => ({ name: 'test', width: 64, height: 64, mipmaps: [] })),
+  walToRgba: vi.fn(() => ({ levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }] })),
+  parseMd2: vi.fn(() => ({ header: { numFrames: 10 } })),
+  parseMd3: vi.fn(() => ({ header: { numFrames: 5 } })),
+  parseWav: vi.fn(() => ({ channels: 1, sampleRate: 22050, bitsPerSample: 16, samples: new Int16Array(22050) })),
 }));
 
 import { PakService } from '@/src/services/pakService';
@@ -98,8 +98,8 @@ describe('PakService.buildFileTree - Comprehensive Tests', () => {
     mockFileList = [];
     service = new PakService();
     // Update the mock worker to return entries matching mockFileList
-    (workerService.getPakParser as jest.Mock).mockReturnValue({
-        parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+    (workerService.getPakParser as vi.Mock).mockReturnValue({
+        parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => ({
             entries: new Map(mockFileList.map(f => [f.path, { name: f.path, offset: 0, length: f.size }])),
             buffer,
             name

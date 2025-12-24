@@ -1,11 +1,11 @@
 import { PakService } from '@/src/services/pakService';
 import { workerService } from '@/src/services/workerService';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 import { PakArchive } from 'quake2ts/engine';
 
 // Mocks
-jest.mock('@/src/services/workerService');
-jest.mock('@/src/services/cacheService', () => {
+vi.mock('@/src/services/workerService');
+vi.mock('@/src/services/cacheService', () => {
     // Cannot access 'jest' from outer scope in factory unless we require it
     // But this is usually ESM/TS issue.
     // Simplest way: return a basic object, and we can spyOn/mock implementations later if needed,
@@ -21,30 +21,30 @@ jest.mock('@/src/services/cacheService', () => {
 });
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('quake2ts/engine', () => {
+    
     return {
         PakArchive: {
-            fromArrayBuffer: jest.fn()
+            fromArrayBuffer: vi.fn()
         },
-        VirtualFileSystem: jest.fn().mockImplementation(() => ({
-            mountPak: jest.fn(),
-            unmountPak: jest.fn(),
-            hasFile: jest.fn().mockReturnValue(false),
-            stat: jest.fn().mockReturnValue(null),
-            readFile: jest.fn().mockResolvedValue(new Uint8Array(0))
+        VirtualFileSystem: vi.fn().mockImplementation(() => ({
+            mountPak: vi.fn(),
+            unmountPak: vi.fn(),
+            hasFile: vi.fn().mockReturnValue(false),
+            stat: vi.fn().mockReturnValue(null),
+            readFile: vi.fn().mockResolvedValue(new Uint8Array(0))
         })),
         // Add other needed exports if any
-        parsePcx: jest.fn(),
-        pcxToRgba: jest.fn(),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        parseMd2: jest.fn(),
-        groupMd2Animations: jest.fn(),
-        parseMd3: jest.fn(),
-        parseWav: jest.fn(),
-        parseBsp: jest.fn(),
-        parseTga: jest.fn()
+        parsePcx: vi.fn(),
+        pcxToRgba: vi.fn(),
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        parseMd2: vi.fn(),
+        groupMd2Animations: vi.fn(),
+        parseMd3: vi.fn(),
+        parseWav: vi.fn(),
+        parseBsp: vi.fn(),
+        parseTga: vi.fn()
     };
 });
 
@@ -53,7 +53,7 @@ describe('PakService Fallback', () => {
 
     beforeEach(() => {
         pakService = new PakService();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should successfully fallback to main thread when worker fails', async () => {
@@ -62,15 +62,15 @@ describe('PakService Fallback', () => {
         const mockPakId = 'test-pak-id';
 
         // Mock worker failure
-        (workerService.executePakParserTask as jest.Mock).mockRejectedValue(new Error('Worker crashed'));
+        (workerService.executePakParserTask as vi.Mock).mockRejectedValue(new Error('Worker crashed'));
 
         // Mock PakArchive.fromArrayBuffer to return a valid archive object
         const mockArchive = {
             entries: new Map([['test.txt', {}]]),
             listEntries: () => [{ name: 'test.txt' }],
-            readFile: jest.fn()
+            readFile: vi.fn()
         };
-        (PakArchive.fromArrayBuffer as jest.Mock).mockReturnValue(mockArchive);
+        (PakArchive.fromArrayBuffer as vi.Mock).mockReturnValue(mockArchive);
 
         // Act
         const result = await pakService.loadPakFromBuffer('test.pak', mockBuffer, mockPakId, false, 0);

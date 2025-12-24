@@ -3,20 +3,20 @@ import { demoRecorderService } from '@/src/services/demoRecorder';
 import { DemoRecorder } from 'quake2ts/engine';
 
 // Mock DemoRecorder
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        DemoRecorder: jest.fn().mockImplementation(() => ({
-            startRecording: jest.fn(),
-            stopRecording: jest.fn().mockReturnValue(new Uint8Array(10)),
-            getIsRecording: jest.fn().mockReturnValue(true),
-            recordMessage: jest.fn()
+        DemoRecorder: vi.fn().mockImplementation(() => ({
+            startRecording: vi.fn(),
+            stopRecording: vi.fn().mockReturnValue(new Uint8Array(10)),
+            getIsRecording: vi.fn().mockReturnValue(true),
+            recordMessage: vi.fn()
         }))
     };
 });
 
 describe('DemoRecorderService Coverage', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // Reset singleton if possible, or just re-use.
         // It's a singleton, so we need to be careful with state.
         // If it's already recording, stop it.
@@ -42,7 +42,7 @@ describe('DemoRecorderService Coverage', () => {
 
     it('should prevent double start', () => {
         demoRecorderService.startRecording('test.dm2');
-        const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
         demoRecorderService.startRecording('test2.dm2');
         expect(spy).toHaveBeenCalledWith('Already recording demo');

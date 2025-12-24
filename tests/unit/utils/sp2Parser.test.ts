@@ -1,4 +1,4 @@
-import { describe, it, expect } from '@jest/globals';
+
 import { parseSprite } from '@/src/utils/sp2Parser';
 
 describe('sp2Parser', () => {

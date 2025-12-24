@@ -2,11 +2,11 @@ import { captureScreenshot, generateScreenshotFilename, downloadScreenshot, Scre
 import html2canvas from 'html2canvas';
 
 // Mock html2canvas
-jest.mock('html2canvas', () => jest.fn());
+vi.mock('html2canvas', () => vi.fn());
 
 // Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = jest.fn();
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn();
+global.URL.revokeObjectURL = vi.fn();
 
 describe('captureScreenshot', () => {
     let mockCanvas: HTMLCanvasElement;
@@ -14,11 +14,11 @@ describe('captureScreenshot', () => {
 
     beforeEach(() => {
         // Reset mocks
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Create mock canvas
         mockCanvas = document.createElement('canvas');
-        mockCanvas.toBlob = jest.fn((callback, type, quality) => {
+        mockCanvas.toBlob = vi.fn((callback, type, quality) => {
              // Mock blob creation
              const blob = new Blob(['mock-image-data'], { type: type || 'image/png' });
              callback(blob);
@@ -43,8 +43,8 @@ describe('captureScreenshot', () => {
     it('uses html2canvas when target is not a canvas', async () => {
         // Mock html2canvas return
         const mockResultCanvas = document.createElement('canvas');
-        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
-        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+        mockResultCanvas.toBlob = vi.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
+        (html2canvas as unknown as vi.Mock).mockResolvedValue(mockResultCanvas);
 
         await captureScreenshot(mockDiv);
 
@@ -55,8 +55,8 @@ describe('captureScreenshot', () => {
 
     it('uses html2canvas when includeHud is true, even for canvas target', async () => {
         const mockResultCanvas = document.createElement('canvas');
-        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
-        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+        mockResultCanvas.toBlob = vi.fn((cb) => cb(new Blob(['html2canvas-data'], { type: 'image/png' })));
+        (html2canvas as unknown as vi.Mock).mockResolvedValue(mockResultCanvas);
 
         const options: ScreenshotOptions = { format: 'png', includeHud: true };
         await captureScreenshot(mockCanvas, options);
@@ -66,8 +66,8 @@ describe('captureScreenshot', () => {
 
     it('passes resolution multiplier to html2canvas scale option', async () => {
         const mockResultCanvas = document.createElement('canvas');
-        mockResultCanvas.toBlob = jest.fn((cb) => cb(new Blob([''], { type: 'image/png' })));
-        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockResultCanvas);
+        mockResultCanvas.toBlob = vi.fn((cb) => cb(new Blob([''], { type: 'image/png' })));
+        (html2canvas as unknown as vi.Mock).mockResolvedValue(mockResultCanvas);
 
         const options: ScreenshotOptions = { format: 'png', resolutionMultiplier: 2, includeHud: true };
         await captureScreenshot(mockDiv, options);
@@ -95,15 +95,15 @@ describe('downloadScreenshot', () => {
         const blob = new Blob(['test'], { type: 'image/png' });
         const filename = 'test.png';
         const mockUrl = 'blob:test';
-        (global.URL.createObjectURL as jest.Mock).mockReturnValue(mockUrl);
+        (global.URL.createObjectURL as vi.Mock).mockReturnValue(mockUrl);
 
         // We need to return a real element for appendChild to work in jsdom
         const mockLink = document.createElement('a');
-        mockLink.click = jest.fn();
+        mockLink.click = vi.fn();
 
-        const createElementSpy = jest.spyOn(document, 'createElement').mockReturnValue(mockLink);
-        const appendChildSpy = jest.spyOn(document.body, 'appendChild');
-        const removeChildSpy = jest.spyOn(document.body, 'removeChild');
+        const createElementSpy = vi.spyOn(document, 'createElement').mockReturnValue(mockLink);
+        const appendChildSpy = vi.spyOn(document.body, 'appendChild');
+        const removeChildSpy = vi.spyOn(document.body, 'removeChild');
 
         downloadScreenshot(blob, filename);
 

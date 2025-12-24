@@ -8,52 +8,52 @@ import { ParsedFile, PakService } from '@/src/services/pakService';
 import { createWebGLContext } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        createWebGLContext: jest.fn(),
-        Camera: jest.fn().mockImplementation(() => ({
+        createWebGLContext: vi.fn(),
+        Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: new Float32Array(16),
             viewMatrix: new Float32Array(16),
-            updateMatrices: jest.fn()
+            updateMatrices: vi.fn()
         })),
-        BspSurfacePipeline: jest.fn(),
-        Md2Pipeline: jest.fn().mockImplementation(() => ({
-             bind: jest.fn(),
-             draw: jest.fn()
+        BspSurfacePipeline: vi.fn(),
+        Md2Pipeline: vi.fn().mockImplementation(() => ({
+             bind: vi.fn(),
+             draw: vi.fn()
         })),
-        Md2MeshBuffers: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            update: jest.fn(),
-            draw: jest.fn()
+        Md2MeshBuffers: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            update: vi.fn(),
+            draw: vi.fn()
         })),
-        createAnimationState: jest.fn(),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
-        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            setParameters: jest.fn(),
-            uploadImage: jest.fn()
+        createAnimationState: vi.fn(),
+        createBspSurfaces: vi.fn().mockReturnValue([]),
+        buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            setParameters: vi.fn(),
+            uploadImage: vi.fn()
         })),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(64)),
-        applySurfaceState: jest.fn(),
-        BspMap: jest.fn(),
-        findLeafForPoint: jest.fn(),
-        DemoPlaybackController: jest.fn()
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(64)),
+        applySurfaceState: vi.fn(),
+        BspMap: vi.fn(),
+        findLeafForPoint: vi.fn(),
+        DemoPlaybackController: vi.fn()
     };
 });
 
-jest.mock('@/src/services/videoRecorder');
+vi.mock('@/src/services/videoRecorder');
 
 // Mock canvas captureStream
-HTMLCanvasElement.prototype.captureStream = jest.fn().mockReturnValue({
-    getVideoTracks: () => [{ stop: jest.fn() }]
+HTMLCanvasElement.prototype.captureStream = vi.fn().mockReturnValue({
+    getVideoTracks: () => [{ stop: vi.fn() }]
 });
 
 // Mock URL
-global.URL.createObjectURL = jest.fn(() => 'blob:url');
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn(() => 'blob:url');
+global.URL.revokeObjectURL = vi.fn();
 
 describe('Video Recording Integration', () => {
     let mockPakService: PakService;
@@ -62,11 +62,11 @@ describe('Video Recording Integration', () => {
 
     beforeEach(() => {
         mockPakService = {
-            hasFile: jest.fn().mockReturnValue(false),
-            readFile: jest.fn(),
-            getPalette: jest.fn(),
-            mountPak: jest.fn(),
-            findByExtension: jest.fn()
+            hasFile: vi.fn().mockReturnValue(false),
+            readFile: vi.fn(),
+            getPalette: vi.fn(),
+            mountPak: vi.fn(),
+            findByExtension: vi.fn()
         } as unknown as PakService;
 
         const mockModel = {
@@ -86,40 +86,40 @@ describe('Video Recording Integration', () => {
         } as unknown as ParsedFile;
 
         mockGl = {
-            viewport: jest.fn(),
-            clearColor: jest.fn(),
-            clear: jest.fn(),
-            enable: jest.fn(),
-            disable: jest.fn(),
-            cullFace: jest.fn(),
-            getExtension: jest.fn(),
-            getParameter: jest.fn(),
-            createShader: jest.fn(),
-            createProgram: jest.fn(),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            createVertexArray: jest.fn(),
-            bindVertexArray: jest.fn(),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            createTexture: jest.fn(),
-            bindTexture: jest.fn(),
-            texParameteri: jest.fn(),
-            texImage2D: jest.fn(),
-            generateMipmap: jest.fn(),
-            drawElements: jest.fn(),
-            activeTexture: jest.fn(),
+            viewport: vi.fn(),
+            clearColor: vi.fn(),
+            clear: vi.fn(),
+            enable: vi.fn(),
+            disable: vi.fn(),
+            cullFace: vi.fn(),
+            getExtension: vi.fn(),
+            getParameter: vi.fn(),
+            createShader: vi.fn(),
+            createProgram: vi.fn(),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            createVertexArray: vi.fn(),
+            bindVertexArray: vi.fn(),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            createTexture: vi.fn(),
+            bindTexture: vi.fn(),
+            texParameteri: vi.fn(),
+            texImage2D: vi.fn(),
+            generateMipmap: vi.fn(),
+            drawElements: vi.fn(),
+            activeTexture: vi.fn(),
         };
 
-        (createWebGLContext as jest.Mock).mockReturnValue({ gl: mockGl });
-        (videoRecorderService.isRecording as jest.Mock).mockReturnValue(false);
+        (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
+        (videoRecorderService.isRecording as vi.Mock).mockReturnValue(false);
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('opens video settings when clicking record', async () => {
@@ -168,8 +168,8 @@ describe('Video Recording Integration', () => {
     });
 
     it('stops recording and handles download', async () => {
-        (videoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
-        (videoRecorderService.stopRecording as jest.Mock).mockResolvedValue(new Blob(['video data'], { type: 'video/webm' }));
+        (videoRecorderService.isRecording as vi.Mock).mockReturnValue(true);
+        (videoRecorderService.stopRecording as vi.Mock).mockResolvedValue(new Blob(['video data'], { type: 'video/webm' }));
 
         render(
             <UniversalViewer

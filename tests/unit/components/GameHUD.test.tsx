@@ -1,10 +1,11 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { GameHUD } from '@/src/components/GameHUD';
 import { PakService } from '@/src/services/pakService';
 import { PlayerStat } from 'quake2ts/shared';
 import { GameStateSnapshot } from '@/src/services/gameService';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const { createGameStateSnapshotFactory } = require('quake2ts/test-utils');
@@ -16,7 +17,7 @@ describe('GameHUD', () => {
 
     beforeEach(() => {
         mockPakService = {
-            readFile: jest.fn().mockResolvedValue(new Uint8Array(0))
+            readFile: vi.fn().mockResolvedValue(new Uint8Array(0))
         } as unknown as PakService;
 
         // Mock GameStateSnapshot using factory

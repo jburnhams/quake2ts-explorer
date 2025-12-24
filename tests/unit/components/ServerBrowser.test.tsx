@@ -1,11 +1,12 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { ServerBrowser, ServerInfo } from '../../../src/components/ServerBrowser';
 
 describe('ServerBrowser', () => {
-  const mockConnect = jest.fn();
-  const mockClose = jest.fn();
+  const mockConnect = vi.fn();
+  const mockClose = vi.fn();
   const mockServers: ServerInfo[] = [
     {
       address: 'ws://test1.com',
@@ -28,7 +29,7 @@ describe('ServerBrowser', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders server list correctly', () => {

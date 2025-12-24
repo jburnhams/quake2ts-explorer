@@ -2,9 +2,9 @@ import { authService, User } from '@/src/services/authService';
 import { consoleService } from '@/src/services/consoleService';
 
 // Mock consoleService
-jest.mock('@/src/services/consoleService', () => ({
+vi.mock('@/src/services/consoleService', () => ({
   consoleService: {
-    log: jest.fn(),
+    log: vi.fn(),
   },
   LogLevel: {
     INFO: 'INFO',
@@ -18,7 +18,7 @@ jest.mock('@/src/services/consoleService', () => ({
 const originalLocation = window.location;
 const mockLocation = {
   href: 'http://localhost:3000/',
-  assign: jest.fn(),
+  assign: vi.fn(),
 };
 
 describe('AuthService', () => {
@@ -33,9 +33,9 @@ describe('AuthService', () => {
   });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     (authService as any).user = null;
-    global.fetch = jest.fn();
+    global.fetch = vi.fn();
   });
 
   describe('getUser', () => {
@@ -55,7 +55,7 @@ describe('AuthService', () => {
         last_login_at: '2023-01-02',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => ({
           user: mockUser,
@@ -70,7 +70,7 @@ describe('AuthService', () => {
 
   describe('checkSession', () => {
     it('should log info when starting check', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => ({ user: { name: 'Test' } }),
       });
@@ -94,7 +94,7 @@ describe('AuthService', () => {
         last_login_at: '2023-01-02',
       };
 
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => ({ user: mockUser }),
       });
@@ -109,7 +109,7 @@ describe('AuthService', () => {
 
     it('should handle 401 and redirect to login url from response', async () => {
       const loginUrl = 'http://api.com/login?redirect=...';
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => ({ login_url: loginUrl }),
@@ -125,7 +125,7 @@ describe('AuthService', () => {
     });
 
     it('should handle 401 and fallback login url when json fails', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: false,
         status: 401,
         json: async () => { throw new Error('Invalid JSON'); },
@@ -141,7 +141,7 @@ describe('AuthService', () => {
     });
 
     it('should handle other error statuses', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Server Error',
@@ -156,7 +156,7 @@ describe('AuthService', () => {
     });
 
     it('should handle network errors', async () => {
-      (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
+      (global.fetch as vi.Mock).mockRejectedValue(new Error('Network error'));
 
       const result = await authService.checkSession();
       expect(result).toBeNull();

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BspAnalyzer } from '@/src/components/BspAnalyzer';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,11 +6,11 @@ import { BspMap } from 'quake2ts/engine';
 import { PakService } from '@/src/services/pakService';
 
 // Mock dependencies
-jest.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
     UniversalViewer: () => <div data-testid="universal-viewer">Universal Viewer</div>
 }));
 
-jest.mock('@/src/components/LightmapInspector', () => ({
+vi.mock('@/src/components/LightmapInspector', () => ({
     LightmapInspector: () => <div data-testid="lightmap-inspector">Lightmap Inspector</div>
 }));
 

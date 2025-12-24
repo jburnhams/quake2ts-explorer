@@ -1,13 +1,13 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { PakService } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
 import { workerService } from '../../src/services/workerService';
 
 // Mock worker service to return immediate result
-jest.mock('../../src/services/workerService', () => ({
+vi.mock('../../src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(),
-        executePakParserTask: jest.fn(async (cb: any) => {
+        getPakParser: vi.fn(),
+        executePakParserTask: vi.fn(async (cb: any) => {
             const api = {
                 parsePak: async (id: string, buffer: ArrayBuffer) => ({
                     entries: new Map(),
@@ -21,10 +21,10 @@ jest.mock('../../src/services/workerService', () => ({
 }));
 
 // Mock PakArchive and VirtualFileSystem logic
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
     PakArchive: {
-      fromArrayBuffer: jest.fn((id: string, buffer: ArrayBuffer) => {
+      fromArrayBuffer: vi.fn((id: string, buffer: ArrayBuffer) => {
         return {
             // ... mocked instance for fallback path if needed
         };
@@ -60,16 +60,16 @@ jest.mock('quake2ts/engine', () => {
       stat() { return null; }
       findByExtension() { return []; }
     },
-    parsePcx: jest.fn(() => ({ palette: new Uint8Array(768) })),
-    pcxToRgba: jest.fn(),
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
-    parseMd2: jest.fn(),
-    groupMd2Animations: jest.fn(),
-    parseMd3: jest.fn(),
-    parseWav: jest.fn(),
-    parseBsp: jest.fn(),
-    parseTga: jest.fn(),
+    parsePcx: vi.fn(() => ({ palette: new Uint8Array(768) })),
+    pcxToRgba: vi.fn(),
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
+    parseMd2: vi.fn(),
+    groupMd2Animations: vi.fn(),
+    parseMd3: vi.fn(),
+    parseWav: vi.fn(),
+    parseBsp: vi.fn(),
+    parseTga: vi.fn(),
   };
 });
 

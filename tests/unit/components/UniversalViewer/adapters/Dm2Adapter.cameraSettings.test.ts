@@ -4,33 +4,33 @@ import { DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
 import { vec3 } from 'gl-matrix';
 
 // Mock gl-matrix
-jest.mock('gl-matrix', () => {
-    const original = jest.requireActual('gl-matrix');
+vi.mock('gl-matrix', () => {
+    const original = vi.requireActual('gl-matrix');
     return {
         ...original,
         vec3: {
             ...original.vec3,
-            create: jest.fn(() => new Float32Array([0, 0, 0])),
-            copy: jest.fn((out, a) => {
+            create: vi.fn(() => new Float32Array([0, 0, 0])),
+            copy: vi.fn((out, a) => {
                 out[0] = a[0];
                 out[1] = a[1];
                 out[2] = a[2];
                 return out;
             }),
-            fromValues: jest.fn((x, y, z) => new Float32Array([x, y, z])),
-            scale: jest.fn((out, a, b) => {
+            fromValues: vi.fn((x, y, z) => new Float32Array([x, y, z])),
+            scale: vi.fn((out, a, b) => {
                  out[0] = a[0] * b;
                  out[1] = a[1] * b;
                  out[2] = a[2] * b;
                  return out;
             }),
-            add: jest.fn((out, a, b) => {
+            add: vi.fn((out, a, b) => {
                  out[0] = a[0] + b[0];
                  out[1] = a[1] + b[1];
                  out[2] = a[2] + b[2];
                  return out;
             }),
-            normalize: jest.fn((out, a) => {
+            normalize: vi.fn((out, a) => {
                  // Simplified normalize for predictable testing
                  return out;
             })
@@ -45,21 +45,21 @@ describe('Dm2Adapter Camera Settings', () => {
     beforeEach(async () => {
         adapter = new Dm2Adapter();
         mockController = {
-            loadDemo: jest.fn(),
-            play: jest.fn(),
-            pause: jest.fn(),
-            update: jest.fn(),
-            getCurrentFrame: jest.fn(() => 0),
-            getFrameData: jest.fn(() => ({
+            loadDemo: vi.fn(),
+            play: vi.fn(),
+            pause: vi.fn(),
+            update: vi.fn(),
+            getCurrentFrame: vi.fn(() => 0),
+            getFrameData: vi.fn(() => ({
                 playerState: {
                     origin: [0, 0, 0],
                     viewangles: [0, 0, 0] // Pitch, Yaw, Roll
                 }
             })),
-            setSpeed: jest.fn(),
-            getDuration: jest.fn(() => 100),
-            getCurrentTime: jest.fn(() => 0),
-            getFrameCount: jest.fn(() => 1000)
+            setSpeed: vi.fn(),
+            getDuration: vi.fn(() => 100),
+            getCurrentTime: vi.fn(() => 0),
+            getFrameCount: vi.fn(() => 1000)
         };
 
         // Inject mock controller (using any cast to access private property or via load)

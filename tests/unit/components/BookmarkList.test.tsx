@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import { BookmarkList, BookmarkListProps } from '@/src/components/BookmarkList';
@@ -23,11 +24,11 @@ describe('BookmarkList', () => {
 
   const defaultProps: BookmarkListProps = {
     bookmarks: mockBookmarks,
-    onJumpTo: jest.fn(),
-    onDelete: jest.fn(),
-    onEdit: jest.fn(),
-    onExport: jest.fn(),
-    onImport: jest.fn()
+    onJumpTo: vi.fn(),
+    onDelete: vi.fn(),
+    onEdit: vi.fn(),
+    onExport: vi.fn(),
+    onImport: vi.fn()
   };
 
   it('renders a list of bookmarks', () => {

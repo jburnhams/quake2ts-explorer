@@ -1,55 +1,55 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 import { multiplayerGameService } from '@/src/services/multiplayerGameService';
 import { networkService } from '@/src/services/networkService';
 import { predictionService } from '@/src/services/predictionService';
 import { PlayerState } from 'quake2ts/shared';
 
 // Mock dependencies
-jest.mock('@/src/services/networkService', () => ({
+vi.mock('@/src/services/networkService', () => ({
     networkService: {
-        setCallbacks: jest.fn(),
-        sendCommand: jest.fn(),
-        disconnect: jest.fn()
+        setCallbacks: vi.fn(),
+        sendCommand: vi.fn(),
+        disconnect: vi.fn()
     }
 }));
 
-jest.mock('@/src/services/predictionService', () => ({
+vi.mock('@/src/services/predictionService', () => ({
     predictionService: {
-        init: jest.fn(),
-        setEnabled: jest.fn(),
-        predict: jest.fn(),
-        onServerFrame: jest.fn()
+        init: vi.fn(),
+        setEnabled: vi.fn(),
+        predict: vi.fn(),
+        onServerFrame: vi.fn()
     }
 }));
 
-jest.mock('quake2ts/engine', () => ({
-    AssetManager: jest.fn().mockImplementation(() => ({
-        loadMap: jest.fn().mockResolvedValue({})
+vi.mock('quake2ts/engine', () => ({
+    AssetManager: vi.fn().mockImplementation(() => ({
+        loadMap: vi.fn().mockResolvedValue({})
     }))
 }));
 
-jest.mock('quake2ts/shared', () => ({
-    CollisionEntityIndex: jest.fn().mockImplementation(() => ({
-        trace: jest.fn().mockReturnValue({ fraction: 1.0 }),
-        link: jest.fn()
+vi.mock('quake2ts/shared', () => ({
+    CollisionEntityIndex: vi.fn().mockImplementation(() => ({
+        trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
+        link: vi.fn()
     })),
-    traceBox: jest.fn().mockReturnValue({ fraction: 1.0, endpos: { x: 0, y: 0, z: 0 } }),
-    pointContents: jest.fn().mockReturnValue(0),
+    traceBox: vi.fn().mockReturnValue({ fraction: 1.0, endpos: { x: 0, y: 0, z: 0 } }),
+    pointContents: vi.fn().mockReturnValue(0),
     Vec3: {},
     CollisionPlane: {}
 }));
 
-jest.mock('@/src/utils/collisionAdapter', () => ({
-    createCollisionModel: jest.fn().mockReturnValue({})
+vi.mock('@/src/utils/collisionAdapter', () => ({
+    createCollisionModel: vi.fn().mockReturnValue({})
 }));
 
-jest.mock('quake2ts/game', () => ({
+vi.mock('quake2ts/game', () => ({
     // Mock Entity if needed
 }));
 
 describe('MultiplayerGameService Coverage', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('getSnapshot returns defaults when no snapshot available', () => {

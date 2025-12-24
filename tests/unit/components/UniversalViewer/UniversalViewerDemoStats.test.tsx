@@ -7,52 +7,52 @@ import { Dm2Adapter } from '@/src/components/UniversalViewer/adapters/Dm2Adapter
 import '@testing-library/jest-dom';
 
 // Mock dependencies
-jest.mock('@/src/components/UniversalViewer/adapters/Dm2Adapter');
-jest.mock('@/src/services/pakService');
-jest.mock('@/src/components/DemoStats', () => ({
+vi.mock('@/src/components/UniversalViewer/adapters/Dm2Adapter');
+vi.mock('@/src/services/pakService');
+vi.mock('@/src/components/DemoStats', () => ({
   DemoStats: ({ visible }: { visible: boolean }) => visible ? <div data-testid="demo-stats">Demo Stats Overlay</div> : null
 }));
 
 // Mock WebGL
 const mockGl = {
-  getExtension: jest.fn(),
-  getParameter: jest.fn(),
-  createShader: jest.fn(),
-  shaderSource: jest.fn(),
-  compileShader: jest.fn(),
-  getShaderParameter: jest.fn(() => true),
-  createProgram: jest.fn(),
-  attachShader: jest.fn(),
-  linkProgram: jest.fn(),
-  getProgramParameter: jest.fn(() => true),
-  useProgram: jest.fn(),
-  createBuffer: jest.fn(),
-  bindBuffer: jest.fn(),
-  bufferData: jest.fn(),
-  enableVertexAttribArray: jest.fn(),
-  vertexAttribPointer: jest.fn(),
-  createVertexArray: jest.fn(),
-  bindVertexArray: jest.fn(),
-  drawElements: jest.fn(),
-  viewport: jest.fn(),
-  clearColor: jest.fn(),
-  clear: jest.fn(),
-  enable: jest.fn(),
-  blendFunc: jest.fn(),
-  depthFunc: jest.fn(),
-  cullFace: jest.fn(),
-  blendFuncSeparate: jest.fn(), // Added missing function
-  createTexture: jest.fn(),
-  bindTexture: jest.fn(),
-  texImage2D: jest.fn(),
-  texParameteri: jest.fn(),
-  activeTexture: jest.fn(),
-  uniform1i: jest.fn(),
-  uniform1f: jest.fn(),
-  uniform3fv: jest.fn(),
-  uniformMatrix4fv: jest.fn(),
-  getUniformLocation: jest.fn(),
-  getAttribLocation: jest.fn(),
+  getExtension: vi.fn(),
+  getParameter: vi.fn(),
+  createShader: vi.fn(),
+  shaderSource: vi.fn(),
+  compileShader: vi.fn(),
+  getShaderParameter: vi.fn(() => true),
+  createProgram: vi.fn(),
+  attachShader: vi.fn(),
+  linkProgram: vi.fn(),
+  getProgramParameter: vi.fn(() => true),
+  useProgram: vi.fn(),
+  createBuffer: vi.fn(),
+  bindBuffer: vi.fn(),
+  bufferData: vi.fn(),
+  enableVertexAttribArray: vi.fn(),
+  vertexAttribPointer: vi.fn(),
+  createVertexArray: vi.fn(),
+  bindVertexArray: vi.fn(),
+  drawElements: vi.fn(),
+  viewport: vi.fn(),
+  clearColor: vi.fn(),
+  clear: vi.fn(),
+  enable: vi.fn(),
+  blendFunc: vi.fn(),
+  depthFunc: vi.fn(),
+  cullFace: vi.fn(),
+  blendFuncSeparate: vi.fn(), // Added missing function
+  createTexture: vi.fn(),
+  bindTexture: vi.fn(),
+  texImage2D: vi.fn(),
+  texParameteri: vi.fn(),
+  activeTexture: vi.fn(),
+  uniform1i: vi.fn(),
+  uniform1f: vi.fn(),
+  uniform3fv: vi.fn(),
+  uniformMatrix4fv: vi.fn(),
+  getUniformLocation: vi.fn(),
+  getAttribLocation: vi.fn(),
 } as unknown as WebGL2RenderingContext;
 
 describe('UniversalViewer Demo Stats Integration', () => {
@@ -60,7 +60,7 @@ describe('UniversalViewer Demo Stats Integration', () => {
 
   beforeAll(() => {
     // Mock HTMLCanvasElement.getContext
-    HTMLCanvasElement.prototype.getContext = jest.fn((contextId: string) => {
+    HTMLCanvasElement.prototype.getContext = vi.fn((contextId: string) => {
         if (contextId === 'webgl2') return mockGl;
         return null;
     }) as any;
@@ -68,36 +68,36 @@ describe('UniversalViewer Demo Stats Integration', () => {
 
   beforeEach(() => {
     pakService = new PakService();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders DemoStats when S key is pressed during demo playback', async () => {
     const mockController = {
-        getCurrentFrame: jest.fn(() => 0),
-        getFrameCount: jest.fn(() => 100),
-        getCurrentTime: jest.fn(() => 0),
-        getDuration: jest.fn(() => 10),
-        isPlaying: jest.fn(() => true),
-        play: jest.fn(),
-        pause: jest.fn(),
-        seekToFrame: jest.fn(),
-        seekToTime: jest.fn(),
-        timeToFrame: jest.fn(),
-        getDemoStatistics: jest.fn(),
-        getPlayerStatistics: jest.fn(),
-        getFrameData: jest.fn(),
+        getCurrentFrame: vi.fn(() => 0),
+        getFrameCount: vi.fn(() => 100),
+        getCurrentTime: vi.fn(() => 0),
+        getDuration: vi.fn(() => 10),
+        isPlaying: vi.fn(() => true),
+        play: vi.fn(),
+        pause: vi.fn(),
+        seekToFrame: vi.fn(),
+        seekToTime: vi.fn(),
+        timeToFrame: vi.fn(),
+        getDemoStatistics: vi.fn(),
+        getPlayerStatistics: vi.fn(),
+        getFrameData: vi.fn(),
     };
 
     // Setup adapter mock to return controller
-    (Dm2Adapter as jest.Mock).mockImplementation(() => ({
-      load: jest.fn().mockResolvedValue(undefined),
-      cleanup: jest.fn(),
-      update: jest.fn(),
-      render: jest.fn(),
-      getDemoController: jest.fn(() => mockController),
-      hasCameraControl: jest.fn(() => true),
-      setCameraMode: jest.fn(),
-      isPlaying: jest.fn(() => true),
+    (Dm2Adapter as vi.Mock).mockImplementation(() => ({
+      load: vi.fn().mockResolvedValue(undefined),
+      cleanup: vi.fn(),
+      update: vi.fn(),
+      render: vi.fn(),
+      getDemoController: vi.fn(() => mockController),
+      hasCameraControl: vi.fn(() => true),
+      setCameraMode: vi.fn(),
+      isPlaying: vi.fn(() => true),
     }));
 
     await act(async () => {

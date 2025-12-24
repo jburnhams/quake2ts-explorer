@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 import { PostProcessor, defaultPostProcessOptions } from '../../../src/utils/postProcessing';
 
 describe('PostProcessor', () => {
@@ -7,51 +7,51 @@ describe('PostProcessor', () => {
 
     beforeEach(() => {
         gl = {
-            createProgram: jest.fn().mockReturnValue({}),
-            createShader: jest.fn().mockReturnValue({}),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            getShaderInfoLog: jest.fn().mockReturnValue(''),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            getProgramInfoLog: jest.fn().mockReturnValue(''),
-            createVertexArray: jest.fn().mockReturnValue({}),
-            bindVertexArray: jest.fn(),
-            createBuffer: jest.fn().mockReturnValue({}),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            getAttribLocation: jest.fn().mockReturnValue(0),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            createTexture: jest.fn().mockReturnValue({}),
-            bindTexture: jest.fn(),
-            texImage2D: jest.fn(),
-            texParameteri: jest.fn(),
-            createRenderbuffer: jest.fn().mockReturnValue({}),
-            bindRenderbuffer: jest.fn(),
-            renderbufferStorage: jest.fn(),
-            createFramebuffer: jest.fn().mockReturnValue({}),
-            bindFramebuffer: jest.fn(),
-            framebufferTexture2D: jest.fn(),
-            framebufferRenderbuffer: jest.fn(),
-            checkFramebufferStatus: jest.fn().mockReturnValue(36053), // FRAMEBUFFER_COMPLETE
-            deleteTexture: jest.fn(),
-            deleteRenderbuffer: jest.fn(),
-            deleteFramebuffer: jest.fn(),
-            deleteProgram: jest.fn(),
-            deleteVertexArray: jest.fn(),
-            deleteShader: jest.fn(),
-            useProgram: jest.fn(),
-            activeTexture: jest.fn(),
-            getUniformLocation: jest.fn().mockReturnValue({}),
-            uniform1i: jest.fn(),
-            uniform1f: jest.fn(),
-            uniform2f: jest.fn(),
-            drawArrays: jest.fn(),
-            viewport: jest.fn(),
-            clear: jest.fn(),
+            createProgram: vi.fn().mockReturnValue({}),
+            createShader: vi.fn().mockReturnValue({}),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            getShaderInfoLog: vi.fn().mockReturnValue(''),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            getProgramInfoLog: vi.fn().mockReturnValue(''),
+            createVertexArray: vi.fn().mockReturnValue({}),
+            bindVertexArray: vi.fn(),
+            createBuffer: vi.fn().mockReturnValue({}),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            getAttribLocation: vi.fn().mockReturnValue(0),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            createTexture: vi.fn().mockReturnValue({}),
+            bindTexture: vi.fn(),
+            texImage2D: vi.fn(),
+            texParameteri: vi.fn(),
+            createRenderbuffer: vi.fn().mockReturnValue({}),
+            bindRenderbuffer: vi.fn(),
+            renderbufferStorage: vi.fn(),
+            createFramebuffer: vi.fn().mockReturnValue({}),
+            bindFramebuffer: vi.fn(),
+            framebufferTexture2D: vi.fn(),
+            framebufferRenderbuffer: vi.fn(),
+            checkFramebufferStatus: vi.fn().mockReturnValue(36053), // FRAMEBUFFER_COMPLETE
+            deleteTexture: vi.fn(),
+            deleteRenderbuffer: vi.fn(),
+            deleteFramebuffer: vi.fn(),
+            deleteProgram: vi.fn(),
+            deleteVertexArray: vi.fn(),
+            deleteShader: vi.fn(),
+            useProgram: vi.fn(),
+            activeTexture: vi.fn(),
+            getUniformLocation: vi.fn().mockReturnValue({}),
+            uniform1i: vi.fn(),
+            uniform1f: vi.fn(),
+            uniform2f: vi.fn(),
+            drawArrays: vi.fn(),
+            viewport: vi.fn(),
+            clear: vi.fn(),
             // Constants
             VERTEX_SHADER: 35633,
             FRAGMENT_SHADER: 35632,
@@ -98,7 +98,7 @@ describe('PostProcessor', () => {
         expect(gl.createFramebuffer).toHaveBeenCalled();
 
         // Resize again to same size - no op
-        (gl.createFramebuffer as jest.Mock).mockClear();
+        (gl.createFramebuffer as vi.Mock).mockClear();
         postProcessor.resize(100, 100);
         expect(gl.createFramebuffer).not.toHaveBeenCalled();
 
@@ -142,15 +142,15 @@ describe('PostProcessor', () => {
     });
 
     it('throws on link error', () => {
-        (gl.getProgramParameter as jest.Mock).mockReturnValue(false);
-        (gl.getProgramInfoLog as jest.Mock).mockReturnValue('Link error');
+        (gl.getProgramParameter as vi.Mock).mockReturnValue(false);
+        (gl.getProgramInfoLog as vi.Mock).mockReturnValue('Link error');
 
         expect(() => postProcessor.init('vert', 'frag')).toThrow('Link error');
     });
 
     it('throws on shader compile error', () => {
-         (gl.getShaderParameter as jest.Mock).mockReturnValue(false);
-         (gl.getShaderInfoLog as jest.Mock).mockReturnValue('Compile error');
+         (gl.getShaderParameter as vi.Mock).mockReturnValue(false);
+         (gl.getShaderInfoLog as vi.Mock).mockReturnValue('Compile error');
 
          expect(() => postProcessor.init('vert', 'frag')).toThrow('Compile error');
     });

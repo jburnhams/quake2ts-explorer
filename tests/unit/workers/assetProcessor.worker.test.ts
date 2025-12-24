@@ -1,31 +1,31 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // Mock dependencies
-jest.mock('comlink', () => ({
-    expose: jest.fn(),
-    transfer: jest.fn((obj) => obj)
+vi.mock('comlink', () => ({
+    expose: vi.fn(),
+    transfer: vi.fn((obj) => obj)
 }));
 
 import { expose, transfer } from 'comlink';
-const mockExpose = expose as jest.Mock;
-const mockTransfer = transfer as jest.Mock;
+const mockExpose = expose as vi.Mock;
+const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-jest.mock('quake2ts/engine', () => ({
-    parsePcx: jest.fn(),
-    pcxToRgba: jest.fn(),
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
-    parseMd2: jest.fn(),
-    groupMd2Animations: jest.fn(),
-    parseMd3: jest.fn(),
-    parseTga: jest.fn(),
-    parseWav: jest.fn(),
-    parseBsp: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+    parsePcx: vi.fn(),
+    pcxToRgba: vi.fn(),
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
+    parseMd2: vi.fn(),
+    groupMd2Animations: vi.fn(),
+    parseMd3: vi.fn(),
+    parseTga: vi.fn(),
+    parseWav: vi.fn(),
+    parseBsp: vi.fn(),
 }));
 
-jest.mock('@/src/utils/sp2Parser', () => ({
-    parseSprite: jest.fn()
+vi.mock('@/src/utils/sp2Parser', () => ({
+    parseSprite: vi.fn()
 }));
 
 // Import worker (this will execute the top-level code and call expose)
@@ -41,7 +41,7 @@ describe('AssetProcessorWorker', () => {
     const capturedApi = mockExpose.mock.calls[0]?.[0];
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         api = capturedApi;
     });
 
@@ -56,8 +56,8 @@ describe('AssetProcessorWorker', () => {
         const mockImage = { width: 10, height: 10 };
         const mockRgba = new Uint8Array(100);
 
-        (engine.parsePcx as jest.Mock).mockReturnValue(mockImage);
-        (engine.pcxToRgba as jest.Mock).mockReturnValue(mockRgba);
+        (engine.parsePcx as vi.Mock).mockReturnValue(mockImage);
+        (engine.pcxToRgba as vi.Mock).mockReturnValue(mockRgba);
 
         const result = api.processPcx(mockBuffer);
 
@@ -80,8 +80,8 @@ describe('AssetProcessorWorker', () => {
         const mockRgba = new Uint8Array(1024);
         const mockLevels = [{ width: 32, height: 32, rgba: mockRgba }];
 
-        (engine.parseWal as jest.Mock).mockReturnValue(mockTexture);
-        (engine.walToRgba as jest.Mock).mockReturnValue({ levels: mockLevels });
+        (engine.parseWal as vi.Mock).mockReturnValue(mockTexture);
+        (engine.walToRgba as vi.Mock).mockReturnValue({ levels: mockLevels });
 
         const result = api.processWal(mockBuffer, mockPalette);
 
@@ -99,7 +99,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockTexture = { width: 32, height: 32 };
 
-        (engine.parseWal as jest.Mock).mockReturnValue(mockTexture);
+        (engine.parseWal as vi.Mock).mockReturnValue(mockTexture);
 
         const result = api.processWal(mockBuffer, null);
 
@@ -112,7 +112,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockImage = { width: 64, height: 64, pixels: new Uint8Array(10) };
 
-        (engine.parseTga as jest.Mock).mockReturnValue(mockImage);
+        (engine.parseTga as vi.Mock).mockReturnValue(mockImage);
 
         const result = api.processTga(mockBuffer);
 
@@ -129,8 +129,8 @@ describe('AssetProcessorWorker', () => {
         const mockModel = { frames: [] };
         const mockAnims = {};
 
-        (engine.parseMd2 as jest.Mock).mockReturnValue(mockModel);
-        (engine.groupMd2Animations as jest.Mock).mockReturnValue(mockAnims);
+        (engine.parseMd2 as vi.Mock).mockReturnValue(mockModel);
+        (engine.groupMd2Animations as vi.Mock).mockReturnValue(mockAnims);
 
         const result = api.processMd2(mockBuffer);
 
@@ -147,7 +147,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockModel = {};
 
-        (engine.parseMd3 as jest.Mock).mockReturnValue(mockModel);
+        (engine.parseMd3 as vi.Mock).mockReturnValue(mockModel);
 
         const result = api.processMd3(mockBuffer);
 
@@ -162,7 +162,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockModel = {};
 
-        (sp2.parseSprite as jest.Mock).mockReturnValue(mockModel);
+        (sp2.parseSprite as vi.Mock).mockReturnValue(mockModel);
 
         const result = api.processSp2(mockBuffer);
 
@@ -177,7 +177,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockAudio = {};
 
-        (engine.parseWav as jest.Mock).mockReturnValue(mockAudio);
+        (engine.parseWav as vi.Mock).mockReturnValue(mockAudio);
 
         const result = api.processWav(mockBuffer);
 
@@ -192,7 +192,7 @@ describe('AssetProcessorWorker', () => {
         const mockBuffer = new ArrayBuffer(8);
         const mockMap = {};
 
-        (engine.parseBsp as jest.Mock).mockReturnValue(mockMap);
+        (engine.parseBsp as vi.Mock).mockReturnValue(mockMap);
 
         const result = api.processBsp(mockBuffer);
 

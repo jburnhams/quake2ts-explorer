@@ -1,4 +1,4 @@
-import { describe, it, expect, jest } from '@jest/globals';
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FileTree } from '@/src/components/FileTree';
@@ -6,14 +6,14 @@ import type { TreeNode } from '@/src/services/pakService';
 import React from 'react';
 
 // Mock AutoSizer to render children with fixed dimensions
-jest.mock('react-virtualized-auto-sizer', () => {
+vi.mock('react-virtualized-auto-sizer', () => {
   return ({ children }: any) => {
     return children({ height: 500, width: 500 });
   };
 });
 
 // Mock react-window (v2) to render all items
-jest.mock('react-window', () => {
+vi.mock('react-window', () => {
   const React = require('react');
   return {
     List: ({ rowComponent, rowProps, rowCount }: any) => {
@@ -58,29 +58,29 @@ const mockTree: TreeNode = {
 
 describe('FileTree Component', () => {
   it('shows empty state when no root', () => {
-    render(<FileTree root={null} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={null} selectedPath={null} onSelect={vi.fn()} />);
     expect(screen.getByText('No files loaded')).toBeInTheDocument();
   });
 
   it('shows empty state when root has no children', () => {
     const emptyRoot: TreeNode = { name: 'root', path: '', isDirectory: true, children: [] };
-    render(<FileTree root={emptyRoot} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={emptyRoot} selectedPath={null} onSelect={vi.fn()} />);
     expect(screen.getByText('No files loaded')).toBeInTheDocument();
   });
 
   it('renders directory nodes', () => {
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
     expect(screen.getByText('pics')).toBeInTheDocument();
   });
 
   it('renders file nodes', () => {
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
     expect(screen.getByText('readme.txt')).toBeInTheDocument();
   });
 
   it('calls onSelect when file is clicked', async () => {
     const user = userEvent.setup();
-    const onSelect = jest.fn();
+    const onSelect = vi.fn();
     render(<FileTree root={mockTree} selectedPath={null} onSelect={onSelect} />);
 
     await user.click(screen.getByText('readme.txt'));
@@ -89,7 +89,7 @@ describe('FileTree Component', () => {
 
   it('expands directory when clicked', async () => {
     const user = userEvent.setup();
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
 
     // Click to expand pics directory
     await user.click(screen.getByText('pics'));
@@ -99,20 +99,20 @@ describe('FileTree Component', () => {
   });
 
   it('highlights selected file', () => {
-    render(<FileTree root={mockTree} selectedPath="readme.txt" onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath="readme.txt" onSelect={vi.fn()} />);
     const item = screen.getByTestId('tree-item-readme.txt');
     expect(item).toHaveClass('tree-node-selected');
   });
 
   it('has tree role for accessibility', () => {
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
     expect(screen.getByRole('tree')).toBeInTheDocument();
   });
 
 
   it('shows correct icon for image files', async () => {
     const user = userEvent.setup();
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
     // Expand pics to see test.pcx
     await user.click(screen.getByText('pics'));
     // PCX should have image icon
@@ -121,14 +121,14 @@ describe('FileTree Component', () => {
   });
 
   it('shows correct icon for text files', () => {
-    render(<FileTree root={mockTree} selectedPath={null} onSelect={jest.fn()} />);
+    render(<FileTree root={mockTree} selectedPath={null} onSelect={vi.fn()} />);
     const txtItem = screen.getByText('readme.txt').closest('.tree-node');
     expect(txtItem?.querySelector('.tree-icon')).toBeInTheDocument();
   });
 
   it('selects nested file', async () => {
     const user = userEvent.setup();
-    const onSelect = jest.fn();
+    const onSelect = vi.fn();
     render(<FileTree root={mockTree} selectedPath={null} onSelect={onSelect} />);
 
     // Expand pics directory

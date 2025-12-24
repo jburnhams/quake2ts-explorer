@@ -5,49 +5,49 @@ import { GizmoRenderer } from '@/src/components/UniversalViewer/adapters/GizmoRe
 import { TransformUtils } from '@/src/utils/transformUtils';
 
 // Mocks
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-            bind: jest.fn().mockReturnValue({}),
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+            bind: vi.fn().mockReturnValue({}),
         })),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
-        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            uploadImage: jest.fn(),
-            setParameters: jest.fn(),
+        createBspSurfaces: vi.fn().mockReturnValue([]),
+        buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            uploadImage: vi.fn(),
+            setParameters: vi.fn(),
         })),
-        resolveLightStyles: jest.fn().mockReturnValue([]),
-        applySurfaceState: jest.fn(),
-        findLeafForPoint: jest.fn().mockReturnValue(-1),
+        resolveLightStyles: vi.fn().mockReturnValue([]),
+        applySurfaceState: vi.fn(),
+        findLeafForPoint: vi.fn().mockReturnValue(-1),
     };
 });
 
 // Mock WebGL context
 const glMock = {
-    createShader: jest.fn(),
-    shaderSource: jest.fn(),
-    compileShader: jest.fn(),
-    getShaderParameter: jest.fn().mockReturnValue(true),
-    createProgram: jest.fn(),
-    attachShader: jest.fn(),
-    linkProgram: jest.fn(),
-    getUniformLocation: jest.fn(),
-    createVertexArray: jest.fn(),
-    bindVertexArray: jest.fn(),
-    createBuffer: jest.fn(),
-    bindBuffer: jest.fn(),
-    bufferData: jest.fn(),
-    enableVertexAttribArray: jest.fn(),
-    vertexAttribPointer: jest.fn(),
-    deleteShader: jest.fn(),
-    useProgram: jest.fn(),
-    uniformMatrix4fv: jest.fn(),
-    uniform3fv: jest.fn(),
-    uniform4fv: jest.fn(),
-    drawArrays: jest.fn(),
-    disable: jest.fn(),
-    enable: jest.fn(),
+    createShader: vi.fn(),
+    shaderSource: vi.fn(),
+    compileShader: vi.fn(),
+    getShaderParameter: vi.fn().mockReturnValue(true),
+    createProgram: vi.fn(),
+    attachShader: vi.fn(),
+    linkProgram: vi.fn(),
+    getUniformLocation: vi.fn(),
+    createVertexArray: vi.fn(),
+    bindVertexArray: vi.fn(),
+    createBuffer: vi.fn(),
+    bindBuffer: vi.fn(),
+    bufferData: vi.fn(),
+    enableVertexAttribArray: vi.fn(),
+    vertexAttribPointer: vi.fn(),
+    deleteShader: vi.fn(),
+    useProgram: vi.fn(),
+    uniformMatrix4fv: vi.fn(),
+    uniform3fv: vi.fn(),
+    uniform4fv: vi.fn(),
+    drawArrays: vi.fn(),
+    disable: vi.fn(),
+    enable: vi.fn(),
     TEXTURE0: 0,
     TEXTURE1: 1,
     RGBA: 123,
@@ -65,14 +65,14 @@ const glMock = {
 } as unknown as WebGL2RenderingContext;
 
 // Mock GizmoRenderer
-jest.mock('@/src/components/UniversalViewer/adapters/GizmoRenderer');
+vi.mock('@/src/components/UniversalViewer/adapters/GizmoRenderer');
 
 describe('BspAdapter Manipulation', () => {
     let adapter: BspAdapter;
     let mockGizmoRenderer: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         EntityEditorService.getInstance().reset();
 
         adapter = new BspAdapter();
@@ -98,14 +98,14 @@ describe('BspAdapter Manipulation', () => {
         };
 
         adapter.loadMap(glMock, mapMock as any, {} as any);
-        mockGizmoRenderer = (GizmoRenderer as jest.Mock).mock.instances[0];
+        mockGizmoRenderer = (GizmoRenderer as vi.Mock).mock.instances[0];
     });
 
     it('handles translation drag', () => {
         EntityEditorService.getInstance().selectEntity(0);
         mockGizmoRenderer.intersect.mockReturnValue({ axis: 'x', distance: 10 });
 
-        jest.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
             point: vec3.fromValues(110, 0, 0),
             t: 0
         });
@@ -115,7 +115,7 @@ describe('BspAdapter Manipulation', () => {
         adapter.onMouseDown(ray, {} as any);
         expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith('x');
 
-        jest.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToLine').mockReturnValue({
             point: vec3.fromValues(120, 0, 0),
             t: 0
         });
@@ -134,7 +134,7 @@ describe('BspAdapter Manipulation', () => {
 
         mockGizmoRenderer.intersect.mockReturnValue({ axis: 'z', distance: 10 });
 
-        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
             point: vec3.fromValues(110, 0, 0),
             t: 0
         });
@@ -144,7 +144,7 @@ describe('BspAdapter Manipulation', () => {
         adapter.onMouseDown(ray, {} as any);
         expect(mockGizmoRenderer.setActiveAxis).toHaveBeenCalledWith('z');
 
-        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
             point: vec3.fromValues(100, 10, 0),
             t: 0
         });
@@ -165,7 +165,7 @@ describe('BspAdapter Manipulation', () => {
 
         mockGizmoRenderer.intersect.mockReturnValue({ axis: 'z', distance: 10 });
 
-        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
             point: vec3.fromValues(110, 0, 0),
             t: 0
         });
@@ -173,7 +173,7 @@ describe('BspAdapter Manipulation', () => {
 
         // Move 13 degrees
         const rad13 = 13 * Math.PI / 180;
-        jest.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
+        vi.spyOn(TransformUtils, 'projectRayToPlane').mockReturnValue({
             point: vec3.fromValues(100 + 10 * Math.cos(rad13), 10 * Math.sin(rad13), 0),
             t: 0
         });

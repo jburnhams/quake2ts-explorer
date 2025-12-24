@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, jest } from '@jest/globals';
+
 import * as fs from 'fs';
 import * as path from 'path';
 import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from 'quake2ts/engine';
@@ -6,7 +6,7 @@ import { PakService } from '../../src/services/pakService';
 
 // Mock workerService to force fallback to main thread parsing
 // This is necessary because JSDOM doesn't support real Workers, and comlink wrapper would hang
-jest.mock('../../src/services/workerService', () => {
+vi.mock('../../src/services/workerService', () => {
   const reject = () => Promise.reject(new Error("No worker in integration test"));
   return {
     workerService: {

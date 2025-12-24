@@ -1,15 +1,15 @@
-import { describe, it, expect, jest } from '@jest/globals';
+
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Toolbar } from '@/src/components/Toolbar';
 
 describe('Toolbar Component', () => {
   const defaultProps = {
-    onFileSelect: jest.fn(),
+    onFileSelect: vi.fn(),
     pakCount: 0,
     fileCount: 0,
     viewMode: 'merged' as const,
-    onViewModeChange: jest.fn(),
+    onViewModeChange: vi.fn(),
   };
 
   it('renders the title', () => {
@@ -30,7 +30,7 @@ describe('Toolbar Component', () => {
   });
 
   it('toggles view mode when checkbox clicked', async () => {
-    const onViewModeChange = jest.fn();
+    const onViewModeChange = vi.fn();
     const user = userEvent.setup();
     render(<Toolbar {...defaultProps} onViewModeChange={onViewModeChange} />);
 
@@ -92,7 +92,7 @@ describe('Toolbar Component', () => {
     render(<Toolbar {...defaultProps} />);
 
     const input = screen.getByTestId('file-input') as HTMLInputElement;
-    const clickSpy = jest.spyOn(input, 'click');
+    const clickSpy = vi.spyOn(input, 'click');
 
     await user.click(screen.getByTestId('add-pak-button'));
 
@@ -101,7 +101,7 @@ describe('Toolbar Component', () => {
   });
 
   it('calls onFileSelect when file is selected', async () => {
-    const onFileSelect = jest.fn();
+    const onFileSelect = vi.fn();
     render(<Toolbar {...defaultProps} onFileSelect={onFileSelect} />);
 
     const input = screen.getByTestId('file-input') as HTMLInputElement;
@@ -119,7 +119,7 @@ describe('Toolbar Component', () => {
   });
 
   it('resets input value after file selection', async () => {
-    const onFileSelect = jest.fn();
+    const onFileSelect = vi.fn();
     render(<Toolbar {...defaultProps} onFileSelect={onFileSelect} />);
 
     const input = screen.getByTestId('file-input') as HTMLInputElement;
@@ -137,7 +137,7 @@ describe('Toolbar Component', () => {
   });
 
   it('does not call onFileSelect when no files selected', () => {
-    const onFileSelect = jest.fn();
+    const onFileSelect = vi.fn();
     render(<Toolbar {...defaultProps} onFileSelect={onFileSelect} />);
 
     const input = screen.getByTestId('file-input') as HTMLInputElement;

@@ -1,10 +1,11 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { DemoMetadataEditor } from '../../../src/components/DemoMetadata';
 import { demoMetadataService } from '../../../src/services/demoMetadataService';
 
 // Mock the service
-jest.mock('../../../src/services/demoMetadataService');
+vi.mock('../../../src/services/demoMetadataService');
 
 describe('DemoMetadataEditor', () => {
   const mockProps = {
@@ -12,13 +13,13 @@ describe('DemoMetadataEditor', () => {
     filename: 'demo1.dm2',
     duration: 123.45,
     mapName: 'q2dm1',
-    onSave: jest.fn(),
-    onClose: jest.fn()
+    onSave: vi.fn(),
+    onClose: vi.fn()
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (demoMetadataService.getMetadata as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    (demoMetadataService.getMetadata as vi.Mock).mockReturnValue({
       id: 'demo1.dm2',
       tags: []
     });
@@ -32,7 +33,7 @@ describe('DemoMetadataEditor', () => {
   });
 
   test('loads existing metadata', () => {
-    (demoMetadataService.getMetadata as jest.Mock).mockReturnValue({
+    (demoMetadataService.getMetadata as vi.Mock).mockReturnValue({
       id: 'demo1.dm2',
       customName: 'Existing Name',
       description: 'Existing Desc',

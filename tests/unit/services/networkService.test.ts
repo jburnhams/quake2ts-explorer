@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 import { networkService, NetworkCallbacks } from '../../../src/services/networkService';
 import { NetChan, ClientCommand, ServerCommand, BinaryWriter } from 'quake2ts/shared';
 
@@ -8,8 +8,8 @@ class MockWebSocket {
   onclose: ((event: { reason: string }) => void) | null = null;
   onerror: ((event: any) => void) | null = null;
   onmessage: ((event: { data: ArrayBuffer }) => void) | null = null;
-  send = jest.fn();
-  close = jest.fn();
+  send = vi.fn();
+  close = vi.fn();
   binaryType = 'blob';
 
   constructor(public url: string) {}
@@ -18,15 +18,15 @@ class MockWebSocket {
 (global as any).WebSocket = MockWebSocket;
 
 // Mock NetChan
-jest.mock('quake2ts/shared', () => {
-  const actual = jest.requireActual('quake2ts/shared') as any;
+vi.mock('quake2ts/shared', () => {
+  const actual = vi.requireActual('quake2ts/shared') as any;
   // We can't import strictly from test-utils here easily if it's not a standard module,
   // but we set up the alias in jest config.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { createNetChanMock } = require('quake2ts/test-utils');
   return {
     ...actual,
-    NetChan: jest.fn().mockImplementation(() => {
+    NetChan: vi.fn().mockImplementation(() => {
         const mock = createNetChanMock();
         // Override default transmit to match test expectations
         mock.transmit.mockReturnValue(new Uint8Array([1, 2, 3]));
@@ -39,18 +39,18 @@ describe('NetworkService', () => {
   let callbacks: NetworkCallbacks;
 
   beforeEach(() => {
-    jest.useFakeTimers();
-    jest.clearAllMocks();
+    vi.useFakeTimers();
+    vi.clearAllMocks();
     callbacks = {
-      onConnect: jest.fn(),
-      onDisconnect: jest.fn(),
-      onError: jest.fn(),
-      onSnapshot: jest.fn(),
-      onServerCommand: jest.fn(),
-      onPrint: jest.fn(),
-      onCenterPrint: jest.fn(),
-      onStuffText: jest.fn(),
-      onConfigString: jest.fn(),
+      onConnect: vi.fn(),
+      onDisconnect: vi.fn(),
+      onError: vi.fn(),
+      onSnapshot: vi.fn(),
+      onServerCommand: vi.fn(),
+      onPrint: vi.fn(),
+      onCenterPrint: vi.fn(),
+      onStuffText: vi.fn(),
+      onConfigString: vi.fn(),
     };
     networkService.setCallbacks(callbacks);
     // Force reset state
@@ -59,7 +59,7 @@ describe('NetworkService', () => {
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should start disconnected', () => {
@@ -91,7 +91,7 @@ describe('NetworkService', () => {
     ws.onclose({ reason: 'Connection error 1' });
 
     // Advance time to trigger retry (1000ms delay)
-    await jest.advanceTimersByTimeAsync(1000);
+    await vi.advanceTimersByTimeAsync(1000);
 
     // Second attempt (Retry 1)
     ws = (networkService as any).ws;
@@ -207,7 +207,7 @@ describe('NetworkService', () => {
 
   it('should ping address', async () => {
       const pPromise = networkService.ping('localhost');
-      await jest.advanceTimersByTimeAsync(200);
+      await vi.advanceTimersByTimeAsync(200);
       const p = await pPromise;
       expect(p).toBeGreaterThanOrEqual(20);
   });
@@ -215,14 +215,14 @@ describe('NetworkService', () => {
   it('should query server info successfully', async () => {
     // Setup a mock WebSocket for the query
     const ws = new MockWebSocket('ws://localhost:27910');
-    (global as any).WebSocket = jest.fn(() => ws);
+    (global as any).WebSocket = vi.fn(() => ws);
 
     // Mock NetChan for the query specifically
-    // Since queryServer creates its own NetChan internally, we rely on the jest.mock above
+    // Since queryServer creates its own NetChan internally, we rely on the vi.mock above
     // to intercept it.
 
     // We need to access the NetChan instance created inside queryServer.
-    // The jest.mock implementation returns a new mock object each time NetChan is instantiated.
+    // The vi.mock implementation returns a new mock object each time NetChan is instantiated.
     // We can capture it if we spy on it, or we can just mock process return value globally
     // since we control when onmessage fires.
 
@@ -238,7 +238,7 @@ describe('NetworkService', () => {
     // Since our mock implementation of process returns [1, 2, 3] by default (see top of file),
     // we need to override it for this test case. But `process` is a method on the instance.
     // We can use mockImplementationOnce on the class mock constructor?
-    // The current mock setup is: NetChan: jest.fn().mockImplementation(() => ({ ... }))
+    // The current mock setup is: NetChan: vi.fn().mockImplementation(() => ({ ... }))
 
     // Let's grab the last created NetChan mock instance
     const MockNetChan = require('quake2ts/shared').NetChan;
@@ -309,7 +309,7 @@ describe('NetworkService', () => {
 
   it('should handle query timeout', async () => {
     const ws = new MockWebSocket('ws://localhost:27910');
-    (global as any).WebSocket = jest.fn(() => ws);
+    (global as any).WebSocket = vi.fn(() => ws);
 
     const queryPromise = networkService.queryServer('ws://localhost:27910');
 
@@ -334,7 +334,7 @@ describe('NetworkService', () => {
     // Actually, advanceTimersByTimeAsync is async. The timeout callback fires.
     // The promise rejects.
 
-    const timerPromise = jest.advanceTimersByTimeAsync(6000);
+    const timerPromise = vi.advanceTimersByTimeAsync(6000);
     await expect(queryPromise).rejects.toThrow('Query timeout');
     await timerPromise;
 

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DemoTimeline } from '@/src/components/DemoTimeline';
@@ -5,35 +6,35 @@ import { DemoPlaybackController, DemoEventType } from 'quake2ts/engine';
 import { createMockRAF } from 'quake2ts/test-utils';
 
 describe('DemoTimeline', () => {
-  let mockController: jest.Mocked<DemoPlaybackController>;
+  let mockController: vi.Mocked<DemoPlaybackController>;
   let mockRaf: ReturnType<typeof createMockRAF>;
 
   beforeEach(() => {
     mockRaf = createMockRAF();
 
     mockController = {
-      play: jest.fn(),
-      pause: jest.fn(),
-      stop: jest.fn(),
-      stepForward: jest.fn(),
-      stepBackward: jest.fn(),
-      seekToFrame: jest.fn(),
-      seekToTime: jest.fn(),
-      setSpeed: jest.fn(),
-      getSpeed: jest.fn().mockReturnValue(1),
-      getCurrentFrame: jest.fn().mockReturnValue(0),
-      getFrameCount: jest.fn().mockReturnValue(100),
-      getCurrentTime: jest.fn().mockReturnValue(0),
-      getDuration: jest.fn().mockReturnValue(10),
-      getState: jest.fn(),
-      isPlaying: jest.fn().mockReturnValue(false),
-      isPaused: jest.fn().mockReturnValue(true),
-      getDemoEvents: jest.fn().mockReturnValue([]),
-    } as unknown as jest.Mocked<DemoPlaybackController>;
+      play: vi.fn(),
+      pause: vi.fn(),
+      stop: vi.fn(),
+      stepForward: vi.fn(),
+      stepBackward: vi.fn(),
+      seekToFrame: vi.fn(),
+      seekToTime: vi.fn(),
+      setSpeed: vi.fn(),
+      getSpeed: vi.fn().mockReturnValue(1),
+      getCurrentFrame: vi.fn().mockReturnValue(0),
+      getFrameCount: vi.fn().mockReturnValue(100),
+      getCurrentTime: vi.fn().mockReturnValue(0),
+      getDuration: vi.fn().mockReturnValue(10),
+      getState: vi.fn(),
+      isPlaying: vi.fn().mockReturnValue(false),
+      isPaused: vi.fn().mockReturnValue(true),
+      getDemoEvents: vi.fn().mockReturnValue([]),
+    } as unknown as vi.Mocked<DemoPlaybackController>;
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders correctly with initial state', () => {
@@ -67,7 +68,7 @@ describe('DemoTimeline', () => {
     const trackContainer = screen.getByTitle(''); // Title is empty initially
 
     // Mock getBoundingClientRect
-    jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
+    vi.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
       left: 0,
       width: 100,
       top: 0,
@@ -132,7 +133,7 @@ describe('DemoTimeline', () => {
       // Visible duration is now 5s (10s / 2)
 
       const trackContainer = screen.getByTitle('');
-       jest.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
+       vi.spyOn(trackContainer, 'getBoundingClientRect').mockReturnValue({
         left: 0,
         width: 100,
         top: 0,

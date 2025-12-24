@@ -2,23 +2,23 @@
 import { AssetCrossRefService } from '../../../src/services/assetCrossRefService';
 import { VirtualFileSystem, parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
 
-jest.mock('quake2ts/engine');
+vi.mock('quake2ts/engine');
 
 describe('AssetCrossRefService', () => {
   let service: AssetCrossRefService;
-  let mockVfs: jest.Mocked<VirtualFileSystem>;
+  let mockVfs: vi.Mocked<VirtualFileSystem>;
 
   beforeEach(() => {
     mockVfs = {
-      findByExtension: jest.fn(),
-      readFile: jest.fn(),
-    } as unknown as jest.Mocked<VirtualFileSystem>;
+      findByExtension: vi.fn(),
+      readFile: vi.fn(),
+    } as unknown as vi.Mocked<VirtualFileSystem>;
 
     service = new AssetCrossRefService(mockVfs);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should clear cache', () => {
@@ -33,7 +33,7 @@ describe('AssetCrossRefService', () => {
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
 
-    (parseMd2 as jest.Mock).mockReturnValue({
+    (parseMd2 as vi.Mock).mockReturnValue({
       skins: [{ name: 'models/skin.pcx' }]
     });
 
@@ -49,7 +49,7 @@ describe('AssetCrossRefService', () => {
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
 
-    (parseMd3 as jest.Mock).mockReturnValue({
+    (parseMd3 as vi.Mock).mockReturnValue({
       surfaces: [{ shaders: [{ name: 'models/skin.tga' }] }]
     });
 
@@ -65,7 +65,7 @@ describe('AssetCrossRefService', () => {
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
 
-    (parseBsp as jest.Mock).mockReturnValue({
+    (parseBsp as vi.Mock).mockReturnValue({
       textures: [{ name: 'textures/wall.wal' }]
     });
 
@@ -92,11 +92,11 @@ describe('AssetCrossRefService', () => {
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
 
-    (parseMd2 as jest.Mock).mockImplementation(() => {
+    (parseMd2 as vi.Mock).mockImplementation(() => {
         throw new Error('Parse error');
     });
 
-    const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation();
 
     const usages = await service.findTextureUsage('models/skin.pcx');
     expect(usages).toHaveLength(0);
@@ -112,9 +112,9 @@ describe('AssetCrossRefService', () => {
         return [];
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
-    (parseMd2 as jest.Mock).mockReturnValue({ skins: [] });
+    (parseMd2 as vi.Mock).mockReturnValue({ skins: [] });
 
-    const setTimeoutSpy = jest.spyOn(global, 'setTimeout');
+    const setTimeoutSpy = vi.spyOn(global, 'setTimeout');
 
     await service.findTextureUsage('models/skin.pcx');
 
@@ -127,7 +127,7 @@ describe('AssetCrossRefService', () => {
         return [];
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
-    (parseMd2 as jest.Mock).mockReturnValue({ skins: [{ name: 'models/skin.pcx' }] });
+    (parseMd2 as vi.Mock).mockReturnValue({ skins: [{ name: 'models/skin.pcx' }] });
 
     // First call
     await service.findTextureUsage('models/skin.pcx');
@@ -145,7 +145,7 @@ describe('AssetCrossRefService', () => {
         return [];
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
-    (parseMd2 as jest.Mock).mockReturnValue({ skins: [{ name: 'models/skin' }] });
+    (parseMd2 as vi.Mock).mockReturnValue({ skins: [{ name: 'models/skin' }] });
 
     const usages = await service.findTextureUsage('models/skin.pcx');
     expect(usages).toHaveLength(1);
@@ -157,7 +157,7 @@ describe('AssetCrossRefService', () => {
         return [];
     });
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
-    (parseMd2 as jest.Mock).mockReturnValue({ skins: [{ name: 'models/skin.tga' }] });
+    (parseMd2 as vi.Mock).mockReturnValue({ skins: [{ name: 'models/skin.tga' }] });
 
     const usages = await service.findTextureUsage('models/skin.pcx');
     expect(usages).toHaveLength(1);
@@ -171,7 +171,7 @@ describe('AssetCrossRefService', () => {
     mockVfs.readFile.mockReturnValue(new Uint8Array(10));
 
     // Mock BSP with entities
-    (parseBsp as jest.Mock).mockReturnValue({
+    (parseBsp as vi.Mock).mockReturnValue({
       entities: {
           entities: [
               { classname: 'worldspawn' },

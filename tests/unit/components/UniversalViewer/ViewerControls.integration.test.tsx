@@ -19,23 +19,23 @@ describe('ViewerControls Integration', () => {
 
     const defaultProps = {
         isPlaying: false,
-        onPlayPause: jest.fn(),
+        onPlayPause: vi.fn(),
         orbit: mockOrbit,
-        setOrbit: jest.fn(),
+        setOrbit: vi.fn(),
         freeCamera: mockFreeCam,
-        setFreeCamera: jest.fn(),
+        setFreeCamera: vi.fn(),
         hasPlayback: true,
         speed: 1.0,
-        setSpeed: jest.fn(),
+        setSpeed: vi.fn(),
         showCameraControls: true,
         cameraMode: 'orbit' as const,
-        setCameraMode: jest.fn(),
+        setCameraMode: vi.fn(),
         renderMode: 'textured' as const,
-        setRenderMode: jest.fn(),
+        setRenderMode: vi.fn(),
         renderColor: [1, 1, 1] as [number, number, number],
-        setRenderColor: jest.fn(),
-        onScreenshot: jest.fn(),
-        onMetadata: jest.fn()
+        setRenderColor: vi.fn(),
+        onScreenshot: vi.fn(),
+        onMetadata: vi.fn()
     };
 
     test('renders metadata button when onMetadata provided', () => {

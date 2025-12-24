@@ -3,29 +3,29 @@ import { vec3, mat4 } from 'gl-matrix';
 
 // Mock WebGL context
 const mockGl = {
-    createShader: jest.fn(() => 'shader'),
-    shaderSource: jest.fn(),
-    compileShader: jest.fn(),
-    getShaderParameter: jest.fn(() => true),
-    getShaderInfoLog: jest.fn(() => ''),
-    createProgram: jest.fn(() => 'program'),
-    attachShader: jest.fn(),
-    linkProgram: jest.fn(),
-    getProgramParameter: jest.fn(() => true),
-    createBuffer: jest.fn(),
-    bindBuffer: jest.fn(),
-    bufferData: jest.fn(),
-    enableVertexAttribArray: jest.fn(),
-    vertexAttribPointer: jest.fn(),
-    createVertexArray: jest.fn(() => 'vao'),
-    bindVertexArray: jest.fn(),
-    useProgram: jest.fn(),
-    getUniformLocation: jest.fn(() => 'loc'),
-    uniformMatrix4fv: jest.fn(),
-    uniform3fv: jest.fn(),
-    uniform4fv: jest.fn(),
-    drawArrays: jest.fn(),
-    deleteShader: jest.fn(),
+    createShader: vi.fn(() => 'shader'),
+    shaderSource: vi.fn(),
+    compileShader: vi.fn(),
+    getShaderParameter: vi.fn(() => true),
+    getShaderInfoLog: vi.fn(() => ''),
+    createProgram: vi.fn(() => 'program'),
+    attachShader: vi.fn(),
+    linkProgram: vi.fn(),
+    getProgramParameter: vi.fn(() => true),
+    createBuffer: vi.fn(),
+    bindBuffer: vi.fn(),
+    bufferData: vi.fn(),
+    enableVertexAttribArray: vi.fn(),
+    vertexAttribPointer: vi.fn(),
+    createVertexArray: vi.fn(() => 'vao'),
+    bindVertexArray: vi.fn(),
+    useProgram: vi.fn(),
+    getUniformLocation: vi.fn(() => 'loc'),
+    uniformMatrix4fv: vi.fn(),
+    uniform3fv: vi.fn(),
+    uniform4fv: vi.fn(),
+    drawArrays: vi.fn(),
+    deleteShader: vi.fn(),
     VERTEX_SHADER: 35633,
     FRAGMENT_SHADER: 35632,
     ARRAY_BUFFER: 34962,
@@ -39,20 +39,20 @@ describe('GizmoRenderer Coverage', () => {
     let renderer: GizmoRenderer;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         renderer = new GizmoRenderer(mockGl);
     });
 
     test('handles shader compilation failure', () => {
-        const glMock = { ...mockGl, getShaderParameter: jest.fn(() => false) } as unknown as WebGL2RenderingContext;
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+        const glMock = { ...mockGl, getShaderParameter: vi.fn(() => false) } as unknown as WebGL2RenderingContext;
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
         new GizmoRenderer(glMock);
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
     });
 
     test('handles program creation failure', () => {
-         const glMock = { ...mockGl, createProgram: jest.fn(() => null) } as unknown as WebGL2RenderingContext;
+         const glMock = { ...mockGl, createProgram: vi.fn(() => null) } as unknown as WebGL2RenderingContext;
          new GizmoRenderer(glMock);
          // Expect no crash
     });

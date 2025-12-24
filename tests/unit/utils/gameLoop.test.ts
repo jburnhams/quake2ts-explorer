@@ -2,54 +2,54 @@
 import { createGameLoop } from '@/src/utils/gameLoop';
 import { FixedTimestepLoop } from 'quake2ts/engine';
 
-jest.mock('quake2ts/engine', () => ({
-  FixedTimestepLoop: jest.fn().mockImplementation(() => ({
-    start: jest.fn(),
-    stop: jest.fn(),
-    pump: jest.fn(),
-    isRunning: jest.fn().mockReturnValue(true)
+vi.mock('quake2ts/engine', () => ({
+  FixedTimestepLoop: vi.fn().mockImplementation(() => ({
+    start: vi.fn(),
+    stop: vi.fn(),
+    pump: vi.fn(),
+    isRunning: vi.fn().mockReturnValue(true)
   }))
 }));
 
 describe('GameLoop', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    jest.useFakeTimers();
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
        return setTimeout(() => cb(performance.now()), 16) as unknown as number;
     });
-    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation((id) => {
        clearTimeout(id);
     });
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should create and start loop', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     const loop = createGameLoop(simulate, render);
 
     loop.start();
 
     expect(FixedTimestepLoop).toHaveBeenCalled();
-    const mockLoop = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
+    const mockLoop = (FixedTimestepLoop as vi.Mock).mock.results[0].value;
     expect(mockLoop.start).toHaveBeenCalled();
 
     // Advance timer to trigger RAF
-    jest.advanceTimersByTime(20);
+    vi.advanceTimersByTime(20);
     expect(mockLoop.pump).toHaveBeenCalled();
   });
 
   it('should not start multiple loops', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     const loop = createGameLoop(simulate, render);
 
     loop.start();
-    const rafSpy = jest.spyOn(window, 'requestAnimationFrame');
+    const rafSpy = vi.spyOn(window, 'requestAnimationFrame');
     rafSpy.mockClear();
 
     loop.start();
@@ -59,31 +59,31 @@ describe('GameLoop', () => {
   });
 
   it('should stop loop', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     const loop = createGameLoop(simulate, render);
 
     loop.start();
     loop.stop();
 
-    const mockLoop = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
+    const mockLoop = (FixedTimestepLoop as vi.Mock).mock.results[0].value;
     expect(mockLoop.stop).toHaveBeenCalled();
     expect(window.cancelAnimationFrame).toHaveBeenCalled();
   });
 
   it('should pause and resume loop', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     const loop = createGameLoop(simulate, render);
-    const mockLoop = (FixedTimestepLoop as jest.Mock).mock.results[0].value;
+    const mockLoop = (FixedTimestepLoop as vi.Mock).mock.results[0].value;
 
     loop.start();
-    jest.advanceTimersByTime(20);
+    vi.advanceTimersByTime(20);
     expect(mockLoop.pump).toHaveBeenCalledTimes(1);
 
     loop.pause();
     mockLoop.pump.mockClear();
-    jest.advanceTimersByTime(20);
+    vi.advanceTimersByTime(20);
     expect(mockLoop.pump).not.toHaveBeenCalled(); // Should not pump when paused
 
     loop.resume();
@@ -91,17 +91,17 @@ describe('GameLoop', () => {
     expect(mockLoop.stop).toHaveBeenCalled();
     expect(mockLoop.start).toHaveBeenCalledTimes(2); // Initial start + resume start
 
-    jest.advanceTimersByTime(20);
+    vi.advanceTimersByTime(20);
     expect(mockLoop.pump).toHaveBeenCalled();
   });
 
   it('should execute simulation and render callbacks', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     createGameLoop(simulate, render);
 
     // Get the config passed to FixedTimestepLoop
-    const config = (FixedTimestepLoop as jest.Mock).mock.calls[0][0];
+    const config = (FixedTimestepLoop as vi.Mock).mock.calls[0][0];
 
     // Call them
     config.simulate({});
@@ -112,18 +112,18 @@ describe('GameLoop', () => {
   });
 
   it('passes correct options to FixedTimestepLoop', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
     createGameLoop(simulate, render, 60);
 
-    const options = (FixedTimestepLoop as jest.Mock).mock.calls[0][1];
+    const options = (FixedTimestepLoop as vi.Mock).mock.calls[0][1];
     expect(options.fixedDeltaMs).toBeCloseTo(1000 / 60);
 
     // Test 'now'
     expect(options.now()).toBeDefined();
 
     // Test 'schedule'
-    const cb = jest.fn();
+    const cb = vi.fn();
     options.schedule(cb);
     expect(window.requestAnimationFrame).toHaveBeenCalledWith(cb);
   });

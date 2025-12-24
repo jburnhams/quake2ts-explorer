@@ -1,21 +1,21 @@
-import { describe, it, expect } from '@jest/globals';
+
 import { render, screen } from '@testing-library/react';
 import { PreviewPanel } from '../../../src/components/PreviewPanel';
 import type { ParsedFile, PakService } from '../../../src/services/pakService';
 
-jest.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
   UniversalViewer: () => <div data-testid="universal-viewer" />,
 }));
 
 // SpriteViewer is still imported
-jest.mock('../../../src/components/SpriteViewer', () => ({
+vi.mock('../../../src/components/SpriteViewer', () => ({
     SpriteViewer: () => <div data-testid="sprite-viewer" />,
 }));
 
 describe('Model Preview', () => {
   const mockPakService = {
-    hasFile: jest.fn(),
-    readFile: jest.fn(),
+    hasFile: vi.fn(),
+    readFile: vi.fn(),
   } as unknown as PakService;
 
   it('renders UniversalViewer for MD2', () => {

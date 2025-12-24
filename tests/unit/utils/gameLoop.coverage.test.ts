@@ -1,24 +1,24 @@
 import { createGameLoop } from '../../../src/utils/gameLoop';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 // Mock requestAnimationFrame
-const mockRaf = jest.fn((cb: any) => setTimeout(cb, 16));
-const mockCancelRaf = jest.fn((id: any) => clearTimeout(id));
+const mockRaf = vi.fn((cb: any) => setTimeout(cb, 16));
+const mockCancelRaf = vi.fn((id: any) => clearTimeout(id));
 global.requestAnimationFrame = mockRaf as any;
 global.cancelAnimationFrame = mockCancelRaf as any;
 
 // Global mocks for FixedTimestepLoop methods to verify calls
-const mockStart = jest.fn();
-const mockStop = jest.fn();
-const mockIsRunning = jest.fn();
-const mockPump = jest.fn();
+const mockStart = vi.fn();
+const mockStop = vi.fn();
+const mockIsRunning = vi.fn();
+const mockPump = vi.fn();
 
 let capturedOpts: any;
 
-jest.mock('quake2ts/engine', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('quake2ts/engine', () => {
+    
     return {
-        FixedTimestepLoop: jest.fn().mockImplementation((opts) => {
+        FixedTimestepLoop: vi.fn().mockImplementation((opts) => {
             capturedOpts = opts;
             return {
                 start: mockStart,
@@ -36,9 +36,9 @@ describe('createGameLoop', () => {
 
     beforeEach(() => {
         capturedOpts = null;
-        simulate = jest.fn();
-        render = jest.fn();
-        jest.clearAllMocks();
+        simulate = vi.fn();
+        render = vi.fn();
+        vi.clearAllMocks();
         mockIsRunning.mockReturnValue(false);
     });
 

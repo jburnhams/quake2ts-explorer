@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { DebugRenderer } from '../../../../../src/components/UniversalViewer/adapters/DebugRenderer';
 import { mat4, vec3, vec4 } from 'gl-matrix';
 
@@ -17,28 +17,28 @@ describe('DebugRenderer', () => {
         mockShader = {} as WebGLShader;
 
         mockGl = {
-            createProgram: jest.fn().mockReturnValue(mockProgram),
-            createShader: jest.fn().mockReturnValue(mockShader),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            createVertexArray: jest.fn().mockReturnValue(mockVao),
-            createBuffer: jest.fn().mockReturnValue(mockBuffer),
-            bindVertexArray: jest.fn(),
-            bindBuffer: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            useProgram: jest.fn(),
-            getUniformLocation: jest.fn().mockReturnValue(1),
-            uniformMatrix4fv: jest.fn(),
-            bufferData: jest.fn(),
-            drawArrays: jest.fn(),
-            deleteShader: jest.fn(),
-            getShaderInfoLog: jest.fn(),
-            getProgramInfoLog: jest.fn(),
+            createProgram: vi.fn().mockReturnValue(mockProgram),
+            createShader: vi.fn().mockReturnValue(mockShader),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            createVertexArray: vi.fn().mockReturnValue(mockVao),
+            createBuffer: vi.fn().mockReturnValue(mockBuffer),
+            bindVertexArray: vi.fn(),
+            bindBuffer: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            useProgram: vi.fn(),
+            getUniformLocation: vi.fn().mockReturnValue(1),
+            uniformMatrix4fv: vi.fn(),
+            bufferData: vi.fn(),
+            drawArrays: vi.fn(),
+            deleteShader: vi.fn(),
+            getShaderInfoLog: vi.fn(),
+            getProgramInfoLog: vi.fn(),
             VERTEX_SHADER: 1,
             FRAGMENT_SHADER: 2,
             ARRAY_BUFFER: 3,
@@ -104,8 +104,8 @@ describe('DebugRenderer', () => {
     });
 
     it('handles shader compilation error', () => {
-        mockGl.getShaderParameter = jest.fn().mockReturnValue(false);
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockGl.getShaderParameter = vi.fn().mockReturnValue(false);
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         new DebugRenderer(mockGl);
 
@@ -115,8 +115,8 @@ describe('DebugRenderer', () => {
 
     it('handles program link error', () => {
         // First call to getProgramParameter is usually for LINK_STATUS
-        mockGl.getProgramParameter = jest.fn().mockReturnValue(false);
-        const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+        mockGl.getProgramParameter = vi.fn().mockReturnValue(false);
+        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
         new DebugRenderer(mockGl);
 

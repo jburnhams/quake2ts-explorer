@@ -1,100 +1,100 @@
 import React from 'react';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import App from '../../src/App';
 import { usePakExplorer } from '../../src/hooks/usePakExplorer';
 
-jest.mock('../../src/hooks/usePakExplorer');
+vi.mock('../../src/hooks/usePakExplorer');
 
 // Mock quake2ts/engine parts used by BspAdapter
-jest.mock('quake2ts/engine', () => ({
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({
-        readFile: jest.fn(),
-        stat: jest.fn(),
-        list: jest.fn(),
-        mountPak: jest.fn(),
-        hasFile: jest.fn(),
-        findByExtension: jest.fn().mockReturnValue([]),
+vi.mock('quake2ts/engine', () => ({
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({
+        readFile: vi.fn(),
+        stat: vi.fn(),
+        list: vi.fn(),
+        mountPak: vi.fn(),
+        hasFile: vi.fn(),
+        findByExtension: vi.fn().mockReturnValue([]),
     })),
     PakArchive: {
-        fromArrayBuffer: jest.fn(),
+        fromArrayBuffer: vi.fn(),
     },
-    createWebGLContext: jest.fn().mockReturnValue({
+    createWebGLContext: vi.fn().mockReturnValue({
         gl: {
-            getExtension: jest.fn(),
-            getParameter: jest.fn(),
-            enable: jest.fn(),
-            clear: jest.fn(),
-            clearColor: jest.fn(),
-            viewport: jest.fn(),
-            createVertexArray: jest.fn(),
-            bindVertexArray: jest.fn(),
-            drawElements: jest.fn(),
-            activeTexture: jest.fn(),
-            createShader: jest.fn(),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            getShaderParameter: jest.fn(() => true),
-            createProgram: jest.fn(),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn(() => true),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            useProgram: jest.fn(),
-            getUniformLocation: jest.fn(),
-            uniformMatrix4fv: jest.fn(),
-            uniform3fv: jest.fn(),
-            uniform4fv: jest.fn(),
-            drawArrays: jest.fn(),
-            deleteShader: jest.fn(),
+            getExtension: vi.fn(),
+            getParameter: vi.fn(),
+            enable: vi.fn(),
+            clear: vi.fn(),
+            clearColor: vi.fn(),
+            viewport: vi.fn(),
+            createVertexArray: vi.fn(),
+            bindVertexArray: vi.fn(),
+            drawElements: vi.fn(),
+            activeTexture: vi.fn(),
+            createShader: vi.fn(),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            getShaderParameter: vi.fn(() => true),
+            createProgram: vi.fn(),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn(() => true),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            useProgram: vi.fn(),
+            getUniformLocation: vi.fn(),
+            uniformMatrix4fv: vi.fn(),
+            uniform3fv: vi.fn(),
+            uniform4fv: vi.fn(),
+            drawArrays: vi.fn(),
+            deleteShader: vi.fn(),
         }
     }),
-    Camera: jest.fn().mockImplementation(() => ({
+    Camera: vi.fn().mockImplementation(() => ({
         projectionMatrix: new Float32Array(16),
         viewMatrix: new Float32Array(16),
-        position: { set: jest.fn() },
-        angles: { set: jest.fn() },
-        updateMatrices: jest.fn(),
+        position: { set: vi.fn() },
+        angles: { set: vi.fn() },
+        updateMatrices: vi.fn(),
     })),
-    BspSurfacePipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn() })),
-    createBspSurfaces: jest.fn().mockReturnValue([]),
-    buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-    resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-    applySurfaceState: jest.fn(),
-    Texture2D: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        uploadImage: jest.fn(),
-        setParameters: jest.fn(),
+    BspSurfacePipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+    createBspSurfaces: vi.fn().mockReturnValue([]),
+    buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+    resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+    applySurfaceState: vi.fn(),
+    Texture2D: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        uploadImage: vi.fn(),
+        setParameters: vi.fn(),
     })),
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
 }));
 
-jest.mock('gl-matrix', () => ({
+vi.mock('gl-matrix', () => ({
     mat4: {
         create: () => new Float32Array(16),
-        multiply: jest.fn(),
-        lookAt: jest.fn(),
-        copy: jest.fn()
+        multiply: vi.fn(),
+        lookAt: vi.fn(),
+        copy: vi.fn()
     },
     vec3: {
         create: () => new Float32Array(3),
         fromValues: () => new Float32Array(3),
-        copy: jest.fn(),
-        set: jest.fn(),
-        clone: jest.fn().mockImplementation(v => new Float32Array(v)),
-        add: jest.fn(),
-        sub: jest.fn(),
-        scale: jest.fn(),
-        scaleAndAdd: jest.fn(),
-        cross: jest.fn(),
-        normalize: jest.fn(),
-        dot: jest.fn(),
-        length: jest.fn(),
+        copy: vi.fn(),
+        set: vi.fn(),
+        clone: vi.fn().mockImplementation(v => new Float32Array(v)),
+        add: vi.fn(),
+        sub: vi.fn(),
+        scale: vi.fn(),
+        scaleAndAdd: vi.fn(),
+        cross: vi.fn(),
+        normalize: vi.fn(),
+        dot: vi.fn(),
+        length: vi.fn(),
     },
     vec4: {
         create: () => new Float32Array(4),
@@ -103,26 +103,26 @@ jest.mock('gl-matrix', () => ({
 }));
 
 // Mock ViewerControls to avoid complexity
-jest.mock('../../src/components/UniversalViewer/ViewerControls', () => ({
+vi.mock('../../src/components/UniversalViewer/ViewerControls', () => ({
     ViewerControls: () => <div />
 }));
 
 // Mock DebugRenderer
-jest.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            clear: jest.fn(),
-            addBox: jest.fn(),
-            addLine: jest.fn(),
-            render: jest.fn(),
-            init: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            clear: vi.fn(),
+            addBox: vi.fn(),
+            addLine: vi.fn(),
+            render: vi.fn(),
+            init: vi.fn()
         }))
     };
 });
 
 describe('Legend Integration', () => {
     beforeEach(() => {
-         jest.clearAllMocks();
+         vi.clearAllMocks();
          (global as any).requestAnimationFrame = (cb: any) => setTimeout(cb, 0);
          (global as any).cancelAnimationFrame = (id: any) => clearTimeout(id);
     });
@@ -132,7 +132,7 @@ describe('Legend Integration', () => {
         const mockMap = {
             header: { version: 38 },
             entities: {
-                getUniqueClassnames: jest.fn().mockReturnValue(classnames),
+                getUniqueClassnames: vi.fn().mockReturnValue(classnames),
                 entities: []
             },
             texInfo: [],
@@ -142,8 +142,8 @@ describe('Legend Integration', () => {
             leafs: []
         };
 
-        (usePakExplorer as jest.Mock).mockReturnValue({
-            pakService: { hasFile: jest.fn(), readFile: jest.fn() },
+        (usePakExplorer as vi.Mock).mockReturnValue({
+            pakService: { hasFile: vi.fn(), readFile: vi.fn() },
             fileTree: { name: 'root', children: [] },
             selectedPath: 'maps/test.bsp',
             metadata: { name: 'test.bsp', extension: 'bsp', size: 100, path: 'maps/test.bsp' },
@@ -152,11 +152,11 @@ describe('Legend Integration', () => {
             fileCount: 5,
             loading: false,
             error: null,
-            handleFileSelect: jest.fn(),
-            handleTreeSelect: jest.fn(),
-            hasFile: jest.fn(),
-            dismissError: jest.fn(),
-            loadFromUrl: jest.fn(),
+            handleFileSelect: vi.fn(),
+            handleTreeSelect: vi.fn(),
+            hasFile: vi.fn(),
+            dismissError: vi.fn(),
+            loadFromUrl: vi.fn(),
         });
 
         render(<App />);
@@ -175,7 +175,7 @@ describe('Legend Integration', () => {
         const mockMap = {
             header: { version: 38 },
             entities: {
-                getUniqueClassnames: jest.fn().mockReturnValue(classnames),
+                getUniqueClassnames: vi.fn().mockReturnValue(classnames),
                 entities: []
             },
             texInfo: [],
@@ -192,8 +192,8 @@ describe('Legend Integration', () => {
         // Setup buildBspGeometry return
         quake2ts.buildBspGeometry.mockReturnValue({ surfaces: [], lightmaps: [] });
 
-        (usePakExplorer as jest.Mock).mockReturnValue({
-            pakService: { hasFile: jest.fn(), readFile: jest.fn() },
+        (usePakExplorer as vi.Mock).mockReturnValue({
+            pakService: { hasFile: vi.fn(), readFile: vi.fn() },
             fileTree: { name: 'root', children: [] },
             selectedPath: 'maps/test.bsp',
             metadata: { name: 'test.bsp', extension: 'bsp', size: 100, path: 'maps/test.bsp' },
@@ -202,11 +202,11 @@ describe('Legend Integration', () => {
             fileCount: 5,
             loading: false,
             error: null,
-            handleFileSelect: jest.fn(),
-            handleTreeSelect: jest.fn(),
-            hasFile: jest.fn(),
-            dismissError: jest.fn(),
-            loadFromUrl: jest.fn(),
+            handleFileSelect: vi.fn(),
+            handleTreeSelect: vi.fn(),
+            hasFile: vi.fn(),
+            dismissError: vi.fn(),
+            loadFromUrl: vi.fn(),
         });
 
         render(<App />);

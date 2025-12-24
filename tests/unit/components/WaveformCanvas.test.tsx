@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { WaveformCanvas } from '@/src/components/WaveformCanvas';
@@ -19,9 +20,9 @@ describe('WaveformCanvas', () => {
             duration: 1,
             sampleRate: 44100,
             numberOfChannels: 1,
-            getChannelData: jest.fn(() => new Float32Array(100).fill(0.5)),
-            copyFromChannel: jest.fn(),
-            copyToChannel: jest.fn()
+            getChannelData: vi.fn(() => new Float32Array(100).fill(0.5)),
+            copyFromChannel: vi.fn(),
+            copyToChannel: vi.fn()
         } as unknown as AudioBuffer;
     });
 

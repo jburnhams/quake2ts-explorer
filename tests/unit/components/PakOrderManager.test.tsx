@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { PakOrderManager } from '@/src/components/PakOrderManager.tsx';
@@ -12,7 +13,7 @@ const createMockArchive = (files: string[]) => ({
 describe('PakOrderManager', () => {
   let mockPakService: Partial<PakService>;
   let mockPaks: MountedPak[];
-  let onClose: jest.Mock;
+  let onClose: vi.Mock;
 
   beforeEach(() => {
     mockPaks = [
@@ -33,10 +34,10 @@ describe('PakOrderManager', () => {
     ];
 
     mockPakService = {
-      getMountedPaks: jest.fn().mockReturnValue(mockPaks),
-      reorderPaks: jest.fn(),
+      getMountedPaks: vi.fn().mockReturnValue(mockPaks),
+      reorderPaks: vi.fn(),
     };
-    onClose = jest.fn();
+    onClose = vi.fn();
   });
 
   test('renders list of paks', () => {

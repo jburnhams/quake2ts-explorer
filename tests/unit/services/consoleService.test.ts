@@ -6,7 +6,7 @@ describe('ConsoleService', () => {
   });
 
   it('should register and execute commands', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     consoleService.registerCommand('test', handler);
 
     consoleService.executeCommand('test arg1 arg2');
@@ -14,7 +14,7 @@ describe('ConsoleService', () => {
   });
 
   it('should handle case insensitivity', () => {
-    const handler = jest.fn();
+    const handler = vi.fn();
     consoleService.registerCommand('Test', handler);
 
     consoleService.executeCommand('TEST');
@@ -30,7 +30,7 @@ describe('ConsoleService', () => {
   });
 
   it('should notify subscribers', () => {
-    const subscriber = jest.fn();
+    const subscriber = vi.fn();
     const unsubscribe = consoleService.subscribe(subscriber);
 
     consoleService.log('test');
@@ -52,7 +52,7 @@ describe('ConsoleService', () => {
   });
 
   it('should handle errors gracefully', () => {
-    const handler = jest.fn(() => {
+    const handler = vi.fn(() => {
       throw new Error('oops');
     });
     consoleService.registerCommand('fail', handler);

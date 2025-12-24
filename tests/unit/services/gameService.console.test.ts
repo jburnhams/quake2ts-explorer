@@ -5,32 +5,32 @@ import { VirtualFileSystem } from 'quake2ts/engine';
 import { createGame } from 'quake2ts/game';
 
 // Mock dependencies
-jest.mock('quake2ts/client', () => ({
-    ClientPrediction: jest.fn().mockImplementation(() => ({
-        setPredictionEnabled: jest.fn(),
-        enqueueCommand: jest.fn(),
-        setAuthoritative: jest.fn(),
-        getPredictionError: jest.fn().mockReturnValue({x:0,y:0,z:0}),
-        decayError: jest.fn(),
-        getPredictedState: jest.fn()
+vi.mock('quake2ts/client', () => ({
+    ClientPrediction: vi.fn().mockImplementation(() => ({
+        setPredictionEnabled: vi.fn(),
+        enqueueCommand: vi.fn(),
+        setAuthoritative: vi.fn(),
+        getPredictionError: vi.fn().mockReturnValue({x:0,y:0,z:0}),
+        decayError: vi.fn(),
+        getPredictedState: vi.fn()
     }))
 }));
 
-jest.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
-  AssetManager: jest.fn().mockImplementation(() => ({
-    loadMap: jest.fn().mockResolvedValue({
+vi.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
+  AssetManager: vi.fn().mockImplementation(() => ({
+    loadMap: vi.fn().mockResolvedValue({
         // Minimal map mock
         leafs: [], nodes: [], models: [], planes: []
     }),
-    clearCache: jest.fn()
+    clearCache: vi.fn()
   }))
 }));
 
-jest.mock('quake2ts/game', () => ({
-  createGame: jest.fn().mockImplementation(() => ({
-    init: jest.fn().mockReturnValue({ state: {} }),
-    shutdown: jest.fn(),
+vi.mock('quake2ts/game', () => ({
+  createGame: vi.fn().mockImplementation(() => ({
+    init: vi.fn().mockReturnValue({ state: {} }),
+    shutdown: vi.fn(),
     entities: [
         { classname: 'player', index: 1, flags: 0, movetype: 0 },
         { classname: 'other', index: 2 }
@@ -38,25 +38,25 @@ jest.mock('quake2ts/game', () => ({
   }))
 }));
 
-jest.mock('@/src/utils/collisionAdapter', () => ({
-  createCollisionModel: jest.fn()
+vi.mock('@/src/utils/collisionAdapter', () => ({
+  createCollisionModel: vi.fn()
 }));
 
-jest.mock('quake2ts/shared', () => ({
-    CollisionEntityIndex: jest.fn().mockImplementation(() => ({
-        trace: jest.fn().mockReturnValue({ fraction: 1.0 }),
-        link: jest.fn(),
-        gatherTriggerTouches: jest.fn()
+vi.mock('quake2ts/shared', () => ({
+    CollisionEntityIndex: vi.fn().mockImplementation(() => ({
+        trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
+        link: vi.fn(),
+        gatherTriggerTouches: vi.fn()
     })),
-    traceBox: jest.fn().mockReturnValue({ fraction: 1.0 }),
-    pointContents: jest.fn().mockReturnValue(0),
+    traceBox: vi.fn().mockReturnValue({ fraction: 1.0 }),
+    pointContents: vi.fn().mockReturnValue(0),
     Vec3: {},
     CollisionPlane: {},
-    NetChan: jest.fn().mockImplementation(() => ({
-        setup: jest.fn(),
-        transmit: jest.fn(),
-        reset: jest.fn(),
-        process: jest.fn()
+    NetChan: vi.fn().mockImplementation(() => ({
+        setup: vi.fn(),
+        transmit: vi.fn(),
+        reset: vi.fn(),
+        process: vi.fn()
     }))
 }));
 
@@ -67,15 +67,15 @@ describe('GameService Console Commands', () => {
     beforeEach(() => {
         vfs = new VirtualFileSystem();
         commands = {};
-        jest.spyOn(consoleService, 'registerCommand').mockImplementation((name, cb) => {
+        vi.spyOn(consoleService, 'registerCommand').mockImplementation((name, cb) => {
             commands[name] = cb;
         });
-        jest.spyOn(consoleService, 'log').mockImplementation(() => {});
+        vi.spyOn(consoleService, 'log').mockImplementation(() => {});
     });
 
     afterEach(() => {
         shutdownGameService();
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('should register and execute console commands', async () => {
@@ -110,9 +110,9 @@ describe('GameService Console Commands', () => {
 
     it('should handle missing player in console commands', async () => {
         // Mock no player in entities
-        (createGame as jest.Mock).mockImplementationOnce(() => ({
-            init: jest.fn(),
-            shutdown: jest.fn(),
+        (createGame as vi.Mock).mockImplementationOnce(() => ({
+            init: vi.fn(),
+            shutdown: vi.fn(),
             entities: [] // No player
         }));
 

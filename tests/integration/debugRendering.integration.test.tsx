@@ -6,54 +6,54 @@ import { DebugMode } from '../../src/types/debugMode';
 import '@testing-library/jest-dom';
 
 // Mocks
-const mockAddBox = jest.fn();
-const mockRender = jest.fn();
-const mockClear = jest.fn();
+const mockAddBox = vi.fn();
+const mockRender = vi.fn();
+const mockClear = vi.fn();
 
-jest.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
   return {
-    DebugRenderer: jest.fn().mockImplementation(() => ({
-      init: jest.fn(),
+    DebugRenderer: vi.fn().mockImplementation(() => ({
+      init: vi.fn(),
       clear: mockClear,
       addBox: mockAddBox,
-      addLine: jest.fn(),
+      addLine: vi.fn(),
       render: mockRender
     }))
   };
 });
 
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        createWebGLContext: jest.fn().mockReturnValue({
+        createWebGLContext: vi.fn().mockReturnValue({
             gl: {
-                clearColor: jest.fn(),
-                clear: jest.fn(),
-                enable: jest.fn(),
-                viewport: jest.fn(),
-                createShader: jest.fn(),
-                createProgram: jest.fn(),
-                createBuffer: jest.fn(),
-                createVertexArray: jest.fn(),
-                bindBuffer: jest.fn(),
-                bindVertexArray: jest.fn(),
-                bufferData: jest.fn(),
-                vertexAttribPointer: jest.fn(),
-                enableVertexAttribArray: jest.fn(),
-                useProgram: jest.fn(),
-                getUniformLocation: jest.fn(),
-                uniformMatrix4fv: jest.fn(),
-                drawElements: jest.fn(),
-                drawArrays: jest.fn(),
-                getShaderParameter: jest.fn().mockReturnValue(true),
-                getProgramParameter: jest.fn().mockReturnValue(true),
-                activeTexture: jest.fn(),
-                generateMipmap: jest.fn(),
-                texParameteri: jest.fn(),
-                texImage2D: jest.fn(),
-                deleteShader: jest.fn(),
-                deleteProgram: jest.fn(),
-                deleteBuffer: jest.fn(),
-                deleteVertexArray: jest.fn(),
+                clearColor: vi.fn(),
+                clear: vi.fn(),
+                enable: vi.fn(),
+                viewport: vi.fn(),
+                createShader: vi.fn(),
+                createProgram: vi.fn(),
+                createBuffer: vi.fn(),
+                createVertexArray: vi.fn(),
+                bindBuffer: vi.fn(),
+                bindVertexArray: vi.fn(),
+                bufferData: vi.fn(),
+                vertexAttribPointer: vi.fn(),
+                enableVertexAttribArray: vi.fn(),
+                useProgram: vi.fn(),
+                getUniformLocation: vi.fn(),
+                uniformMatrix4fv: vi.fn(),
+                drawElements: vi.fn(),
+                drawArrays: vi.fn(),
+                getShaderParameter: vi.fn().mockReturnValue(true),
+                getProgramParameter: vi.fn().mockReturnValue(true),
+                activeTexture: vi.fn(),
+                generateMipmap: vi.fn(),
+                texParameteri: vi.fn(),
+                texImage2D: vi.fn(),
+                deleteShader: vi.fn(),
+                deleteProgram: vi.fn(),
+                deleteBuffer: vi.fn(),
+                deleteVertexArray: vi.fn(),
                 COLOR_BUFFER_BIT: 16384,
                 DEPTH_BUFFER_BIT: 256,
                 DEPTH_TEST: 2929,
@@ -78,27 +78,27 @@ jest.mock('quake2ts/engine', () => {
                 LINES: 1,
             }
         }),
-        Camera: jest.fn().mockImplementation(() => ({
+        Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: new Float32Array(16),
             viewMatrix: new Float32Array(16),
             position: new Float32Array(3),
-            updateMatrices: jest.fn(),
+            updateMatrices: vi.fn(),
         })),
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-            bind: jest.fn().mockReturnValue({}),
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+            bind: vi.fn().mockReturnValue({}),
         })),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
-        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            uploadImage: jest.fn(),
-            setParameters: jest.fn(),
+        createBspSurfaces: vi.fn().mockReturnValue([]),
+        buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            uploadImage: vi.fn(),
+            setParameters: vi.fn(),
         })),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-        applySurfaceState: jest.fn(),
-        findLeafForPoint: jest.fn().mockReturnValue(-1),
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+        applySurfaceState: vi.fn(),
+        findLeafForPoint: vi.fn().mockReturnValue(-1),
     };
 });
 
@@ -107,12 +107,12 @@ describe('Debug Rendering Integration', () => {
 
     beforeEach(() => {
         mockPakService = {
-            hasFile: jest.fn().mockReturnValue(false),
-            readFile: jest.fn(),
-            getPalette: jest.fn(),
+            hasFile: vi.fn().mockReturnValue(false),
+            readFile: vi.fn(),
+            getPalette: vi.fn(),
         } as unknown as PakService;
 
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('enables bounding box visualization when selected in UI', async () => {
@@ -123,9 +123,9 @@ describe('Debug Rendering Integration', () => {
                     { classname: 'worldspawn' }, // Should map to model 0
                     { classname: 'info_player_start', properties: { origin: '100 100 100' } } // Should draw box at origin
                 ],
-                getUniqueClassnames: jest.fn().mockReturnValue(['worldspawn', 'info_player_start'])
+                getUniqueClassnames: vi.fn().mockReturnValue(['worldspawn', 'info_player_start'])
             },
-            pickEntity: jest.fn(),
+            pickEntity: vi.fn(),
             leafs: []
         };
 
@@ -149,7 +149,7 @@ describe('Debug Rendering Integration', () => {
 
         // Initially debug mode is None, addBox should not be called (or cleared only)
         // Note: The render loop runs continuously in UniversalViewer via requestAnimationFrame.
-        // In JSDOM requestAnimationFrame is mocked or handled via jest.useFakeTimers typically,
+        // In JSDOM requestAnimationFrame is mocked or handled via vi.useFakeTimers typically,
         // but here we are relying on the effect loop.
         // We might need to advance timers if we want to test loop behavior rigorously,
         // but let's see if selecting the option triggers state update and subsequent render calls.

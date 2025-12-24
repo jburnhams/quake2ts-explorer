@@ -1,16 +1,16 @@
 /**
  * @jest-environment node
  */
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import * as fs from 'fs';
 import * as path from 'path';
 
 // Mock worker service to use a synchronous-like mock instead of real worker
 // This is critical for tests that don't support workers or for performance
-jest.mock('@/src/services/workerService', () => ({
+vi.mock('@/src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(() => ({
-            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => {
+        getPakParser: vi.fn(() => ({
+            parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => {
                 // We need to parse properly here. But in real test we load a REAL file.
                 // We can't easily parse a real PAK in the mock without the real PakArchive logic.
                 // So we should delegate to the real PakArchive for the content of the "worker" result.
@@ -18,7 +18,7 @@ jest.mock('@/src/services/workerService', () => ({
                 // However, we can't import PakArchive here easily inside the mock factory.
                 // Instead, we can make the mock fail, forcing fallback to main thread?
                 // Or we can import PakArchive inside.
-                const { PakArchive } = jest.requireActual('quake2ts/engine') as any;
+                const { PakArchive } = vi.requireActual('quake2ts/engine') as any;
                 const archive = PakArchive.fromArrayBuffer(name, buffer);
                 // Extract entries to mimic worker result
                 // @ts-ignore

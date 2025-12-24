@@ -7,70 +7,70 @@ import { EntityEditorService, SelectionMode } from '../../src/services/entityEdi
 import { BspMap, BspEntity } from 'quake2ts/engine';
 
 // Mock engine dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        createWebGLContext: jest.fn(() => ({ gl: {
-            viewport: jest.fn(),
-            clearColor: jest.fn(),
-            clear: jest.fn(),
-            enable: jest.fn(),
-            getExtension: jest.fn(),
-            createShader: jest.fn(),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            getShaderParameter: jest.fn(() => true),
-            createProgram: jest.fn(),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn(() => true),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            createTexture: jest.fn(),
-            bindTexture: jest.fn(),
-            texImage2D: jest.fn(),
-            texParameteri: jest.fn(),
-            generateMipmap: jest.fn(),
-            getUniformLocation: jest.fn(),
-            getAttribLocation: jest.fn(),
-            useProgram: jest.fn(),
-            uniformMatrix4fv: jest.fn(),
-            uniform1i: jest.fn(),
-            uniform1f: jest.fn(),
-            uniform3fv: jest.fn(),
-            drawElements: jest.fn(),
-            createVertexArray: jest.fn(),
-            bindVertexArray: jest.fn(),
-            deleteBuffer: jest.fn(),
-            deleteTexture: jest.fn(),
-            deleteProgram: jest.fn(),
-            deleteShader: jest.fn(),
-            deleteVertexArray: jest.fn(),
+        createWebGLContext: vi.fn(() => ({ gl: {
+            viewport: vi.fn(),
+            clearColor: vi.fn(),
+            clear: vi.fn(),
+            enable: vi.fn(),
+            getExtension: vi.fn(),
+            createShader: vi.fn(),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            getShaderParameter: vi.fn(() => true),
+            createProgram: vi.fn(),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn(() => true),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            createTexture: vi.fn(),
+            bindTexture: vi.fn(),
+            texImage2D: vi.fn(),
+            texParameteri: vi.fn(),
+            generateMipmap: vi.fn(),
+            getUniformLocation: vi.fn(),
+            getAttribLocation: vi.fn(),
+            useProgram: vi.fn(),
+            uniformMatrix4fv: vi.fn(),
+            uniform1i: vi.fn(),
+            uniform1f: vi.fn(),
+            uniform3fv: vi.fn(),
+            drawElements: vi.fn(),
+            createVertexArray: vi.fn(),
+            bindVertexArray: vi.fn(),
+            deleteBuffer: vi.fn(),
+            deleteTexture: vi.fn(),
+            deleteProgram: vi.fn(),
+            deleteShader: vi.fn(),
+            deleteVertexArray: vi.fn(),
         } })),
-        Camera: jest.fn().mockImplementation(() => ({
+        Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: [],
             viewMatrix: [],
             position: [0, 0, 0],
             aspect: 1,
-            updateMatrices: jest.fn()
+            updateMatrices: vi.fn()
         })),
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(() => ({})),
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(() => ({})),
         })),
-        createBspSurfaces: jest.fn(() => []),
-        buildBspGeometry: jest.fn(() => ({ surfaces: [], lightmaps: [] })),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            uploadImage: jest.fn(),
-            setParameters: jest.fn()
+        createBspSurfaces: vi.fn(() => []),
+        buildBspGeometry: vi.fn(() => ({ surfaces: [], lightmaps: [] })),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            uploadImage: vi.fn(),
+            setParameters: vi.fn()
         })),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        resolveLightStyles: jest.fn(() => new Float32Array(256)),
-        applySurfaceState: jest.fn(),
-        findLeafForPoint: jest.fn(() => 0)
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        resolveLightStyles: vi.fn(() => new Float32Array(256)),
+        applySurfaceState: vi.fn(),
+        findLeafForPoint: vi.fn(() => 0)
     };
 });
 
@@ -93,7 +93,7 @@ describe('Entity Manipulation Integration', () => {
                 entities: mockEntities,
                 getUniqueClassnames: () => ['worldspawn', 'info_player_start', 'weapon_shotgun']
             },
-            pickEntity: jest.fn((ray) => {
+            pickEntity: vi.fn((ray) => {
                 // Mock picking logic: always pick 2nd entity if ray direction is roughly X
                 if (ray.direction[0] > 0.9) {
                     return { entity: mockEntities[1], distance: 100 };
@@ -107,9 +107,9 @@ describe('Entity Manipulation Integration', () => {
         } as any;
 
         mockPakService = {
-            hasFile: jest.fn(() => false),
-            readFile: jest.fn(),
-            getPalette: jest.fn()
+            hasFile: vi.fn(() => false),
+            readFile: vi.fn(),
+            getPalette: vi.fn()
         } as any;
     });
 

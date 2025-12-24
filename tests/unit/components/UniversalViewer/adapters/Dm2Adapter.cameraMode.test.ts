@@ -5,29 +5,29 @@ import { PakService } from '@/src/services/pakService';
 import { DemoPlaybackController } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  DemoPlaybackController: jest.fn().mockImplementation(() => ({
-    loadDemo: jest.fn(),
-    play: jest.fn(),
-    pause: jest.fn(),
-    stop: jest.fn(),
-    update: jest.fn(),
-    getCurrentFrame: jest.fn().mockReturnValue(0),
-    getFrameData: jest.fn().mockReturnValue({
+vi.mock('quake2ts/engine', () => ({
+  DemoPlaybackController: vi.fn().mockImplementation(() => ({
+    loadDemo: vi.fn(),
+    play: vi.fn(),
+    pause: vi.fn(),
+    stop: vi.fn(),
+    update: vi.fn(),
+    getCurrentFrame: vi.fn().mockReturnValue(0),
+    getFrameData: vi.fn().mockReturnValue({
         playerState: {
             origin: [100, 200, 30],
             viewangles: [10, 90, 0] // pitch, yaw, roll
         }
     }),
-    getDuration: jest.fn().mockReturnValue(100),
-    getCurrentTime: jest.fn().mockReturnValue(0),
-    getFrameCount: jest.fn().mockReturnValue(1000),
-    seekToTime: jest.fn()
+    getDuration: vi.fn().mockReturnValue(100),
+    getCurrentTime: vi.fn().mockReturnValue(0),
+    getFrameCount: vi.fn().mockReturnValue(1000),
+    seekToTime: vi.fn()
   })),
-  Camera: jest.fn()
+  Camera: vi.fn()
 }));
 
-jest.mock('@/src/components/UniversalViewer/adapters/BspAdapter');
+vi.mock('@/src/components/UniversalViewer/adapters/BspAdapter');
 
 describe('Dm2Adapter Camera Modes', () => {
     let adapter: Dm2Adapter;
@@ -38,7 +38,7 @@ describe('Dm2Adapter Camera Modes', () => {
         adapter = new Dm2Adapter();
         mockGl = {} as WebGL2RenderingContext;
         mockPakService = {
-            hasFile: jest.fn().mockReturnValue(false)
+            hasFile: vi.fn().mockReturnValue(false)
         } as unknown as PakService;
 
         const file = {
@@ -52,7 +52,7 @@ describe('Dm2Adapter Camera Modes', () => {
 
     afterEach(() => {
         adapter.cleanup();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('default camera mode is FirstPerson', () => {

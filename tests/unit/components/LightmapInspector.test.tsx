@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LightmapInspector } from '@/src/components/LightmapInspector';
@@ -5,14 +6,14 @@ import { BspMap } from 'quake2ts/engine';
 import '@testing-library/jest-dom';
 
 // Mock gl-matrix
-jest.mock('gl-matrix', () => ({
-  mat4: { create: jest.fn(), multiply: jest.fn(), perspective: jest.fn(), lookAt: jest.fn(), identity: jest.fn(), rotate: jest.fn(), translate: jest.fn() },
-  vec3: { create: jest.fn(), fromValues: jest.fn(), scale: jest.fn(), add: jest.fn() }
+vi.mock('gl-matrix', () => ({
+  mat4: { create: vi.fn(), multiply: vi.fn(), perspective: vi.fn(), lookAt: vi.fn(), identity: vi.fn(), rotate: vi.fn(), translate: vi.fn() },
+  vec3: { create: vi.fn(), fromValues: vi.fn(), scale: vi.fn(), add: vi.fn() }
 }));
 
 // Mock quake2ts engine
-jest.mock('quake2ts/engine', () => ({
-  Texture2D: jest.fn()
+vi.mock('quake2ts/engine', () => ({
+  Texture2D: vi.fn()
 }));
 
 describe('LightmapInspector', () => {
@@ -29,19 +30,19 @@ describe('LightmapInspector', () => {
             nodes: [],
             leafs: [],
             planes: [],
-            entities: { entities: [], getUniqueClassnames: jest.fn() },
+            entities: { entities: [], getUniqueClassnames: vi.fn() },
             // ... other properties
         } as any;
 
         mockGl = {
-            createFramebuffer: jest.fn(() => ({})),
-            bindFramebuffer: jest.fn(),
-            framebufferTexture2D: jest.fn(),
-            checkFramebufferStatus: jest.fn(() => 36053), // FRAMEBUFFER_COMPLETE
-            readPixels: jest.fn(),
-            deleteFramebuffer: jest.fn()
+            createFramebuffer: vi.fn(() => ({})),
+            bindFramebuffer: vi.fn(),
+            framebufferTexture2D: vi.fn(),
+            checkFramebufferStatus: vi.fn(() => 36053), // FRAMEBUFFER_COMPLETE
+            readPixels: vi.fn(),
+            deleteFramebuffer: vi.fn()
         };
-        (mockGl.checkFramebufferStatus as jest.Mock).mockReturnValue(36053); // gl.FRAMEBUFFER_COMPLETE
+        (mockGl.checkFramebufferStatus as vi.Mock).mockReturnValue(36053); // gl.FRAMEBUFFER_COMPLETE
 
         // Ensure constants are available
         (mockGl as any).FRAMEBUFFER = 0x8D40;
@@ -57,8 +58,8 @@ describe('LightmapInspector', () => {
         };
 
         mockAdapter = {
-            getLightmaps: jest.fn().mockReturnValue([mockTexture, mockTexture]),
-            getLightmapInfo: jest.fn().mockReturnValue({ width: 128, height: 128, surfaceCount: 10 }),
+            getLightmaps: vi.fn().mockReturnValue([mockTexture, mockTexture]),
+            getLightmapInfo: vi.fn().mockReturnValue({ width: 128, height: 128, surfaceCount: 10 }),
         };
     });
 

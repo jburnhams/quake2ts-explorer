@@ -54,15 +54,15 @@ describe('performanceService', () => {
         Object.defineProperty(global, 'performance', {
             writable: true,
             value: {
-                now: jest.fn(() => Date.now()),
-                mark: jest.fn(),
-                measure: jest.fn(),
+                now: vi.fn(() => Date.now()),
+                mark: vi.fn(),
+                measure: vi.fn(),
             },
         });
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should call performance.mark on startMeasure', () => {
@@ -82,7 +82,7 @@ describe('performanceService', () => {
     });
 
     it('should gracefully handle measure errors', () => {
-        (performance.measure as jest.Mock).mockImplementationOnce(() => {
+        (performance.measure as vi.Mock).mockImplementationOnce(() => {
             throw new Error('Invalid mark');
         });
 

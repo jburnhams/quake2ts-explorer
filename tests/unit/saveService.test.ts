@@ -2,20 +2,20 @@ import { saveGame, loadGame, listSaves, deleteSave } from '@/src/services/saveSe
 import { getGameService } from '@/src/services/gameService';
 
 // Mock dependencies
-jest.mock('@/src/services/gameService', () => ({
-  getGameService: jest.fn()
+vi.mock('@/src/services/gameService', () => ({
+  getGameService: vi.fn()
 }));
 
 const mockGameService = {
-  createSave: jest.fn(),
-  loadSave: jest.fn()
+  createSave: vi.fn(),
+  loadSave: vi.fn()
 };
 
 describe('SaveService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorage.clear();
-    (getGameService as jest.Mock).mockReturnValue(mockGameService);
+    (getGameService as vi.Mock).mockReturnValue(mockGameService);
   });
 
   const mockSaveFile = {
@@ -48,7 +48,7 @@ describe('SaveService', () => {
   });
 
   test('saveGame throws if no game service', async () => {
-    (getGameService as jest.Mock).mockReturnValue(null);
+    (getGameService as vi.Mock).mockReturnValue(null);
     await expect(saveGame(1, 'Test')).rejects.toThrow('No active game');
   });
 

@@ -1,47 +1,47 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { Md3Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md3Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
 import { Md3SurfaceMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 
 // Mock DebugRenderer
-jest.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            clear: jest.fn(),
-            addBox: jest.fn(),
-            addLine: jest.fn(),
-            render: jest.fn(),
-            init: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            clear: vi.fn(),
+            addBox: vi.fn(),
+            addLine: vi.fn(),
+            render: vi.fn(),
+            init: vi.fn()
         }))
     };
 });
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    Md3Pipeline: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        drawSurface: jest.fn(),
+    Md3Pipeline: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        drawSurface: vi.fn(),
     })),
-    Md3SurfaceMesh: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
+    Md3SurfaceMesh: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
         indexCount: 100,
     })),
-    Texture2D: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        setParameters: jest.fn(),
-        uploadImage: jest.fn(),
+    Texture2D: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        setParameters: vi.fn(),
+        uploadImage: vi.fn(),
     })),
-    parsePcx: jest.fn(),
-    pcxToRgba: jest.fn(),
+    parsePcx: vi.fn(),
+    pcxToRgba: vi.fn(),
   };
 });
 
 describe('Md3Adapter', () => {
   let adapter: Md3Adapter;
   let mockGl: WebGL2RenderingContext;
-  let mockPakService: jest.Mocked<PakService>;
+  let mockPakService: vi.Mocked<PakService>;
 
   beforeEach(() => {
     adapter = new Md3Adapter();
@@ -50,17 +50,17 @@ describe('Md3Adapter', () => {
         LINES: 1,
         UNSIGNED_SHORT: 10,
         TEXTURE0: 7,
-        drawElements: jest.fn(),
-        activeTexture: jest.fn(),
-        generateMipmap: jest.fn(),
+        drawElements: vi.fn(),
+        activeTexture: vi.fn(),
+        generateMipmap: vi.fn(),
     } as unknown as WebGL2RenderingContext;
     mockPakService = {
-        hasFile: jest.fn(),
-        readFile: jest.fn(),
-    } as unknown as jest.Mocked<PakService>;
+        hasFile: vi.fn(),
+        readFile: vi.fn(),
+    } as unknown as vi.Mocked<PakService>;
 
     // Clear mocks
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('throws error if file type is not md3', async () => {
@@ -126,8 +126,8 @@ describe('Md3Adapter', () => {
 
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.readFile.mockResolvedValue(new Uint8Array(100));
-    (parsePcx as jest.Mock).mockReturnValue({});
-    (pcxToRgba as jest.Mock).mockReturnValue({});
+    (parsePcx as vi.Mock).mockReturnValue({});
+    (pcxToRgba as vi.Mock).mockReturnValue({});
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
 
@@ -151,7 +151,7 @@ describe('Md3Adapter', () => {
     adapter.setRenderOptions({ mode: 'wireframe', color: [0.1, 0.2, 0.3] });
     adapter.render(mockGl, camera, viewMatrix);
 
-    const pipeline = (Md3Pipeline as jest.Mock).mock.results[0].value;
+    const pipeline = (Md3Pipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.drawSurface).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
         renderMode: {
             mode: 'wireframe',
@@ -181,8 +181,8 @@ describe('Md3Adapter', () => {
 
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.readFile.mockResolvedValue(new Uint8Array(1));
-    (parsePcx as jest.Mock).mockReturnValue({});
-    (pcxToRgba as jest.Mock).mockReturnValue({});
+    (parsePcx as vi.Mock).mockReturnValue({});
+    (pcxToRgba as vi.Mock).mockReturnValue({});
 
     await adapter.load(mockGl, file, mockPakService, 'models/test.md3');
 
@@ -192,7 +192,7 @@ describe('Md3Adapter', () => {
     adapter.render(mockGl, camera, viewMatrix);
 
     expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE0);
-    const textureInstance = (Texture2D as jest.Mock).mock.results[0].value;
+    const textureInstance = (Texture2D as vi.Mock).mock.results[0].value;
     expect(textureInstance.bind).toHaveBeenCalled();
   });
 

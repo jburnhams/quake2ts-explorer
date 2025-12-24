@@ -14,7 +14,7 @@ describe('AccessibilitySettingsTab', () => {
     keyboardOnly: false,
   };
 
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();

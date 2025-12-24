@@ -1,28 +1,28 @@
 import { demoStorageService } from '@/src/services/demoStorageService';
-import { jest, describe, it, expect, beforeEach, afterAll } from '@jest/globals';
+
 
 // Fake IndexedDB implementation mock
 const mockIndexedDB = {
-    open: jest.fn(),
+    open: vi.fn(),
 };
 
 const mockDb = {
-    transaction: jest.fn(),
-    objectStoreNames: { contains: jest.fn() },
-    createObjectStore: jest.fn(),
+    transaction: vi.fn(),
+    objectStoreNames: { contains: vi.fn() },
+    createObjectStore: vi.fn(),
 };
 
 const mockTransaction = {
-    objectStore: jest.fn(),
+    objectStore: vi.fn(),
 };
 
 const mockStore = {
-    put: jest.fn(),
-    getAll: jest.fn(),
-    get: jest.fn(),
-    delete: jest.fn(),
-    index: jest.fn(),
-    createIndex: jest.fn(),
+    put: vi.fn(),
+    getAll: vi.fn(),
+    get: vi.fn(),
+    delete: vi.fn(),
+    index: vi.fn(),
+    createIndex: vi.fn(),
 };
 
 // Global assignment
@@ -33,14 +33,14 @@ const originalCrypto = global.crypto;
 Object.defineProperty(global, 'crypto', {
     value: {
         ...originalCrypto,
-        randomUUID: jest.fn().mockReturnValue('uuid')
+        randomUUID: vi.fn().mockReturnValue('uuid')
     },
     writable: true
 });
 
 describe('DemoStorageService Coverage', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // @ts-ignore
         demoStorageService.db = null;
 

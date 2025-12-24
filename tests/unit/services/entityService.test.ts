@@ -4,18 +4,18 @@ import { VirtualFileSystem, parseBsp } from 'quake2ts/engine';
 import { toArrayBuffer } from '@/src/utils/helpers';
 
 // Mock quake2ts engine
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({
-      findByExtension: jest.fn(),
-      readFile: jest.fn(),
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({
+      findByExtension: vi.fn(),
+      readFile: vi.fn(),
     })),
-    parseBsp: jest.fn(),
+    parseBsp: vi.fn(),
   };
 });
 
-jest.mock('@/src/utils/helpers', () => ({
-  toArrayBuffer: jest.fn((data) => data.buffer),
+vi.mock('@/src/utils/helpers', () => ({
+  toArrayBuffer: vi.fn((data) => data.buffer),
 }));
 
 describe('EntityService', () => {
@@ -67,7 +67,7 @@ describe('EntityService', () => {
     const { parseBsp } = require('quake2ts/engine');
     parseBsp.mockReturnValue(mockMap);
 
-    const onProgress = jest.fn();
+    const onProgress = vi.fn();
     const records = await service.scanAllMaps(onProgress);
 
     expect(vfs.findByExtension).toHaveBeenCalledWith('bsp');

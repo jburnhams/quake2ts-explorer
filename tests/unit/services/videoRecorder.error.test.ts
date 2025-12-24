@@ -1,21 +1,21 @@
 import { videoRecorderService } from '@/src/services/videoRecorder';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 describe('VideoRecorderService Errors', () => {
     let mockCanvas: HTMLCanvasElement;
 
     beforeEach(() => {
         mockCanvas = document.createElement('canvas');
-        mockCanvas.captureStream = jest.fn() as any;
-        (global as any).MediaRecorder = jest.fn().mockImplementation(() => ({
-            start: jest.fn(),
-            stop: jest.fn(),
+        mockCanvas.captureStream = vi.fn() as any;
+        (global as any).MediaRecorder = vi.fn().mockImplementation(() => ({
+            start: vi.fn(),
+            stop: vi.fn(),
             state: 'inactive',
             ondataavailable: null,
             onstop: null,
             onerror: null
         }));
-        (global as any).MediaRecorder.isTypeSupported = jest.fn(() => true);
+        (global as any).MediaRecorder.isTypeSupported = vi.fn(() => true);
     });
 
     afterEach(() => {
@@ -23,8 +23,8 @@ describe('VideoRecorderService Errors', () => {
     });
 
     it('should handle startRecording errors', () => {
-        const spy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (mockCanvas.captureStream as jest.Mock).mockImplementation(() => {
+        const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (mockCanvas.captureStream as vi.Mock).mockImplementation(() => {
             throw new Error('Stream capture failed');
         });
 
@@ -36,8 +36,8 @@ describe('VideoRecorderService Errors', () => {
 
     it('should handle forceStop error', () => {
         (global as any).MediaRecorder.mockImplementation(() => ({
-            start: jest.fn(),
-            stop: jest.fn().mockImplementation(() => { throw new Error('Stop failed'); }),
+            start: vi.fn(),
+            stop: vi.fn().mockImplementation(() => { throw new Error('Stop failed'); }),
             state: 'recording',
             ondataavailable: null,
             onstop: null,

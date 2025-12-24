@@ -4,14 +4,14 @@ import { PakService } from '../../src/services/pakService';
 import { WorkerPakArchive } from '../../src/utils/WorkerPakArchive';
 
 // Mock dependencies
-jest.mock('../../src/services/workerService');
+vi.mock('../../src/services/workerService');
 
 describe('PakService with Worker Integration', () => {
     let pakService: PakService;
 
     beforeEach(() => {
         pakService = new PakService();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should parse PAK using workerService', async () => {
@@ -19,20 +19,20 @@ describe('PakService with Worker Integration', () => {
         const dummyEntries = new Map<string, any>();
         dummyEntries.set('test.txt', { offset: 100, length: 50 });
 
-        const mockParsePak = jest.fn().mockResolvedValue({
+        const mockParsePak = vi.fn().mockResolvedValue({
             entries: dummyEntries,
             buffer: dummyBuffer,
             name: 'test-pak'
         });
 
-        (workerService.executePakParserTask as jest.Mock).mockImplementation(async (cb: any) => {
+        (workerService.executePakParserTask as vi.Mock).mockImplementation(async (cb: any) => {
             const api = { parsePak: mockParsePak };
             return cb(api);
         });
 
         const file = {
             name: 'test.pak',
-            arrayBuffer: jest.fn().mockResolvedValue(dummyBuffer)
+            arrayBuffer: vi.fn().mockResolvedValue(dummyBuffer)
         } as unknown as File;
 
         const archive = await pakService.loadPakFile(file);
@@ -46,7 +46,7 @@ describe('PakService with Worker Integration', () => {
         const dummyBuffer = new ArrayBuffer(1024);
 
         // Mock PakArchive.fromArrayBuffer returning an object that satisfies VFS
-        const mockFromArrayBuffer = jest.spyOn(PakArchive, 'fromArrayBuffer').mockImplementation((name, buffer) => {
+        const mockFromArrayBuffer = vi.spyOn(PakArchive, 'fromArrayBuffer').mockImplementation((name, buffer) => {
             return {
                 name,
                 buffer,
@@ -60,16 +60,16 @@ describe('PakService with Worker Integration', () => {
             } as unknown as PakArchive;
         });
 
-        const mockParsePak = jest.fn().mockRejectedValue(new Error('Worker crashed'));
+        const mockParsePak = vi.fn().mockRejectedValue(new Error('Worker crashed'));
 
-        (workerService.executePakParserTask as jest.Mock).mockImplementation(async (cb: any) => {
+        (workerService.executePakParserTask as vi.Mock).mockImplementation(async (cb: any) => {
             const api = { parsePak: mockParsePak };
             return cb(api);
         });
 
         const file = {
             name: 'test.pak',
-            arrayBuffer: jest.fn().mockResolvedValue(dummyBuffer)
+            arrayBuffer: vi.fn().mockResolvedValue(dummyBuffer)
         } as unknown as File;
 
         const archive = await pakService.loadPakFile(file);

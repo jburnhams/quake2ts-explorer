@@ -28,7 +28,7 @@ describe('GraphicsSettingsTab', () => {
     ssao: true,
   };
 
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();

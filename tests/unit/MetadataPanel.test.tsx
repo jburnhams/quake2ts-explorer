@@ -1,4 +1,4 @@
-import { describe, it, expect, jest } from '@jest/globals';
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { MetadataPanel } from '@/src/components/MetadataPanel';
 import type { FileMetadata, ParsedFile } from '@/src/services/pakService';
@@ -91,8 +91,8 @@ describe('MetadataPanel Component', () => {
         },
         animations: [{ name: 'stand', firstFrame: 0, lastFrame: 0 }],
       };
-      const hasFile = jest.fn(() => true);
-      const onNavigateToFile = jest.fn();
+      const hasFile = vi.fn(() => true);
+      const onNavigateToFile = vi.fn();
       render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
       expect(screen.getByTestId('md2-details')).toBeInTheDocument();
       expect(screen.getByText('200')).toBeInTheDocument(); // vertices
@@ -115,8 +115,8 @@ describe('MetadataPanel Component', () => {
         },
         animations: [],
       };
-      const hasFile = jest.fn(() => true);
-      const onNavigateToFile = jest.fn();
+      const hasFile = vi.fn(() => true);
+      const onNavigateToFile = vi.fn();
       render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
 
       const skinButton = screen.getByRole('button', { name: /models\/test\/skin\.pcx/i });
@@ -140,8 +140,8 @@ describe('MetadataPanel Component', () => {
         },
         animations: [],
       };
-      const hasFile = jest.fn(() => false);
-      const onNavigateToFile = jest.fn();
+      const hasFile = vi.fn(() => false);
+      const onNavigateToFile = vi.fn();
       render(<MetadataPanel metadata={md2Metadata} parsedFile={parsedMd2} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
 
       expect(screen.getByText(/models\/missing\/skin\.pcx \(missing\)/i)).toBeInTheDocument();
@@ -198,8 +198,8 @@ describe('MetadataPanel Component', () => {
            ]
         } as any
       };
-      const hasFile = jest.fn((path) => path === 'textures/e1u1/floor.wal');
-      const onNavigateToFile = jest.fn();
+      const hasFile = vi.fn((path) => path === 'textures/e1u1/floor.wal');
+      const onNavigateToFile = vi.fn();
 
       render(<MetadataPanel metadata={bspMetadata} parsedFile={parsedBsp} hasFile={hasFile} onNavigateToFile={onNavigateToFile} />);
       expect(screen.getByTestId('bsp-details')).toBeInTheDocument();

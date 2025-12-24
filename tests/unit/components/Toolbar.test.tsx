@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,25 +6,25 @@ import { Toolbar } from '../../../src/components/Toolbar';
 import { demoRecorderService } from '../../../src/services/demoRecorder';
 
 // Mock the demoRecorderService
-jest.mock('../../../src/services/demoRecorder', () => ({
+vi.mock('../../../src/services/demoRecorder', () => ({
   demoRecorderService: {
-    startRecording: jest.fn(),
-    stopRecording: jest.fn(),
-    isRecording: jest.fn()
+    startRecording: vi.fn(),
+    stopRecording: vi.fn(),
+    isRecording: vi.fn()
   }
 }));
 
 // Mock URL.createObjectURL and revokeObjectURL
-global.URL.createObjectURL = jest.fn(() => 'blob:url');
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn(() => 'blob:url');
+global.URL.revokeObjectURL = vi.fn();
 
 describe('Toolbar', () => {
-  const mockOnFileSelect = jest.fn();
-  const mockOnViewModeChange = jest.fn();
+  const mockOnFileSelect = vi.fn();
+  const mockOnViewModeChange = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (demoRecorderService.isRecording as jest.Mock).mockReturnValue(false);
+    vi.clearAllMocks();
+    (demoRecorderService.isRecording as vi.Mock).mockReturnValue(false);
   });
 
   it('renders correctly', () => {
@@ -108,8 +109,8 @@ describe('Toolbar', () => {
   });
 
   it('stops recording', async () => {
-      (demoRecorderService.isRecording as jest.Mock).mockReturnValue(true);
-      (demoRecorderService.stopRecording as jest.Mock).mockResolvedValue(new Uint8Array([1, 2, 3]));
+      (demoRecorderService.isRecording as vi.Mock).mockReturnValue(true);
+      (demoRecorderService.stopRecording as vi.Mock).mockResolvedValue(new Uint8Array([1, 2, 3]));
 
       render(
         <Toolbar

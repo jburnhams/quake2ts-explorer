@@ -5,33 +5,33 @@ import { BspAdapter } from '../../../../src/components/UniversalViewer/adapters/
 import React from 'react';
 
 // Mock gl-matrix (use actual for math logic in picking)
-jest.mock('gl-matrix', () => jest.requireActual('gl-matrix'));
+vi.mock('gl-matrix', () => vi.requireActual('gl-matrix'));
 
 // Mock DebugRenderer
-jest.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            clear: jest.fn(),
-            addBox: jest.fn(),
-            addLine: jest.fn(),
-            render: jest.fn(),
-            init: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            clear: vi.fn(),
+            addBox: vi.fn(),
+            addLine: vi.fn(),
+            render: vi.fn(),
+            init: vi.fn()
         }))
     };
 });
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        createWebGLContext: jest.fn().mockReturnValue({
+        createWebGLContext: vi.fn().mockReturnValue({
             gl: {
-                clearColor: jest.fn(), clear: jest.fn(), enable: jest.fn(), drawElements: jest.fn(), viewport: jest.fn(), activeTexture: jest.fn(),
-                generateMipmap: jest.fn(),
+                clearColor: vi.fn(), clear: vi.fn(), enable: vi.fn(), drawElements: vi.fn(), viewport: vi.fn(), activeTexture: vi.fn(),
+                generateMipmap: vi.fn(),
                 TRIANGLES: 0, COLOR_BUFFER_BIT: 0, DEPTH_BUFFER_BIT: 0, DEPTH_TEST: 0, CULL_FACE: 0, UNSIGNED_SHORT: 0, RGBA: 0,
                 UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0
             },
         }),
-        Camera: jest.fn().mockImplementation(() => {
+        Camera: vi.fn().mockImplementation(() => {
             const { mat4 } = require('gl-matrix');
             const proj = mat4.create();
             mat4.perspective(proj, Math.PI/2, 1, 1, 100);
@@ -41,36 +41,36 @@ jest.mock('quake2ts/engine', () => {
                 fov: 60, aspect: 1,
                 position: new Float32Array(3),
                 angles: new Float32Array(3),
-                updateMatrices: jest.fn(),
+                updateMatrices: vi.fn(),
             };
         }),
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn() })),
-        createBspSurfaces: jest.fn().mockReturnValue([{ faceIndex: 0, texture: 't1' }]),
-        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [{ indexCount: 6, vao: { bind: jest.fn() }, surfaceFlags: 0, texture: 't1' }], lightmaps: [] }),
-        resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-        applySurfaceState: jest.fn(),
-        parseWal: jest.fn().mockReturnValue({ width: 64, height: 64 }),
-        walToRgba: jest.fn().mockReturnValue({ levels: [{ width: 64, height: 64, rgba: new Uint8Array() }] }),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            uploadImage: jest.fn(), setParameters: jest.fn(), bind: jest.fn(),
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+        createBspSurfaces: vi.fn().mockReturnValue([{ faceIndex: 0, texture: 't1' }]),
+        buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [{ indexCount: 6, vao: { bind: vi.fn() }, surfaceFlags: 0, texture: 't1' }], lightmaps: [] }),
+        resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+        applySurfaceState: vi.fn(),
+        parseWal: vi.fn().mockReturnValue({ width: 64, height: 64 }),
+        walToRgba: vi.fn().mockReturnValue({ levels: [{ width: 64, height: 64, rgba: new Uint8Array() }] }),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            uploadImage: vi.fn(), setParameters: vi.fn(), bind: vi.fn(),
         })),
-        Md2Adapter: jest.fn(), Md3Adapter: jest.fn(), Dm2Adapter: jest.fn(),
+        Md2Adapter: vi.fn(), Md3Adapter: vi.fn(), Dm2Adapter: vi.fn(),
     };
 });
 
 // Mock GizmoRenderer
-jest.mock('../../../../src/components/UniversalViewer/adapters/GizmoRenderer', () => {
+vi.mock('../../../../src/components/UniversalViewer/adapters/GizmoRenderer', () => {
     return {
-        GizmoRenderer: jest.fn().mockImplementation(() => ({
-            render: jest.fn(),
-            intersect: jest.fn(),
-            setHoveredAxis: jest.fn(),
-            setActiveAxis: jest.fn()
+        GizmoRenderer: vi.fn().mockImplementation(() => ({
+            render: vi.fn(),
+            intersect: vi.fn(),
+            setHoveredAxis: vi.fn(),
+            setActiveAxis: vi.fn()
         }))
     };
 });
 
-jest.mock('../../../../src/components/UniversalViewer/ViewerControls', () => ({
+vi.mock('../../../../src/components/UniversalViewer/ViewerControls', () => ({
   ViewerControls: () => <div data-testid="viewer-controls" />,
 }));
 
@@ -80,13 +80,13 @@ describe('UniversalViewer Picking', () => {
 
   beforeEach(() => {
       pakServiceMock = {
-          hasFile: jest.fn().mockReturnValue(false),
-          readFile: jest.fn().mockResolvedValue(new Uint8Array(100)),
-          parseFile: jest.fn(),
-          getPalette: jest.fn(),
+          hasFile: vi.fn().mockReturnValue(false),
+          readFile: vi.fn().mockResolvedValue(new Uint8Array(100)),
+          parseFile: vi.fn(),
+          getPalette: vi.fn(),
       };
       quake2tsMock = require('quake2ts/engine');
-      jest.clearAllMocks();
+      vi.clearAllMocks();
 
       let frameId = 0;
       const frameCallbacks = new Map<number, FrameRequestCallback>();
@@ -107,10 +107,10 @@ describe('UniversalViewer Picking', () => {
       const pickedEntity = { classname: 'info_player_start', properties: {} };
       const mockMap = {
           entities: {
-              getUniqueClassnames: jest.fn().mockReturnValue([])
+              getUniqueClassnames: vi.fn().mockReturnValue([])
           },
           models: [],
-          pickEntity: jest.fn().mockReturnValue({ entity: pickedEntity, model: {}, distance: 10 })
+          pickEntity: vi.fn().mockReturnValue({ entity: pickedEntity, model: {}, distance: 10 })
       };
 
       const parsedFile: ParsedFile = {
@@ -118,7 +118,7 @@ describe('UniversalViewer Picking', () => {
           map: mockMap as any,
       };
 
-      const onEntitySelected = jest.fn();
+      const onEntitySelected = vi.fn();
 
       const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onEntitySelected={onEntitySelected} />);
 
@@ -132,7 +132,7 @@ describe('UniversalViewer Picking', () => {
       expect(canvas).toBeInTheDocument();
 
       if(canvas) {
-          canvas.getBoundingClientRect = jest.fn().mockReturnValue({
+          canvas.getBoundingClientRect = vi.fn().mockReturnValue({
               left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
           });
           Object.defineProperty(canvas, 'width', { value: 800 });
@@ -146,14 +146,14 @@ describe('UniversalViewer Picking', () => {
   });
 
   it('updates hovered entity on mousemove', async () => {
-      const setHoveredSpy = jest.spyOn(BspAdapter.prototype, 'setHoveredEntity');
+      const setHoveredSpy = vi.spyOn(BspAdapter.prototype, 'setHoveredEntity');
       const hoveredEntity = { classname: 'func_door', properties: {} };
       const mockMap = {
           entities: {
-              getUniqueClassnames: jest.fn().mockReturnValue([])
+              getUniqueClassnames: vi.fn().mockReturnValue([])
           },
           models: [],
-          pickEntity: jest.fn().mockReturnValue({ entity: hoveredEntity, model: {}, distance: 10 })
+          pickEntity: vi.fn().mockReturnValue({ entity: hoveredEntity, model: {}, distance: 10 })
       };
 
       const parsedFile: ParsedFile = {
@@ -173,7 +173,7 @@ describe('UniversalViewer Picking', () => {
       expect(canvas).toBeInTheDocument();
 
       if(canvas) {
-          canvas.getBoundingClientRect = jest.fn().mockReturnValue({
+          canvas.getBoundingClientRect = vi.fn().mockReturnValue({
               left: 0, top: 0, width: 800, height: 600, right: 800, bottom: 600
           });
           Object.defineProperty(canvas, 'width', { value: 800 });

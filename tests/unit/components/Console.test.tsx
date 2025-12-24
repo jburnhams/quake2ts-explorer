@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, fireEvent, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,7 +6,7 @@ import { Console } from '../../../src/components/Console';
 import { consoleService } from '../../../src/services/consoleService';
 
 // Mock scrollIntoView since it's not supported in JSDOM
-window.HTMLElement.prototype.scrollIntoView = jest.fn();
+window.HTMLElement.prototype.scrollIntoView = vi.fn();
 
 describe('Console Component', () => {
   beforeEach(() => {
@@ -13,18 +14,18 @@ describe('Console Component', () => {
   });
 
   it('renders nothing when closed', () => {
-    const { container } = render(<Console isOpen={false} onClose={jest.fn()} />);
+    const { container } = render(<Console isOpen={false} onClose={vi.fn()} />);
     expect(container).toBeEmptyDOMElement();
   });
 
   it('renders when open', () => {
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    render(<Console isOpen={true} onClose={vi.fn()} />);
     expect(screen.getByRole('textbox')).toBeInTheDocument();
   });
 
   it('submits command on Enter', () => {
-    const executeSpy = jest.spyOn(consoleService, 'executeCommand');
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    const executeSpy = vi.spyOn(consoleService, 'executeCommand');
+    render(<Console isOpen={true} onClose={vi.fn()} />);
 
     const input = screen.getByRole('textbox');
     fireEvent.change(input, { target: { value: 'help' } });
@@ -35,10 +36,10 @@ describe('Console Component', () => {
   });
 
   it('navigates history with Up/Down arrows', () => {
-    const prevSpy = jest.spyOn(consoleService, 'getHistoryPrevious').mockReturnValue('prev-cmd');
-    const nextSpy = jest.spyOn(consoleService, 'getHistoryNext').mockReturnValue('next-cmd');
+    const prevSpy = vi.spyOn(consoleService, 'getHistoryPrevious').mockReturnValue('prev-cmd');
+    const nextSpy = vi.spyOn(consoleService, 'getHistoryNext').mockReturnValue('next-cmd');
 
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    render(<Console isOpen={true} onClose={vi.fn()} />);
     const input = screen.getByRole('textbox');
 
     fireEvent.keyDown(input, { key: 'ArrowUp' });
@@ -51,7 +52,7 @@ describe('Console Component', () => {
   });
 
   it('closes on Escape or backtick', () => {
-    const onClose = jest.fn();
+    const onClose = vi.fn();
     render(<Console isOpen={true} onClose={onClose} />);
     const input = screen.getByRole('textbox');
 
@@ -64,14 +65,14 @@ describe('Console Component', () => {
 
   it('should display logs', () => {
     consoleService.log('Test Log Message');
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    render(<Console isOpen={true} onClose={vi.fn()} />);
     expect(screen.getByText(/Test Log Message/)).toBeInTheDocument();
   });
 
   it('autocomplete on Tab', () => {
     // We mock consoleService.getSuggestions
-    const suggestionsSpy = jest.spyOn(consoleService, 'getSuggestions').mockReturnValue(['foobar', 'foobaz']);
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    const suggestionsSpy = vi.spyOn(consoleService, 'getSuggestions').mockReturnValue(['foobar', 'foobaz']);
+    render(<Console isOpen={true} onClose={vi.fn()} />);
     const input = screen.getByRole('textbox');
 
     // Type 'foo'
@@ -97,13 +98,13 @@ describe('Console Component', () => {
 
   it('shows suggestions when typing', () => {
     // Mock suggestions
-    const suggestionsSpy = jest.spyOn(consoleService, 'getSuggestions').mockReturnValue(['help', 'history']);
-    const helpSpy = jest.spyOn(consoleService, 'getHelpText').mockImplementation((cmd) => {
+    const suggestionsSpy = vi.spyOn(consoleService, 'getSuggestions').mockReturnValue(['help', 'history']);
+    const helpSpy = vi.spyOn(consoleService, 'getHelpText').mockImplementation((cmd) => {
       if (cmd === 'help') return 'Show help';
       return undefined;
     });
 
-    render(<Console isOpen={true} onClose={jest.fn()} />);
+    render(<Console isOpen={true} onClose={vi.fn()} />);
     const input = screen.getByRole('textbox');
 
     // Type 'h'

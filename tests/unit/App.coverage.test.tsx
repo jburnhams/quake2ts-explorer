@@ -7,12 +7,12 @@ import { consoleService, LogLevel } from '../../src/services/consoleService';
 import { saveService } from '../../src/services/saveService';
 
 // Mocks
-jest.mock('../../src/hooks/usePakExplorer');
-jest.mock('../../src/services/consoleService');
-jest.mock('../../src/services/saveService');
+vi.mock('../../src/hooks/usePakExplorer');
+vi.mock('../../src/services/consoleService');
+vi.mock('../../src/services/saveService');
 
 // Mock child components to avoid deep rendering issues
-jest.mock('../../src/components/Toolbar', () => ({
+vi.mock('../../src/components/Toolbar', () => ({
   Toolbar: ({ onOpenEntityDatabase, onOpenPakManager }: any) => (
     <div data-testid="toolbar">
       <button onClick={onOpenEntityDatabase} data-testid="open-entity-db">Open Entity DB</button>
@@ -20,8 +20,8 @@ jest.mock('../../src/components/Toolbar', () => ({
     </div>
   )
 }));
-jest.mock('../../src/components/FileTree', () => ({ FileTree: () => <div data-testid="file-tree" /> }));
-jest.mock('../../src/components/PreviewPanel', () => ({
+vi.mock('../../src/components/FileTree', () => ({ FileTree: () => <div data-testid="file-tree" /> }));
+vi.mock('../../src/components/PreviewPanel', () => ({
   PreviewPanel: ({ onClassnamesLoaded, onEntitySelected }: any) => (
     <div data-testid="preview-panel">
       <button onClick={() => onClassnamesLoaded(['class1', 'class2'])} data-testid="trigger-classnames">Trigger Classnames</button>
@@ -29,28 +29,28 @@ jest.mock('../../src/components/PreviewPanel', () => ({
     </div>
   )
 }));
-jest.mock('../../src/components/MetadataPanel', () => ({ MetadataPanel: () => <div data-testid="metadata-panel" /> }));
-jest.mock('../../src/components/DropZone', () => ({ DropZone: ({ children }: any) => <div>{children}</div> }));
-jest.mock('../../src/components/ResizablePanel', () => ({
+vi.mock('../../src/components/MetadataPanel', () => ({ MetadataPanel: () => <div data-testid="metadata-panel" /> }));
+vi.mock('../../src/components/DropZone', () => ({ DropZone: ({ children }: any) => <div>{children}</div> }));
+vi.mock('../../src/components/ResizablePanel', () => ({
   ResizablePanel: ({ children, title }: any) => <div data-testid={`resizable-panel-${title}`}>{children}</div>
 }));
-jest.mock('../../src/components/EntityLegend', () => ({
+vi.mock('../../src/components/EntityLegend', () => ({
   EntityLegend: ({ onToggle }: any) => (
     <div data-testid="entity-legend">
       <button onClick={() => onToggle('class1')} data-testid="toggle-class1">Toggle class1</button>
     </div>
   )
 }));
-jest.mock('../../src/components/EntityMetadata', () => ({ EntityMetadata: () => <div data-testid="entity-metadata" /> }));
-jest.mock('../../src/components/EntityDatabase', () => ({ EntityDatabase: () => <div data-testid="entity-database" /> }));
-jest.mock('../../src/components/PakOrderManager', () => ({
+vi.mock('../../src/components/EntityMetadata', () => ({ EntityMetadata: () => <div data-testid="entity-metadata" /> }));
+vi.mock('../../src/components/EntityDatabase', () => ({ EntityDatabase: () => <div data-testid="entity-database" /> }));
+vi.mock('../../src/components/PakOrderManager', () => ({
   PakOrderManager: ({ onClose }: any) => (
     <div data-testid="pak-order-manager">
       <button onClick={onClose} data-testid="close-pak-manager">Close Pak Manager</button>
     </div>
   )
 }));
-jest.mock('../../src/components/Console', () => ({
+vi.mock('../../src/components/Console', () => ({
   Console: ({ isOpen, onClose }: any) => isOpen ? (
     <div data-testid="console-open">
       <button onClick={onClose} data-testid="close-console">Close Console</button>
@@ -59,14 +59,14 @@ jest.mock('../../src/components/Console', () => ({
 }));
 
 describe('App Component Coverage', () => {
-  const mockHandleTreeSelect = jest.fn();
-  const mockSetViewMode = jest.fn();
-  const mockStartGameMode = jest.fn();
-  const mockStopGameMode = jest.fn();
+  const mockHandleTreeSelect = vi.fn();
+  const mockSetViewMode = vi.fn();
+  const mockStartGameMode = vi.fn();
+  const mockStopGameMode = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (usePakExplorer as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    (usePakExplorer as vi.Mock).mockReturnValue({
       pakService: {},
       fileTree: {},
       selectedPath: null,
@@ -80,17 +80,17 @@ describe('App Component Coverage', () => {
       gameMode: 'browser',
       isPaused: false,
       gameStateSnapshot: null,
-      handleFileSelect: jest.fn(),
+      handleFileSelect: vi.fn(),
       handleTreeSelect: mockHandleTreeSelect,
-      hasFile: jest.fn(),
-      dismissError: jest.fn(),
-      removePak: jest.fn(),
+      hasFile: vi.fn(),
+      dismissError: vi.fn(),
+      removePak: vi.fn(),
       setViewMode: mockSetViewMode,
       startGameMode: mockStartGameMode,
       stopGameMode: mockStopGameMode,
-      togglePause: jest.fn(),
-      pauseGame: jest.fn(),
-      resumeGame: jest.fn(),
+      togglePause: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
     });
   });
 
@@ -123,7 +123,7 @@ describe('App Component Coverage', () => {
     expect(consoleService.registerCommand).toHaveBeenCalledWith('load', expect.any(Function));
 
     // Get the callbacks
-    const calls = (consoleService.registerCommand as jest.Mock).mock.calls;
+    const calls = (consoleService.registerCommand as vi.Mock).mock.calls;
     const mapCallback = calls.find(call => call[0] === 'map')[1];
     const quitCallback = calls.find(call => call[0] === 'quit')[1];
     const saveCallback = calls.find(call => call[0] === 'save')[1];
@@ -154,7 +154,7 @@ describe('App Component Coverage', () => {
     expect(saveService.saveGame).toHaveBeenCalledWith(1, 'mysave');
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Game saved'), LogLevel.SUCCESS);
 
-    (saveService.saveGame as jest.Mock).mockRejectedValueOnce('Error');
+    (saveService.saveGame as vi.Mock).mockRejectedValueOnce('Error');
     await saveCallback(['1', 'mysave']);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Save failed'), LogLevel.ERROR);
 
@@ -162,16 +162,16 @@ describe('App Component Coverage', () => {
     await loadCallback([]);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Usage: load'), LogLevel.WARNING);
 
-    (saveService.loadGame as jest.Mock).mockResolvedValue({ name: 'mysave' });
+    (saveService.loadGame as vi.Mock).mockResolvedValue({ name: 'mysave' });
     await loadCallback(['1']);
     expect(saveService.loadGame).toHaveBeenCalledWith(1);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Loading save: mysave'), LogLevel.INFO);
 
-    (saveService.loadGame as jest.Mock).mockResolvedValue(null);
+    (saveService.loadGame as vi.Mock).mockResolvedValue(null);
     await loadCallback(['1']);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('No save found'), LogLevel.WARNING);
 
-    (saveService.loadGame as jest.Mock).mockRejectedValueOnce('Error');
+    (saveService.loadGame as vi.Mock).mockRejectedValueOnce('Error');
     await loadCallback(['1']);
     expect(consoleService.log).toHaveBeenCalledWith(expect.stringContaining('Load failed'), LogLevel.ERROR);
   });

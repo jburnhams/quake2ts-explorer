@@ -54,7 +54,7 @@ describe('EntityEditorService', () => {
   });
 
   test('should notify listeners on change', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     service.subscribe(listener);
     service.setEntities([mockEntity1]);
     expect(listener).toHaveBeenCalled();

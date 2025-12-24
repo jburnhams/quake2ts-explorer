@@ -1,19 +1,19 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // Mock dependencies
-jest.mock('comlink', () => ({
-    expose: jest.fn(),
-    transfer: jest.fn((obj) => obj)
+vi.mock('comlink', () => ({
+    expose: vi.fn(),
+    transfer: vi.fn((obj) => obj)
 }));
 
 import { expose, transfer } from 'comlink';
-const mockExpose = expose as jest.Mock;
-const mockTransfer = transfer as jest.Mock;
+const mockExpose = expose as vi.Mock;
+const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
     PakArchive: {
-        fromArrayBuffer: jest.fn()
+        fromArrayBuffer: vi.fn()
     }
 }));
 
@@ -28,7 +28,7 @@ describe('PakParserWorker', () => {
     const capturedApi = mockExpose.mock.calls[0]?.[0];
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         api = capturedApi;
     });
 
@@ -42,7 +42,7 @@ describe('PakParserWorker', () => {
         const mockEntries = new Map();
         const mockArchive = { entries: mockEntries };
 
-        (PakArchive.fromArrayBuffer as jest.Mock).mockReturnValue(mockArchive);
+        (PakArchive.fromArrayBuffer as vi.Mock).mockReturnValue(mockArchive);
 
         const result = api.parsePak('test.pak', mockBuffer);
 

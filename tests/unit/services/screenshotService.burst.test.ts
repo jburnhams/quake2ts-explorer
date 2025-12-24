@@ -3,12 +3,12 @@ import JSZip from 'jszip';
 import html2canvas from 'html2canvas';
 
 // Mock dependencies
-jest.mock('html2canvas', () => jest.fn());
-jest.mock('jszip', () => {
-  return jest.fn().mockImplementation(() => ({
-    folder: jest.fn().mockReturnThis(),
-    file: jest.fn(),
-    generateAsync: jest.fn().mockResolvedValue(new Blob(['zip-content'], { type: 'application/zip' })),
+vi.mock('html2canvas', () => vi.fn());
+vi.mock('jszip', () => {
+  return vi.fn().mockImplementation(() => ({
+    folder: vi.fn().mockReturnThis(),
+    file: vi.fn(),
+    generateAsync: vi.fn().mockResolvedValue(new Blob(['zip-content'], { type: 'application/zip' })),
   }));
 });
 
@@ -21,16 +21,16 @@ describe('ScreenshotService - Burst Mode', () => {
 
         // Mock html2canvas to return a mock canvas
         mockCanvas = {
-            toBlob: jest.fn((callback) => {
+            toBlob: vi.fn((callback) => {
                 const blob = new Blob(['image-data'], { type: 'image/png' });
                 callback(blob);
             }),
             width: 100,
             height: 100
         };
-        (html2canvas as unknown as jest.Mock).mockResolvedValue(mockCanvas);
+        (html2canvas as unknown as vi.Mock).mockResolvedValue(mockCanvas);
 
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     test('captureBurst captures multiple screenshots', async () => {
@@ -75,7 +75,7 @@ describe('ScreenshotService - Burst Mode', () => {
 
         // Check JSZip usage
         expect(JSZip).toHaveBeenCalled();
-        const zipInstance = (JSZip as unknown as jest.Mock).mock.results[0].value;
+        const zipInstance = (JSZip as unknown as vi.Mock).mock.results[0].value;
         expect(zipInstance.folder).toHaveBeenCalledWith('burst_capture');
         expect(zipInstance.file).toHaveBeenCalledTimes(2);
 

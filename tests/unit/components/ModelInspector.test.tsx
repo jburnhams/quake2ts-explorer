@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ModelInspector } from '../../../src/components/ModelInspector';
 import { ParsedFile } from '../../../src/services/pakService';
@@ -5,7 +6,7 @@ import { ViewerAdapter } from '../../../src/components/UniversalViewer/adapters/
 import React from 'react';
 
 // Mock UniversalViewer
-jest.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
   UniversalViewer: ({ onAdapterReady }: any) => {
     if (onAdapterReady) {
        (global as any).lastOnAdapterReady = onAdapterReady;
@@ -21,28 +22,28 @@ describe('ModelInspector', () => {
   beforeEach(() => {
     pakServiceMock = {};
     adapterMock = {
-      getAnimations: jest.fn().mockReturnValue([
+      getAnimations: vi.fn().mockReturnValue([
         { name: 'idle', firstFrame: 0, lastFrame: 10, fps: 10 },
         { name: 'run', firstFrame: 11, lastFrame: 20, fps: 10 },
       ]),
-      setAnimation: jest.fn(),
-      getFrameInfo: jest.fn().mockReturnValue({ currentFrame: 0, totalFrames: 21, interpolatedFrame: 0 }),
-      seekFrame: jest.fn(),
-      play: jest.fn(),
-      pause: jest.fn(),
-      isPlaying: jest.fn().mockReturnValue(true),
+      setAnimation: vi.fn(),
+      getFrameInfo: vi.fn().mockReturnValue({ currentFrame: 0, totalFrames: 21, interpolatedFrame: 0 }),
+      seekFrame: vi.fn(),
+      play: vi.fn(),
+      pause: vi.fn(),
+      isPlaying: vi.fn().mockReturnValue(true),
     };
     (global as any).lastOnAdapterReady = null;
-    jest.useFakeTimers();
-    jest.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: any) => {
+    vi.useFakeTimers();
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb: any) => {
         return 1;
     });
-    jest.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
+    vi.spyOn(window, 'cancelAnimationFrame').mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.restoreAllMocks();
+    vi.useRealTimers();
+    vi.restoreAllMocks();
   });
 
   it('renders and initializes adapter', () => {
@@ -133,8 +134,8 @@ describe('ModelInspector', () => {
 
   it('triggers export', () => {
     // Mock URL.createObjectURL and revokeObjectURL
-    const mockCreateObjectURL = jest.fn();
-    const mockRevokeObjectURL = jest.fn();
+    const mockCreateObjectURL = vi.fn();
+    const mockRevokeObjectURL = vi.fn();
     global.URL.createObjectURL = mockCreateObjectURL;
     global.URL.revokeObjectURL = mockRevokeObjectURL;
 

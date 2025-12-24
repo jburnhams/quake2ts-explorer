@@ -1,12 +1,12 @@
-import { describe, it, expect } from '@jest/globals';
+
 import { render, screen } from '@testing-library/react';
 import { PreviewPanel } from '../../../src/components/PreviewPanel';
 import type { ParsedFile, PakService } from '../../../src/services/pakService';
 
 describe('Text Preview', () => {
   const mockPakService = {
-    hasFile: jest.fn(),
-    readFile: jest.fn(),
+    hasFile: vi.fn(),
+    readFile: vi.fn(),
   } as unknown as PakService;
 
   it('renders text content', () => {

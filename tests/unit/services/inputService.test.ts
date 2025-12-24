@@ -3,21 +3,21 @@ import { initInputController, cleanupInputController, generateUserCommand, setIn
 import { InputController, InputBindings } from 'quake2ts/client';
 
 // Mock quake2ts/client
-jest.mock('quake2ts/client', () => {
+vi.mock('quake2ts/client', () => {
     const mockInputController = {
-        handleKeyDown: jest.fn(),
-        handleKeyUp: jest.fn(),
-        handleMouseButtonDown: jest.fn(),
-        handleMouseButtonUp: jest.fn(),
-        handleMouseMove: jest.fn(),
-        buildCommand: jest.fn().mockReturnValue({ buttons: 0 }),
-        getDefaultBindings: jest.fn().mockReturnValue({
-            getBinding: jest.fn().mockReturnValue(null)
+        handleKeyDown: vi.fn(),
+        handleKeyUp: vi.fn(),
+        handleMouseButtonDown: vi.fn(),
+        handleMouseButtonUp: vi.fn(),
+        handleMouseMove: vi.fn(),
+        buildCommand: vi.fn().mockReturnValue({ buttons: 0 }),
+        getDefaultBindings: vi.fn().mockReturnValue({
+            getBinding: vi.fn().mockReturnValue(null)
         })
     };
     return {
-        InputController: jest.fn().mockImplementation(() => mockInputController),
-        InputBindings: jest.fn().mockImplementation(() => ({}))
+        InputController: vi.fn().mockImplementation(() => mockInputController),
+        InputBindings: vi.fn().mockImplementation(() => ({}))
     };
 });
 
@@ -25,13 +25,13 @@ describe('InputService', () => {
     let mockController: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         cleanupInputController();
         // Initialize to get the mock instance
         initInputController();
-        mockController = (InputController as unknown as jest.Mock).mock.results[0].value;
+        mockController = (InputController as unknown as vi.Mock).mock.results[0].value;
         // Reset call counts from init
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -40,7 +40,7 @@ describe('InputService', () => {
 
     it('should initialize input controller', () => {
         // Need to clear mocks and re-init to capture call
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         cleanupInputController();
 
         initInputController();
@@ -71,7 +71,7 @@ describe('InputService', () => {
         mockController.getDefaultBindings().getBinding.mockReturnValue('some_command');
 
         const keyDown = new KeyboardEvent('keydown', { code: 'Space', cancelable: true });
-        const spy = jest.spyOn(keyDown, 'preventDefault');
+        const spy = vi.spyOn(keyDown, 'preventDefault');
         window.dispatchEvent(keyDown);
 
         expect(spy).toHaveBeenCalled();

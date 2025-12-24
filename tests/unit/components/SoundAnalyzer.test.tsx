@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SoundAnalyzer } from '@/src/components/SoundAnalyzer';
@@ -14,17 +15,17 @@ global.ResizeObserver = class ResizeObserver {
 class MockAudioBufferSourceNode {
   buffer: AudioBuffer | null = null;
   loop: boolean = false;
-  connect = jest.fn();
-  start = jest.fn();
-  stop = jest.fn();
+  connect = vi.fn();
+  start = vi.fn();
+  stop = vi.fn();
   onended: ((event?: any) => void) | null = null;
 }
 
 class MockAnalyserNode {
   fftSize: number = 2048;
   frequencyBinCount: number = 1024;
-  connect = jest.fn();
-  getByteFrequencyData = jest.fn((array: Uint8Array) => {
+  connect = vi.fn();
+  getByteFrequencyData = vi.fn((array: Uint8Array) => {
     array.fill(128); // Fill with some dummy data
   });
 }
@@ -32,19 +33,19 @@ class MockAnalyserNode {
 class MockAudioContext {
   state: string = 'running';
   currentTime: number = 0;
-  createBuffer = jest.fn(() => ({
+  createBuffer = vi.fn(() => ({
     length: 44100,
     duration: 1.0,
     numberOfChannels: 1,
     sampleRate: 44100,
-    getChannelData: jest.fn(() => new Float32Array(44100))
+    getChannelData: vi.fn(() => new Float32Array(44100))
   }));
-  createBufferSource = jest.fn(() => new MockAudioBufferSourceNode());
-  createAnalyser = jest.fn(() => new MockAnalyserNode());
-  resume = jest.fn(async () => {
+  createBufferSource = vi.fn(() => new MockAudioBufferSourceNode());
+  createAnalyser = vi.fn(() => new MockAnalyserNode());
+  resume = vi.fn(async () => {
     this.state = 'running';
   });
-  close = jest.fn();
+  close = vi.fn();
   destination = {};
 }
 
@@ -65,7 +66,7 @@ describe('SoundAnalyzer', () => {
   const mockFileName = "test.wav";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders sound analyzer interface', () => {

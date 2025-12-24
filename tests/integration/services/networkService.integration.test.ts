@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 import { networkService } from '../../../src/services/networkService';
 import { WebSocket, Server } from 'mock-socket';
 import { NetChan, ServerCommand } from 'quake2ts/shared';
@@ -31,8 +31,8 @@ describe('NetworkService Integration', () => {
   });
 
   it('should successfully connect and disconnect', async () => {
-    const onConnect = jest.fn();
-    const onDisconnect = jest.fn();
+    const onConnect = vi.fn();
+    const onDisconnect = vi.fn();
 
     networkService.setCallbacks({
       onConnect,
@@ -49,7 +49,7 @@ describe('NetworkService Integration', () => {
   });
 
   it('should receive messages from server', async () => {
-    const onPrint = jest.fn();
+    const onPrint = vi.fn();
     networkService.setCallbacks({ onPrint });
 
     await networkService.connect(serverUrl);

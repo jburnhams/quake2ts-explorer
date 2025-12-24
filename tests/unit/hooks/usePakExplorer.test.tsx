@@ -8,29 +8,29 @@ import { initInputController, cleanupInputController, generateUserCommand } from
 
 // Setup mock methods holder
 const mockPakServiceMethods = {
-    buildFileTree: jest.fn(),
-    getMountedPaks: jest.fn(),
-    listDirectory: jest.fn(),
-    loadPakFile: jest.fn(),
-    loadPakFromBuffer: jest.fn(),
-    getFileMetadata: jest.fn(),
-    parseFile: jest.fn(),
-    hasFile: jest.fn(),
-    unloadPak: jest.fn(),
+    buildFileTree: vi.fn(),
+    getMountedPaks: vi.fn(),
+    listDirectory: vi.fn(),
+    loadPakFile: vi.fn(),
+    loadPakFromBuffer: vi.fn(),
+    getFileMetadata: vi.fn(),
+    parseFile: vi.fn(),
+    hasFile: vi.fn(),
+    unloadPak: vi.fn(),
     vfs: {},
 };
 
 // Mock dependencies
-jest.mock('../../../src/services/indexedDBService', () => ({
+vi.mock('../../../src/services/indexedDBService', () => ({
   indexedDBService: {
-    getPaks: jest.fn().mockResolvedValue([]),
-    savePak: jest.fn().mockResolvedValue('mock-pak-id'),
-    deletePak: jest.fn().mockResolvedValue(undefined),
+    getPaks: vi.fn().mockResolvedValue([]),
+    savePak: vi.fn().mockResolvedValue('mock-pak-id'),
+    deletePak: vi.fn().mockResolvedValue(undefined),
   }
 }));
 
-jest.mock('../../../src/services/pakService', () => {
-    const PakServiceMock = jest.fn().mockImplementation(() => {
+vi.mock('../../../src/services/pakService', () => {
+    const PakServiceMock = vi.fn().mockImplementation(() => {
         // Reset mocks for new instance if needed, or share them.
         mockPakServiceMethods.buildFileTree.mockReturnValue({ name: 'root', children: [] });
         mockPakServiceMethods.getMountedPaks.mockReturnValue([]);
@@ -43,7 +43,7 @@ jest.mock('../../../src/services/pakService', () => {
     });
 
     // Mock static method
-    (PakServiceMock as any).getVfsPath = jest.fn((path: string) => {
+    (PakServiceMock as any).getVfsPath = vi.fn((path: string) => {
         if (path.includes(':')) {
             const parts = path.split(':');
             return parts.slice(1).join(':');
@@ -53,47 +53,47 @@ jest.mock('../../../src/services/pakService', () => {
 
     return {
         PakService: PakServiceMock,
-        getPakService: jest.fn(),
+        getPakService: vi.fn(),
     };
 });
 
 // Mock GameService
-jest.mock('../../../src/services/gameService', () => ({
-    createGameSimulation: jest.fn().mockResolvedValue({
-        start: jest.fn(),
-        shutdown: jest.fn(),
-        tick: jest.fn(),
-        getSnapshot: jest.fn().mockReturnValue({ time: 123 }),
-        getConfigStrings: jest.fn().mockReturnValue(new Map())
+vi.mock('../../../src/services/gameService', () => ({
+    createGameSimulation: vi.fn().mockResolvedValue({
+        start: vi.fn(),
+        shutdown: vi.fn(),
+        tick: vi.fn(),
+        getSnapshot: vi.fn().mockReturnValue({ time: 123 }),
+        getConfigStrings: vi.fn().mockReturnValue(new Map())
     })
 }));
 
 // Mock GameLoop
-jest.mock('../../../src/utils/gameLoop', () => ({
-    createGameLoop: jest.fn().mockReturnValue({
-        start: jest.fn(),
-        stop: jest.fn(),
-        pause: jest.fn(),
-        resume: jest.fn()
+vi.mock('../../../src/utils/gameLoop', () => ({
+    createGameLoop: vi.fn().mockReturnValue({
+        start: vi.fn(),
+        stop: vi.fn(),
+        pause: vi.fn(),
+        resume: vi.fn()
     })
 }));
 
 // Mock InputService
-jest.mock('../../../src/services/inputService', () => ({
-    initInputController: jest.fn(),
-    cleanupInputController: jest.fn(),
-    generateUserCommand: jest.fn().mockReturnValue({})
+vi.mock('../../../src/services/inputService', () => ({
+    initInputController: vi.fn(),
+    cleanupInputController: vi.fn(),
+    generateUserCommand: vi.fn().mockReturnValue({})
 }));
 
 
 // Mock fetch for built-in paks
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('usePakExplorer', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // Setup successful fetch default to avoid init errors in unrelated tests
-        (global.fetch as jest.Mock).mockResolvedValue({
+        (global.fetch as vi.Mock).mockResolvedValue({
             ok: false,
         });
 
@@ -113,7 +113,7 @@ describe('usePakExplorer', () => {
 
     it('loads paks from IndexedDB on init', async () => {
         const mockPaks = [{ id: '1', name: 'stored.pak', blob: new Blob(['']) }];
-        (indexedDBService.getPaks as jest.Mock).mockResolvedValue(mockPaks);
+        (indexedDBService.getPaks as vi.Mock).mockResolvedValue(mockPaks);
 
         const { result } = renderHook(() => usePakExplorer());
 
@@ -183,8 +183,8 @@ describe('usePakExplorer', () => {
     });
 
     it('handles load error safely', async () => {
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (indexedDBService.getPaks as jest.Mock).mockRejectedValue(new Error('DB Error'));
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (indexedDBService.getPaks as vi.Mock).mockRejectedValue(new Error('DB Error'));
 
         const { result } = renderHook(() => usePakExplorer());
 
@@ -215,7 +215,7 @@ describe('usePakExplorer', () => {
 
     it('aborts loading on unmount', async () => {
         // Mock fetch to hang so we can unmount while pending
-        (global.fetch as jest.Mock).mockImplementation(() => new Promise(() => {}));
+        (global.fetch as vi.Mock).mockImplementation(() => new Promise(() => {}));
 
         const { unmount } = renderHook(() => usePakExplorer());
         unmount();
@@ -243,7 +243,7 @@ describe('usePakExplorer', () => {
         expect(result.current.gameMode).toBe('game');
 
         // Check loop callbacks
-        const calls = (createGameLoop as jest.Mock).mock.calls;
+        const calls = (createGameLoop as vi.Mock).mock.calls;
         expect(calls.length).toBeGreaterThan(0);
         const [simulate, render] = calls[calls.length - 1]; // Use last call
 
@@ -268,8 +268,8 @@ describe('usePakExplorer', () => {
     });
 
     it('handles game mode start failure', async () => {
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (createGameSimulation as jest.Mock).mockRejectedValue(new Error('Game init failed'));
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (createGameSimulation as vi.Mock).mockRejectedValue(new Error('Game init failed'));
 
         const { result } = renderHook(() => usePakExplorer());
         await waitFor(() => expect(result.current.loading).toBe(false));
@@ -327,7 +327,7 @@ describe('usePakExplorer', () => {
 
     it('loads built-in paks successfully from manifest', async () => {
         // Mock fetch for manifest and paks
-        (global.fetch as jest.Mock).mockImplementation((url) => {
+        (global.fetch as vi.Mock).mockImplementation((url) => {
             if (url === 'pak-manifest.json') {
                 return Promise.resolve({
                     ok: true,
@@ -360,7 +360,7 @@ describe('usePakExplorer', () => {
     });
 
     it('skips paks with text/html content type', async () => {
-        (global.fetch as jest.Mock).mockImplementation((url) => {
+        (global.fetch as vi.Mock).mockImplementation((url) => {
             if (url === 'pak-manifest.json') {
                 return Promise.resolve({
                     ok: true,
@@ -390,7 +390,7 @@ describe('usePakExplorer', () => {
     });
 
     it('loadFromUrl handles successful fetch', async () => {
-        (global.fetch as jest.Mock).mockResolvedValue({
+        (global.fetch as vi.Mock).mockResolvedValue({
             ok: true,
             arrayBuffer: () => Promise.resolve(new ArrayBuffer(10))
         });
@@ -406,7 +406,7 @@ describe('usePakExplorer', () => {
     });
 
     it('loadFromUrl handles fetch error', async () => {
-         (global.fetch as jest.Mock).mockResolvedValue({
+         (global.fetch as vi.Mock).mockResolvedValue({
              ok: false,
              statusText: 'Not Found'
          });
@@ -431,7 +431,7 @@ describe('usePakExplorer', () => {
         });
 
         // Let's use loadFromUrl to cause error
-        (global.fetch as jest.Mock).mockResolvedValue({ ok: false, statusText: 'Err' });
+        (global.fetch as vi.Mock).mockResolvedValue({ ok: false, statusText: 'Err' });
         await act(async () => {
             await result.current.loadFromUrl('bad');
         });

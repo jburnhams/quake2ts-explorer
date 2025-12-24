@@ -1,11 +1,12 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BookmarkDialog } from '@/src/components/BookmarkDialog';
 
 describe('BookmarkDialog', () => {
-  const mockOnClose = jest.fn();
-  const mockOnSave = jest.fn();
+  const mockOnClose = vi.fn();
+  const mockOnSave = vi.fn();
 
   const defaultProps = {
     currentFrame: 123,
@@ -16,7 +17,7 @@ describe('BookmarkDialog', () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should not render when isOpen is false', () => {

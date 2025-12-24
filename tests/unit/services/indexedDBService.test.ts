@@ -20,37 +20,37 @@ describe('IndexedDBService', () => {
     };
 
     mockIndex = {
-      get: jest.fn().mockReturnValue(mockRequest),
+      get: vi.fn().mockReturnValue(mockRequest),
     };
 
     mockObjectStore = {
-      createIndex: jest.fn(),
-      put: jest.fn().mockReturnValue(mockRequest),
-      getAll: jest.fn().mockReturnValue(mockRequest),
-      delete: jest.fn().mockReturnValue(mockRequest),
-      index: jest.fn().mockReturnValue(mockIndex),
+      createIndex: vi.fn(),
+      put: vi.fn().mockReturnValue(mockRequest),
+      getAll: vi.fn().mockReturnValue(mockRequest),
+      delete: vi.fn().mockReturnValue(mockRequest),
+      index: vi.fn().mockReturnValue(mockIndex),
     };
 
     mockTransaction = {
-      objectStore: jest.fn().mockReturnValue(mockObjectStore),
+      objectStore: vi.fn().mockReturnValue(mockObjectStore),
     };
 
     mockDB = {
-      transaction: jest.fn().mockReturnValue(mockTransaction),
+      transaction: vi.fn().mockReturnValue(mockTransaction),
       objectStoreNames: {
-        contains: jest.fn().mockReturnValue(false),
+        contains: vi.fn().mockReturnValue(false),
       },
-      createObjectStore: jest.fn().mockReturnValue(mockObjectStore),
+      createObjectStore: vi.fn().mockReturnValue(mockObjectStore),
     };
 
     global.indexedDB = {
-      open: jest.fn().mockReturnValue(mockRequest),
+      open: vi.fn().mockReturnValue(mockRequest),
     } as any;
 
     // Mock crypto.randomUUID
     Object.defineProperty(global, 'crypto', {
       value: {
-        randomUUID: jest.fn().mockReturnValue('mock-uuid'),
+        randomUUID: vi.fn().mockReturnValue('mock-uuid'),
       },
       writable: true,
     });

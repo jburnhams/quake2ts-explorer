@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { Dm2Adapter } from '../../../../../src/components/UniversalViewer/adapters/Dm2Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
 import { BspAdapter } from '../../../../../src/components/UniversalViewer/adapters/BspAdapter';
@@ -8,54 +8,54 @@ import { CameraMode } from '@/src/types/cameraMode';
 import { DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    DemoPlaybackController: jest.fn().mockImplementation(() => ({
-      loadDemo: jest.fn(),
-      play: jest.fn(),
-      pause: jest.fn(),
-      stop: jest.fn(),
-      update: jest.fn(),
-      getState: jest.fn(),
-      getDuration: jest.fn().mockReturnValue(100),
-      getCurrentTime: jest.fn().mockReturnValue(10),
-      getCurrentFrame: jest.fn().mockReturnValue(100),
-      getFrameCount: jest.fn().mockReturnValue(1000),
-      getFrameData: jest.fn().mockReturnValue({
+    DemoPlaybackController: vi.fn().mockImplementation(() => ({
+      loadDemo: vi.fn(),
+      play: vi.fn(),
+      pause: vi.fn(),
+      stop: vi.fn(),
+      update: vi.fn(),
+      getState: vi.fn(),
+      getDuration: vi.fn().mockReturnValue(100),
+      getCurrentTime: vi.fn().mockReturnValue(10),
+      getCurrentFrame: vi.fn().mockReturnValue(100),
+      getFrameCount: vi.fn().mockReturnValue(1000),
+      getFrameData: vi.fn().mockReturnValue({
           playerState: {
               origin: [10, 20, 30],
               viewangles: [0, 90, 0]
           }
       }),
-      seekToTime: jest.fn(),
-      setSpeed: jest.fn(),
+      seekToTime: vi.fn(),
+      setSpeed: vi.fn(),
     })),
   };
 });
 
-jest.mock('../../../../../src/components/UniversalViewer/adapters/BspAdapter');
+vi.mock('../../../../../src/components/UniversalViewer/adapters/BspAdapter');
 
 describe('Dm2Adapter', () => {
   let adapter: Dm2Adapter;
   let mockGl: WebGL2RenderingContext;
-  let mockPakService: jest.Mocked<PakService>;
-  let mockBspAdapter: jest.Mocked<BspAdapter>;
+  let mockPakService: vi.Mocked<PakService>;
+  let mockBspAdapter: vi.Mocked<BspAdapter>;
 
   beforeEach(() => {
     adapter = new Dm2Adapter();
     mockGl = {} as WebGL2RenderingContext;
     mockPakService = {
-      hasFile: jest.fn(),
-      parseFile: jest.fn(),
-    } as unknown as jest.Mocked<PakService>;
+      hasFile: vi.fn(),
+      parseFile: vi.fn(),
+    } as unknown as vi.Mocked<PakService>;
 
     // Clear mocks
-    (DemoPlaybackController as jest.Mock).mockClear();
-    (BspAdapter as jest.Mock).mockClear();
+    (DemoPlaybackController as vi.Mock).mockClear();
+    (BspAdapter as vi.Mock).mockClear();
 
     // Setup BspAdapter mock instance
-    mockBspAdapter = new BspAdapter() as jest.Mocked<BspAdapter>;
-    (BspAdapter as jest.Mock).mockReturnValue(mockBspAdapter);
+    mockBspAdapter = new BspAdapter() as vi.Mocked<BspAdapter>;
+    (BspAdapter as vi.Mock).mockReturnValue(mockBspAdapter);
   });
 
   it('throws error if file type is not dm2', async () => {
@@ -75,7 +75,7 @@ describe('Dm2Adapter', () => {
 
     await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
 
-    const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     expect(controllerInstance.loadDemo).toHaveBeenCalled();
     expect(controllerInstance.play).toHaveBeenCalled();
 
@@ -93,7 +93,7 @@ describe('Dm2Adapter', () => {
 
     // Map does not exist
     mockPakService.hasFile.mockReturnValue(false);
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
 
@@ -110,7 +110,7 @@ describe('Dm2Adapter', () => {
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.parseFile.mockResolvedValue({ type: 'txt', content: 'hello' } as any);
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
 
@@ -127,7 +127,7 @@ describe('Dm2Adapter', () => {
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.parseFile.mockRejectedValue(new Error('Load failed'));
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
 
@@ -140,7 +140,7 @@ describe('Dm2Adapter', () => {
     mockPakService.hasFile.mockReturnValue(false);
     await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
 
-    const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     // Mock frame data
     controllerInstance.getFrameData.mockReturnValue({
         playerState: { origin: [10, 20, 30], viewangles: [0, 90, 0] }
@@ -163,7 +163,7 @@ describe('Dm2Adapter', () => {
     adapter.setCameraMode(CameraMode.ThirdPerson);
     adapter.setCameraSettings({ ...DEFAULT_CAMERA_SETTINGS, thirdPersonDistance: 100 });
 
-    const controller = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     controller.getFrameData.mockReturnValue({
         playerState: { origin: [0, 0, 0], viewangles: [0, 0, 0] }
     });
@@ -187,7 +187,7 @@ describe('Dm2Adapter', () => {
     await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
 
     adapter.setCameraMode(CameraMode.Orbital);
-    const controller = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     controller.getFrameData.mockReturnValue({
         playerState: { origin: [0, 0, 0], viewangles: [0, 0, 0] }
     });
@@ -217,7 +217,7 @@ describe('Dm2Adapter', () => {
     mockPakService.hasFile.mockReturnValue(false);
     await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
 
-    const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
     adapter.pause();
     expect(controllerInstance.pause).toHaveBeenCalled();
@@ -234,7 +234,7 @@ describe('Dm2Adapter', () => {
     mockPakService.parseFile.mockResolvedValue({ type: 'bsp', map: {} } as any);
 
     await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
-    const controllerInstance = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+    const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
     adapter.cleanup();
     expect(mockBspAdapter.cleanup).toHaveBeenCalled();
@@ -250,7 +250,7 @@ describe('Dm2Adapter', () => {
       const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
       mockPakService.hasFile.mockReturnValue(false);
       await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
-      const controller = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+      const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
       controller.getCurrentTime.mockReturnValue(10);
       controller.getDuration.mockReturnValue(100);
@@ -270,7 +270,7 @@ describe('Dm2Adapter', () => {
       const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
       mockPakService.hasFile.mockReturnValue(false);
       await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
-      const controller = (DemoPlaybackController as jest.Mock).mock.results[0].value;
+      const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
       expect(adapter.getDemoController()).toBe(controller);
   });

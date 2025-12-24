@@ -28,7 +28,7 @@ describe('SettingsService', () => {
   beforeEach(() => {
     localStorage.clear();
     // We need to re-instantiate the service or reset it because it's a singleton export
-    // Since we can't easily re-instantiate the exported singleton without jest.resetModules,
+    // Since we can't easily re-instantiate the exported singleton without vi.resetModules,
     // we'll rely on the resetToDefaults method or creating a new instance if we exported the class.
     // Ideally we should export the class for testing.
     service = new SettingsService();
@@ -80,7 +80,7 @@ describe('SettingsService', () => {
   });
 
   test('should notify listeners on change', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     const unsubscribe = service.subscribe(listener);
 
     service.updateSettings({

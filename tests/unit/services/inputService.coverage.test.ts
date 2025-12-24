@@ -1,21 +1,21 @@
 import { initInputController, cleanupInputController, generateUserCommand, getInputController, setInputMode } from '../../../src/services/inputService';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
 
-jest.mock('quake2ts/client', () => {
-    const { jest } = require('@jest/globals');
+
+vi.mock('quake2ts/client', () => {
+    
     return {
-        InputController: jest.fn().mockImplementation(() => ({
-            handleKeyDown: jest.fn(),
-            handleKeyUp: jest.fn(),
-            handleMouseButtonDown: jest.fn(),
-            handleMouseButtonUp: jest.fn(),
-            handleMouseMove: jest.fn(),
-            buildCommand: jest.fn(() => ({ buttons: 1 })), // Mock command
-            getDefaultBindings: jest.fn(() => ({
-                getBinding: jest.fn((code) => code === 'Space') // Return true for bound key
+        InputController: vi.fn().mockImplementation(() => ({
+            handleKeyDown: vi.fn(),
+            handleKeyUp: vi.fn(),
+            handleMouseButtonDown: vi.fn(),
+            handleMouseButtonUp: vi.fn(),
+            handleMouseMove: vi.fn(),
+            buildCommand: vi.fn(() => ({ buttons: 1 })), // Mock command
+            getDefaultBindings: vi.fn(() => ({
+                getBinding: vi.fn((code) => code === 'Space') // Return true for bound key
             }))
         })),
-        InputBindings: jest.fn()
+        InputBindings: vi.fn()
     };
 });
 
@@ -24,7 +24,7 @@ describe('InputService Coverage', () => {
 
     beforeEach(() => {
         cleanupInputController();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
@@ -43,7 +43,7 @@ describe('InputService Coverage', () => {
         mockController = getInputController();
 
         const downEvent = new KeyboardEvent('keydown', { code: 'Space' });
-        const preventDefaultSpy = jest.spyOn(downEvent, 'preventDefault');
+        const preventDefaultSpy = vi.spyOn(downEvent, 'preventDefault');
         window.dispatchEvent(downEvent);
         expect(mockController.handleKeyDown).toHaveBeenCalledWith('Space', expect.any(Number));
         expect(preventDefaultSpy).toHaveBeenCalled(); // Bound key prevents default

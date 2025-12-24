@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -6,9 +7,9 @@ import { networkService } from '../../../src/services/networkService';
 import { usePakExplorer } from '../../../src/hooks/usePakExplorer';
 
 // Mock dependencies
-jest.mock('../../../src/services/networkService');
-jest.mock('../../../src/hooks/usePakExplorer');
-jest.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('../../../src/services/networkService');
+vi.mock('../../../src/hooks/usePakExplorer');
+vi.mock('../../../src/components/UniversalViewer/UniversalViewer', () => ({
   UniversalViewer: () => <div data-testid="universal-viewer">Viewer</div>
 }));
 
@@ -20,12 +21,12 @@ global.ResizeObserver = class ResizeObserver {
 };
 
 describe('ServerBrowser Integration', () => {
-  const mockConnect = jest.fn().mockResolvedValue(undefined);
+  const mockConnect = vi.fn().mockResolvedValue(undefined);
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (networkService.connect as jest.Mock).mockImplementation(mockConnect);
-    (usePakExplorer as jest.Mock).mockReturnValue({
+    vi.clearAllMocks();
+    (networkService.connect as vi.Mock).mockImplementation(mockConnect);
+    (usePakExplorer as vi.Mock).mockReturnValue({
       pakService: {},
       fileTree: { type: 'dir', name: 'root', path: '', children: [] },
       selectedPath: null,
@@ -39,18 +40,18 @@ describe('ServerBrowser Integration', () => {
       isPaused: false,
       gameStateSnapshot: null,
       viewMode: 'merged',
-      handleFileSelect: jest.fn(),
-      handleTreeSelect: jest.fn(),
-      hasFile: jest.fn(),
-      dismissError: jest.fn(),
-      loadFromUrl: jest.fn(),
-      startGameMode: jest.fn(),
-      stopGameMode: jest.fn(),
-      togglePause: jest.fn(),
-      pauseGame: jest.fn(),
-      resumeGame: jest.fn(),
-      removePak: jest.fn(),
-      setViewMode: jest.fn(),
+      handleFileSelect: vi.fn(),
+      handleTreeSelect: vi.fn(),
+      hasFile: vi.fn(),
+      dismissError: vi.fn(),
+      loadFromUrl: vi.fn(),
+      startGameMode: vi.fn(),
+      stopGameMode: vi.fn(),
+      togglePause: vi.fn(),
+      pauseGame: vi.fn(),
+      resumeGame: vi.fn(),
+      removePak: vi.fn(),
+      setViewMode: vi.fn(),
     });
   });
 

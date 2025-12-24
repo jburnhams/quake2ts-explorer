@@ -9,27 +9,27 @@ import { vec3 } from 'gl-matrix';
 describe('ViewerControls Demo Stepping', () => {
   const mockProps = {
     isPlaying: true,
-    onPlayPause: jest.fn(),
+    onPlayPause: vi.fn(),
     orbit: { radius: 100, theta: 0, phi: 0, target: [0, 0, 0] as vec3 } as OrbitState,
-    setOrbit: jest.fn(),
+    setOrbit: vi.fn(),
     freeCamera: { position: [0, 0, 0] as vec3, rotation: [0, 0, 0] as vec3 } as FreeCameraState,
-    setFreeCamera: jest.fn(),
+    setFreeCamera: vi.fn(),
     hasPlayback: true,
     speed: 1.0,
-    setSpeed: jest.fn(),
+    setSpeed: vi.fn(),
     showCameraControls: true,
     cameraMode: 'orbit' as const,
-    setCameraMode: jest.fn(),
+    setCameraMode: vi.fn(),
     renderMode: 'textured' as const,
-    setRenderMode: jest.fn(),
+    setRenderMode: vi.fn(),
     renderColor: [1, 1, 1] as [number, number, number],
-    setRenderColor: jest.fn(),
+    setRenderColor: vi.fn(),
     debugMode: DebugMode.None,
-    setDebugMode: jest.fn(),
+    setDebugMode: vi.fn(),
   };
 
   it('renders step buttons when stepping handlers are provided', () => {
-    render(<ViewerControls {...mockProps} onStepForward={jest.fn()} onStepBackward={jest.fn()} />);
+    render(<ViewerControls {...mockProps} onStepForward={vi.fn()} onStepBackward={vi.fn()} />);
 
     expect(screen.getByTitle(/Step Backward/i)).toBeInTheDocument();
     expect(screen.getByTitle(/Step Forward/i)).toBeInTheDocument();
@@ -43,7 +43,7 @@ describe('ViewerControls Demo Stepping', () => {
   });
 
   it('calls onStepForward when forward button is clicked', () => {
-    const onStepForward = jest.fn();
+    const onStepForward = vi.fn();
     render(<ViewerControls {...mockProps} onStepForward={onStepForward} isPlaying={false} />);
 
     fireEvent.click(screen.getByTitle(/Step Forward/i));
@@ -51,7 +51,7 @@ describe('ViewerControls Demo Stepping', () => {
   });
 
   it('calls onStepBackward when backward button is clicked', () => {
-    const onStepBackward = jest.fn();
+    const onStepBackward = vi.fn();
     render(<ViewerControls {...mockProps} onStepBackward={onStepBackward} isPlaying={false} />);
 
     fireEvent.click(screen.getByTitle(/Step Backward/i));
@@ -59,7 +59,7 @@ describe('ViewerControls Demo Stepping', () => {
   });
 
   it('disables step buttons when playing', () => {
-    render(<ViewerControls {...mockProps} onStepForward={jest.fn()} onStepBackward={jest.fn()} isPlaying={true} />);
+    render(<ViewerControls {...mockProps} onStepForward={vi.fn()} onStepBackward={vi.fn()} isPlaying={true} />);
 
     expect(screen.getByTitle(/Step Backward/i)).toBeDisabled();
     expect(screen.getByTitle(/Step Forward/i)).toBeDisabled();

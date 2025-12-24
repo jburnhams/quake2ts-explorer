@@ -1,13 +1,14 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SettingsPanel } from '@/src/components/SettingsPanel';
 import { settingsService } from '@/src/services/settingsService';
 
 // Mock dependencies
-jest.mock('@/src/services/settingsService', () => ({
+vi.mock('@/src/services/settingsService', () => ({
   settingsService: {
-    getSettings: jest.fn(),
-    updateSettings: jest.fn(),
+    getSettings: vi.fn(),
+    updateSettings: vi.fn(),
   }
 }));
 
@@ -27,11 +28,11 @@ const mockSettings = {
 };
 
 describe('SettingsPanel', () => {
-  const mockOnClose = jest.fn();
+  const mockOnClose = vi.fn();
 
   beforeEach(() => {
-    (settingsService.getSettings as jest.Mock).mockReturnValue(mockSettings);
-    jest.clearAllMocks();
+    (settingsService.getSettings as vi.Mock).mockReturnValue(mockSettings);
+    vi.clearAllMocks();
   });
 
   test('renders correctly', () => {
@@ -113,7 +114,7 @@ describe('SettingsPanel', () => {
   });
 
   test('reset button prompts confirmation', () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     render(<SettingsPanel onClose={mockOnClose} />);
 
     const resetButton = screen.getByText('Reset Defaults');

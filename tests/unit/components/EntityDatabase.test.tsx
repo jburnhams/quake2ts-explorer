@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
@@ -6,18 +7,18 @@ import { PakService } from '@/src/services/pakService';
 import { EntityService, EntityRecord } from '@/src/services/entityService';
 
 // Mock dependencies
-jest.mock('@/src/services/pakService');
-jest.mock('@/src/services/entityService');
+vi.mock('@/src/services/pakService');
+vi.mock('@/src/services/entityService');
 
 // Mock AutoSizer to render children with fixed dimensions
-jest.mock('react-virtualized-auto-sizer', () => {
+vi.mock('react-virtualized-auto-sizer', () => {
   return ({ children }: any) => {
     return children({ height: 500, width: 500 });
   };
 });
 
 // Mock react-window (v2) to render all items
-jest.mock('react-window', () => {
+vi.mock('react-window', () => {
   const React = require('react');
   return {
     List: ({ rowComponent, rowProps, rowCount }: any) => {
@@ -70,28 +71,28 @@ describe('EntityDatabase Component', () => {
     ];
 
     mockPakService = {
-      getVfs: jest.fn().mockReturnValue({}),
+      getVfs: vi.fn().mockReturnValue({}),
     };
 
     mockEntityService = {
-      scanAllMaps: jest.fn().mockImplementation((cb) => {
+      scanAllMaps: vi.fn().mockImplementation((cb) => {
         if (cb) cb(0, 1, 'maps/map1.bsp');
         return Promise.resolve(mockEntities);
       }),
-      generateEntFile: jest.fn().mockReturnValue('mock-ent-content')
+      generateEntFile: vi.fn().mockReturnValue('mock-ent-content')
     };
 
-    (EntityService as jest.Mock).mockImplementation(() => mockEntityService);
+    (EntityService as vi.Mock).mockImplementation(() => mockEntityService);
 
     // Mock URL.createObjectURL and URL.revokeObjectURL
     // @ts-ignore
-    global.URL.createObjectURL = jest.fn(() => 'mock-url');
+    global.URL.createObjectURL = vi.fn(() => 'mock-url');
     // @ts-ignore
-    global.URL.revokeObjectURL = jest.fn();
+    global.URL.revokeObjectURL = vi.fn();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders and loads entities', async () => {

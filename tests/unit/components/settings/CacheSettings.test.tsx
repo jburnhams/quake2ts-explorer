@@ -4,13 +4,13 @@ import { CacheSettingsTab } from '@/src/components/settings/CacheSettings';
 import { cacheService, CACHE_STORES } from '@/src/services/cacheService';
 
 // Mock dependencies
-jest.mock('@/src/services/cacheService', () => ({
+vi.mock('@/src/services/cacheService', () => ({
   cacheService: {
-    getStats: jest.fn(),
-    getStorageEstimate: jest.fn(),
-    clear: jest.fn(),
-    clearAll: jest.fn(),
-    export: jest.fn()
+    getStats: vi.fn(),
+    getStorageEstimate: vi.fn(),
+    clear: vi.fn(),
+    clearAll: vi.fn(),
+    export: vi.fn()
   },
   CACHE_STORES: {
       PAK_INDEX: 'pak-index',
@@ -21,8 +21,8 @@ jest.mock('@/src/services/cacheService', () => ({
 }));
 
 // Mock Blob and URL
-global.URL.createObjectURL = jest.fn();
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn();
+global.URL.revokeObjectURL = vi.fn();
 
 describe('CacheSettingsTab', () => {
   const mockStats = {
@@ -34,20 +34,20 @@ describe('CacheSettingsTab', () => {
   const mockEstimate = { usage: 1024 * 1024 * 50, quota: 1024 * 1024 * 1024 };
 
   beforeEach(() => {
-    (cacheService.getStats as jest.Mock).mockResolvedValue(mockStats);
-    (cacheService.getStorageEstimate as jest.Mock).mockResolvedValue(mockEstimate);
-    jest.clearAllMocks();
-    window.confirm = jest.fn(() => true);
+    (cacheService.getStats as vi.Mock).mockResolvedValue(mockStats);
+    (cacheService.getStorageEstimate as vi.Mock).mockResolvedValue(mockEstimate);
+    vi.clearAllMocks();
+    window.confirm = vi.fn(() => true);
   });
 
   afterEach(() => {
-    (global.URL.createObjectURL as jest.Mock).mockClear();
-    (global.URL.revokeObjectURL as jest.Mock).mockClear();
+    (global.URL.createObjectURL as vi.Mock).mockClear();
+    (global.URL.revokeObjectURL as vi.Mock).mockClear();
   });
 
   it('renders loading state initially', async () => {
     // Delay resolution
-    (cacheService.getStats as jest.Mock).mockImplementation(() => new Promise(() => {}));
+    (cacheService.getStats as vi.Mock).mockImplementation(() => new Promise(() => {}));
     render(<CacheSettingsTab />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
   });
@@ -90,7 +90,7 @@ describe('CacheSettingsTab', () => {
   });
 
   it('handles export', async () => {
-    (cacheService.export as jest.Mock).mockResolvedValue([{ key: 'test', data: 'data' }]);
+    (cacheService.export as vi.Mock).mockResolvedValue([{ key: 'test', data: 'data' }]);
     render(<CacheSettingsTab />);
     await waitFor(() => screen.getByText('Items: 10'));
 
@@ -102,7 +102,7 @@ describe('CacheSettingsTab', () => {
   });
 
   it('handles error loading stats', async () => {
-    (cacheService.getStats as jest.Mock).mockRejectedValue(new Error('Load failed'));
+    (cacheService.getStats as vi.Mock).mockRejectedValue(new Error('Load failed'));
     render(<CacheSettingsTab />);
 
     await waitFor(() => {

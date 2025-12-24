@@ -4,10 +4,10 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import App from '../../src/App';
 import * as fs from 'fs';
 import * as path from 'path';
-import { jest } from '@jest/globals';
+
 
 // Mock dependencies
-jest.mock('@/src/services/workerService', () => ({
+vi.mock('@/src/services/workerService', () => ({
     workerService: {
         executePakParserTask: () => Promise.reject(new Error('Worker not available in JSDOM')),
         executeAssetProcessorTask: () => Promise.reject(new Error('Worker not available in JSDOM'))
@@ -15,7 +15,7 @@ jest.mock('@/src/services/workerService', () => ({
 }));
 
 // Mock react-virtualized-auto-sizer to provide dimensions
-jest.mock('react-virtualized-auto-sizer', () => {
+vi.mock('react-virtualized-auto-sizer', () => {
     return ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) => {
         return children({ width: 500, height: 500 });
     };
@@ -32,8 +32,8 @@ global.ResizeObserver = class ResizeObserver {
 import 'fake-indexeddb/auto';
 
 // Mock window.URL.createObjectURL
-global.URL.createObjectURL = jest.fn(() => 'blob:mock');
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn(() => 'blob:mock');
+global.URL.revokeObjectURL = vi.fn();
 
 describe('FileTree Loading Integration', () => {
     const pakPath = path.resolve(__dirname, '../../public/pak.pak');
@@ -49,7 +49,7 @@ describe('FileTree Loading Integration', () => {
         }
         const pakBuffer = fs.readFileSync(pakPath);
 
-        global.fetch = jest.fn((input: RequestInfo | URL) => {
+        global.fetch = vi.fn((input: RequestInfo | URL) => {
             const url = input.toString();
             if (url.endsWith('pak-manifest.json')) {
                 return Promise.resolve({
@@ -70,7 +70,7 @@ describe('FileTree Loading Integration', () => {
                 status: 404,
                 text: async () => 'Not Found'
             } as Response);
-        }) as jest.Mock;
+        }) as vi.Mock;
 
         await act(async () => {
             render(<App />);
@@ -116,7 +116,7 @@ describe('FileTree Loading Integration', () => {
         }
         const pakBuffer = fs.readFileSync(pakPath);
 
-        global.fetch = jest.fn((input: RequestInfo | URL) => {
+        global.fetch = vi.fn((input: RequestInfo | URL) => {
             const url = input.toString();
             if (url.endsWith('pak-manifest.json')) {
                 return Promise.resolve({
@@ -137,7 +137,7 @@ describe('FileTree Loading Integration', () => {
                 status: 404,
                 text: async () => 'Not Found'
             } as Response);
-        }) as jest.Mock;
+        }) as vi.Mock;
 
         const { container } = await act(async () => {
             return render(<App />);

@@ -1,74 +1,75 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { SoundAnalyzer } from '@/src/components/SoundAnalyzer';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 // Mocks
-jest.mock('@/src/services/assetCrossRefService', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/services/assetCrossRefService', () => {
+    
     return {
-        AssetCrossRefService: jest.fn().mockImplementation(() => ({
-            findSoundUsage: jest.fn().mockResolvedValue([])
+        AssetCrossRefService: vi.fn().mockImplementation(() => ({
+            findSoundUsage: vi.fn().mockResolvedValue([])
         }))
     };
 });
 
-jest.mock('@/src/components/WaveformCanvas', () => ({
+vi.mock('@/src/components/WaveformCanvas', () => ({
     WaveformCanvas: () => <div data-testid="waveform-canvas">Canvas</div>
 }));
-jest.mock('@/src/components/FrequencySpectrum', () => ({
+vi.mock('@/src/components/FrequencySpectrum', () => ({
     FrequencySpectrum: () => <div data-testid="frequency-spectrum">Spectrum</div>
 }));
 
 // Mock AudioContext
 const mockAudioContext = {
-    createBufferSource: jest.fn().mockReturnValue({
-        connect: jest.fn(),
-        start: jest.fn(),
-        stop: jest.fn(),
-        disconnect: jest.fn(),
+    createBufferSource: vi.fn().mockReturnValue({
+        connect: vi.fn(),
+        start: vi.fn(),
+        stop: vi.fn(),
+        disconnect: vi.fn(),
         onended: null
     }),
-    createGain: jest.fn().mockReturnValue({
-        connect: jest.fn(),
+    createGain: vi.fn().mockReturnValue({
+        connect: vi.fn(),
         gain: { value: 1 }
     }),
-    createAnalyser: jest.fn().mockReturnValue({
-        connect: jest.fn(),
+    createAnalyser: vi.fn().mockReturnValue({
+        connect: vi.fn(),
         frequencyBinCount: 128,
-        getByteFrequencyData: jest.fn()
+        getByteFrequencyData: vi.fn()
     }),
-    createBuffer: jest.fn().mockReturnValue({
+    createBuffer: vi.fn().mockReturnValue({
         numberOfChannels: 1,
         duration: 10,
         length: 441000,
         sampleRate: 44100,
         getChannelData: () => new Float32Array(441000)
     }),
-    decodeAudioData: jest.fn().mockImplementation((buf, cb) => {
+    decodeAudioData: vi.fn().mockImplementation((buf, cb) => {
         cb({ duration: 10, length: 441000, sampleRate: 44100, numberOfChannels: 1, getChannelData: () => new Float32Array(441000) });
     }),
     state: 'suspended',
-    resume: jest.fn().mockResolvedValue(undefined),
+    resume: vi.fn().mockResolvedValue(undefined),
     destination: {},
     currentTime: 0,
-    close: jest.fn()
+    close: vi.fn()
 };
 
-(global as any).window.AudioContext = jest.fn().mockImplementation(() => mockAudioContext);
+(global as any).window.AudioContext = vi.fn().mockImplementation(() => mockAudioContext);
 (global as any).window.webkitAudioContext = (global as any).window.AudioContext;
-(global as any).requestAnimationFrame = jest.fn();
-(global as any).cancelAnimationFrame = jest.fn();
+(global as any).requestAnimationFrame = vi.fn();
+(global as any).cancelAnimationFrame = vi.fn();
 
 describe('SoundAnalyzer Coverage', () => {
     let mockPakService: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockPakService = {
-            readFile: jest.fn().mockResolvedValue(new Uint8Array(100)),
+            readFile: vi.fn().mockResolvedValue(new Uint8Array(100)),
             getFileName: (path: string) => path.split('/').pop() || '',
-            getVfs: jest.fn()
+            getVfs: vi.fn()
         };
     });
 
@@ -151,8 +152,8 @@ describe('SoundAnalyzer Coverage', () => {
 
     it('should handle export wav', async () => {
         // Mock URL.createObjectURL
-        global.URL.createObjectURL = jest.fn() as any;
-        global.URL.revokeObjectURL = jest.fn() as any;
+        global.URL.createObjectURL = vi.fn() as any;
+        global.URL.revokeObjectURL = vi.fn() as any;
 
         await act(async () => {
             render(<SoundAnalyzer

@@ -11,20 +11,20 @@ import { createGameLoop } from '../../src/utils/gameLoop';
 // we will verify that calling start() on our wrapper triggers callbacks over time.
 
 // IMPORTANT: We need to unmock quake2ts/engine if it was mocked in unit tests
-jest.unmock('quake2ts/engine');
+vi.unmock('quake2ts/engine');
 
 describe('GameLoop Integration', () => {
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should run simulation steps when time advances', () => {
-    const simulate = jest.fn();
-    const render = jest.fn();
+    const simulate = vi.fn();
+    const render = vi.fn();
 
     const loop = createGameLoop(simulate, render);
 
@@ -32,13 +32,13 @@ describe('GameLoop Integration', () => {
 
     // Advance time by 100ms.
     // FixedTimestepLoop (assuming 40Hz = 25ms) should trigger simulate ~4 times.
-    jest.advanceTimersByTime(100);
+    vi.advanceTimersByTime(100);
 
     // Note: Jest's fake timers might not trigger requestAnimationFrame automatically depending on config.
     // Jsdom usually implements rAF, but strictly it waits for the loop.
     // If FixedTimestepLoop uses rAF, we need to ensure rAF callbacks are fired.
 
-    // With jest.useFakeTimers, rAF is usually mocked to run with advanceTimersByTime.
+    // With vi.useFakeTimers, rAF is usually mocked to run with advanceTimersByTime.
 
     // Since we don't know the exact internal implementation of FixedTimestepLoop (if it uses performance.now() vs Date.now()),
     // checking exact calls might be flaky if we don't control the time source.

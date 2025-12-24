@@ -3,8 +3,8 @@ import { saveGame, loadGame, listSaves, deleteSave, type SavedGame } from '@/src
 import { getGameService } from '@/src/services/gameService';
 
 // Mock dependencies
-jest.mock('@/src/services/gameService', () => ({
-    getGameService: jest.fn()
+vi.mock('@/src/services/gameService', () => ({
+    getGameService: vi.fn()
 }));
 
 describe('SaveService Coverage', () => {
@@ -15,22 +15,22 @@ describe('SaveService Coverage', () => {
         mockStorage = {};
         Object.defineProperty(window, 'localStorage', {
             value: {
-                getItem: jest.fn((key) => mockStorage[key] || null),
-                setItem: jest.fn((key, val) => mockStorage[key] = val),
-                removeItem: jest.fn((key) => delete mockStorage[key]),
+                getItem: vi.fn((key) => mockStorage[key] || null),
+                setItem: vi.fn((key, val) => mockStorage[key] = val),
+                removeItem: vi.fn((key) => delete mockStorage[key]),
                 length: 0,
-                key: jest.fn((i) => Object.keys(mockStorage)[i])
+                key: vi.fn((i) => Object.keys(mockStorage)[i])
             },
             writable: true
         });
 
         mockGameService = {
-            createSave: jest.fn().mockReturnValue({ valid: true, map: 'map1' }),
-            loadSave: jest.fn()
+            createSave: vi.fn().mockReturnValue({ valid: true, map: 'map1' }),
+            loadSave: vi.fn()
         };
-        (getGameService as jest.Mock).mockReturnValue(mockGameService);
+        (getGameService as vi.Mock).mockReturnValue(mockGameService);
 
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should save game', async () => {
@@ -43,7 +43,7 @@ describe('SaveService Coverage', () => {
     });
 
     it('should throw if no game service on save', async () => {
-        (getGameService as jest.Mock).mockReturnValue(null);
+        (getGameService as vi.Mock).mockReturnValue(null);
         await expect(saveGame(1, 'test')).rejects.toThrow("No active game");
     });
 
@@ -81,7 +81,7 @@ describe('SaveService Coverage', () => {
 
     it('should handle quota error', async () => {
         const error = new DOMException('Quota', 'QuotaExceededError');
-        localStorage.setItem = jest.fn().mockImplementation(() => { throw error; });
+        localStorage.setItem = vi.fn().mockImplementation(() => { throw error; });
 
         await expect(saveGame(1, 'test')).rejects.toThrow("Storage quota exceeded");
     });

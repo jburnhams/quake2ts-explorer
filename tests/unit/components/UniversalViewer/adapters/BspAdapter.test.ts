@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { BspAdapter } from '../../../../../src/components/UniversalViewer/adapters/BspAdapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
 import {
@@ -14,58 +14,58 @@ import {
 import { mat4 } from 'gl-matrix';
 
 // Mock DebugRenderer
-jest.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            clear: jest.fn(),
-            addBox: jest.fn(),
-            addLine: jest.fn(),
-            render: jest.fn(),
-            init: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            clear: vi.fn(),
+            addBox: vi.fn(),
+            addLine: vi.fn(),
+            render: vi.fn(),
+            init: vi.fn()
         }))
     };
 });
 
 // Mock GizmoRenderer
-jest.mock('../../../../../src/components/UniversalViewer/adapters/GizmoRenderer', () => {
+vi.mock('../../../../../src/components/UniversalViewer/adapters/GizmoRenderer', () => {
     return {
-        GizmoRenderer: jest.fn().mockImplementation(() => ({
-            render: jest.fn(),
-            intersect: jest.fn(),
-            setHoveredAxis: jest.fn(),
-            setActiveAxis: jest.fn()
+        GizmoRenderer: vi.fn().mockImplementation(() => ({
+            render: vi.fn(),
+            intersect: vi.fn(),
+            setHoveredAxis: vi.fn(),
+            setActiveAxis: vi.fn()
         }))
     };
 });
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-        bind: jest.fn().mockReturnValue({}),
+    BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+        bind: vi.fn().mockReturnValue({}),
     })),
-    createBspSurfaces: jest.fn().mockReturnValue([]),
-    buildBspGeometry: jest.fn().mockReturnValue({
+    createBspSurfaces: vi.fn().mockReturnValue([]),
+    buildBspGeometry: vi.fn().mockReturnValue({
         surfaces: [],
         lightmaps: []
     }),
-    Texture2D: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        setParameters: jest.fn(),
-        uploadImage: jest.fn(),
+    Texture2D: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        setParameters: vi.fn(),
+        uploadImage: vi.fn(),
     })),
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
-    resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-    applySurfaceState: jest.fn(),
-    Camera: jest.fn(),
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
+    resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+    applySurfaceState: vi.fn(),
+    Camera: vi.fn(),
   };
 });
 
 describe('BspAdapter', () => {
   let adapter: BspAdapter;
   let mockGl: WebGL2RenderingContext;
-  let mockPakService: jest.Mocked<PakService>;
+  let mockPakService: vi.Mocked<PakService>;
 
   beforeEach(() => {
     adapter = new BspAdapter();
@@ -83,33 +83,33 @@ describe('BspAdapter', () => {
         LINES: 1,
         NEAREST: 0,
         CLAMP_TO_EDGE: 33071,
-        generateMipmap: jest.fn(),
-        activeTexture: jest.fn(),
-        drawElements: jest.fn(),
-        createShader: jest.fn(),
-        createProgram: jest.fn(),
-        getUniformLocation: jest.fn(),
-        getAttribLocation: jest.fn(),
-        createBuffer: jest.fn(),
-        bindBuffer: jest.fn(),
-        bufferData: jest.fn(),
-        enableVertexAttribArray: jest.fn(),
-        vertexAttribPointer: jest.fn(),
-        createVertexArray: jest.fn(),
-        bindVertexArray: jest.fn(),
-        enable: jest.fn(),
-        disable: jest.fn(),
+        generateMipmap: vi.fn(),
+        activeTexture: vi.fn(),
+        drawElements: vi.fn(),
+        createShader: vi.fn(),
+        createProgram: vi.fn(),
+        getUniformLocation: vi.fn(),
+        getAttribLocation: vi.fn(),
+        createBuffer: vi.fn(),
+        bindBuffer: vi.fn(),
+        bufferData: vi.fn(),
+        enableVertexAttribArray: vi.fn(),
+        vertexAttribPointer: vi.fn(),
+        createVertexArray: vi.fn(),
+        bindVertexArray: vi.fn(),
+        enable: vi.fn(),
+        disable: vi.fn(),
     } as unknown as WebGL2RenderingContext;
 
     mockPakService = {
-      hasFile: jest.fn(),
-      readFile: jest.fn(),
-      getPalette: jest.fn(),
-    } as unknown as jest.Mocked<PakService>;
+      hasFile: vi.fn(),
+      readFile: vi.fn(),
+      getPalette: vi.fn(),
+    } as unknown as vi.Mocked<PakService>;
 
     // Clear mocks
-    jest.clearAllMocks();
-    (Texture2D as jest.Mock).mockClear();
+    vi.clearAllMocks();
+    (Texture2D as vi.Mock).mockClear();
   });
 
   it('throws error if file type is not bsp', async () => {
@@ -124,7 +124,7 @@ describe('BspAdapter', () => {
     } as any;
 
     // Mock buildBspGeometry to return surfaces with textures
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { texture: 'wall' }
         ],
@@ -135,8 +135,8 @@ describe('BspAdapter', () => {
     mockPakService.readFile.mockResolvedValue(new Uint8Array(100));
     mockPakService.getPalette.mockReturnValue(new Uint8Array(768));
 
-    (parseWal as jest.Mock).mockReturnValue({});
-    (walToRgba as jest.Mock).mockReturnValue({
+    (parseWal as vi.Mock).mockReturnValue({});
+    (walToRgba as vi.Mock).mockReturnValue({
         levels: [
             { width: 32, height: 32, rgba: new Uint8Array(32*32*4) }
         ]
@@ -156,14 +156,14 @@ describe('BspAdapter', () => {
     expect(Texture2D).toHaveBeenCalledWith(mockGl);
     // Should create white texture + texture for wall
     // Access returned objects via results, not instances
-    const results = (Texture2D as jest.Mock).mock.results;
+    const results = (Texture2D as vi.Mock).mock.results;
     expect(results.length).toBeGreaterThanOrEqual(2);
     expect(mockGl.generateMipmap).toHaveBeenCalled();
   });
 
   it('handles missing textures gracefully', async () => {
      const file: ParsedFile = { type: 'bsp', map: {} } as any;
-     (buildBspGeometry as jest.Mock).mockReturnValue({
+     (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [{ texture: 'missing' }],
         lightmaps: []
     });
@@ -176,14 +176,14 @@ describe('BspAdapter', () => {
 
   it('handles texture load failure gracefully', async () => {
      const file: ParsedFile = { type: 'bsp', map: {} } as any;
-     (buildBspGeometry as jest.Mock).mockReturnValue({
+     (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [{ texture: 'broken' }],
         lightmaps: []
     });
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.readFile.mockRejectedValue(new Error('Read error'));
 
-    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
@@ -193,9 +193,9 @@ describe('BspAdapter', () => {
 
   it('renders surfaces', async () => {
     const file: ParsedFile = { type: 'bsp', map: {} } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             {
                 texture: 'wall',
@@ -206,7 +206,7 @@ describe('BspAdapter', () => {
             }
         ],
         lightmaps: [
-            { texture: { bind: jest.fn() } }
+            { texture: { bind: vi.fn() } }
         ]
     });
 
@@ -214,7 +214,7 @@ describe('BspAdapter', () => {
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.readFile.mockResolvedValue(new Uint8Array(100));
     mockPakService.getPalette.mockReturnValue(new Uint8Array(768));
-    (walToRgba as jest.Mock).mockReturnValue({
+    (walToRgba as vi.Mock).mockReturnValue({
         levels: [{ width: 32, height: 32, rgba: new Uint8Array() }]
     });
 
@@ -238,9 +238,9 @@ describe('BspAdapter', () => {
 
   it('applies brightness scaling', async () => {
     const file: ParsedFile = { type: 'bsp', map: {} } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { vao: mockVao, indexCount: 6, texture: 'test' }
         ],
@@ -254,7 +254,7 @@ describe('BspAdapter', () => {
     adapter.setRenderOptions({ mode: 'textured', color: [1, 1, 1], brightness: 0.5 });
     adapter.render(mockGl, camera, viewMatrix);
 
-    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
         renderMode: {
             mode: 'textured',
@@ -267,14 +267,14 @@ describe('BspAdapter', () => {
 
   it('handles fullbright mode correctly', async () => {
     const file: ParsedFile = { type: 'bsp', map: {} } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { vao: mockVao, indexCount: 6, texture: 'test', lightmap: { atlasIndex: 0 } }
         ],
         lightmaps: [
-             { texture: { bind: jest.fn() } }
+             { texture: { bind: vi.fn() } }
         ]
     });
 
@@ -291,7 +291,7 @@ describe('BspAdapter', () => {
 
     // The white texture is created first in load()
     // Use mock.results to access returned object
-    const whiteTexture = (Texture2D as jest.Mock).mock.results[0].value;
+    const whiteTexture = (Texture2D as vi.Mock).mock.results[0].value;
     expect(whiteTexture.bind).toHaveBeenCalled();
   });
 
@@ -305,9 +305,9 @@ describe('BspAdapter', () => {
 
   it('sets render options and uses them during render', async () => {
     const file: ParsedFile = { type: 'bsp', map: {} } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { vao: mockVao, indexCount: 6, texture: 'test' }
         ],
@@ -325,7 +325,7 @@ describe('BspAdapter', () => {
 
     expect(mockGl.drawElements).toHaveBeenCalledWith(1, 6, mockGl.UNSIGNED_SHORT, 0); // Assuming 1 is LINES for wireframe in mock
 
-    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
         renderMode: {
             mode: 'wireframe',
@@ -352,12 +352,12 @@ describe('BspAdapter', () => {
     const classnames = ['worldspawn', 'info_player_start'];
     const mockMap = {
         entities: {
-            getUniqueClassnames: jest.fn().mockReturnValue(classnames)
+            getUniqueClassnames: vi.fn().mockReturnValue(classnames)
         }
     };
     const file: ParsedFile = { type: 'bsp', map: mockMap } as any;
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
+    (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
 
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
@@ -372,16 +372,16 @@ describe('BspAdapter', () => {
   it('rebuilds geometry with hidden classnames when setHiddenClasses is called', async () => {
     const file: ParsedFile = { type: 'bsp', map: {} } as any;
     const surfaces = [{ texture: 'wall' }];
-    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+    (createBspSurfaces as vi.Mock).mockReturnValue(surfaces);
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [],
         lightmaps: []
     });
 
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
-    (buildBspGeometry as jest.Mock).mockClear();
+    (buildBspGeometry as vi.Mock).mockClear();
 
     const hidden = new Set(['bad_entity']);
     adapter.setHiddenClasses(hidden);
@@ -390,8 +390,8 @@ describe('BspAdapter', () => {
   });
 
   it('delegates pickEntity to map', async () => {
-    const file: ParsedFile = { type: 'bsp', map: { pickEntity: jest.fn().mockReturnValue('hit') } } as any;
-    (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
+    const file: ParsedFile = { type: 'bsp', map: { pickEntity: vi.fn().mockReturnValue('hit') } } as any;
+    (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
     await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
     const result = adapter.pickEntity!('ray' as any);
@@ -402,10 +402,10 @@ describe('BspAdapter', () => {
   it('handles multi-selection option', async () => {
       const mockEntities = [{ properties: {} }, { properties: {} }];
       const file: ParsedFile = { type: 'bsp', map: {
-          pickEntity: jest.fn().mockReturnValue({ entity: mockEntities[1] }),
+          pickEntity: vi.fn().mockReturnValue({ entity: mockEntities[1] }),
           entities: { entities: mockEntities }
       } } as any;
-      (buildBspGeometry as jest.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
+      (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
       await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
 
       // First selection (Single)
@@ -421,11 +421,11 @@ describe('BspAdapter', () => {
 
   it('handles highlighting in render', async () => {
     const file: ParsedFile = { type: 'bsp', map: { models: [{firstFace: 0, numFaces: 1}] } } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
     const surfaces = [{ faceIndex: 0 }]; // Input surface
-    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+    (createBspSurfaces as vi.Mock).mockReturnValue(surfaces);
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { vao: mockVao, indexCount: 6, texture: 'test', surfaceFlags: 0 }
         ],
@@ -440,7 +440,7 @@ describe('BspAdapter', () => {
     const camera = { projectionMatrix: mat4.create() } as any;
     adapter.render(mockGl, camera, mat4.create());
 
-    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
         renderMode: {
             mode: 'solid',
@@ -453,11 +453,11 @@ describe('BspAdapter', () => {
 
   it('highlights entity with * model reference correctly', async () => {
     const file: ParsedFile = { type: 'bsp', map: { models: [{firstFace: 0, numFaces: 1}, {firstFace: 10, numFaces: 5}] } } as any;
-    const mockVao = { bind: jest.fn() };
+    const mockVao = { bind: vi.fn() };
     const surfaces = [{ faceIndex: 12 }]; // Should match model index 1
-    (createBspSurfaces as jest.Mock).mockReturnValue(surfaces);
+    (createBspSurfaces as vi.Mock).mockReturnValue(surfaces);
 
-    (buildBspGeometry as jest.Mock).mockReturnValue({
+    (buildBspGeometry as vi.Mock).mockReturnValue({
         surfaces: [
             { vao: mockVao, indexCount: 6, texture: 'test', surfaceFlags: 0 }
         ],
@@ -473,7 +473,7 @@ describe('BspAdapter', () => {
     const camera = { projectionMatrix: mat4.create() } as any;
     adapter.render(mockGl, camera, mat4.create());
 
-    const pipeline = (BspSurfacePipeline as jest.Mock).mock.results[0].value;
+    const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
         renderMode: {
             mode: 'solid',

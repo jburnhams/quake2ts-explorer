@@ -4,53 +4,53 @@ import { createGame } from 'quake2ts/game';
 import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
 
 // Mocks
-jest.mock('quake2ts/client', () => ({
-    ClientPrediction: jest.fn().mockImplementation(() => ({
-        setPredictionEnabled: jest.fn(),
-        enqueueCommand: jest.fn(),
-        setAuthoritative: jest.fn(),
-        getPredictionError: jest.fn().mockReturnValue({x:0,y:0,z:0}),
-        decayError: jest.fn(),
-        getPredictedState: jest.fn()
+vi.mock('quake2ts/client', () => ({
+    ClientPrediction: vi.fn().mockImplementation(() => ({
+        setPredictionEnabled: vi.fn(),
+        enqueueCommand: vi.fn(),
+        setAuthoritative: vi.fn(),
+        getPredictionError: vi.fn().mockReturnValue({x:0,y:0,z:0}),
+        decayError: vi.fn(),
+        getPredictedState: vi.fn()
     }))
 }));
 
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
   return {
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({})),
-    AssetManager: jest.fn().mockImplementation(() => ({
-      loadMap: jest.fn(),
-      getMap: jest.fn(),
-      resetForLevelChange: jest.fn()
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
+    AssetManager: vi.fn().mockImplementation(() => ({
+      loadMap: vi.fn(),
+      getMap: vi.fn(),
+      resetForLevelChange: vi.fn()
     })),
   };
 });
 
-jest.mock('quake2ts/game', () => {
+vi.mock('quake2ts/game', () => {
   return {
-    createGame: jest.fn(),
+    createGame: vi.fn(),
     MulticastType: { All: 0 }
   };
 });
 
-jest.mock('quake2ts/shared', () => {
-  const actual = jest.requireActual('quake2ts/shared');
+vi.mock('quake2ts/shared', () => {
+  const actual = vi.requireActual('quake2ts/shared');
   return {
     ...actual,
-    buildCollisionModel: jest.fn(),
-    CollisionEntityIndex: jest.fn(),
-    traceBox: jest.fn(),
-    pointContents: jest.fn(),
-    createVec3: jest.fn((x,y,z) => ({x,y,z})),
+    buildCollisionModel: vi.fn(),
+    CollisionEntityIndex: vi.fn(),
+    traceBox: vi.fn(),
+    pointContents: vi.fn(),
+    createVec3: vi.fn((x,y,z) => ({x,y,z})),
   };
 });
 
 const mockEntityIndexInstance = {
-  link: jest.fn(),
-  unlink: jest.fn(),
-  trace: jest.fn().mockReturnValue({ fraction: 1.0, entityId: null })
+  link: vi.fn(),
+  unlink: vi.fn(),
+  trace: vi.fn().mockReturnValue({ fraction: 1.0, entityId: null })
 };
-(CollisionEntityIndex as unknown as jest.Mock).mockReturnValue(mockEntityIndexInstance);
+(CollisionEntityIndex as unknown as vi.Mock).mockReturnValue(mockEntityIndexInstance);
 
 describe('GameService', () => {
   let vfs: any;
@@ -59,7 +59,7 @@ describe('GameService', () => {
   let capturedImports: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset mockEntityIndexInstance behavior
     mockEntityIndexInstance.link.mockClear();
     mockEntityIndexInstance.unlink.mockClear();
@@ -67,7 +67,7 @@ describe('GameService', () => {
 
     vfs = new VirtualFileSystem();
     assetManager = new AssetManager(vfs);
-    (AssetManager as unknown as jest.Mock).mockImplementation(() => assetManager);
+    (AssetManager as unknown as vi.Mock).mockImplementation(() => assetManager);
 
     // Mock map data with full structure to test bspToCollisionLump
     assetManager.loadMap.mockResolvedValue({
@@ -83,25 +83,25 @@ describe('GameService', () => {
     });
 
     gameInstance = {
-      init: jest.fn(),
-      shutdown: jest.fn(),
-      frame: jest.fn().mockReturnValue({ state: { time: 100 } }),
-      snapshot: jest.fn(),
-      createSave: jest.fn(),
-      loadSave: jest.fn(),
+      init: vi.fn(),
+      shutdown: vi.fn(),
+      frame: vi.fn().mockReturnValue({ state: { time: 100 } }),
+      snapshot: vi.fn(),
+      createSave: vi.fn(),
+      loadSave: vi.fn(),
       time: 120, // 2 minutes
       entities: [
           { index: 1, origin: {x:0,y:0,z:0} } // Mock entity for trace find
       ]
     };
 
-    (createGame as jest.Mock).mockImplementation((imports: any) => {
+    (createGame as vi.Mock).mockImplementation((imports: any) => {
         capturedImports = imports;
         return gameInstance;
     });
 
     // Mock traceBox default return
-    (traceBox as jest.Mock).mockReturnValue({
+    (traceBox as vi.Mock).mockReturnValue({
         fraction: 1.0,
         allsolid: false,
         startsolid: false,
@@ -160,7 +160,7 @@ describe('GameService', () => {
       });
 
       it('implements trace callback (world hit)', () => {
-          (traceBox as jest.Mock).mockReturnValue({
+          (traceBox as vi.Mock).mockReturnValue({
               fraction: 0.5,
               endpos: {x:50,y:0,z:0},
               contents: 1,
@@ -181,7 +181,7 @@ describe('GameService', () => {
       });
 
       it('implements trace callback (entity hit)', () => {
-          (traceBox as jest.Mock).mockReturnValue({ fraction: 1.0 });
+          (traceBox as vi.Mock).mockReturnValue({ fraction: 1.0 });
           mockEntityIndexInstance.trace.mockReturnValue({
               fraction: 0.5,
               entityId: 1,
@@ -206,7 +206,7 @@ describe('GameService', () => {
       });
 
       it('implements pointcontents callback', () => {
-          (pointContents as jest.Mock).mockReturnValue(42);
+          (pointContents as vi.Mock).mockReturnValue(42);
           const result = capturedImports.pointcontents({x:0,y:0,z:0});
           expect(result).toBe(42);
           expect(pointContents).toHaveBeenCalled();

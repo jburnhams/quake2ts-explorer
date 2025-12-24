@@ -3,12 +3,12 @@ import { Camera } from 'quake2ts/engine';
 import { mat4, vec3 } from 'gl-matrix';
 
 // Use real gl-matrix
-jest.mock('gl-matrix', () => jest.requireActual('gl-matrix'));
+vi.mock('gl-matrix', () => vi.requireActual('gl-matrix'));
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        Camera: jest.fn(),
+        Camera: vi.fn(),
     };
 });
 

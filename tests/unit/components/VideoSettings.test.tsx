@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,11 +6,11 @@ import { VideoSettings } from '@/src/components/VideoSettings';
 import { VideoRecordOptions } from '@/src/services/videoRecorder';
 
 describe('VideoSettings', () => {
-    const mockOnStart = jest.fn();
-    const mockOnClose = jest.fn();
+    const mockOnStart = vi.fn();
+    const mockOnClose = vi.fn();
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('renders correctly when open', () => {

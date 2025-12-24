@@ -10,14 +10,14 @@ import { GameSimulation, GameStateSnapshot } from 'quake2ts/game';
 import { indexedDBService } from '../../src/services/indexedDBService';
 
 // Mock AutoSizer to render children with fixed dimensions
-jest.mock('react-virtualized-auto-sizer', () => {
+vi.mock('react-virtualized-auto-sizer', () => {
   return ({ children }: any) => {
     return children({ height: 500, width: 500 });
   };
 });
 
 // Mock react-window (v2) to render all items
-jest.mock('react-window', () => {
+vi.mock('react-window', () => {
   const React = require('react');
   return {
     List: ({ rowComponent, rowProps, rowCount }: any) => {
@@ -34,11 +34,11 @@ jest.mock('react-window', () => {
 });
 
 // Mock dependencies
-jest.mock('../../src/services/pakService');
-jest.mock('../../src/services/gameService');
-jest.mock('../../src/utils/gameLoop');
-jest.mock('../../src/services/indexedDBService');
-jest.mock('../../src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('../../src/services/pakService');
+vi.mock('../../src/services/gameService');
+vi.mock('../../src/utils/gameLoop');
+vi.mock('../../src/services/indexedDBService');
+vi.mock('../../src/components/UniversalViewer/UniversalViewer', () => ({
     UniversalViewer: () => <div data-testid="universal-viewer">Universal Viewer</div>
 }));
 
@@ -55,11 +55,11 @@ describe('Game Mode Integration', () => {
     let mockGameLoop: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
 
         // Setup PakService mock
         mockPakService = {
-            buildFileTree: jest.fn().mockReturnValue({
+            buildFileTree: vi.fn().mockReturnValue({
                 name: 'root',
                 path: '',
                 isDirectory: true,
@@ -78,12 +78,12 @@ describe('Game Mode Integration', () => {
                     }
                 ]
             }),
-            listDirectory: jest.fn().mockReturnValue({ files: [], directories: [] }),
-            getMountedPaks: jest.fn().mockReturnValue([{ id: 'pak0', name: 'pak0.pak' }]),
-            getFileMetadata: jest.fn().mockReturnValue({ size: 1000, compressedSize: 500, extension: 'bsp', sourcePak: 'pak0.pak' }),
-            hasFile: jest.fn().mockReturnValue(true),
-            loadPakFromBuffer: jest.fn().mockResolvedValue(undefined),
-            parseFile: jest.fn().mockResolvedValue({
+            listDirectory: vi.fn().mockReturnValue({ files: [], directories: [] }),
+            getMountedPaks: vi.fn().mockReturnValue([{ id: 'pak0', name: 'pak0.pak' }]),
+            getFileMetadata: vi.fn().mockReturnValue({ size: 1000, compressedSize: 500, extension: 'bsp', sourcePak: 'pak0.pak' }),
+            hasFile: vi.fn().mockReturnValue(true),
+            loadPakFromBuffer: vi.fn().mockResolvedValue(undefined),
+            parseFile: vi.fn().mockResolvedValue({
                 type: 'bsp',
                 map: {
                     header: { version: 38 },
@@ -102,39 +102,39 @@ describe('Game Mode Integration', () => {
 
         // Use Object.defineProperty to handle the 'prototype' read that might happen during instantiation
         // or just return the mock instance when new PakService() is called.
-        (pakServiceModule.PakService as unknown as jest.Mock).mockImplementation(() => mockPakService);
+        (pakServiceModule.PakService as unknown as vi.Mock).mockImplementation(() => mockPakService);
         // Also mock static method
         (pakServiceModule.PakService as any).getVfsPath = (path: string) => path;
 
         // Setup IndexedDB mock
-        (indexedDBService.getPaks as jest.Mock).mockResolvedValue([]);
+        (indexedDBService.getPaks as vi.Mock).mockResolvedValue([]);
 
         // Setup GameSimulation mock
         mockGameSimulation = {
-            start: jest.fn(),
-            stop: jest.fn(),
-            shutdown: jest.fn(),
-            tick: jest.fn(),
-            getSnapshot: jest.fn().mockReturnValue({
+            start: vi.fn(),
+            stop: vi.fn(),
+            shutdown: vi.fn(),
+            tick: vi.fn(),
+            getSnapshot: vi.fn().mockReturnValue({
                 playerState: {},
                 entities: [],
                 events: []
             } as GameStateSnapshot),
-            getConfigStrings: jest.fn().mockReturnValue(new Map()),
-            createSave: jest.fn(),
-            loadSave: jest.fn()
+            getConfigStrings: vi.fn().mockReturnValue(new Map()),
+            createSave: vi.fn(),
+            loadSave: vi.fn()
         };
-        (createGameSimulation as jest.Mock).mockResolvedValue(mockGameSimulation);
+        (createGameSimulation as vi.Mock).mockResolvedValue(mockGameSimulation);
 
         // Setup GameLoop mock
         mockGameLoop = {
-            start: jest.fn(),
-            stop: jest.fn(),
-            isRunning: jest.fn().mockReturnValue(true),
-            pause: jest.fn(),
-            resume: jest.fn()
+            start: vi.fn(),
+            stop: vi.fn(),
+            isRunning: vi.fn().mockReturnValue(true),
+            pause: vi.fn(),
+            resume: vi.fn()
         };
-        (createGameLoop as jest.Mock).mockReturnValue(mockGameLoop);
+        (createGameLoop as vi.Mock).mockReturnValue(mockGameLoop);
     });
 
     it('switches to game mode when "Play Map" is clicked', async () => {

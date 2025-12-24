@@ -1,5 +1,5 @@
 import { consoleService, LogLevel } from '../../../src/services/consoleService';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 describe('ConsoleService Extra Coverage', () => {
     beforeEach(() => {
@@ -7,7 +7,7 @@ describe('ConsoleService Extra Coverage', () => {
     });
 
     it('unregisters commands', () => {
-        const handler = jest.fn();
+        const handler = vi.fn();
         consoleService.registerCommand('temp', handler);
         consoleService.executeCommand('temp');
         expect(handler).toHaveBeenCalled();

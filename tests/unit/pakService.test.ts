@@ -1,10 +1,10 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 
 // Mock worker service first to avoid import issues
-jest.mock('@/src/services/workerService', () => ({
+vi.mock('@/src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(() => ({
-            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+        getPakParser: vi.fn(() => ({
+            parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => ({
                 entries: new Map([
                     ['test.txt', { name: 'test.txt', offset: 0, length: 100 }],
                     ['pics/test.pcx', { name: 'pics/test.pcx', offset: 100, length: 200 }],
@@ -20,9 +20,9 @@ jest.mock('@/src/services/workerService', () => ({
 }));
 
 // Mock quake2ts/engine before importing pakService
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
   PakArchive: {
-    fromArrayBuffer: jest.fn((name: string, _buffer: ArrayBuffer) => ({
+    fromArrayBuffer: vi.fn((name: string, _buffer: ArrayBuffer) => ({
       name,
       entries: new Map([
         ['test.txt', { name: 'test.txt', offset: 0, length: 100 }],
@@ -42,10 +42,10 @@ jest.mock('quake2ts/engine', () => ({
       ],
     })),
   },
-  VirtualFileSystem: jest.fn().mockImplementation(() => {
+  VirtualFileSystem: vi.fn().mockImplementation(() => {
     const files = new Map<string, { path: string; size: number; sourcePak: string }>();
     return {
-      mountPak: jest.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
+      mountPak: vi.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
         // Handle both standard PakArchive (mocked above) and WorkerPakArchive
         const entries = typeof archive.listEntries === 'function' ? archive.listEntries() : [];
         for (const entry of entries) {
@@ -56,13 +56,13 @@ jest.mock('quake2ts/engine', () => ({
           });
         }
       }),
-      hasFile: jest.fn((path: string) => files.has(path)),
-      stat: jest.fn((path: string) => files.get(path)),
-      readFile: jest.fn(async (path: string) => {
+      hasFile: vi.fn((path: string) => files.has(path)),
+      stat: vi.fn((path: string) => files.get(path)),
+      readFile: vi.fn(async (path: string) => {
         if (!files.has(path)) throw new Error(`File not found: ${path}`);
         return new Uint8Array(files.get(path)!.size);
       }),
-      list: jest.fn((dirPath?: string) => {
+      list: vi.fn((dirPath?: string) => {
         const prefix = dirPath ? `${dirPath}/` : '';
         const filesInDir: Array<{ path: string; size: number; sourcePak: string }> = [];
         const directories = new Set<string>();
@@ -90,45 +90,45 @@ jest.mock('quake2ts/engine', () => ({
           directories: Array.from(directories),
         };
       }),
-      findByExtension: jest.fn((ext: string) =>
+      findByExtension: vi.fn((ext: string) =>
         Array.from(files.values()).filter(f => f.path.endsWith(ext))
       ),
     };
   }),
-  parsePcx: jest.fn(() => ({
+  parsePcx: vi.fn(() => ({
     width: 64,
     height: 64,
     bitsPerPixel: 8,
     palette: new Uint8Array(768),
   })),
-  pcxToRgba: jest.fn(() => new Uint8Array(64 * 64 * 4)),
-  parseWal: jest.fn(() => ({
+  pcxToRgba: vi.fn(() => new Uint8Array(64 * 64 * 4)),
+  parseWal: vi.fn(() => ({
     name: 'test',
     width: 64,
     height: 64,
     mipmaps: [{ level: 0, width: 64, height: 64, data: new Uint8Array(64 * 64) }],
   })),
-  walToRgba: jest.fn(() => ({
+  walToRgba: vi.fn(() => ({
     levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }],
   })),
-  parseMd2: jest.fn(() => ({
+  parseMd2: vi.fn(() => ({
     header: { numFrames: 10, numVertices: 100, numTriangles: 50, numSkins: 1, numGlCommands: 200, skinWidth: 256, skinHeight: 256 },
     skins: [{ name: 'models/test/skin.pcx' }],
     frames: [{ name: 'stand01', vertices: [] }, { name: 'stand02', vertices: [] }],
   })),
-  groupMd2Animations: jest.fn(() => [
+  groupMd2Animations: vi.fn(() => [
     { name: 'stand', firstFrame: 0, lastFrame: 1 },
   ]),
-  parseMd3: jest.fn(() => ({
+  parseMd3: vi.fn(() => ({
     header: { numFrames: 5, numSurfaces: 2, numTags: 1 },
   })),
-  parseWav: jest.fn(() => ({
+  parseWav: vi.fn(() => ({
     channels: 1,
     sampleRate: 22050,
     bitsPerSample: 16,
     samples: new Int16Array(22050),
   })),
-  parseBsp: jest.fn(() => ({
+  parseBsp: vi.fn(() => ({
     header: { version: 38, lumps: new Map() },
     entities: { raw: '', entities: [], worldspawn: undefined },
     models: [],
@@ -139,8 +139,8 @@ jest.mock('quake2ts/engine', () => ({
   })),
 }));
 
-jest.mock('../../src/utils/sp2Parser', () => ({
-  parseSprite: jest.fn(() => ({
+vi.mock('../../src/utils/sp2Parser', () => ({
+  parseSprite: vi.fn(() => ({
     ident: 0x32534449,
     version: 2,
     numFrames: 1,

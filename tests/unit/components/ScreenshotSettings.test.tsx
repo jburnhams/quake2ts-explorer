@@ -1,11 +1,12 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ScreenshotSettings } from '@/src/components/ScreenshotSettings';
 import '@testing-library/jest-dom';
 
 describe('ScreenshotSettings', () => {
-  const mockOnCapture = jest.fn();
-  const mockOnClose = jest.fn();
+  const mockOnCapture = vi.fn();
+  const mockOnClose = vi.fn();
 
   beforeEach(() => {
     mockOnCapture.mockClear();

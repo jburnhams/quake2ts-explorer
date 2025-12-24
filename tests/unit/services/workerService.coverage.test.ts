@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 describe('WorkerService Coverage', () => {
   let workerService: any;
@@ -9,16 +9,16 @@ describe('WorkerService Coverage', () => {
   let PakParserWorker: any;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
 
     mockApi = {
-      parsePak: jest.fn().mockResolvedValue({ name: 'test', buffer: new ArrayBuffer(0), entries: new Map() }),
-      processPcx: jest.fn().mockResolvedValue({}),
-      analyzeBsp: jest.fn().mockResolvedValue([]),
+      parsePak: vi.fn().mockResolvedValue({ name: 'test', buffer: new ArrayBuffer(0), entries: new Map() }),
+      processPcx: vi.fn().mockResolvedValue({}),
+      analyzeBsp: vi.fn().mockResolvedValue([]),
     };
 
-    mockWrap = jest.fn().mockReturnValue(mockApi);
-    jest.mock('comlink', () => ({
+    mockWrap = vi.fn().mockReturnValue(mockApi);
+    vi.mock('comlink', () => ({
       wrap: mockWrap,
     }));
 
@@ -42,8 +42,8 @@ describe('WorkerService Coverage', () => {
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
-    jest.useRealTimers();
+    vi.restoreAllMocks();
+    vi.useRealTimers();
   });
 
   it('executeAssetProcessorTask should execute task successfully', async () => {
@@ -65,9 +65,9 @@ describe('WorkerService Coverage', () => {
   });
 
   it('executeAssetProcessorTask should terminate worker on timeout', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
-    const terminateSpy = jest.spyOn(AssetProcessorWorker.prototype, 'terminate');
+    const terminateSpy = vi.spyOn(AssetProcessorWorker.prototype, 'terminate');
     mockApi.processPcx.mockImplementation(() => new Promise(() => {}));
 
     try {
@@ -75,7 +75,7 @@ describe('WorkerService Coverage', () => {
         return await api.processPcx(new ArrayBuffer(0));
       }, 1000);
 
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       await taskPromise;
     } catch (e) {
       // Expected timeout
@@ -85,9 +85,9 @@ describe('WorkerService Coverage', () => {
   });
 
   it('executeIndexerTask should terminate worker on timeout', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
-    const terminateSpy = jest.spyOn(IndexerWorker.prototype, 'terminate');
+    const terminateSpy = vi.spyOn(IndexerWorker.prototype, 'terminate');
     mockApi.analyzeBsp.mockImplementation(() => new Promise(() => {}));
 
     try {
@@ -95,7 +95,7 @@ describe('WorkerService Coverage', () => {
         return await api.analyzeBsp(new ArrayBuffer(0));
       }, 1000);
 
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       await taskPromise;
     } catch (e) {
       // Expected timeout

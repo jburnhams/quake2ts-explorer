@@ -1,22 +1,22 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 import { initInputController, cleanupInputController } from '@/src/services/inputService';
 import { InputController, InputBindings } from 'quake2ts/client';
 import { DEFAULT_BINDINGS } from '@/src/config/defaultBindings';
 
 // Mock quake2ts/client
-jest.mock('quake2ts/client', () => {
+vi.mock('quake2ts/client', () => {
     return {
-        InputController: jest.fn().mockImplementation(() => ({
-            handleKeyDown: jest.fn(),
-            handleKeyUp: jest.fn(),
-            handleMouseButtonDown: jest.fn(),
-            handleMouseButtonUp: jest.fn(),
-            handleMouseMove: jest.fn(),
-            buildCommand: jest.fn().mockReturnValue({ buttons: 0 }),
-            getDefaultBindings: jest.fn().mockReturnValue({ getBinding: () => null })
+        InputController: vi.fn().mockImplementation(() => ({
+            handleKeyDown: vi.fn(),
+            handleKeyUp: vi.fn(),
+            handleMouseButtonDown: vi.fn(),
+            handleMouseButtonUp: vi.fn(),
+            handleMouseMove: vi.fn(),
+            buildCommand: vi.fn().mockReturnValue({ buttons: 0 }),
+            getDefaultBindings: vi.fn().mockReturnValue({ getBinding: () => null })
         })),
-        InputBindings: jest.fn().mockImplementation(() => ({
-            getBinding: jest.fn()
+        InputBindings: vi.fn().mockImplementation(() => ({
+            getBinding: vi.fn()
         }))
     };
 });
@@ -24,8 +24,8 @@ jest.mock('quake2ts/client', () => {
 describe('InputService Bindings', () => {
     beforeEach(() => {
         cleanupInputController();
-        (InputController as unknown as jest.Mock).mockClear();
-        (InputBindings as unknown as jest.Mock).mockClear();
+        (InputController as unknown as vi.Mock).mockClear();
+        (InputBindings as unknown as vi.Mock).mockClear();
     });
 
     afterEach(() => {

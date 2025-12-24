@@ -5,14 +5,14 @@ import fs from 'fs';
 import path from 'path';
 
 // Need to mock webgl and audio context for node environment
-jest.mock('quake2ts/engine', () => {
-  const actual = jest.requireActual('quake2ts/engine');
+vi.mock('quake2ts/engine', () => {
+  const actual = vi.requireActual('quake2ts/engine');
   return {
     ...actual,
-    createWebGLContext: jest.fn(),
-    AudioSystem: jest.fn().mockImplementation(() => ({
-      update: jest.fn(),
-      shutdown: jest.fn()
+    createWebGLContext: vi.fn(),
+    AudioSystem: vi.fn().mockImplementation(() => ({
+      update: vi.fn(),
+      shutdown: vi.fn()
     }))
   };
 });
@@ -34,7 +34,7 @@ describe('GameService Integration', () => {
     vfs = new VirtualFileSystem();
     const nodeBuffer = fs.readFileSync(PAK_PATH);
     const buffer = nodeBuffer.buffer.slice(nodeBuffer.byteOffset, nodeBuffer.byteOffset + nodeBuffer.byteLength);
-    const { PakArchive } = jest.requireActual('quake2ts/engine');
+    const { PakArchive } = vi.requireActual('quake2ts/engine');
     // @ts-ignore - PakArchive.fromArrayBuffer is not typed in the jest import
     const archive = PakArchive.fromArrayBuffer('pak.pak', buffer);
     vfs.mountPak(archive);

@@ -3,28 +3,28 @@ import { demoStorageService } from '../../../src/services/demoStorageService';
 
 // Mock IndexedDB
 const mockTransaction = {
-  objectStore: jest.fn(),
+  objectStore: vi.fn(),
 };
 
 const mockObjectStore = {
-  put: jest.fn(),
-  get: jest.fn(),
-  getAll: jest.fn(),
-  delete: jest.fn(),
-  index: jest.fn(),
-  createIndex: jest.fn(),
+  put: vi.fn(),
+  get: vi.fn(),
+  getAll: vi.fn(),
+  delete: vi.fn(),
+  index: vi.fn(),
+  createIndex: vi.fn(),
 };
 
 const mockIndex = {
-  getAll: jest.fn(),
+  getAll: vi.fn(),
 };
 
 const mockDB = {
-  transaction: jest.fn(() => mockTransaction),
+  transaction: vi.fn(() => mockTransaction),
   objectStoreNames: {
-    contains: jest.fn(),
+    contains: vi.fn(),
   },
-  createObjectStore: jest.fn(() => mockObjectStore),
+  createObjectStore: vi.fn(() => mockObjectStore),
 };
 
 const mockIDBRequest = {
@@ -39,7 +39,7 @@ const mockOpenRequest = {
 };
 
 global.indexedDB = {
-  open: jest.fn(() => mockOpenRequest),
+  open: vi.fn(() => mockOpenRequest),
 } as any;
 
 global.Blob = class {
@@ -54,15 +54,15 @@ global.Blob = class {
 // Override crypto to control randomUUID
 Object.defineProperty(global, 'crypto', {
   value: {
-    randomUUID: jest.fn(() => 'test-uuid'),
-    getRandomValues: jest.fn((arr) => arr)
+    randomUUID: vi.fn(() => 'test-uuid'),
+    getRandomValues: vi.fn((arr) => arr)
   },
   writable: true
 });
 
 describe('DemoStorageService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     (demoStorageService as any).db = null; // Reset singleton state
 
     mockTransaction.objectStore.mockReturnValue(mockObjectStore);

@@ -7,34 +7,34 @@ import { createWebGLContext } from 'quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  createWebGLContext: jest.fn(),
-  Camera: jest.fn().mockImplementation(() => ({
+vi.mock('quake2ts/engine', () => ({
+  createWebGLContext: vi.fn(),
+  Camera: vi.fn().mockImplementation(() => ({
     fov: 60,
     aspect: 1,
     position: [0,0,0],
     angles: [0,0,0],
-    updateMatrices: jest.fn(),
+    updateMatrices: vi.fn(),
   })),
 }));
 
-jest.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
-jest.mock('@/src/services/screenshotService');
+vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
+vi.mock('@/src/services/screenshotService');
 
 // Mock DebugRenderer
-jest.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('@/src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            init: jest.fn(),
-            render: jest.fn(),
-            clear: jest.fn(),
-            destroy: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            init: vi.fn(),
+            render: vi.fn(),
+            clear: vi.fn(),
+            destroy: vi.fn()
         }))
     };
 });
 
 // Mock ViewerControls to ensure it renders and we can find the button
-jest.mock('@/src/components/UniversalViewer/ViewerControls', () => {
+vi.mock('@/src/components/UniversalViewer/ViewerControls', () => {
     return {
         ViewerControls: ({ onScreenshot }: { onScreenshot: () => void }) => (
             <button data-testid="screenshot-btn" onClick={onScreenshot}>Screenshot</button>
@@ -48,36 +48,36 @@ describe('Screenshot Integration', () => {
   let mockMd2Adapter: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
 
     mockPakService = {} as PakService;
 
     mockGlContext = {
       gl: {
-        clearColor: jest.fn(),
-        clear: jest.fn(),
-        enable: jest.fn(),
-        viewport: jest.fn(),
-        createShader: jest.fn(),
-        createProgram: jest.fn(),
+        clearColor: vi.fn(),
+        clear: vi.fn(),
+        enable: vi.fn(),
+        viewport: vi.fn(),
+        createShader: vi.fn(),
+        createProgram: vi.fn(),
       }
     };
-    (createWebGLContext as jest.Mock).mockReturnValue(mockGlContext);
+    (createWebGLContext as vi.Mock).mockReturnValue(mockGlContext);
 
     mockMd2Adapter = {
-      load: jest.fn().mockResolvedValue(undefined),
-      render: jest.fn(),
-      update: jest.fn(),
-      cleanup: jest.fn(),
-      setRenderOptions: jest.fn(),
-      setDebugMode: jest.fn(),
+      load: vi.fn().mockResolvedValue(undefined),
+      render: vi.fn(),
+      update: vi.fn(),
+      cleanup: vi.fn(),
+      setRenderOptions: vi.fn(),
+      setDebugMode: vi.fn(),
     };
-    (Md2Adapter as jest.Mock).mockImplementation(() => mockMd2Adapter);
+    (Md2Adapter as vi.Mock).mockImplementation(() => mockMd2Adapter);
 
     // Mock screenshot service
-    (screenshotService.captureScreenshot as jest.Mock).mockResolvedValue(new Blob(['test'], { type: 'image/png' }));
-    (screenshotService.generateScreenshotFilename as jest.Mock).mockReturnValue('screenshot.png');
-    (screenshotService.downloadScreenshot as jest.Mock).mockImplementation(() => {});
+    (screenshotService.captureScreenshot as vi.Mock).mockResolvedValue(new Blob(['test'], { type: 'image/png' }));
+    (screenshotService.generateScreenshotFilename as vi.Mock).mockReturnValue('screenshot.png');
+    (screenshotService.downloadScreenshot as vi.Mock).mockImplementation(() => {});
   });
 
   it('should trigger screenshot capture and download when button is clicked', async () => {
@@ -124,8 +124,8 @@ describe('Screenshot Integration', () => {
   });
 
   it('should handle screenshot errors gracefully', async () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (screenshotService.captureScreenshot as jest.Mock).mockRejectedValue(new Error('Capture failed'));
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    (screenshotService.captureScreenshot as vi.Mock).mockRejectedValue(new Error('Capture failed'));
 
     await act(async () => {
       render(

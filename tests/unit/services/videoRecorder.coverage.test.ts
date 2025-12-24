@@ -31,26 +31,26 @@ describe('VideoRecorderService Coverage', () => {
     service = new VideoRecorderService();
     mockCanvas = document.createElement('canvas');
     mockStream = {
-      getTracks: jest.fn().mockReturnValue([{ stop: jest.fn() }]),
-      addTrack: jest.fn()
+      getTracks: vi.fn().mockReturnValue([{ stop: vi.fn() }]),
+      addTrack: vi.fn()
     };
-    mockCanvas.captureStream = jest.fn().mockReturnValue(mockStream);
+    mockCanvas.captureStream = vi.fn().mockReturnValue(mockStream);
 
-    (global as any).MediaRecorder = jest.fn().mockImplementation((s, o) => {
+    (global as any).MediaRecorder = vi.fn().mockImplementation((s, o) => {
         mockMediaRecorder = new MockMediaRecorder(s, o);
         return mockMediaRecorder;
     });
-    (global as any).MediaRecorder.isTypeSupported = jest.fn().mockReturnValue(true);
+    (global as any).MediaRecorder.isTypeSupported = vi.fn().mockReturnValue(true);
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle startRecording errors (already recording)', () => {
       service.startRecording(mockCanvas);
 
-      const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       service.startRecording(mockCanvas);
       expect(spy).toHaveBeenCalledWith('Already recording');
       spy.mockRestore();
@@ -65,8 +65,8 @@ describe('VideoRecorderService Coverage', () => {
   });
 
   it('should handle unsupported mime types', () => {
-      (global as any).MediaRecorder.isTypeSupported = jest.fn().mockReturnValue(false);
-      const warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      (global as any).MediaRecorder.isTypeSupported = vi.fn().mockReturnValue(false);
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
       service.startRecording(mockCanvas, { mimeType: 'video/mp4' });
 
@@ -100,7 +100,7 @@ describe('VideoRecorderService Coverage', () => {
   it('should force stop', () => {
       service.startRecording(mockCanvas);
       const mr = mockMediaRecorder;
-      const stopSpy = jest.spyOn(mr, 'stop');
+      const stopSpy = vi.spyOn(mr, 'stop');
 
       service.forceStop();
 

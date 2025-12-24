@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { EntityLegend } from '../../../src/components/EntityLegend';
@@ -6,7 +7,7 @@ import '@testing-library/jest-dom';
 describe('EntityLegend', () => {
   it('does not render when classnames are empty', () => {
     const { container } = render(
-      <EntityLegend classnames={[]} hiddenClassnames={new Set()} onToggle={jest.fn()} />
+      <EntityLegend classnames={[]} hiddenClassnames={new Set()} onToggle={vi.fn()} />
     );
     expect(container).toBeEmptyDOMElement();
   });
@@ -17,7 +18,7 @@ describe('EntityLegend', () => {
       <EntityLegend
         classnames={classnames}
         hiddenClassnames={new Set()}
-        onToggle={jest.fn()}
+        onToggle={vi.fn()}
       />
     );
 
@@ -27,7 +28,7 @@ describe('EntityLegend', () => {
   });
 
   it('toggles checkboxes correctly', () => {
-    const onToggle = jest.fn();
+    const onToggle = vi.fn();
     const classnames = ['item_health'];
     const hidden = new Set<string>();
 
@@ -54,7 +55,7 @@ describe('EntityLegend', () => {
       <EntityLegend
         classnames={classnames}
         hiddenClassnames={hidden}
-        onToggle={jest.fn()}
+        onToggle={vi.fn()}
       />
     );
 

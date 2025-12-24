@@ -1,5 +1,5 @@
 import { cacheService, CACHE_STORES } from '../../../src/services/cacheService';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 describe('CacheService Coverage', () => {
   let mockDB: any;
@@ -13,28 +13,28 @@ describe('CacheService Coverage', () => {
     (cacheService as any).initPromise = null;
 
     mockStore = {
-      put: jest.fn(),
-      get: jest.fn(),
-      delete: jest.fn(),
-      clear: jest.fn(),
-      count: jest.fn(),
-      getAll: jest.fn(),
-      createIndex: jest.fn(),
-      index: jest.fn(),
-      indexNames: { contains: jest.fn().mockReturnValue(false) }
+      put: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn(),
+      clear: vi.fn(),
+      count: vi.fn(),
+      getAll: vi.fn(),
+      createIndex: vi.fn(),
+      index: vi.fn(),
+      indexNames: { contains: vi.fn().mockReturnValue(false) }
     };
 
     mockTransaction = {
-      objectStore: jest.fn().mockReturnValue(mockStore)
+      objectStore: vi.fn().mockReturnValue(mockStore)
     };
 
     mockDB = {
       objectStoreNames: {
-        contains: jest.fn().mockReturnValue(false)
+        contains: vi.fn().mockReturnValue(false)
       },
-      createObjectStore: jest.fn().mockReturnValue(mockStore),
-      transaction: jest.fn().mockReturnValue(mockTransaction),
-      close: jest.fn()
+      createObjectStore: vi.fn().mockReturnValue(mockStore),
+      transaction: vi.fn().mockReturnValue(mockTransaction),
+      close: vi.fn()
     };
 
     mockOpenRequest = {
@@ -45,7 +45,7 @@ describe('CacheService Coverage', () => {
       onerror: null
     };
 
-    const mockOpen = jest.fn().mockReturnValue(mockOpenRequest);
+    const mockOpen = vi.fn().mockReturnValue(mockOpenRequest);
 
     Object.defineProperty(global, 'indexedDB', {
       value: {
@@ -56,7 +56,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('init handles error', async () => {
-    const mockOpen = global.indexedDB.open as jest.Mock;
+    const mockOpen = global.indexedDB.open as vi.Mock;
     mockOpen.mockImplementation(() => {
         setTimeout(() => {
             if (mockOpenRequest.onerror) {
@@ -75,7 +75,7 @@ describe('CacheService Coverage', () => {
 
       // If we mock open to succeed but result is null?
       mockOpenRequest.result = null;
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -85,7 +85,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('get handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -101,7 +101,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('set handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -124,7 +124,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('delete handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -140,7 +140,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('clear handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -156,7 +156,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('export handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -172,7 +172,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('getStats handles error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -188,7 +188,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('enforceQuota handles cursor error', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -201,7 +201,7 @@ describe('CacheService Coverage', () => {
       });
 
       const mockIndex = {
-          openKeyCursor: jest.fn().mockImplementation(() => {
+          openKeyCursor: vi.fn().mockImplementation(() => {
                const req = { onerror: null };
                setTimeout(() => req.onerror && (req.onerror as any)(), 0);
                return req;
@@ -214,7 +214,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('close closes db', async () => {
-      const mockOpen = global.indexedDB.open as jest.Mock;
+      const mockOpen = global.indexedDB.open as vi.Mock;
       mockOpen.mockImplementation(() => {
           setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
           return mockOpenRequest;
@@ -226,7 +226,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('getStorageEstimate calls navigator.storage', async () => {
-      const mockEstimate = jest.fn().mockResolvedValue({ usage: 100, quota: 1000 });
+      const mockEstimate = vi.fn().mockResolvedValue({ usage: 100, quota: 1000 });
       // @ts-ignore
       global.navigator.storage = { estimate: mockEstimate };
 
@@ -243,7 +243,7 @@ describe('CacheService Coverage', () => {
   });
 
   it('getStats returns stats for all stores', async () => {
-    const mockOpen = global.indexedDB.open as jest.Mock;
+    const mockOpen = global.indexedDB.open as vi.Mock;
     mockOpen.mockImplementation(() => {
         setTimeout(() => mockOpenRequest.onsuccess && mockOpenRequest.onsuccess({ target: mockOpenRequest }), 0);
         return mockOpenRequest;

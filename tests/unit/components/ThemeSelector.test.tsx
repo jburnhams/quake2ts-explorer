@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { ThemeSelector } from '../../../src/components/ThemeSelector';
@@ -31,7 +32,7 @@ describe('ThemeSelector', () => {
   });
 
   test('changes theme when new option is selected', () => {
-    const handleChange = jest.fn();
+    const handleChange = vi.fn();
     render(<ThemeSelector onChange={handleChange} />);
 
     const select = screen.getByTestId('theme-select');

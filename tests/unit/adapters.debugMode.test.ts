@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { BspAdapter } from '../../src/components/UniversalViewer/adapters/BspAdapter';
 import { Md2Adapter } from '../../src/components/UniversalViewer/adapters/Md2Adapter';
 import { Md3Adapter } from '../../src/components/UniversalViewer/adapters/Md3Adapter';
@@ -7,43 +7,43 @@ import { mat4 } from 'gl-matrix';
 
 // Mock DebugRenderer
 const mockDebugRendererInstance = {
-    clear: jest.fn(),
-    addBox: jest.fn(),
-    addLine: jest.fn(),
-    render: jest.fn(),
-    init: jest.fn()
+    clear: vi.fn(),
+    addBox: vi.fn(),
+    addLine: vi.fn(),
+    render: vi.fn(),
+    init: vi.fn()
 };
 
-jest.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => mockDebugRendererInstance)
+        DebugRenderer: vi.fn().mockImplementation(() => mockDebugRendererInstance)
     };
 });
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-    BspSurfacePipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn() })),
-    createBspSurfaces: jest.fn().mockReturnValue([]),
-    buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-    Texture2D: jest.fn().mockImplementation(() => ({
-        bind: jest.fn(),
-        setParameters: jest.fn(),
-        uploadImage: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+    BspSurfacePipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+    createBspSurfaces: vi.fn().mockReturnValue([]),
+    buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+    Texture2D: vi.fn().mockImplementation(() => ({
+        bind: vi.fn(),
+        setParameters: vi.fn(),
+        uploadImage: vi.fn(),
     })),
-    Md2Pipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn() })),
-    Md2MeshBuffers: jest.fn().mockImplementation(() => ({ bind: jest.fn(), update: jest.fn(), indexCount: 0 })),
-    Md3Pipeline: jest.fn().mockImplementation(() => ({ bind: jest.fn(), drawSurface: jest.fn() })),
-    Md3SurfaceMesh: jest.fn(),
-    createAnimationState: jest.fn(),
-    advanceAnimation: jest.fn(),
-    computeFrameBlend: jest.fn().mockReturnValue({ frame0: 0, frame1: 0, lerp: 0 }),
-    parsePcx: jest.fn().mockReturnValue({}),
-    pcxToRgba: jest.fn().mockReturnValue({}),
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
-    resolveLightStyles: jest.fn().mockReturnValue(new Float32Array(32)),
-    applySurfaceState: jest.fn(),
-    findLeafForPoint: jest.fn().mockReturnValue(0),
+    Md2Pipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+    Md2MeshBuffers: vi.fn().mockImplementation(() => ({ bind: vi.fn(), update: vi.fn(), indexCount: 0 })),
+    Md3Pipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn(), drawSurface: vi.fn() })),
+    Md3SurfaceMesh: vi.fn(),
+    createAnimationState: vi.fn(),
+    advanceAnimation: vi.fn(),
+    computeFrameBlend: vi.fn().mockReturnValue({ frame0: 0, frame1: 0, lerp: 0 }),
+    parsePcx: vi.fn().mockReturnValue({}),
+    pcxToRgba: vi.fn().mockReturnValue({}),
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
+    resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
+    applySurfaceState: vi.fn(),
+    findLeafForPoint: vi.fn().mockReturnValue(0),
 }));
 
 describe('Adapter Debug Modes', () => {
@@ -51,35 +51,35 @@ describe('Adapter Debug Modes', () => {
     let mockPakService: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockGl = {
-            createVertexArray: jest.fn(),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            bindVertexArray: jest.fn(),
-            createProgram: jest.fn(),
-            createShader: jest.fn(),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            getUniformLocation: jest.fn(),
-            uniformMatrix4fv: jest.fn(),
-            drawArrays: jest.fn(),
-            useProgram: jest.fn(),
-            activeTexture: jest.fn(),
-            generateMipmap: jest.fn(),
-            drawElements: jest.fn(),
+            createVertexArray: vi.fn(),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            bindVertexArray: vi.fn(),
+            createProgram: vi.fn(),
+            createShader: vi.fn(),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            getUniformLocation: vi.fn(),
+            uniformMatrix4fv: vi.fn(),
+            drawArrays: vi.fn(),
+            useProgram: vi.fn(),
+            activeTexture: vi.fn(),
+            generateMipmap: vi.fn(),
+            drawElements: vi.fn(),
         } as unknown as WebGL2RenderingContext;
 
         mockPakService = {
-            hasFile: jest.fn().mockReturnValue(false),
-            readFile: jest.fn(),
+            hasFile: vi.fn().mockReturnValue(false),
+            readFile: vi.fn(),
         };
     });
 
@@ -89,7 +89,7 @@ describe('Adapter Debug Modes', () => {
             const map = {
                 entities: {
                     entities: [{ classname: 'worldspawn' }],
-                    getUniqueClassnames: jest.fn()
+                    getUniqueClassnames: vi.fn()
                 },
                 models: [{ min: [0,0,0], max: [10,10,10], firstFace: 0, numFaces: 0 }]
             };
@@ -117,7 +117,7 @@ describe('Adapter Debug Modes', () => {
         it('renders PVS cluster box in DebugMode.PVSClusters', async () => {
              const adapter = new BspAdapter();
              const map = {
-                 entities: { entities: [], getUniqueClassnames: jest.fn() },
+                 entities: { entities: [], getUniqueClassnames: vi.fn() },
                  models: [],
                  faces: [],
                  planes: [],
@@ -141,7 +141,7 @@ describe('Adapter Debug Modes', () => {
         it('renders collision hulls in DebugMode.CollisionHulls', async () => {
              const adapter = new BspAdapter();
              const map = {
-                 entities: { entities: [], getUniqueClassnames: jest.fn() },
+                 entities: { entities: [], getUniqueClassnames: vi.fn() },
                  models: [],
                  faces: [],
                  planes: [],

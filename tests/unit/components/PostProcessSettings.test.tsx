@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,8 +6,8 @@ import { PostProcessSettings } from '@/src/components/PostProcessSettings';
 import { defaultPostProcessOptions } from '@/src/utils/postProcessing';
 
 describe('PostProcessSettings', () => {
-    const mockOnChange = jest.fn();
-    const mockOnClose = jest.fn();
+    const mockOnChange = vi.fn();
+    const mockOnClose = vi.fn();
 
     const renderComponent = (props: Partial<React.ComponentProps<typeof PostProcessSettings>> = {}) => {
         return render(
@@ -21,7 +22,7 @@ describe('PostProcessSettings', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should not render when isOpen is false', () => {

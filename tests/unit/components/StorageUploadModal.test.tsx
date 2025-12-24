@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { StorageUploadModal, StorageUploadModalProps } from '../../../src/components/StorageUploadModal';
@@ -7,7 +8,7 @@ describe('StorageUploadModal', () => {
     isOpen: true,
     progress: 50,
     status: 'Uploading...',
-    onClose: jest.fn(),
+    onClose: vi.fn(),
   };
 
   it('renders nothing when isOpen is false', () => {

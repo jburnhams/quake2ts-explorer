@@ -1,9 +1,10 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { GameMenu } from '../../../src/components/GameMenu';
 
 // Mock SaveLoadDialog to verify it gets rendered
-jest.mock('../../../src/components/SaveLoadDialog', () => ({
+vi.mock('../../../src/components/SaveLoadDialog', () => ({
   SaveLoadDialog: ({ mode, onClose }: { mode: string, onClose: () => void }) => (
     <div data-testid="save-load-dialog">
       Dialog Mode: {mode}
@@ -13,13 +14,13 @@ jest.mock('../../../src/components/SaveLoadDialog', () => ({
 }));
 
 describe('GameMenu', () => {
-  const mockResume = jest.fn();
-  const mockSave = jest.fn();
-  const mockLoad = jest.fn();
-  const mockQuit = jest.fn();
+  const mockResume = vi.fn();
+  const mockSave = vi.fn();
+  const mockLoad = vi.fn();
+  const mockQuit = vi.fn();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('renders correctly', () => {

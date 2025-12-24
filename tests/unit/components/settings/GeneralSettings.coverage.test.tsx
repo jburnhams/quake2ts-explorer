@@ -4,7 +4,7 @@ import { GeneralSettingsTab } from '@/src/components/settings/GeneralSettings';
 import { GeneralSettings } from '@/src/types/settings';
 
 // Mock ThemeSelector
-jest.mock('@/src/components/ThemeSelector', () => ({
+vi.mock('@/src/components/ThemeSelector', () => ({
   ThemeSelector: () => <div>ThemeSelector Mock</div>
 }));
 
@@ -18,7 +18,7 @@ describe('GeneralSettingsTab', () => {
     theme: 'dark'
   };
 
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();

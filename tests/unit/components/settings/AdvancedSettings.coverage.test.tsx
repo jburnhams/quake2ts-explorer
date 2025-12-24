@@ -5,10 +5,10 @@ import { AdvancedSettings } from '@/src/types/settings';
 import { cacheService } from '@/src/services/cacheService';
 
 // Mock cacheService
-jest.mock('@/src/services/cacheService', () => ({
+vi.mock('@/src/services/cacheService', () => ({
   cacheService: {
-    clearAll: jest.fn(),
-    close: jest.fn(),
+    clearAll: vi.fn(),
+    close: vi.fn(),
   },
 }));
 
@@ -21,24 +21,24 @@ describe('AdvancedSettingsTab', () => {
     experimentalFeatures: false,
   };
 
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();
-    (cacheService.clearAll as jest.Mock).mockClear();
-    (cacheService.close as jest.Mock).mockClear();
+    (cacheService.clearAll as vi.Mock).mockClear();
+    (cacheService.close as vi.Mock).mockClear();
 
     // Mock window methods
-    global.alert = jest.fn();
-    global.confirm = jest.fn();
+    global.alert = vi.fn();
+    global.confirm = vi.fn();
     // @ts-ignore
     delete window.location;
     // @ts-ignore
-    window.location = { reload: jest.fn() };
+    window.location = { reload: vi.fn() };
 
     // Mock indexedDB
     const mockIndexedDB = {
-        deleteDatabase: jest.fn().mockImplementation(() => {
+        deleteDatabase: vi.fn().mockImplementation(() => {
             return {
                 set onerror(cb) {},
                 set onsuccess(cb: any) { cb(); },
@@ -90,7 +90,7 @@ describe('AdvancedSettingsTab', () => {
   });
 
   it('clears cache successfully', async () => {
-    (cacheService.clearAll as jest.Mock).mockResolvedValue(undefined);
+    (cacheService.clearAll as vi.Mock).mockResolvedValue(undefined);
     render(<AdvancedSettingsTab settings={mockSettings} onChange={mockOnChange} />);
 
     const clearCacheBtn = screen.getByRole('button', { name: 'Clear Cache' });
@@ -103,7 +103,7 @@ describe('AdvancedSettingsTab', () => {
   });
 
   it('handles clear cache failure', async () => {
-    (cacheService.clearAll as jest.Mock).mockRejectedValue(new Error('Fail'));
+    (cacheService.clearAll as vi.Mock).mockRejectedValue(new Error('Fail'));
     render(<AdvancedSettingsTab settings={mockSettings} onChange={mockOnChange} />);
 
     const clearCacheBtn = screen.getByRole('button', { name: 'Clear Cache' });
@@ -115,7 +115,7 @@ describe('AdvancedSettingsTab', () => {
   });
 
   it('clears all data when confirmed', async () => {
-    (global.confirm as jest.Mock).mockReturnValue(true);
+    (global.confirm as vi.Mock).mockReturnValue(true);
     render(<AdvancedSettingsTab settings={mockSettings} onChange={mockOnChange} />);
 
     const clearAllBtn = screen.getByRole('button', { name: 'Clear All Data & Reset' });
@@ -128,7 +128,7 @@ describe('AdvancedSettingsTab', () => {
   });
 
   it('does not clear data when cancelled', async () => {
-    (global.confirm as jest.Mock).mockReturnValue(false);
+    (global.confirm as vi.Mock).mockReturnValue(false);
     render(<AdvancedSettingsTab settings={mockSettings} onChange={mockOnChange} />);
 
     const clearAllBtn = screen.getByRole('button', { name: 'Clear All Data & Reset' });

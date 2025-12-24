@@ -3,9 +3,9 @@ import { SpriteViewer } from '../../src/components/SpriteViewer';
 import { SpriteModel } from 'quake2ts/engine';
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => ({
-    parsePcx: jest.fn().mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(0), pixels: new Uint8Array(0) }),
-    pcxToRgba: jest.fn().mockReturnValue(new Uint8Array(10 * 10 * 4).fill(255)),
+vi.mock('quake2ts/engine', () => ({
+    parsePcx: vi.fn().mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(0), pixels: new Uint8Array(0) }),
+    pcxToRgba: vi.fn().mockReturnValue(new Uint8Array(10 * 10 * 4).fill(255)),
 }));
 
 const mockParsePcx = require('quake2ts/engine').parsePcx;
@@ -23,16 +23,16 @@ describe('SpriteViewer', () => {
     };
 
     beforeEach(() => {
-        jest.clearAllMocks();
-        jest.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.clearAllMocks();
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
-        (console.warn as jest.Mock).mockRestore();
+        (console.warn as vi.Mock).mockRestore();
     });
 
     it('should load frames and render the first frame', async () => {
-        const loadFile = jest.fn().mockResolvedValue(new Uint8Array(100));
+        const loadFile = vi.fn().mockResolvedValue(new Uint8Array(100));
 
         const { container } = render(<SpriteViewer model={model} loadFile={loadFile} />);
 
@@ -54,7 +54,7 @@ describe('SpriteViewer', () => {
     });
 
     it('should handle load errors gracefully', async () => {
-        const loadFile = jest.fn()
+        const loadFile = vi.fn()
             .mockResolvedValueOnce(new Uint8Array(100)) // Frame 1 ok
             .mockRejectedValueOnce(new Error('Failed')); // Frame 2 fail
 
@@ -69,8 +69,8 @@ describe('SpriteViewer', () => {
     });
 
     it('should cycle frames', async () => {
-        jest.useFakeTimers();
-        const loadFile = jest.fn().mockResolvedValue(new Uint8Array(100));
+        vi.useFakeTimers();
+        const loadFile = vi.fn().mockResolvedValue(new Uint8Array(100));
 
         const { container } = render(<SpriteViewer model={model} loadFile={loadFile} />);
 
@@ -82,7 +82,7 @@ describe('SpriteViewer', () => {
 
         // Advance time
         act(() => {
-            jest.advanceTimersByTime(110);
+            vi.advanceTimersByTime(110);
         });
 
         const newText = container.textContent || '';
@@ -93,6 +93,6 @@ describe('SpriteViewer', () => {
         const hasFrame2 = newText.includes('Frame: 2 / 2');
         expect(hasFrame1 || hasFrame2).toBe(true);
 
-        jest.useRealTimers();
+        vi.useRealTimers();
     });
 });

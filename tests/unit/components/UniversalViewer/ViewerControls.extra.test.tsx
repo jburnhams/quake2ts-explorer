@@ -6,7 +6,7 @@ import { DebugMode } from '@/src/types/debugMode';
 import { vec3 } from 'gl-matrix';
 
 // Mock Colorful component
-jest.mock('@uiw/react-color-colorful', () => ({
+vi.mock('@uiw/react-color-colorful', () => ({
   __esModule: true,
   default: ({ onChange }: any) => (
     <div data-testid="color-picker" onClick={() => onChange({ hsva: { h: 0, s: 0, v: 0, a: 1 } })}>
@@ -16,23 +16,23 @@ jest.mock('@uiw/react-color-colorful', () => ({
 }));
 
 describe('ViewerControls Interaction Coverage', () => {
-  const mockSetOrbit = jest.fn((update) => {
+  const mockSetOrbit = vi.fn((update) => {
       if (typeof update === 'function') {
           update({ radius: 100, theta: 0, phi: Math.PI/4, target: [0, 0, 0] });
       }
   });
-  const mockSetFreeCamera = jest.fn((update) => {
+  const mockSetFreeCamera = vi.fn((update) => {
       if (typeof update === 'function') {
           update({ position: [0, 0, 0], rotation: [0, 0, 0] });
       }
   });
-  const mockSetSpeed = jest.fn();
-  const mockSetCameraMode = jest.fn();
-  const mockSetRenderMode = jest.fn();
-  const mockSetRenderColor = jest.fn();
-  const mockOnPlayPause = jest.fn();
-  const mockSetDebugMode = jest.fn();
-  const mockSetShowStats = jest.fn();
+  const mockSetSpeed = vi.fn();
+  const mockSetCameraMode = vi.fn();
+  const mockSetRenderMode = vi.fn();
+  const mockSetRenderColor = vi.fn();
+  const mockOnPlayPause = vi.fn();
+  const mockSetDebugMode = vi.fn();
+  const mockSetShowStats = vi.fn();
 
   const defaultProps = {
     isPlaying: true,
@@ -55,15 +55,15 @@ describe('ViewerControls Interaction Coverage', () => {
     setDebugMode: mockSetDebugMode,
     setShowStats: mockSetShowStats,
     showStats: false,
-    onScreenshot: jest.fn(),
-    onMetadata: jest.fn(),
-    onLightingSettings: jest.fn(),
-    onPostProcessSettings: jest.fn(),
-    onCameraSettings: jest.fn(),
+    onScreenshot: vi.fn(),
+    onMetadata: vi.fn(),
+    onLightingSettings: vi.fn(),
+    onPostProcessSettings: vi.fn(),
+    onCameraSettings: vi.fn(),
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it('exercises camera movement logic in orbit mode', () => {
@@ -163,7 +163,7 @@ describe('ViewerControls Interaction Coverage', () => {
 
   // New tests for Demo Stats Button
   it('renders Demo Stats button when onToggleDemoStats is provided', () => {
-      const onToggleDemoStats = jest.fn();
+      const onToggleDemoStats = vi.fn();
       render(<ViewerControls {...defaultProps} onToggleDemoStats={onToggleDemoStats} />);
 
       const button = screen.getByTitle(/Toggle Demo Stats Overlay/i);
@@ -174,7 +174,7 @@ describe('ViewerControls Interaction Coverage', () => {
   });
 
   it('highlights Demo Stats button when stats are visible', () => {
-      render(<ViewerControls {...defaultProps} onToggleDemoStats={jest.fn()} showDemoStats={true} />);
+      render(<ViewerControls {...defaultProps} onToggleDemoStats={vi.fn()} showDemoStats={true} />);
 
       const button = screen.getByTitle(/Toggle Demo Stats Overlay/i);
       expect(button).toHaveStyle('background-color: #444');

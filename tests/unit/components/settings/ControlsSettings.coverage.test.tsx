@@ -15,8 +15,8 @@ describe('ControlsSettingsTab', () => {
     autoAim: false,
   };
 
-  const mockOnChange = jest.fn();
-  const mockOnOpenKeybindings = jest.fn();
+  const mockOnChange = vi.fn();
+  const mockOnOpenKeybindings = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();

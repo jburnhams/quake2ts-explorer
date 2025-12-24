@@ -44,7 +44,7 @@ describe('ThemeService', () => {
   });
 
   test('notifies listeners on change', () => {
-    const listener = jest.fn();
+    const listener = vi.fn();
     service.subscribe(listener);
 
     service.setTheme('light');

@@ -1,5 +1,5 @@
 import { cacheService, CACHE_STORES } from '../../../src/services/cacheService';
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 describe('CacheService', () => {
   let mockDB: any;
@@ -13,28 +13,28 @@ describe('CacheService', () => {
     (cacheService as any).initPromise = null;
 
     mockStore = {
-      put: jest.fn(),
-      get: jest.fn(),
-      delete: jest.fn(),
-      clear: jest.fn(),
-      count: jest.fn(),
-      getAll: jest.fn(),
-      createIndex: jest.fn(),
-      index: jest.fn(),
-      indexNames: { contains: jest.fn().mockReturnValue(false) }
+      put: vi.fn(),
+      get: vi.fn(),
+      delete: vi.fn(),
+      clear: vi.fn(),
+      count: vi.fn(),
+      getAll: vi.fn(),
+      createIndex: vi.fn(),
+      index: vi.fn(),
+      indexNames: { contains: vi.fn().mockReturnValue(false) }
     };
 
     mockTransaction = {
-      objectStore: jest.fn().mockReturnValue(mockStore)
+      objectStore: vi.fn().mockReturnValue(mockStore)
     };
 
     mockDB = {
       objectStoreNames: {
-        contains: jest.fn().mockReturnValue(false)
+        contains: vi.fn().mockReturnValue(false)
       },
-      createObjectStore: jest.fn().mockReturnValue(mockStore),
-      transaction: jest.fn().mockReturnValue(mockTransaction),
-      close: jest.fn()
+      createObjectStore: vi.fn().mockReturnValue(mockStore),
+      transaction: vi.fn().mockReturnValue(mockTransaction),
+      close: vi.fn()
     };
 
     mockOpenRequest = {
@@ -46,7 +46,7 @@ describe('CacheService', () => {
     };
 
     // Mock indexedDB.open
-    const mockOpen = jest.fn().mockImplementation(() => {
+    const mockOpen = vi.fn().mockImplementation(() => {
         // trigger success asynchronously
         setTimeout(() => {
             if (mockOpenRequest.onsuccess) {
@@ -65,7 +65,7 @@ describe('CacheService', () => {
   });
 
   it('should initialize database and create stores with indexes', async () => {
-    const mockOpen = global.indexedDB.open as jest.Mock;
+    const mockOpen = global.indexedDB.open as vi.Mock;
     mockOpen.mockImplementation(() => {
         setTimeout(() => {
             if (mockOpenRequest.onupgradeneeded) {
@@ -136,7 +136,7 @@ describe('CacheService', () => {
     let iter = 0;
     const mockCursor = {
         primaryKey: 'k1',
-        continue: jest.fn(() => {
+        continue: vi.fn(() => {
             iter++;
             if (iter >= 5) {
                 mockCursorRequest.result = null; // stop
@@ -151,7 +151,7 @@ describe('CacheService', () => {
     };
 
     const mockIndex = {
-        openKeyCursor: jest.fn().mockImplementation(() => {
+        openKeyCursor: vi.fn().mockImplementation(() => {
              setTimeout(() => mockCursorRequest.onsuccess && (mockCursorRequest.onsuccess as any)(), 0);
              return mockCursorRequest;
         })

@@ -3,7 +3,7 @@ import { demoMetadataService, DemoMetadata } from '../../../src/services/demoMet
 describe('DemoMetadataService', () => {
   beforeEach(() => {
     localStorage.clear();
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const mockMetadata: DemoMetadata = {
@@ -84,8 +84,8 @@ describe('DemoMetadataService', () => {
   });
 
   test('should handle storage errors gracefully', () => {
-    const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
-    jest.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('Storage full');
     });
 

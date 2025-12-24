@@ -2,12 +2,12 @@ import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter
 import { BspMap } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-  ...jest.requireActual('quake2ts/engine'),
-  BspSurfacePipeline: jest.fn(),
-  DebugRenderer: jest.fn(),
-  createBspSurfaces: jest.fn(() => []),
-  buildBspGeometry: jest.fn(() => ({ surfaces: [], lightmaps: [] })),
+vi.mock('quake2ts/engine', () => ({
+  ...vi.requireActual('quake2ts/engine'),
+  BspSurfacePipeline: vi.fn(),
+  DebugRenderer: vi.fn(),
+  createBspSurfaces: vi.fn(() => []),
+  buildBspGeometry: vi.fn(() => ({ surfaces: [], lightmaps: [] })),
 }));
 
 describe('BspAdapter - Extended', () => {
@@ -17,14 +17,14 @@ describe('BspAdapter - Extended', () => {
   beforeEach(() => {
     adapter = new BspAdapter();
     mockMap = {
-      pickEntity: jest.fn(),
+      pickEntity: vi.fn(),
       faces: [{ texInfoIndex: 0 }, { texInfoIndex: 1 }],
       texinfo: [
         { texture: 'wall1', flags: 1, value: 100, contents: 0 },
         { texture: 'sky', flags: 4, value: 0, contents: 0 }
       ],
       entities: {
-          getUniqueClassnames: jest.fn(() => []),
+          getUniqueClassnames: vi.fn(() => []),
           entities: []
       },
       models: [],

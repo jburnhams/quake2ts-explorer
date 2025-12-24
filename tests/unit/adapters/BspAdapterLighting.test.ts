@@ -5,23 +5,23 @@ import { PakService } from '@/src/services/pakService';
 import { RenderOptions } from '@/src/components/UniversalViewer/adapters/types';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
-    const originalModule = jest.requireActual('quake2ts/engine');
+vi.mock('quake2ts/engine', () => {
+    const originalModule = vi.requireActual('quake2ts/engine');
     return {
         ...originalModule,
-        BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-            bind: jest.fn().mockReturnValue({}),
-            draw: jest.fn()
+        BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+            bind: vi.fn().mockReturnValue({}),
+            draw: vi.fn()
         })),
-        resolveLightStyles: jest.fn(),
-        createBspSurfaces: jest.fn().mockReturnValue([]),
-        buildBspGeometry: jest.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
-        Texture2D: jest.fn().mockImplementation(() => ({
-            bind: jest.fn(),
-            uploadImage: jest.fn(),
-            setParameters: jest.fn()
+        resolveLightStyles: vi.fn(),
+        createBspSurfaces: vi.fn().mockReturnValue([]),
+        buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),
+        Texture2D: vi.fn().mockImplementation(() => ({
+            bind: vi.fn(),
+            uploadImage: vi.fn(),
+            setParameters: vi.fn()
         })),
-        applySurfaceState: jest.fn()
+        applySurfaceState: vi.fn()
     };
 });
 
@@ -34,37 +34,37 @@ describe('BspAdapter Lighting Controls', () => {
 
     beforeEach(() => {
         mockGl = {
-            createTexture: jest.fn(),
-            bindTexture: jest.fn(),
-            texImage2D: jest.fn(),
-            texParameteri: jest.fn(),
-            generateMipmap: jest.fn(),
-            activeTexture: jest.fn(),
-            drawElements: jest.fn(),
-            createShader: jest.fn().mockReturnValue({}),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            createProgram: jest.fn().mockReturnValue({}),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn().mockReturnValue(true),
-            getShaderParameter: jest.fn().mockReturnValue(true),
-            getAttribLocation: jest.fn(),
-            getUniformLocation: jest.fn(),
-            createBuffer: jest.fn(),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            createVertexArray: jest.fn().mockReturnValue({}),
-            bindVertexArray: jest.fn(),
-            useProgram: jest.fn(),
-            getUniformLocation: jest.fn(),
-            uniformMatrix4fv: jest.fn(),
-            uniform3fv: jest.fn(),
-            uniform4fv: jest.fn(),
-            drawArrays: jest.fn(),
-            deleteShader: jest.fn(),
+            createTexture: vi.fn(),
+            bindTexture: vi.fn(),
+            texImage2D: vi.fn(),
+            texParameteri: vi.fn(),
+            generateMipmap: vi.fn(),
+            activeTexture: vi.fn(),
+            drawElements: vi.fn(),
+            createShader: vi.fn().mockReturnValue({}),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            createProgram: vi.fn().mockReturnValue({}),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn().mockReturnValue(true),
+            getShaderParameter: vi.fn().mockReturnValue(true),
+            getAttribLocation: vi.fn(),
+            getUniformLocation: vi.fn(),
+            createBuffer: vi.fn(),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            createVertexArray: vi.fn().mockReturnValue({}),
+            bindVertexArray: vi.fn(),
+            useProgram: vi.fn(),
+            getUniformLocation: vi.fn(),
+            uniformMatrix4fv: vi.fn(),
+            uniform3fv: vi.fn(),
+            uniform4fv: vi.fn(),
+            drawArrays: vi.fn(),
+            deleteShader: vi.fn(),
             NEAREST: 9728,
             LINEAR: 9729,
             RGBA: 6408,
@@ -102,7 +102,7 @@ describe('BspAdapter Lighting Controls', () => {
         } as unknown as BspMap;
 
         mockPakService = {
-            hasFile: jest.fn().mockReturnValue(false)
+            hasFile: vi.fn().mockReturnValue(false)
         } as unknown as PakService;
 
         adapter = new BspAdapter();
@@ -112,12 +112,12 @@ describe('BspAdapter Lighting Controls', () => {
 
     it('freezes light styles when freezeLights is true', () => {
         // Mock light styles returning dynamic values
-        (resolveLightStyles as jest.Mock).mockReturnValue(new Float32Array([0.5, 2.0]));
+        (resolveLightStyles as vi.Mock).mockReturnValue(new Float32Array([0.5, 2.0]));
 
         // Mock pipeline to capture bind call
-        const mockBind = jest.fn().mockReturnValue({});
+        const mockBind = vi.fn().mockReturnValue({});
         (adapter as any).pipeline.bind = mockBind;
-        (adapter as any).geometry = { surfaces: [{ surfaceFlags: 0, indexCount: 0, vao: { bind: jest.fn() } }], lightmaps: [] };
+        (adapter as any).geometry = { surfaces: [{ surfaceFlags: 0, indexCount: 0, vao: { bind: vi.fn() } }], lightmaps: [] };
         (adapter as any).surfaces = [{ surfaceFlags: 0 }];
 
         // Set render options with freezeLights = true
@@ -145,11 +145,11 @@ describe('BspAdapter Lighting Controls', () => {
 
     it('uses dynamic light styles when freezeLights is false', () => {
          // Mock light styles
-         (resolveLightStyles as jest.Mock).mockReturnValue(new Float32Array([0.5, 2.0]));
+         (resolveLightStyles as vi.Mock).mockReturnValue(new Float32Array([0.5, 2.0]));
 
-         const mockBind = jest.fn().mockReturnValue({});
+         const mockBind = vi.fn().mockReturnValue({});
          (adapter as any).pipeline.bind = mockBind;
-         (adapter as any).geometry = { surfaces: [{ surfaceFlags: 0, indexCount: 0, vao: { bind: jest.fn() } }], lightmaps: [] };
+         (adapter as any).geometry = { surfaces: [{ surfaceFlags: 0, indexCount: 0, vao: { bind: vi.fn() } }], lightmaps: [] };
          (adapter as any).surfaces = [{ surfaceFlags: 0 }];
 
          // Set render options with freezeLights = false

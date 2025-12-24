@@ -1,53 +1,53 @@
 import { PostProcessor, defaultPostProcessOptions } from '../../../src/utils/postProcessing';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // Manually mock WebGL2 context to have full control for unit testing
 const createMockGL = () => ({
-    createProgram: jest.fn(() => ({})),
-    createShader: jest.fn(() => ({})),
-    shaderSource: jest.fn(),
-    compileShader: jest.fn(),
-    attachShader: jest.fn(),
-    linkProgram: jest.fn(),
-    getProgramParameter: jest.fn(() => true),
-    getShaderParameter: jest.fn(() => true),
-    getProgramInfoLog: jest.fn(() => ''),
-    getShaderInfoLog: jest.fn(() => ''),
-    createVertexArray: jest.fn(() => ({})),
-    bindVertexArray: jest.fn(),
-    createBuffer: jest.fn(() => ({})),
-    bindBuffer: jest.fn(),
-    bufferData: jest.fn(),
-    getAttribLocation: jest.fn(() => 0),
-    enableVertexAttribArray: jest.fn(),
-    vertexAttribPointer: jest.fn(),
-    getUniformLocation: jest.fn(() => ({})),
-    uniform1i: jest.fn(),
-    uniform1f: jest.fn(),
-    uniform2f: jest.fn(),
-    createTexture: jest.fn(() => ({})),
-    bindTexture: jest.fn(),
-    texImage2D: jest.fn(),
-    texParameteri: jest.fn(),
-    createFramebuffer: jest.fn(() => ({})),
-    bindFramebuffer: jest.fn(),
-    framebufferTexture2D: jest.fn(),
-    framebufferRenderbuffer: jest.fn(),
-    checkFramebufferStatus: jest.fn(() => 36053), // FRAMEBUFFER_COMPLETE
-    createRenderbuffer: jest.fn(() => ({})),
-    bindRenderbuffer: jest.fn(),
-    renderbufferStorage: jest.fn(),
-    viewport: jest.fn(),
-    clear: jest.fn(),
-    useProgram: jest.fn(),
-    activeTexture: jest.fn(),
-    drawArrays: jest.fn(),
-    deleteTexture: jest.fn(),
-    deleteRenderbuffer: jest.fn(),
-    deleteFramebuffer: jest.fn(),
-    deleteProgram: jest.fn(),
-    deleteVertexArray: jest.fn(),
-    deleteShader: jest.fn(),
+    createProgram: vi.fn(() => ({})),
+    createShader: vi.fn(() => ({})),
+    shaderSource: vi.fn(),
+    compileShader: vi.fn(),
+    attachShader: vi.fn(),
+    linkProgram: vi.fn(),
+    getProgramParameter: vi.fn(() => true),
+    getShaderParameter: vi.fn(() => true),
+    getProgramInfoLog: vi.fn(() => ''),
+    getShaderInfoLog: vi.fn(() => ''),
+    createVertexArray: vi.fn(() => ({})),
+    bindVertexArray: vi.fn(),
+    createBuffer: vi.fn(() => ({})),
+    bindBuffer: vi.fn(),
+    bufferData: vi.fn(),
+    getAttribLocation: vi.fn(() => 0),
+    enableVertexAttribArray: vi.fn(),
+    vertexAttribPointer: vi.fn(),
+    getUniformLocation: vi.fn(() => ({})),
+    uniform1i: vi.fn(),
+    uniform1f: vi.fn(),
+    uniform2f: vi.fn(),
+    createTexture: vi.fn(() => ({})),
+    bindTexture: vi.fn(),
+    texImage2D: vi.fn(),
+    texParameteri: vi.fn(),
+    createFramebuffer: vi.fn(() => ({})),
+    bindFramebuffer: vi.fn(),
+    framebufferTexture2D: vi.fn(),
+    framebufferRenderbuffer: vi.fn(),
+    checkFramebufferStatus: vi.fn(() => 36053), // FRAMEBUFFER_COMPLETE
+    createRenderbuffer: vi.fn(() => ({})),
+    bindRenderbuffer: vi.fn(),
+    renderbufferStorage: vi.fn(),
+    viewport: vi.fn(),
+    clear: vi.fn(),
+    useProgram: vi.fn(),
+    activeTexture: vi.fn(),
+    drawArrays: vi.fn(),
+    deleteTexture: vi.fn(),
+    deleteRenderbuffer: vi.fn(),
+    deleteFramebuffer: vi.fn(),
+    deleteProgram: vi.fn(),
+    deleteVertexArray: vi.fn(),
+    deleteShader: vi.fn(),
     VERTEX_SHADER: 35633,
     FRAGMENT_SHADER: 35632,
     LINK_STATUS: 35714,
@@ -94,12 +94,12 @@ describe('PostProcessor', () => {
     });
 
     it('throws on shader compilation error', () => {
-        (gl.getShaderParameter as jest.Mock).mockReturnValueOnce(false);
+        (gl.getShaderParameter as vi.Mock).mockReturnValueOnce(false);
         expect(() => pp.init('vert', 'frag')).toThrow('Shader compilation failed');
     });
 
     it('throws on program link error', () => {
-        (gl.getProgramParameter as jest.Mock).mockReturnValue(false);
+        (gl.getProgramParameter as vi.Mock).mockReturnValue(false);
         expect(() => pp.init('vert', 'frag')).toThrow('Could not link post-process program');
     });
 
@@ -113,14 +113,14 @@ describe('PostProcessor', () => {
     it('does not resize if dimensions match', () => {
         pp.init('vert', 'frag');
         pp.resize(100, 100);
-        (gl.createTexture as jest.Mock).mockClear();
+        (gl.createTexture as vi.Mock).mockClear();
         pp.resize(100, 100);
         expect(gl.createTexture).not.toHaveBeenCalled();
     });
 
     it('logs error on incomplete framebuffer', () => {
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (gl.checkFramebufferStatus as jest.Mock).mockReturnValue(0); // Incomplete
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (gl.checkFramebufferStatus as vi.Mock).mockReturnValue(0); // Incomplete
         pp.resize(100, 100);
         expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Framebuffer incomplete'));
         consoleErrorSpy.mockRestore();

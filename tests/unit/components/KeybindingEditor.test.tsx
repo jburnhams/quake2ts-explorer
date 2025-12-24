@@ -1,18 +1,19 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { KeybindingEditor } from '@/src/components/KeybindingEditor';
 import { keybindingService } from '@/src/services/keybindingService';
 
 // Mock the service
-jest.mock('@/src/services/keybindingService', () => ({
+vi.mock('@/src/services/keybindingService', () => ({
   keybindingService: {
-    getBindings: jest.fn(),
-    bindKey: jest.fn(),
-    unbindKey: jest.fn(),
-    checkConflict: jest.fn(),
-    resetToDefaults: jest.fn(),
-    resetCategory: jest.fn(),
-    applyPreset: jest.fn(),
+    getBindings: vi.fn(),
+    bindKey: vi.fn(),
+    unbindKey: vi.fn(),
+    checkConflict: vi.fn(),
+    resetToDefaults: vi.fn(),
+    resetCategory: vi.fn(),
+    applyPreset: vi.fn(),
   },
   ACTION_CATEGORIES: {},
 }));
@@ -24,11 +25,11 @@ const mockBindings = [
 ];
 
 describe('KeybindingEditor', () => {
-  const mockOnClose = jest.fn();
+  const mockOnClose = vi.fn();
 
   beforeEach(() => {
-    (keybindingService.getBindings as jest.Mock).mockReturnValue(mockBindings);
-    jest.clearAllMocks();
+    (keybindingService.getBindings as vi.Mock).mockReturnValue(mockBindings);
+    vi.clearAllMocks();
   });
 
   test('renders binding list correctly', () => {
@@ -93,7 +94,7 @@ describe('KeybindingEditor', () => {
   });
 
   test('resets to defaults', () => {
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
     render(<KeybindingEditor onClose={mockOnClose} />);
 
     const resetBtn = screen.getByText('Reset All Defaults');

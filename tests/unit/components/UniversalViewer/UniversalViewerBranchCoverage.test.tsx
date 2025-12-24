@@ -7,38 +7,38 @@ import * as screenshotService from '../../../../src/services/screenshotService';
 import { performanceService } from '../../../../src/services/performanceService';
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
 
-jest.mock('../../../../src/services/pakService');
-jest.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: jest.fn(),
-  createWebGLContext: jest.fn().mockReturnValue({ gl: {
-      viewport: jest.fn(),
-      clearColor: jest.fn(),
-      clear: jest.fn(),
-      enable: jest.fn(),
-      createShader: jest.fn(),
-      createProgram: jest.fn(),
-      createBuffer: jest.fn(),
-      bindBuffer: jest.fn(),
-      bufferData: jest.fn(),
-      getAttribLocation: jest.fn(),
-      vertexAttribPointer: jest.fn(),
-      enableVertexAttribArray: jest.fn(),
-      useProgram: jest.fn(),
+vi.mock('../../../../src/services/pakService');
+vi.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: vi.fn(),
+  createWebGLContext: vi.fn().mockReturnValue({ gl: {
+      viewport: vi.fn(),
+      clearColor: vi.fn(),
+      clear: vi.fn(),
+      enable: vi.fn(),
+      createShader: vi.fn(),
+      createProgram: vi.fn(),
+      createBuffer: vi.fn(),
+      bindBuffer: vi.fn(),
+      bufferData: vi.fn(),
+      getAttribLocation: vi.fn(),
+      vertexAttribPointer: vi.fn(),
+      enableVertexAttribArray: vi.fn(),
+      useProgram: vi.fn(),
   } }),
-  Camera: jest.fn().mockImplementation(() => ({
+  Camera: vi.fn().mockImplementation(() => ({
       position: [0,0,0],
       angles: [0,0,0],
       viewMatrix: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
       projectionMatrix: [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1],
-      updateMatrices: jest.fn()
+      updateMatrices: vi.fn()
   })),
 }));
 
-jest.mock('../../../../src/components/UniversalViewer/adapters/Md2Adapter');
-jest.mock('../../../../src/services/screenshotService');
+vi.mock('../../../../src/components/UniversalViewer/adapters/Md2Adapter');
+vi.mock('../../../../src/services/screenshotService');
 
 // Mock PerformanceGraph to avoid canvas issues
-jest.mock('../../../../src/components/PerformanceGraph', () => ({
+vi.mock('../../../../src/components/PerformanceGraph', () => ({
     PerformanceGraph: () => <div data-testid="perf-graph" />
 }));
 
@@ -53,7 +53,7 @@ describe('UniversalViewer Branch Coverage', () => {
     let mockPakService: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockPakService = new PakService();
     });
 
@@ -68,8 +68,8 @@ describe('UniversalViewer Branch Coverage', () => {
     });
 
     it('handles screenshot errors', async () => {
-        const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-        (screenshotService.captureScreenshot as jest.Mock).mockRejectedValue(new Error('Capture failed'));
+        const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        (screenshotService.captureScreenshot as vi.Mock).mockRejectedValue(new Error('Capture failed'));
 
         render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} />);
 
@@ -92,29 +92,29 @@ describe('UniversalViewer Branch Coverage', () => {
 
     it('handles key shortcuts for playback', async () => {
          const mockController = {
-             stepForward: jest.fn(),
-             stepBackward: jest.fn(),
-             seekToTime: jest.fn(),
-             getDuration: jest.fn().mockReturnValue(100),
-             getCurrentFrame: jest.fn().mockReturnValue(10),
-             seekToFrame: jest.fn(),
-             getFrameCount: jest.fn().mockReturnValue(1000),
-             getDemoEvents: jest.fn().mockReturnValue([]),
+             stepForward: vi.fn(),
+             stepBackward: vi.fn(),
+             seekToTime: vi.fn(),
+             getDuration: vi.fn().mockReturnValue(100),
+             getCurrentFrame: vi.fn().mockReturnValue(10),
+             seekToFrame: vi.fn(),
+             getFrameCount: vi.fn().mockReturnValue(1000),
+             getDemoEvents: vi.fn().mockReturnValue([]),
          };
 
          const mockAdapter = {
-             load: jest.fn(),
-             cleanup: jest.fn(),
-             getDemoController: jest.fn().mockReturnValue(mockController),
-             hasCameraControl: jest.fn().mockReturnValue(true),
-             update: jest.fn(),
-             render: jest.fn(),
-             play: jest.fn(),
-             pause: jest.fn(),
-             isPlaying: jest.fn().mockReturnValue(true), // Initially playing
+             load: vi.fn(),
+             cleanup: vi.fn(),
+             getDemoController: vi.fn().mockReturnValue(mockController),
+             hasCameraControl: vi.fn().mockReturnValue(true),
+             update: vi.fn(),
+             render: vi.fn(),
+             play: vi.fn(),
+             pause: vi.fn(),
+             isPlaying: vi.fn().mockReturnValue(true), // Initially playing
          };
 
-         (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapter);
+         (Md2Adapter as vi.Mock).mockImplementation(() => mockAdapter);
 
          render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />);
 
@@ -146,15 +146,15 @@ describe('UniversalViewer Branch Coverage', () => {
 
     it('handles mouse interactions for camera', async () => {
          const mockAdapterInstance = {
-             load: jest.fn(),
-             cleanup: jest.fn(),
-             hasCameraControl: jest.fn().mockReturnValue(false), // Allow orbit
-             update: jest.fn(),
-             render: jest.fn(),
-             pickEntity: jest.fn(),
-             setHoveredEntity: jest.fn(),
+             load: vi.fn(),
+             cleanup: vi.fn(),
+             hasCameraControl: vi.fn().mockReturnValue(false), // Allow orbit
+             update: vi.fn(),
+             render: vi.fn(),
+             pickEntity: vi.fn(),
+             setHoveredEntity: vi.fn(),
          };
-         (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapterInstance);
+         (Md2Adapter as vi.Mock).mockImplementation(() => mockAdapterInstance);
 
          let capturedAdapter: any;
          const onAdapterReady = (adapter: any) => { capturedAdapter = adapter; };
@@ -186,13 +186,13 @@ describe('UniversalViewer Branch Coverage', () => {
     });
 
     it('updates stats loop', async () => {
-         jest.useFakeTimers();
+         vi.useFakeTimers();
          const mockAdapter = {
-             load: jest.fn(),
-             cleanup: jest.fn(),
-             update: jest.fn(),
-             render: jest.fn(),
-             getStatistics: jest.fn().mockReturnValue({
+             load: vi.fn(),
+             cleanup: vi.fn(),
+             update: vi.fn(),
+             render: vi.fn(),
+             getStatistics: vi.fn().mockReturnValue({
                  cpuFrameTimeMs: 1,
                  drawCalls: 10,
                  triangles: 100,
@@ -200,9 +200,9 @@ describe('UniversalViewer Branch Coverage', () => {
                  textureBinds: 2,
                  visibleSurfaces: 50
              }),
-             setSpeed: jest.fn(),
+             setSpeed: vi.fn(),
          };
-         (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapter);
+         (Md2Adapter as vi.Mock).mockImplementation(() => mockAdapter);
 
          render(<UniversalViewer parsedFile={{ type: 'md2', model: {} } as any} pakService={mockPakService} showControls={true} />);
          await waitFor(() => expect(mockAdapter.load).toHaveBeenCalled());
@@ -212,11 +212,11 @@ describe('UniversalViewer Branch Coverage', () => {
 
          // Advance time significantly
          act(() => {
-             jest.advanceTimersByTime(1000);
+             vi.advanceTimersByTime(1000);
          });
 
          expect(screen.getByText('FPS')).toBeInTheDocument();
 
-         jest.useRealTimers();
+         vi.useRealTimers();
     });
 });

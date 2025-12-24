@@ -15,35 +15,35 @@ global.ResizeObserver = class ResizeObserver {
 class MockAudioBufferSourceNode {
     buffer: AudioBuffer | null = null;
     loop: boolean = false;
-    connect = jest.fn();
-    start = jest.fn();
-    stop = jest.fn();
+    connect = vi.fn();
+    start = vi.fn();
+    stop = vi.fn();
     onended: ((event?: any) => void) | null = null;
 }
 class MockAnalyserNode {
     fftSize: number = 2048;
     frequencyBinCount: number = 1024;
-    connect = jest.fn();
-    getByteFrequencyData = jest.fn((array: Uint8Array) => {
+    connect = vi.fn();
+    getByteFrequencyData = vi.fn((array: Uint8Array) => {
         array.fill(128);
     });
 }
 class MockAudioContext {
     state: string = 'running';
     currentTime: number = 0;
-    createBuffer = jest.fn(() => ({
+    createBuffer = vi.fn(() => ({
         length: 44100,
         duration: 1.0,
         numberOfChannels: 1,
         sampleRate: 44100,
-        getChannelData: jest.fn(() => new Float32Array(44100))
+        getChannelData: vi.fn(() => new Float32Array(44100))
     }));
-    createBufferSource = jest.fn(() => new MockAudioBufferSourceNode());
-    createAnalyser = jest.fn(() => new MockAnalyserNode());
-    resume = jest.fn(async () => {
+    createBufferSource = vi.fn(() => new MockAudioBufferSourceNode());
+    createAnalyser = vi.fn(() => new MockAnalyserNode());
+    resume = vi.fn(async () => {
         this.state = 'running';
     });
-    close = jest.fn();
+    close = vi.fn();
     destination = {};
 }
 Object.defineProperty(window, 'AudioContext', {
@@ -52,13 +52,13 @@ Object.defineProperty(window, 'AudioContext', {
 });
 
 // Mock other heavy components
-jest.mock('../../src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('../../src/components/UniversalViewer/UniversalViewer', () => ({
     UniversalViewer: () => <div data-testid="universal-viewer" />
 }));
-jest.mock('../../src/components/BspAnalyzer', () => ({
+vi.mock('../../src/components/BspAnalyzer', () => ({
     BspAnalyzer: () => <div data-testid="bsp-analyzer" />
 }));
-jest.mock('../../src/components/TextureAtlas', () => ({
+vi.mock('../../src/components/TextureAtlas', () => ({
     TextureAtlas: () => <div data-testid="texture-atlas" />
 }));
 
@@ -67,10 +67,10 @@ describe('SoundAnalyzer Integration', () => {
 
     beforeEach(() => {
         pakServiceMock = {
-            hasFile: jest.fn(),
-            readFile: jest.fn(),
-            parseFile: jest.fn(),
-            getPalette: jest.fn()
+            hasFile: vi.fn(),
+            readFile: vi.fn(),
+            parseFile: vi.fn(),
+            getPalette: vi.fn()
         } as unknown as PakService;
     });
 

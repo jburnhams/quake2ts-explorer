@@ -2,69 +2,69 @@
 import { PakService, getPakService, resetPakService } from '@/src/services/pakService';
 import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
 import { MOD_PRIORITY } from '@/src/types/modInfo';
-import { describe, it, expect, beforeEach, jest } from '@jest/globals';
+
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('quake2ts/engine', () => {
+    
     return {
         PakArchive: {
-            fromArrayBuffer: jest.fn().mockReturnValue({})
+            fromArrayBuffer: vi.fn().mockReturnValue({})
         },
-        VirtualFileSystem: jest.fn().mockImplementation(() => ({
-            mountPak: jest.fn(),
-            unmountPak: jest.fn(),
-            setPriority: jest.fn(),
-            hasFile: jest.fn(),
-            readFile: jest.fn(),
-            stat: jest.fn(),
-            list: jest.fn().mockReturnValue({ files: [], directories: [] }),
-            findByExtension: jest.fn().mockReturnValue([])
+        VirtualFileSystem: vi.fn().mockImplementation(() => ({
+            mountPak: vi.fn(),
+            unmountPak: vi.fn(),
+            setPriority: vi.fn(),
+            hasFile: vi.fn(),
+            readFile: vi.fn(),
+            stat: vi.fn(),
+            list: vi.fn().mockReturnValue({ files: [], directories: [] }),
+            findByExtension: vi.fn().mockReturnValue([])
         })),
-        parsePcx: jest.fn(),
-        pcxToRgba: jest.fn(),
-        parseWal: jest.fn(),
-        walToRgba: jest.fn(),
-        parseMd2: jest.fn(),
-        groupMd2Animations: jest.fn(),
-        parseMd3: jest.fn(),
-        parseBsp: jest.fn(),
-        parseWav: jest.fn(),
-        parseTga: jest.fn(),
+        parsePcx: vi.fn(),
+        pcxToRgba: vi.fn(),
+        parseWal: vi.fn(),
+        walToRgba: vi.fn(),
+        parseMd2: vi.fn(),
+        groupMd2Animations: vi.fn(),
+        parseMd3: vi.fn(),
+        parseBsp: vi.fn(),
+        parseWav: vi.fn(),
+        parseTga: vi.fn(),
     };
 });
 
-jest.mock('@/src/utils/sp2Parser', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/utils/sp2Parser', () => {
+    
     return {
-        parseSprite: jest.fn()
+        parseSprite: vi.fn()
     };
 });
 
-jest.mock('@/src/services/workerService', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/services/workerService', () => {
+    
 
     const mockAssetWorker = {
-        processPcx: jest.fn(),
-        processWal: jest.fn(),
-        processTga: jest.fn(),
-        processMd2: jest.fn(),
-        processMd3: jest.fn(),
-        processSp2: jest.fn(),
-        processWav: jest.fn(),
-        processBsp: jest.fn()
+        processPcx: vi.fn(),
+        processWal: vi.fn(),
+        processTga: vi.fn(),
+        processMd2: vi.fn(),
+        processMd3: vi.fn(),
+        processSp2: vi.fn(),
+        processWav: vi.fn(),
+        processBsp: vi.fn()
     };
 
     const mockPakParser = {
-        parsePak: jest.fn()
+        parsePak: vi.fn()
     };
 
     return {
         workerService: {
-            getPakParser: jest.fn().mockReturnValue(mockPakParser),
-            getAssetProcessor: jest.fn().mockReturnValue(mockAssetWorker),
-            executeAssetProcessorTask: jest.fn(async (cb: any) => cb(mockAssetWorker)),
-            executePakParserTask: jest.fn(async (cb: any) => cb(mockPakParser)),
+            getPakParser: vi.fn().mockReturnValue(mockPakParser),
+            getAssetProcessor: vi.fn().mockReturnValue(mockAssetWorker),
+            executeAssetProcessorTask: vi.fn(async (cb: any) => cb(mockAssetWorker)),
+            executePakParserTask: vi.fn(async (cb: any) => cb(mockPakParser)),
             // Expose mocks for test access
             _mockAssetWorker: mockAssetWorker,
             _mockPakParser: mockPakParser
@@ -72,12 +72,12 @@ jest.mock('@/src/services/workerService', () => {
     };
 });
 
-jest.mock('@/src/services/cacheService', () => {
-    const { jest } = require('@jest/globals');
+vi.mock('@/src/services/cacheService', () => {
+    
     return {
         cacheService: {
-            get: jest.fn(),
-            set: jest.fn().mockResolvedValue(undefined)
+            get: vi.fn(),
+            set: vi.fn().mockResolvedValue(undefined)
         },
         CACHE_STORES: { PAK_INDEX: 'pak-index' }
     };
@@ -92,7 +92,7 @@ describe('PakService Coverage', () => {
 
     beforeEach(() => {
         resetPakService();
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         service = getPakService();
         mockVfs = service.getVfs();
 
@@ -107,8 +107,8 @@ describe('PakService Coverage', () => {
 
     it('should handle unloadPak with VFS rebuild fallback', () => {
         const dumbVfs = {
-            mountPak: jest.fn(),
-            hasFile: jest.fn(),
+            mountPak: vi.fn(),
+            hasFile: vi.fn(),
         } as unknown as VirtualFileSystem;
 
         const dumbService = new PakService(dumbVfs);
@@ -213,13 +213,13 @@ describe('PakService Coverage', () => {
     it('should use cached pak index if available', async () => {
         mockCacheService.get.mockResolvedValue(new Map()); // Cache hit
         const file = {
-            arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(100)),
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(100)),
             name: 'test.pak'
         } as unknown as File;
 
         // Mock crypto safely
-        const mockRandomUUID = jest.fn().mockReturnValue('uuid');
-        const mockDigest = jest.fn().mockResolvedValue(new ArrayBuffer(32));
+        const mockRandomUUID = vi.fn().mockReturnValue('uuid');
+        const mockDigest = vi.fn().mockResolvedValue(new ArrayBuffer(32));
 
         if (global.crypto) {
              Object.defineProperty(global.crypto, 'randomUUID', {
@@ -260,13 +260,13 @@ describe('PakService Coverage', () => {
         });
 
         const file = {
-            arrayBuffer: jest.fn().mockResolvedValue(new ArrayBuffer(100)),
+            arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(100)),
             name: 'test.pak'
         } as unknown as File;
 
         // Mock crypto safely
-        const mockRandomUUID = jest.fn().mockReturnValue('uuid');
-        const mockDigest = jest.fn().mockResolvedValue(new ArrayBuffer(32));
+        const mockRandomUUID = vi.fn().mockReturnValue('uuid');
+        const mockDigest = vi.fn().mockResolvedValue(new ArrayBuffer(32));
 
         if (global.crypto) {
              Object.defineProperty(global.crypto, 'randomUUID', {

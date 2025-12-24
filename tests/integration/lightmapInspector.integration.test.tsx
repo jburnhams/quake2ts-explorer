@@ -6,20 +6,20 @@ import '@testing-library/jest-dom';
 import { act } from 'react-dom/test-utils';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
     BspMap: class {},
-    Texture2D: jest.fn(),
-    createBspSurfaces: jest.fn().mockReturnValue([]),
-    buildBspGeometry: jest.fn().mockReturnValue({ lightmaps: [], surfaces: [] }),
-    BspSurfacePipeline: jest.fn().mockImplementation(() => ({
-        bind: jest.fn()
+    Texture2D: vi.fn(),
+    createBspSurfaces: vi.fn().mockReturnValue([]),
+    buildBspGeometry: vi.fn().mockReturnValue({ lightmaps: [], surfaces: [] }),
+    BspSurfacePipeline: vi.fn().mockImplementation(() => ({
+        bind: vi.fn()
     })),
-    resolveLightStyles: jest.fn().mockReturnValue([]),
-    applySurfaceState: jest.fn(),
-    findLeafForPoint: jest.fn().mockReturnValue(-1)
+    resolveLightStyles: vi.fn().mockReturnValue([]),
+    applySurfaceState: vi.fn(),
+    findLeafForPoint: vi.fn().mockReturnValue(-1)
 }));
 
-jest.mock('@/src/components/UniversalViewer/UniversalViewer', () => {
+vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => {
     // Import React dynamically inside the mock
     const React = require('react');
     return {
@@ -31,10 +31,10 @@ jest.mock('@/src/components/UniversalViewer/UniversalViewer', () => {
                             { gl: {}, texture: {} },
                             { gl: {}, texture: {} }
                         ],
-                        load: jest.fn(),
-                        update: jest.fn(),
-                        render: jest.fn(),
-                        cleanup: jest.fn()
+                        load: vi.fn(),
+                        update: vi.fn(),
+                        render: vi.fn(),
+                        cleanup: vi.fn()
                     });
                 }
             }, [onAdapterReady]);
@@ -49,9 +49,9 @@ describe('LightmapInspector Integration', () => {
 
     beforeEach(() => {
         mockPakService = {
-            hasFile: jest.fn(),
-            readFile: jest.fn(),
-            getPalette: jest.fn()
+            hasFile: vi.fn(),
+            readFile: vi.fn(),
+            getPalette: vi.fn()
         } as any;
 
         mockMap = {
@@ -62,7 +62,7 @@ describe('LightmapInspector Integration', () => {
             nodes: [],
             leafs: [],
             planes: [],
-            entities: { entities: [], getUniqueClassnames: jest.fn().mockReturnValue([]) },
+            entities: { entities: [], getUniqueClassnames: vi.fn().mockReturnValue([]) },
             lightmaps: new Uint8Array(100)
         };
     });

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -6,20 +7,20 @@ import { bookmarkService } from '@/src/services/bookmarkService';
 
 // Mock the controller
 const mockController = {
-  getCurrentTime: jest.fn(() => 10.5),
-  getCurrentFrame: jest.fn(() => 100),
-  pause: jest.fn(),
-  seekToFrame: jest.fn(),
-  play: jest.fn()
+  getCurrentTime: vi.fn(() => 10.5),
+  getCurrentFrame: vi.fn(() => 100),
+  pause: vi.fn(),
+  seekToFrame: vi.fn(),
+  play: vi.fn()
 };
 
 // Mock bookmark service
-jest.mock('@/src/services/bookmarkService', () => ({
+vi.mock('@/src/services/bookmarkService', () => ({
   bookmarkService: {
-    getBookmarks: jest.fn(() => []),
-    addBookmark: jest.fn(),
-    updateBookmark: jest.fn(),
-    deleteBookmark: jest.fn()
+    getBookmarks: vi.fn(() => []),
+    addBookmark: vi.fn(),
+    updateBookmark: vi.fn(),
+    deleteBookmark: vi.fn()
   }
 }));
 
@@ -27,8 +28,8 @@ describe('DemoBookmarks', () => {
   const demoId = 'test-demo-1';
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (bookmarkService.getBookmarks as jest.Mock).mockReturnValue([]);
+    vi.clearAllMocks();
+    (bookmarkService.getBookmarks as vi.Mock).mockReturnValue([]);
   });
 
   it('should render buttons', () => {
@@ -64,7 +65,7 @@ describe('DemoBookmarks', () => {
   });
 
   it('should toggle list visibility', () => {
-    (bookmarkService.getBookmarks as jest.Mock).mockReturnValue([
+    (bookmarkService.getBookmarks as vi.Mock).mockReturnValue([
       { id: '1', name: 'Saved Mark', frame: 50, timeSeconds: 5 }
     ]);
 
@@ -84,7 +85,7 @@ describe('DemoBookmarks', () => {
 
   it('should edit a bookmark', () => {
     const bookmark = { id: '1', name: 'Original', frame: 50, timeSeconds: 5 };
-    (bookmarkService.getBookmarks as jest.Mock).mockReturnValue([bookmark]);
+    (bookmarkService.getBookmarks as vi.Mock).mockReturnValue([bookmark]);
 
     render(<DemoBookmarks controller={mockController as any} demoId={demoId} />);
     fireEvent.click(screen.getByText('📂 List'));

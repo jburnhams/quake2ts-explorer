@@ -1,21 +1,22 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { SaveLoadDialog } from '../../../src/components/SaveLoadDialog';
 import { saveService } from '../../../src/services/saveService';
 
 // Mock dependencies
-jest.mock('../../../src/services/saveService', () => ({
+vi.mock('../../../src/services/saveService', () => ({
   saveService: {
-    listSaves: jest.fn(),
-    saveGame: jest.fn(),
-    loadGame: jest.fn(),
-    deleteSave: jest.fn(),
+    listSaves: vi.fn(),
+    saveGame: vi.fn(),
+    loadGame: vi.fn(),
+    deleteSave: vi.fn(),
   },
 }));
 
-jest.mock('../../../src/services/consoleService', () => ({
+vi.mock('../../../src/services/consoleService', () => ({
   consoleService: {
-    log: jest.fn(),
+    log: vi.fn(),
   },
   LogLevel: {
     INFO: 'INFO',
@@ -32,12 +33,12 @@ describe('SaveLoadDialog', () => {
   ];
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (saveService.listSaves as jest.Mock).mockReturnValue(mockSaves);
+    vi.clearAllMocks();
+    (saveService.listSaves as vi.Mock).mockReturnValue(mockSaves);
   });
 
   test('renders save slots correctly', () => {
-    render(<SaveLoadDialog mode="save" onClose={jest.fn()} onActionComplete={jest.fn()} />);
+    render(<SaveLoadDialog mode="save" onClose={vi.fn()} onActionComplete={vi.fn()} />);
 
     expect(screen.getByText('Save Game')).toBeInTheDocument();
     expect(screen.getByText('Slot 0')).toBeInTheDocument();
@@ -48,7 +49,7 @@ describe('SaveLoadDialog', () => {
   });
 
   test('handles slot selection', () => {
-    render(<SaveLoadDialog mode="save" onClose={jest.fn()} onActionComplete={jest.fn()} />);
+    render(<SaveLoadDialog mode="save" onClose={vi.fn()} onActionComplete={vi.fn()} />);
 
     fireEvent.click(screen.getByText('Slot 2')); // Empty slot
     const input = screen.getByPlaceholderText('Enter save name...') as HTMLInputElement;
@@ -59,8 +60,8 @@ describe('SaveLoadDialog', () => {
   });
 
   test('saves game successfully', async () => {
-    const onActionComplete = jest.fn();
-    render(<SaveLoadDialog mode="save" onClose={jest.fn()} onActionComplete={onActionComplete} />);
+    const onActionComplete = vi.fn();
+    render(<SaveLoadDialog mode="save" onClose={vi.fn()} onActionComplete={onActionComplete} />);
 
     // Select empty slot 2
     fireEvent.click(screen.getByText('Slot 2'));
@@ -76,10 +77,10 @@ describe('SaveLoadDialog', () => {
   });
 
   test('loads game successfully', async () => {
-    const onActionComplete = jest.fn();
-    (saveService.loadGame as jest.Mock).mockResolvedValue(mockSaves[0]);
+    const onActionComplete = vi.fn();
+    (saveService.loadGame as vi.Mock).mockResolvedValue(mockSaves[0]);
 
-    render(<SaveLoadDialog mode="load" onClose={jest.fn()} onActionComplete={onActionComplete} />);
+    render(<SaveLoadDialog mode="load" onClose={vi.fn()} onActionComplete={onActionComplete} />);
 
     // Select slot 0
     fireEvent.click(screen.getByText('Slot 0'));
@@ -96,9 +97,9 @@ describe('SaveLoadDialog', () => {
 
   test('delete save functionality', async () => {
     // Mock window.confirm
-    window.confirm = jest.fn(() => true);
+    window.confirm = vi.fn(() => true);
 
-    render(<SaveLoadDialog mode="load" onClose={jest.fn()} onActionComplete={jest.fn()} />);
+    render(<SaveLoadDialog mode="load" onClose={vi.fn()} onActionComplete={vi.fn()} />);
 
     // Find delete button for slot 0
     const deleteButtons = screen.getAllByTitle('Delete Save');

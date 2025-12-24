@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { render, screen, fireEvent } from '@testing-library/react';
 import { ResizablePanel } from '@/src/components/ResizablePanel';
 
@@ -93,7 +93,7 @@ describe('ResizablePanel', () => {
     });
 
     it('calls onCollapsedChange when collapse button clicked', () => {
-      const onCollapsedChange = jest.fn();
+      const onCollapsedChange = vi.fn();
       render(
         <ResizablePanel
           defaultWidth={280}
@@ -114,7 +114,7 @@ describe('ResizablePanel', () => {
     });
 
     it('calls onCollapsedChange when expand button clicked', () => {
-      const onCollapsedChange = jest.fn();
+      const onCollapsedChange = vi.fn();
       render(
         <ResizablePanel
           defaultWidth={280}
@@ -203,7 +203,7 @@ describe('ResizablePanel', () => {
 
   describe('keyboard accessibility', () => {
     it('collapse button responds to Enter key', () => {
-      const onCollapsedChange = jest.fn();
+      const onCollapsedChange = vi.fn();
       render(
         <ResizablePanel
           defaultWidth={280}
@@ -223,7 +223,7 @@ describe('ResizablePanel', () => {
     });
 
     it('expand button responds to Space key', () => {
-      const onCollapsedChange = jest.fn();
+      const onCollapsedChange = vi.fn();
       render(
         <ResizablePanel
           defaultWidth={280}

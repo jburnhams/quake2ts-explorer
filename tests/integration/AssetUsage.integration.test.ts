@@ -8,11 +8,11 @@ import { VirtualFileSystem } from 'quake2ts/engine';
 // Since we can't easily import real parse functions in test environment without wasm/binary setup sometimes,
 // we will mock the engine imports but keep the service logic real.
 
-jest.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: jest.requireActual('quake2ts/engine').VirtualFileSystem,
-  parseMd2: jest.fn(),
-  parseMd3: jest.fn(),
-  parseBsp: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+  VirtualFileSystem: vi.requireActual('quake2ts/engine').VirtualFileSystem,
+  parseMd2: vi.fn(),
+  parseMd3: vi.fn(),
+  parseBsp: vi.fn(),
 }));
 
 import { parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
@@ -22,7 +22,7 @@ describe('AssetCrossRefService Integration', () => {
   let service: AssetCrossRefService;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     vfs = new VirtualFileSystem();
     service = new AssetCrossRefService(vfs);
   });
@@ -39,7 +39,7 @@ describe('AssetCrossRefService Integration', () => {
     const mockBsp = 'maps/level1.bsp';
 
     // Mock VFS behavior
-    vfs.findByExtension = jest.fn((ext: string) => {
+    vfs.findByExtension = vi.fn((ext: string) => {
       const results: { path: string }[] = [];
       if (ext === 'md2') results.push({ path: mockMd2 });
       if (ext === 'md3') results.push({ path: mockMd3 });
@@ -47,14 +47,14 @@ describe('AssetCrossRefService Integration', () => {
       return results;
     });
 
-    vfs.readFile = jest.fn((path: string) => {
+    vfs.readFile = vi.fn((path: string) => {
        return new Uint8Array([0]); // Dummy content
     });
 
     // Mock parsers
-    (parseMd2 as jest.Mock).mockReturnValue({ skins: ['models/skin.pcx'] });
-    (parseMd3 as jest.Mock).mockReturnValue({ surfaces: [{ shaders: [{ name: 'models/skin.tga' }] }] });
-    (parseBsp as jest.Mock).mockReturnValue({ textures: [{ name: 'textures/wall' }] });
+    (parseMd2 as vi.Mock).mockReturnValue({ skins: ['models/skin.pcx'] });
+    (parseMd3 as vi.Mock).mockReturnValue({ surfaces: [{ shaders: [{ name: 'models/skin.tga' }] }] });
+    (parseBsp as vi.Mock).mockReturnValue({ textures: [{ name: 'textures/wall' }] });
 
     // Test finding skin.pcx
     const result1 = await service.findTextureUsage('models/skin.pcx');

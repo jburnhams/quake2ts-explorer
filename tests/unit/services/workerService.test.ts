@@ -1,4 +1,4 @@
-import { jest, describe, it, expect, beforeEach, afterEach } from '@jest/globals';
+
 
 describe('WorkerService', () => {
   let workerService: any;
@@ -7,16 +7,16 @@ describe('WorkerService', () => {
   let PakParserWorker: any;
 
   beforeEach(() => {
-    jest.resetModules();
+    vi.resetModules();
 
     mockApi = {
-      parsePak: jest.fn().mockResolvedValue({ name: 'test', buffer: new ArrayBuffer(0), entries: new Map() }),
-      processPcx: jest.fn().mockResolvedValue({}),
-      processWal: jest.fn().mockResolvedValue({}),
+      parsePak: vi.fn().mockResolvedValue({ name: 'test', buffer: new ArrayBuffer(0), entries: new Map() }),
+      processPcx: vi.fn().mockResolvedValue({}),
+      processWal: vi.fn().mockResolvedValue({}),
     };
 
-    mockWrap = jest.fn().mockReturnValue(mockApi);
-    jest.mock('comlink', () => ({
+    mockWrap = vi.fn().mockReturnValue(mockApi);
+    vi.mock('comlink', () => ({
       wrap: mockWrap,
     }));
 
@@ -39,7 +39,7 @@ describe('WorkerService', () => {
   });
 
   it('should timeout if task takes too long', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
     mockApi.parsePak.mockImplementation(() => new Promise(() => {}));
 
@@ -47,17 +47,17 @@ describe('WorkerService', () => {
       return await api.parsePak('test', new ArrayBuffer(0));
     }, 1000);
 
-    jest.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(2000);
 
     await expect(taskPromise).rejects.toThrow('Worker task timed out');
 
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it('should terminate worker on timeout', async () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
 
-    const terminateSpy = jest.spyOn(PakParserWorker.prototype, 'terminate');
+    const terminateSpy = vi.spyOn(PakParserWorker.prototype, 'terminate');
 
     mockApi.parsePak.mockImplementation(() => new Promise(() => {}));
 
@@ -66,7 +66,7 @@ describe('WorkerService', () => {
         return await api.parsePak('test', new ArrayBuffer(0));
       }, 1000);
 
-      jest.advanceTimersByTime(2000);
+      vi.advanceTimersByTime(2000);
       await taskPromise;
     } catch (e) {
       // Expected timeout
@@ -74,7 +74,7 @@ describe('WorkerService', () => {
 
     expect(terminateSpy).toHaveBeenCalled();
 
-    jest.useRealTimers();
+    vi.useRealTimers();
     terminateSpy.mockRestore();
   });
 });

@@ -1,13 +1,13 @@
-import { describe, it, expect } from '@jest/globals';
+
 import { render, screen } from '@testing-library/react';
 import { PreviewPanel } from '@/src/components/PreviewPanel';
 import type { ParsedFile, PakService } from '@/src/services/pakService';
 
 describe('PreviewPanel Component', () => {
   const mockPakService = {
-    hasFile: jest.fn(),
-    readFile: jest.fn(),
-    getPalette: jest.fn().mockReturnValue(null),
+    hasFile: vi.fn(),
+    readFile: vi.fn(),
+    getPalette: vi.fn().mockReturnValue(null),
   } as unknown as PakService;
 
   it('shows empty state when no file selected', () => {

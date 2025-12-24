@@ -1,18 +1,18 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 import { predictionService } from '@/src/services/predictionService';
 import { ClientPrediction } from 'quake2ts/client';
 
 // Define mock functions
-const mockSetPredictionEnabled = jest.fn();
-const mockEnqueueCommand = jest.fn().mockReturnValue({});
-const mockSetAuthoritative = jest.fn();
-const mockGetPredictionError = jest.fn().mockReturnValue({x:10, y:0, z:0});
-const mockDecayError = jest.fn();
-const mockGetPredictedState = jest.fn().mockReturnValue({});
+const mockSetPredictionEnabled = vi.fn();
+const mockEnqueueCommand = vi.fn().mockReturnValue({});
+const mockSetAuthoritative = vi.fn();
+const mockGetPredictionError = vi.fn().mockReturnValue({x:10, y:0, z:0});
+const mockDecayError = vi.fn();
+const mockGetPredictedState = vi.fn().mockReturnValue({});
 
 // Mock dependencies
-jest.mock('quake2ts/client', () => ({
-    ClientPrediction: jest.fn().mockImplementation(() => ({
+vi.mock('quake2ts/client', () => ({
+    ClientPrediction: vi.fn().mockImplementation(() => ({
         setPredictionEnabled: mockSetPredictionEnabled,
         enqueueCommand: mockEnqueueCommand,
         setAuthoritative: mockSetAuthoritative,
@@ -24,25 +24,25 @@ jest.mock('quake2ts/client', () => ({
 
 describe('PredictionService Coverage', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('initializes correctly', () => {
         predictionService.init({
-            trace: jest.fn() as any,
-            pointContents: jest.fn() as any
+            trace: vi.fn() as any,
+            pointContents: vi.fn() as any
         });
         expect(ClientPrediction).toHaveBeenCalled();
     });
 
     it('setEnabled calls predictor', () => {
-        predictionService.init({ trace: jest.fn() as any, pointContents: jest.fn() as any });
+        predictionService.init({ trace: vi.fn() as any, pointContents: vi.fn() as any });
         predictionService.setEnabled(true);
         expect(mockSetPredictionEnabled).toHaveBeenCalledWith(true);
     });
 
     it('onServerFrame checks error threshold', () => {
-        predictionService.init({ trace: jest.fn() as any, pointContents: jest.fn() as any });
+        predictionService.init({ trace: vi.fn() as any, pointContents: vi.fn() as any });
 
         // Setup mock return for this test
         mockGetPredictionError.mockReturnValue({x:1, y:0, z:0});
@@ -55,13 +55,13 @@ describe('PredictionService Coverage', () => {
     });
 
     it('decayError delegates to predictor', () => {
-        predictionService.init({ trace: jest.fn() as any, pointContents: jest.fn() as any });
+        predictionService.init({ trace: vi.fn() as any, pointContents: vi.fn() as any });
         predictionService.decayError(16);
         expect(mockDecayError).toHaveBeenCalledWith(16);
     });
 
     it('getPredictedState delegates to predictor', () => {
-        predictionService.init({ trace: jest.fn() as any, pointContents: jest.fn() as any });
+        predictionService.init({ trace: vi.fn() as any, pointContents: vi.fn() as any });
         predictionService.getPredictedState();
         expect(mockGetPredictedState).toHaveBeenCalled();
     });

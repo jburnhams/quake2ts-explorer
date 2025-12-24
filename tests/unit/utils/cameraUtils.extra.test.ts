@@ -1,5 +1,5 @@
 import { updateFreeCamera, FreeCameraState } from '../../../src/utils/cameraUtils';
-import { describe, it, expect } from '@jest/globals';
+
 
 describe('cameraUtils extra coverage', () => {
     const initialState: FreeCameraState = {

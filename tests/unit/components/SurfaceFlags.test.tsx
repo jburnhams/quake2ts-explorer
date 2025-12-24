@@ -1,8 +1,9 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SurfaceFlags, SurfaceFlagsProps } from '@/src/components/SurfaceFlags';
 import { SURF_LIGHT, SURF_SKY } from '@/src/utils/surfaceFlagParser';
-import { jest } from '@jest/globals';
+
 
 describe('SurfaceFlags', () => {
   it('renders empty state when no properties', () => {
@@ -56,7 +57,7 @@ describe('SurfaceFlags', () => {
   });
 
   it('calls onFilterByFlag when flag clicked', () => {
-    const onFilter = jest.fn();
+    const onFilter = vi.fn();
     const props: SurfaceFlagsProps = {
       properties: {
         textureName: 'sky',
@@ -72,7 +73,7 @@ describe('SurfaceFlags', () => {
   });
 
   it('renders active filter state and clears it', () => {
-      const onFilter = jest.fn();
+      const onFilter = vi.fn();
       render(<SurfaceFlags properties={null} activeFilter="LIGHT" onFilterByFlag={onFilter} />);
 
       expect(screen.getByText('Filtering by:')).toBeInTheDocument();

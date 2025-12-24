@@ -6,74 +6,74 @@ import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { OrbitState } from '../../../src/utils/cameraUtils';
 
 // Mock gl-matrix
-jest.mock('gl-matrix', () => {
-  const original = jest.requireActual('gl-matrix');
+vi.mock('gl-matrix', () => {
+  const original = vi.requireActual('gl-matrix');
   return {
     ...original,
     mat4: {
       ...original.mat4,
-      create: jest.fn(() => new Float32Array(16)),
-      lookAt: jest.fn(),
+      create: vi.fn(() => new Float32Array(16)),
+      lookAt: vi.fn(),
     },
     vec3: {
         ...original.vec3,
-        create: jest.fn(() => new Float32Array(3)),
+        create: vi.fn(() => new Float32Array(3)),
     }
   };
 });
 
 // Mock DebugRenderer
-jest.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
+vi.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
     return {
-        DebugRenderer: jest.fn().mockImplementation(() => ({
-            clear: jest.fn(),
-            addBox: jest.fn(),
-            addLine: jest.fn(),
-            render: jest.fn(),
-            init: jest.fn()
+        DebugRenderer: vi.fn().mockImplementation(() => ({
+            clear: vi.fn(),
+            addBox: vi.fn(),
+            addLine: vi.fn(),
+            render: vi.fn(),
+            init: vi.fn()
         }))
     };
 });
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => ({
-  createWebGLContext: jest.fn(() => ({
+vi.mock('quake2ts/engine', () => ({
+  createWebGLContext: vi.fn(() => ({
     gl: {
-      viewport: jest.fn(),
-      clearColor: jest.fn(),
-      clear: jest.fn(),
-      enable: jest.fn(),
+      viewport: vi.fn(),
+      clearColor: vi.fn(),
+      clear: vi.fn(),
+      enable: vi.fn(),
       CULL_FACE: 0,
       DEPTH_TEST: 1,
       COLOR_BUFFER_BIT: 16384,
       DEPTH_BUFFER_BIT: 256,
     }
   })),
-  Camera: jest.fn(() => ({
+  Camera: vi.fn(() => ({
     fov: 60,
     aspect: 1,
     position: new Float32Array(3),
     angles: new Float32Array(3),
     viewMatrix: new Float32Array(16),
   })),
-  BspSurfacePipeline: jest.fn(() => ({
-    bind: jest.fn(),
-    cleanup: jest.fn(),
+  BspSurfacePipeline: vi.fn(() => ({
+    bind: vi.fn(),
+    cleanup: vi.fn(),
   })),
-  createBspSurfaces: jest.fn(() => []),
-  buildBspGeometry: jest.fn(() => ({
+  createBspSurfaces: vi.fn(() => []),
+  buildBspGeometry: vi.fn(() => ({
     surfaces: [],
     lightmaps: []
   })),
-  resolveLightStyles: jest.fn(() => new Map()),
-  applySurfaceState: jest.fn(),
-  Texture2D: jest.fn(() => ({
-      bind: jest.fn(),
-      setParameters: jest.fn(),
-      uploadImage: jest.fn()
+  resolveLightStyles: vi.fn(() => new Map()),
+  applySurfaceState: vi.fn(),
+  Texture2D: vi.fn(() => ({
+      bind: vi.fn(),
+      setParameters: vi.fn(),
+      uploadImage: vi.fn()
   })),
-  parseWal: jest.fn(() => ({})),
-  walToRgba: jest.fn(() => ({ levels: [] })),
+  parseWal: vi.fn(() => ({})),
+  walToRgba: vi.fn(() => ({ levels: [] })),
 }));
 
 // Mock adapters using js extension as required by jest config map if present, or just path
@@ -84,24 +84,24 @@ jest.mock('quake2ts/engine', () => ({
 // Actually '$1' is the capture group. So it keeps the path as is?
 // Wait, `^(\\.{1,2}/.*)\\.js$`: '$1' means `../foo.js` -> `../foo`.
 // So if I import `.../Md2Adapter`, it looks for `Md2Adapter.ts` automatically?
-// But here I'm using `jest.mock`.
+// But here I'm using `vi.mock`.
 
-jest.mock('../../../src/components/UniversalViewer/adapters/Md2Adapter', () => ({
-  Md2Adapter: jest.fn(() => ({
-    load: jest.fn(),
-    update: jest.fn(),
-    render: jest.fn(),
-    cleanup: jest.fn(),
+vi.mock('../../../src/components/UniversalViewer/adapters/Md2Adapter', () => ({
+  Md2Adapter: vi.fn(() => ({
+    load: vi.fn(),
+    update: vi.fn(),
+    render: vi.fn(),
+    cleanup: vi.fn(),
     hasCameraControl: () => false
   }))
 }), { virtual: true }); // virtual might help if resolution fails? No, file exists.
 
-jest.mock('../../../src/components/UniversalViewer/adapters/BspAdapter', () => ({
-  BspAdapter: jest.fn(() => ({
-    load: jest.fn(),
-    update: jest.fn(),
-    render: jest.fn(),
-    cleanup: jest.fn(),
+vi.mock('../../../src/components/UniversalViewer/adapters/BspAdapter', () => ({
+  BspAdapter: vi.fn(() => ({
+    load: vi.fn(),
+    update: vi.fn(),
+    render: vi.fn(),
+    cleanup: vi.fn(),
     hasCameraControl: () => false,
     useZUp: () => true
   }))
@@ -112,7 +112,7 @@ describe('UniversalViewer Camera Integration', () => {
 
     beforeEach(() => {
         pakService = {} as PakService;
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should switch to Free Camera mode for BSP files', async () => {
@@ -134,9 +134,9 @@ describe('UniversalViewer Camera Integration', () => {
 
 describe('ViewerControls Interaction', () => {
     it('should toggle camera mode', () => {
-        const setCameraMode = jest.fn();
-        const setOrbit = jest.fn();
-        const setSpeed = jest.fn();
+        const setCameraMode = vi.fn();
+        const setOrbit = vi.fn();
+        const setSpeed = vi.fn();
 
         const { getByText } = render(
             <ViewerControls

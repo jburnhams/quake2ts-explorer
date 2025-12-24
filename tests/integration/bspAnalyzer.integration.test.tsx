@@ -5,11 +5,11 @@ import { PakService } from '@/src/services/pakService';
 import { BspMap } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
     UniversalViewer: () => <div data-testid="universal-viewer">Universal Viewer</div>
 }));
 
-jest.mock('@/src/components/LightmapInspector', () => ({
+vi.mock('@/src/components/LightmapInspector', () => ({
     LightmapInspector: () => <div>Lightmap Inspector</div>
 }));
 

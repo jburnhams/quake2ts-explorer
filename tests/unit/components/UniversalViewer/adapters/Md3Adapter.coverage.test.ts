@@ -5,8 +5,8 @@ import { PakService } from '../../../../../src/services/pakService';
 import { DebugMode } from '@/src/types/debugMode';
 
 // Mocks
-jest.mock('quake2ts/engine');
-jest.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer');
+vi.mock('quake2ts/engine');
+vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer');
 
 describe('Md3Adapter Coverage', () => {
   let adapter: Md3Adapter;
@@ -15,7 +15,7 @@ describe('Md3Adapter Coverage', () => {
   let mockFile: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     adapter = new Md3Adapter();
     mockGl = {
       LINEAR_MIPMAP_LINEAR: 1,
@@ -25,13 +25,13 @@ describe('Md3Adapter Coverage', () => {
       UNSIGNED_BYTE: 5,
       TEXTURE_2D: 6,
       TEXTURE0: 7,
-      generateMipmap: jest.fn(),
-      activeTexture: jest.fn(),
+      generateMipmap: vi.fn(),
+      activeTexture: vi.fn(),
     } as unknown as WebGL2RenderingContext;
 
     mockPakService = {
-      hasFile: jest.fn(),
-      readFile: jest.fn(),
+      hasFile: vi.fn(),
+      readFile: vi.fn(),
     };
 
     mockFile = {
@@ -62,8 +62,8 @@ describe('Md3Adapter Coverage', () => {
   test('loads valid MD3 file', async () => {
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.readFile.mockResolvedValue(new Uint8Array(10));
-    (parsePcx as jest.Mock).mockReturnValue({ width: 32, height: 32 });
-    (pcxToRgba as jest.Mock).mockReturnValue(new Uint8Array(1024));
+    (parsePcx as vi.Mock).mockReturnValue({ width: 32, height: 32 });
+    (pcxToRgba as vi.Mock).mockReturnValue(new Uint8Array(1024));
 
     await adapter.load(mockGl, mockFile, mockPakService, 'models/test.md3');
 
@@ -108,7 +108,7 @@ describe('Md3Adapter Coverage', () => {
 
     // Basic render
     adapter.render(mockGl, mockCamera, mockViewMatrix);
-    const mockPipelineInstance = (Md3Pipeline as jest.Mock).mock.instances[0];
+    const mockPipelineInstance = (Md3Pipeline as vi.Mock).mock.instances[0];
     expect(mockPipelineInstance.bind).toHaveBeenCalled();
     expect(mockPipelineInstance.drawSurface).toHaveBeenCalledTimes(2);
   });
@@ -122,7 +122,7 @@ describe('Md3Adapter Coverage', () => {
 
     adapter.render(mockGl, mockCamera, mockViewMatrix);
 
-    const debugInstance = (DebugRenderer as jest.Mock).mock.instances[0];
+    const debugInstance = (DebugRenderer as vi.Mock).mock.instances[0];
     expect(debugInstance.clear).toHaveBeenCalled();
     expect(debugInstance.addBox).toHaveBeenCalled();
     expect(debugInstance.render).toHaveBeenCalled();
@@ -139,7 +139,7 @@ describe('Md3Adapter Coverage', () => {
 
       adapter.render(mockGl, mockCamera, mockViewMatrix);
 
-      const debugInstance = (DebugRenderer as jest.Mock).mock.instances[0];
+      const debugInstance = (DebugRenderer as vi.Mock).mock.instances[0];
       // Should call addBox with fallback values
       expect(debugInstance.addBox).toHaveBeenCalled();
   });
@@ -153,7 +153,7 @@ describe('Md3Adapter Coverage', () => {
 
     adapter.render(mockGl, mockCamera, mockViewMatrix);
 
-    const debugInstance = (DebugRenderer as jest.Mock).mock.instances[0];
+    const debugInstance = (DebugRenderer as vi.Mock).mock.instances[0];
     expect(debugInstance.addLine).toHaveBeenCalled(); // Axes
     expect(debugInstance.addBox).toHaveBeenCalled(); // Origin
   });

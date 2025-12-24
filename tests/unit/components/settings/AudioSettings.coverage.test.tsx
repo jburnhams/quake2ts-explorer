@@ -14,7 +14,7 @@ describe('AudioSettingsTab', () => {
     sampleRate: 44100
   };
 
-  const mockOnChange = jest.fn();
+  const mockOnChange = vi.fn();
 
   beforeEach(() => {
     mockOnChange.mockClear();

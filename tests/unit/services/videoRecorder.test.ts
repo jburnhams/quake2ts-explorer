@@ -46,7 +46,7 @@ class MockMediaRecorder {
 }
 
 global.MediaRecorder = MockMediaRecorder as any;
-(global.MediaRecorder as any).isTypeSupported = jest.fn().mockReturnValue(true);
+(global.MediaRecorder as any).isTypeSupported = vi.fn().mockReturnValue(true);
 
 describe('VideoRecorderService', () => {
   let mockCanvas: HTMLCanvasElement;
@@ -63,7 +63,7 @@ describe('VideoRecorderService', () => {
     } as unknown as MediaStream;
 
     mockCanvas = {
-      captureStream: jest.fn().mockReturnValue(mockStream),
+      captureStream: vi.fn().mockReturnValue(mockStream),
     } as unknown as HTMLCanvasElement;
   });
 

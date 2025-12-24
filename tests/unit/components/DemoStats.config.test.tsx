@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -6,23 +7,23 @@ import { DemoPlaybackController, PlayerStatistics, DemoStatistics } from 'quake2
 
 // Mock the controller
 const mockController = {
-  getDemoStatistics: jest.fn(),
-  getPlayerStatistics: jest.fn(),
-  getFrameData: jest.fn(),
-  getCurrentFrame: jest.fn(),
-  getCurrentTime: jest.fn(),
-  getFrameCount: jest.fn()
+  getDemoStatistics: vi.fn(),
+  getPlayerStatistics: vi.fn(),
+  getFrameData: vi.fn(),
+  getCurrentFrame: vi.fn(),
+  getCurrentTime: vi.fn(),
+  getFrameCount: vi.fn()
 } as unknown as DemoPlaybackController;
 
 // Mock localStorage
 const localStorageMock = (function() {
   let store: Record<string, string> = {};
   return {
-    getItem: jest.fn((key: string) => store[key] || null),
-    setItem: jest.fn((key: string, value: string) => {
+    getItem: vi.fn((key: string) => store[key] || null),
+    setItem: vi.fn((key: string, value: string) => {
       store[key] = value.toString();
     }),
-    clear: jest.fn(() => {
+    clear: vi.fn(() => {
       store = {};
     })
   };
@@ -34,14 +35,14 @@ Object.defineProperty(window, 'localStorage', {
 
 describe('DemoStats Configuration', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     localStorageMock.clear();
 
-    (mockController.getCurrentFrame as jest.Mock).mockReturnValue(100);
-    (mockController.getCurrentTime as jest.Mock).mockReturnValue(10.5);
-    (mockController.getFrameCount as jest.Mock).mockReturnValue(1000);
+    (mockController.getCurrentFrame as vi.Mock).mockReturnValue(100);
+    (mockController.getCurrentTime as vi.Mock).mockReturnValue(10.5);
+    (mockController.getFrameCount as vi.Mock).mockReturnValue(1000);
 
-    (mockController.getDemoStatistics as jest.Mock).mockReturnValue({
+    (mockController.getDemoStatistics as vi.Mock).mockReturnValue({
         duration: 120,
         averageFps: 60,
         frameCount: 1000,
@@ -49,13 +50,13 @@ describe('DemoStats Configuration', () => {
         playerCount: 1
     } as DemoStatistics);
 
-    (mockController.getPlayerStatistics as jest.Mock).mockReturnValue({
+    (mockController.getPlayerStatistics as vi.Mock).mockReturnValue({
         kills: 5,
         deaths: 2,
         damageDealt: 500
     } as PlayerStatistics);
 
-    (mockController.getFrameData as jest.Mock).mockReturnValue({
+    (mockController.getFrameData as vi.Mock).mockReturnValue({
         playerState: {
             origin: { x: 100, y: 200, z: 50 },
             velocity: { x: 300, y: 0, z: 0 },
@@ -66,7 +67,7 @@ describe('DemoStats Configuration', () => {
 
   it('renders settings toggle', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     // Look for a settings button (icon or text)
@@ -75,7 +76,7 @@ describe('DemoStats Configuration', () => {
 
   it('toggles settings panel visibility', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     const settingsBtn = screen.getByTitle('Configure Stats');
@@ -87,7 +88,7 @@ describe('DemoStats Configuration', () => {
 
   it('hides sections when configured to false', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     // Open settings
@@ -103,7 +104,7 @@ describe('DemoStats Configuration', () => {
 
   it('renders SpeedGraph when enabled', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     // Open settings and enable graph (it might be disabled by default or enabled, check implementation)
@@ -123,7 +124,7 @@ describe('DemoStats Configuration', () => {
 
   it('persists configuration to localStorage', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     const settingsBtn = screen.getByTitle('Configure Stats');
@@ -137,7 +138,7 @@ describe('DemoStats Configuration', () => {
 
   it('allows changing scale', async () => {
     await act(async () => {
-        render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+        render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
     });
 
     const settingsBtn = screen.getByTitle('Configure Stats');
@@ -154,7 +155,7 @@ describe('DemoStats Configuration', () => {
   // But typically checking if localStorage updates with new coordinates after a simulated drag sequence is good enough.
   it('updates position on drag', async () => {
       await act(async () => {
-          render(<DemoStats controller={mockController} visible={true} onClose={jest.fn()} />);
+          render(<DemoStats controller={mockController} visible={true} onClose={vi.fn()} />);
       });
 
       const header = screen.getByText('Demo Stats').closest('div');

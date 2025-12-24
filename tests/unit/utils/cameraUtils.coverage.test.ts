@@ -1,6 +1,6 @@
 import { updateFreeCamera, computeFreeCameraViewMatrix, computeCameraPosition, FreeCameraState } from '../../../src/utils/cameraUtils';
 import { vec3, mat4 } from 'gl-matrix';
-import { describe, it, expect } from '@jest/globals';
+
 
 describe('cameraUtils coverage', () => {
     describe('computeCameraPosition', () => {

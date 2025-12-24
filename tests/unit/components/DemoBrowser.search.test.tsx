@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 import { DemoBrowser } from '../../../src/components/DemoBrowser';
@@ -5,23 +6,23 @@ import { demoStorageService } from '../../../src/services/demoStorageService';
 import { demoMetadataService } from '../../../src/services/demoMetadataService';
 
 // Mock dependencies
-jest.mock('../../../src/services/demoStorageService', () => ({
+vi.mock('../../../src/services/demoStorageService', () => ({
   demoStorageService: {
-    getDemos: jest.fn(),
-    deleteDemo: jest.fn(),
+    getDemos: vi.fn(),
+    deleteDemo: vi.fn(),
   }
 }));
 
-jest.mock('../../../src/services/demoMetadataService', () => ({
+vi.mock('../../../src/services/demoMetadataService', () => ({
   demoMetadataService: {
-    getAllMetadata: jest.fn(),
-    deleteMetadata: jest.fn(),
+    getAllMetadata: vi.fn(),
+    deleteMetadata: vi.fn(),
   }
 }));
 
 // Mock URL.createObjectURL
-global.URL.createObjectURL = jest.fn(() => 'blob:url');
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn(() => 'blob:url');
+global.URL.revokeObjectURL = vi.fn();
 
 const mockDemos = [
   {
@@ -69,13 +70,13 @@ const mockMetadata = [
 
 describe('DemoBrowser Search and Filter', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (demoStorageService.getDemos as jest.Mock).mockResolvedValue(mockDemos);
-    (demoMetadataService.getAllMetadata as jest.Mock).mockReturnValue(mockMetadata);
+    vi.clearAllMocks();
+    (demoStorageService.getDemos as vi.Mock).mockResolvedValue(mockDemos);
+    (demoMetadataService.getAllMetadata as vi.Mock).mockReturnValue(mockMetadata);
   });
 
   it('renders search input and sort controls', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
 
     await waitFor(() => screen.getByPlaceholderText(/search/i));
     expect(screen.getByPlaceholderText(/search/i)).toBeInTheDocument();
@@ -83,7 +84,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('filters demos by name', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const searchInput = screen.getByPlaceholderText(/search/i);
@@ -94,7 +95,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('filters demos by map name', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const searchInput = screen.getByPlaceholderText(/search/i);
@@ -105,7 +106,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('filters demos by tags from metadata', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const searchInput = screen.getByPlaceholderText(/search/i);
@@ -116,7 +117,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('filters demos by custom name from metadata', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const searchInput = screen.getByPlaceholderText(/search/i);
@@ -127,7 +128,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('sorts demos by date (default: newest first)', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const rows = screen.getAllByRole('row');
@@ -140,7 +141,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('sorts demos by size', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const sortSelect = screen.getByRole('combobox', { name: /sort/i });
@@ -154,7 +155,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('sorts demos by duration', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const sortSelect = screen.getByRole('combobox', { name: /sort/i });
@@ -177,7 +178,7 @@ describe('DemoBrowser Search and Filter', () => {
   });
 
   it('sorts demos by name', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     await waitFor(() => screen.getByText('demo2.dm2'));
 
     const sortSelect = screen.getByRole('combobox', { name: /sort/i });

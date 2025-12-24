@@ -2,17 +2,17 @@ import { remoteStorageService } from '../../../src/services/remoteStorageService
 import { STORAGE_API_URL } from '../../../src/services/authService';
 
 // Mock global fetch
-global.fetch = jest.fn();
+global.fetch = vi.fn();
 
 describe('RemoteStorageService', () => {
   beforeEach(() => {
-    jest.resetAllMocks();
+    vi.resetAllMocks();
   });
 
   describe('listCollections', () => {
     it('calls the correct endpoint and returns data', async () => {
       const mockCollections = [{ id: 1, name: 'test' }];
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => mockCollections,
       });
@@ -27,7 +27,7 @@ describe('RemoteStorageService', () => {
     });
 
     it('throws error on failure', async () => {
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: false,
         status: 500,
         statusText: 'Internal Server Error',
@@ -42,7 +42,7 @@ describe('RemoteStorageService', () => {
       const input = { name: 'My Collection', description: 'Desc' };
       const mockResponse = { id: 1, ...input };
 
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -63,7 +63,7 @@ describe('RemoteStorageService', () => {
       const input = { key: 'test.txt', file, collection_id: 1 };
       const mockResponse = { id: 10, key: 'test.txt' };
 
-      (global.fetch as jest.Mock).mockResolvedValue({
+      (global.fetch as vi.Mock).mockResolvedValue({
         ok: true,
         json: async () => mockResponse,
       });
@@ -75,7 +75,7 @@ describe('RemoteStorageService', () => {
         // Body is FormData, hard to inspect exactly without utilities, but we check call
       }));
 
-      const callArgs = (global.fetch as jest.Mock).mock.calls[0][1];
+      const callArgs = (global.fetch as vi.Mock).mock.calls[0][1];
       const formData = callArgs.body as FormData;
       expect(formData.get('key')).toBe('test.txt');
       expect(formData.get('collection_id')).toBe('1');

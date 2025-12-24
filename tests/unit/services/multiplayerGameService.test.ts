@@ -6,23 +6,23 @@ import { createCollisionModel } from '@/src/utils/collisionAdapter';
 import { traceBox, pointContents } from 'quake2ts/shared';
 
 // Mock dependencies
-jest.mock('@/src/services/networkService', () => ({
+vi.mock('@/src/services/networkService', () => ({
     __esModule: true,
     networkService: {
-        setCallbacks: jest.fn(),
-        sendCommand: jest.fn(),
-        disconnect: jest.fn()
+        setCallbacks: vi.fn(),
+        sendCommand: vi.fn(),
+        disconnect: vi.fn()
     }
 }));
-jest.mock('@/src/services/predictionService');
-jest.mock('quake2ts/engine', () => ({
-    AssetManager: jest.fn()
+vi.mock('@/src/services/predictionService');
+vi.mock('quake2ts/engine', () => ({
+    AssetManager: vi.fn()
 }));
-jest.mock('@/src/utils/collisionAdapter');
-jest.mock('quake2ts/shared', () => ({
-    ...jest.requireActual('quake2ts/shared'),
-    traceBox: jest.fn(),
-    pointContents: jest.fn()
+vi.mock('@/src/utils/collisionAdapter');
+vi.mock('quake2ts/shared', () => ({
+    ...vi.requireActual('quake2ts/shared'),
+    traceBox: vi.fn(),
+    pointContents: vi.fn()
 }));
 
 describe('MultiplayerGameService', () => {
@@ -30,11 +30,11 @@ describe('MultiplayerGameService', () => {
     let mockAssetManager: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         mockAssetManager = {
-            loadMap: jest.fn()
+            loadMap: vi.fn()
         };
-        (AssetManager as jest.Mock).mockReturnValue(mockAssetManager);
+        (AssetManager as vi.Mock).mockReturnValue(mockAssetManager);
 
         service = new MultiplayerGameService();
     });
@@ -49,7 +49,7 @@ describe('MultiplayerGameService', () => {
         const mockCollisionModel = { planes: [] };
 
         mockAssetManager.loadMap.mockResolvedValue(mockMap);
-        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
+        (createCollisionModel as vi.Mock).mockReturnValue(mockCollisionModel);
 
         await service.init(vfs, 'demo1');
 
@@ -88,7 +88,7 @@ describe('MultiplayerGameService', () => {
         const cmd: any = { forwardMove: 100 };
         const mockPredicted = { origin: { x: 10, y: 0, z: 0 } };
 
-        (predictionService.predict as jest.Mock).mockReturnValue(mockPredicted);
+        (predictionService.predict as vi.Mock).mockReturnValue(mockPredicted);
 
         service.tick(step, cmd);
 
@@ -108,7 +108,7 @@ describe('MultiplayerGameService', () => {
 
     it('handles server snapshot', () => {
         // Access private method callback via networkService.setCallbacks call
-        const callbacks = (networkService.setCallbacks as jest.Mock).mock.calls[0][0];
+        const callbacks = (networkService.setCallbacks as vi.Mock).mock.calls[0][0];
         const mockSnapshot = {
             time: 1234,
             playerState: { origin: { x: 5, y: 5, z: 5 } },
@@ -120,7 +120,7 @@ describe('MultiplayerGameService', () => {
         expect(predictionService.onServerFrame).toHaveBeenCalledWith(mockSnapshot.playerState, 0, 1234);
 
         // Check if getSnapshot uses it (if prediction is null)
-        (predictionService.predict as jest.Mock).mockReturnValue(null);
+        (predictionService.predict as vi.Mock).mockReturnValue(null);
         // Reset local prediction state by not calling tick?
         // tick stores result in this.predictedState.
         // We need to verify that getSnapshot uses latestSnapshot if predictedState is null.
@@ -134,12 +134,12 @@ describe('MultiplayerGameService', () => {
     it('performs trace using collision model', async () => {
         const mockCollisionModel = { planes: [] };
         mockAssetManager.loadMap.mockResolvedValue({});
-        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
+        (createCollisionModel as vi.Mock).mockReturnValue(mockCollisionModel);
 
         await service.init({} as any, 'map');
 
         // Capture init options to get trace callback
-        const initOpts = (predictionService.init as jest.Mock).mock.calls[0][0];
+        const initOpts = (predictionService.init as vi.Mock).mock.calls[0][0];
 
         const mockTraceResult = {
             allsolid: false,
@@ -150,7 +150,7 @@ describe('MultiplayerGameService', () => {
             surfaceFlags: 0,
             contents: 0
         };
-        (traceBox as jest.Mock).mockReturnValue(mockTraceResult);
+        (traceBox as vi.Mock).mockReturnValue(mockTraceResult);
 
         const result = initOpts.trace({ x: 0, y: 0, z: 0 }, { x: 100, y: 0, z: 0 }, { x: -10, y: -10, z: -10 }, { x: 10, y: 10, z: 10 });
 
@@ -164,7 +164,7 @@ describe('MultiplayerGameService', () => {
 
     it('trace returns full fraction if no model', () => {
         // Not initialized
-        const callbacks = (networkService.setCallbacks as jest.Mock).mock.calls[0][0];
+        const callbacks = (networkService.setCallbacks as vi.Mock).mock.calls[0][0];
         // Wait, how to access trace? It was passed to init.
         // But we haven't called init.
         // We can access private method if we cast to any, or use logic.
@@ -186,12 +186,12 @@ describe('MultiplayerGameService', () => {
     it('pointContents delegates to engine', async () => {
         const mockCollisionModel = {};
         mockAssetManager.loadMap.mockResolvedValue({});
-        (createCollisionModel as jest.Mock).mockReturnValue(mockCollisionModel);
+        (createCollisionModel as vi.Mock).mockReturnValue(mockCollisionModel);
         await service.init({} as any, 'map');
 
-        const initOpts = (predictionService.init as jest.Mock).mock.calls[0][0];
+        const initOpts = (predictionService.init as vi.Mock).mock.calls[0][0];
 
-        (pointContents as jest.Mock).mockReturnValue(42);
+        (pointContents as vi.Mock).mockReturnValue(42);
 
         const result = initOpts.pointContents({ x: 10, y: 10, z: 10 });
         expect(pointContents).toHaveBeenCalledWith({ x: 10, y: 10, z: 10 }, mockCollisionModel, 0);

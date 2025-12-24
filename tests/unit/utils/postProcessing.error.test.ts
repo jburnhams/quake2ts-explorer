@@ -1,5 +1,5 @@
 import { PostProcessor } from '@/src/utils/postProcessing';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 describe('PostProcessor Errors', () => {
     let gl: any;
@@ -7,25 +7,25 @@ describe('PostProcessor Errors', () => {
 
     beforeEach(() => {
         gl = {
-            createShader: jest.fn(() => ({})),
-            shaderSource: jest.fn(),
-            compileShader: jest.fn(),
-            getShaderParameter: jest.fn(() => true),
-            createProgram: jest.fn(() => ({})),
-            attachShader: jest.fn(),
-            linkProgram: jest.fn(),
-            getProgramParameter: jest.fn(() => true),
-            createVertexArray: jest.fn(() => ({})),
-            bindVertexArray: jest.fn(),
-            createBuffer: jest.fn(() => ({})),
-            bindBuffer: jest.fn(),
-            bufferData: jest.fn(),
-            getAttribLocation: jest.fn(() => 0),
-            enableVertexAttribArray: jest.fn(),
-            vertexAttribPointer: jest.fn(),
-            getShaderInfoLog: jest.fn(),
-            deleteShader: jest.fn(),
-            getProgramInfoLog: jest.fn(),
+            createShader: vi.fn(() => ({})),
+            shaderSource: vi.fn(),
+            compileShader: vi.fn(),
+            getShaderParameter: vi.fn(() => true),
+            createProgram: vi.fn(() => ({})),
+            attachShader: vi.fn(),
+            linkProgram: vi.fn(),
+            getProgramParameter: vi.fn(() => true),
+            createVertexArray: vi.fn(() => ({})),
+            bindVertexArray: vi.fn(),
+            createBuffer: vi.fn(() => ({})),
+            bindBuffer: vi.fn(),
+            bufferData: vi.fn(),
+            getAttribLocation: vi.fn(() => 0),
+            enableVertexAttribArray: vi.fn(),
+            vertexAttribPointer: vi.fn(),
+            getShaderInfoLog: vi.fn(),
+            deleteShader: vi.fn(),
+            getProgramInfoLog: vi.fn(),
             // Enums
             VERTEX_SHADER: 1,
             FRAGMENT_SHADER: 2,

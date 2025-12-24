@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { LightingControls, LightingOptions } from '@/src/components/LightingControls';
@@ -12,8 +13,8 @@ describe('LightingControls', () => {
         freezeLights: false
     };
 
-    const mockOnChange = jest.fn();
-    const mockOnClose = jest.fn();
+    const mockOnChange = vi.fn();
+    const mockOnClose = vi.fn();
 
     beforeEach(() => {
         mockOnChange.mockClear();

@@ -1,22 +1,22 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { renderHook, act, waitFor } from '@testing-library/react';
 
 // Mock IndexedDB Service
-jest.mock('@/src/services/indexedDBService', () => ({
+vi.mock('@/src/services/indexedDBService', () => ({
   indexedDBService: {
-    initDB: jest.fn(),
-    savePak: jest.fn(async (file: File) => 'mock-id'),
-    getPaks: jest.fn(async () => []),
-    deletePak: jest.fn(),
+    initDB: vi.fn(),
+    savePak: vi.fn(async (file: File) => 'mock-id'),
+    getPaks: vi.fn(async () => []),
+    deletePak: vi.fn(),
   }
 }));
 
 // Mock worker service to avoid issues with real workers in JSDOM
 // Use relative path to ensure we intercept the call from pakService.ts which imports it relatively
-jest.mock('../../src/services/workerService', () => ({
+vi.mock('../../src/services/workerService', () => ({
     workerService: {
-        getPakParser: jest.fn(() => ({
-            parsePak: jest.fn(async (name: string, buffer: ArrayBuffer) => ({
+        getPakParser: vi.fn(() => ({
+            parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => ({
                 entries: new Map([
                     ['readme.txt', { name: 'readme.txt', offset: 0, length: 100 }],
                 ]),
@@ -28,9 +28,9 @@ jest.mock('../../src/services/workerService', () => ({
 }));
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
   PakArchive: {
-    fromArrayBuffer: jest.fn((name: string, _buffer: ArrayBuffer) => ({
+    fromArrayBuffer: vi.fn((name: string, _buffer: ArrayBuffer) => ({
       name,
       entries: new Map([
         ['readme.txt', { name: 'readme.txt', offset: 0, length: 100 }],
@@ -42,10 +42,10 @@ jest.mock('quake2ts/engine', () => ({
       ],
     })),
   },
-  VirtualFileSystem: jest.fn().mockImplementation(() => {
+  VirtualFileSystem: vi.fn().mockImplementation(() => {
     const files = new Map<string, { path: string; size: number; sourcePak: string }>();
     return {
-      mountPak: jest.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
+      mountPak: vi.fn((archive: { name: string; listEntries: () => Array<{ name: string; length: number }> }) => {
         // Mock ID logic: use archive name as sourcePak
         for (const entry of archive.listEntries()) {
           files.set(entry.name, {
@@ -55,44 +55,44 @@ jest.mock('quake2ts/engine', () => ({
           });
         }
       }),
-      hasFile: jest.fn((path: string) => files.has(path)),
-      stat: jest.fn((path: string) => files.get(path)),
-      readFile: jest.fn(async (path: string) => {
+      hasFile: vi.fn((path: string) => files.has(path)),
+      stat: vi.fn((path: string) => files.get(path)),
+      readFile: vi.fn(async (path: string) => {
         if (!files.has(path)) throw new Error(`File not found: ${path}`);
         return new TextEncoder().encode('test content');
       }),
-      list: jest.fn(() => ({
+      list: vi.fn(() => ({
         files: Array.from(files.values()),
         directories: [],
       })),
-      findByExtension: jest.fn((ext: string) =>
+      findByExtension: vi.fn((ext: string) =>
         Array.from(files.values()).filter(f => f.path.endsWith(ext))
       ),
     };
   }),
-  parsePcx: jest.fn(() => ({
+  parsePcx: vi.fn(() => ({
     width: 64,
     height: 64,
     bitsPerPixel: 8,
     palette: new Uint8Array(768),
   })),
-  pcxToRgba: jest.fn(() => new Uint8Array(64 * 64 * 4)),
-  parseWal: jest.fn(() => ({
+  pcxToRgba: vi.fn(() => new Uint8Array(64 * 64 * 4)),
+  parseWal: vi.fn(() => ({
     name: 'test',
     width: 64,
     height: 64,
     mipmaps: [],
   })),
-  walToRgba: jest.fn(() => ({
+  walToRgba: vi.fn(() => ({
     levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }],
   })),
-  parseMd2: jest.fn(() => ({
+  parseMd2: vi.fn(() => ({
     header: { numFrames: 10, numVertices: 100, numTriangles: 50, numSkins: 1, numGlCommands: 200 },
   })),
-  parseMd3: jest.fn(() => ({
+  parseMd3: vi.fn(() => ({
     header: { numFrames: 5, numSurfaces: 2, numTags: 1 },
   })),
-  parseWav: jest.fn(() => ({
+  parseWav: vi.fn(() => ({
     channels: 1,
     sampleRate: 22050,
     bitsPerSample: 16,
@@ -104,14 +104,14 @@ import { usePakExplorer } from '@/src/hooks/usePakExplorer';
 
 describe('usePakExplorer Hook', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
     // Reset global fetch mock
-    global.fetch = jest.fn(() =>
+    global.fetch = vi.fn(() =>
         Promise.resolve({
             ok: false,
             statusText: 'Not Found'
         })
-    ) as jest.Mock;
+    ) as vi.Mock;
   });
 
   it('initializes with default state', async () => {
@@ -149,7 +149,7 @@ describe('usePakExplorer Hook', () => {
 
     const file = new File(['PACK'], 'test.pak', { type: 'application/octet-stream' });
     // Mock arrayBuffer properly
-    file.arrayBuffer = jest.fn().mockResolvedValue(new ArrayBuffer(10));
+    file.arrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(10));
 
     const fileList = {
         length: 1,
@@ -190,13 +190,13 @@ describe('usePakExplorer Hook', () => {
     const { result } = renderHook(() => usePakExplorer());
     await waitFor(() => expect(result.current.loading).toBe(false));
 
-    global.fetch = jest.fn(() =>
+    global.fetch = vi.fn(() =>
       Promise.resolve({
         ok: true,
         arrayBuffer: () => Promise.resolve(new ArrayBuffer(10)),
         statusText: 'OK'
       })
-    ) as jest.Mock;
+    ) as vi.Mock;
 
     await act(async () => {
       await result.current.loadFromUrl('http://example.com/default.pak');

@@ -3,15 +3,15 @@ import { AssetCrossRefService } from '@/src/services/assetCrossRefService';
 import { VirtualFileSystem } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('quake2ts/engine', () => ({
-    VirtualFileSystem: jest.fn().mockImplementation(() => ({
-        findByExtension: jest.fn().mockReturnValue([]),
-        readFile: jest.fn(),
-        hasFile: jest.fn()
+vi.mock('quake2ts/engine', () => ({
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({
+        findByExtension: vi.fn().mockReturnValue([]),
+        readFile: vi.fn(),
+        hasFile: vi.fn()
     })),
-    parseMd2: jest.fn(),
-    parseMd3: jest.fn(),
-    parseBsp: jest.fn()
+    parseMd2: vi.fn(),
+    parseMd3: vi.fn(),
+    parseBsp: vi.fn()
 }));
 
 describe('AssetCrossRefService Coverage', () => {
@@ -21,7 +21,7 @@ describe('AssetCrossRefService Coverage', () => {
     beforeEach(() => {
         mockVfs = new VirtualFileSystem();
         service = new AssetCrossRefService(mockVfs);
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('should find texture usage in models', async () => {
@@ -47,7 +47,7 @@ describe('AssetCrossRefService Coverage', () => {
         mockVfs.findByExtension.mockReturnValue([{ path: 'models/bad.md2' }]);
         mockVfs.readFile.mockRejectedValue(new Error('Read Fail'));
 
-        const spy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        const spy = vi.spyOn(console, 'warn').mockImplementation(() => {});
         await service.findTextureUsage('any');
 
         expect(spy).toHaveBeenCalled();

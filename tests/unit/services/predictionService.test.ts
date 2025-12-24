@@ -15,18 +15,18 @@ import {
 import { predictionService } from '../../../src/services/predictionService';
 
 // Mock ClientPrediction
-jest.mock('quake2ts/client', () => {
+vi.mock('quake2ts/client', () => {
   return {
-    ClientPrediction: jest.fn().mockImplementation(() => ({
-      setPredictionEnabled: jest.fn(),
-      enqueueCommand: jest.fn().mockReturnValue({
+    ClientPrediction: vi.fn().mockImplementation(() => ({
+      setPredictionEnabled: vi.fn(),
+      enqueueCommand: vi.fn().mockReturnValue({
           origin: { x: 100, y: 0, z: 0 }, // Mock predicted state
           pmove: { origin: { x: 100, y: 0, z: 0 } }
       }),
-      setAuthoritative: jest.fn(),
-      getPredictionError: jest.fn().mockReturnValue({ x: 0, y: 0, z: 0 }),
-      decayError: jest.fn(),
-      getPredictedState: jest.fn().mockReturnValue({
+      setAuthoritative: vi.fn(),
+      getPredictionError: vi.fn().mockReturnValue({ x: 0, y: 0, z: 0 }),
+      decayError: vi.fn(),
+      getPredictedState: vi.fn().mockReturnValue({
           origin: { x: 100, y: 0, z: 0 }
       })
     }))
@@ -38,9 +38,9 @@ describe('PredictionService', () => {
   let mockPointContents: PointContentsFunction;
 
   beforeEach(() => {
-    mockTrace = jest.fn();
-    mockPointContents = jest.fn();
-    (ClientPrediction as jest.Mock).mockClear();
+    mockTrace = vi.fn();
+    mockPointContents = vi.fn();
+    (ClientPrediction as vi.Mock).mockClear();
   });
 
   it('should initialize successfully', () => {
@@ -61,7 +61,7 @@ describe('PredictionService', () => {
     predictionService.init({ trace: mockTrace, pointContents: mockPointContents });
 
     // Access the mock instance
-    const instance = (ClientPrediction as jest.Mock).mock.results[0].value;
+    const instance = (ClientPrediction as vi.Mock).mock.results[0].value;
 
     predictionService.setEnabled(true);
     expect(instance.setPredictionEnabled).toHaveBeenCalledWith(true);
@@ -72,7 +72,7 @@ describe('PredictionService', () => {
 
   it('should predict user command', () => {
     predictionService.init({ trace: mockTrace, pointContents: mockPointContents });
-    const instance = (ClientPrediction as jest.Mock).mock.results[0].value;
+    const instance = (ClientPrediction as vi.Mock).mock.results[0].value;
 
     const cmd: UserCommand = {
         msec: 16,
@@ -94,7 +94,7 @@ describe('PredictionService', () => {
 
   it('should delegate server frame updates', () => {
     predictionService.init({ trace: mockTrace, pointContents: mockPointContents });
-    const instance = (ClientPrediction as jest.Mock).mock.results[0].value;
+    const instance = (ClientPrediction as vi.Mock).mock.results[0].value;
 
     const serverState = { origin: { x: 0, y: 0, z: 0 } } as PredictionState;
     // Updated signature call
@@ -108,7 +108,7 @@ describe('PredictionService', () => {
 
   it('should track mispredictions', () => {
       predictionService.init({ trace: mockTrace, pointContents: mockPointContents });
-      const instance = (ClientPrediction as jest.Mock).mock.results[0].value;
+      const instance = (ClientPrediction as vi.Mock).mock.results[0].value;
 
       // Mock getPredictionError to return significant error
       instance.getPredictionError.mockReturnValue({ x: 10, y: 0, z: 0 });

@@ -1,4 +1,4 @@
-import { describe, it, expect, jest, beforeEach } from '@jest/globals';
+
 import { ModDetectionServiceImpl } from '../../src/services/modDetectionService';
 import { PakService, MountedPak } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
@@ -27,14 +27,14 @@ describe('ModDetectionService', () => {
   beforeEach(() => {
     service = new ModDetectionServiceImpl();
     mockPakService = {
-      getMountedPaks: jest.fn<() => MountedPak[]>().mockReturnValue([]),
+      getMountedPaks: vi.fn<() => MountedPak[]>().mockReturnValue([]),
     } as unknown as PakService;
   });
 
   it('should detect base game from colormap.pcx', async () => {
     const archive = createMockArchive({ 'pics/colormap.pcx': '...' });
     const pak: MountedPak = { id: '1', name: 'pak0.pak', archive, isUser: false };
-    (mockPakService.getMountedPaks as jest.Mock).mockReturnValue([pak]);
+    (mockPakService.getMountedPaks as vi.Mock).mockReturnValue([pak]);
 
     const mods = await service.detectMods(mockPakService);
 
@@ -53,7 +53,7 @@ describe('ModDetectionService', () => {
     });
     const archive = createMockArchive({ 'mod.json': modJson });
     const pak: MountedPak = { id: '2', name: 'my_mod.pak', archive, isUser: true };
-    (mockPakService.getMountedPaks as jest.Mock).mockReturnValue([pak]);
+    (mockPakService.getMountedPaks as vi.Mock).mockReturnValue([pak]);
 
     const mods = await service.detectMods(mockPakService);
 
@@ -66,7 +66,7 @@ describe('ModDetectionService', () => {
   it('should detect Rogue expansion by unique file', async () => {
     const archive = createMockArchive({ 'maps/rogue1.bsp': '...' });
     const pak: MountedPak = { id: '3', name: 'pak0.pak', archive, isUser: false };
-    (mockPakService.getMountedPaks as jest.Mock).mockReturnValue([pak]);
+    (mockPakService.getMountedPaks as vi.Mock).mockReturnValue([pak]);
 
     const mods = await service.detectMods(mockPakService);
 
@@ -78,7 +78,7 @@ describe('ModDetectionService', () => {
   it('should detect Xatrix expansion by filename', async () => {
      const archive = createMockArchive({}); // Empty archive
      const pak: MountedPak = { id: '4', name: 'xatrix.pak', archive, isUser: false };
-     (mockPakService.getMountedPaks as jest.Mock).mockReturnValue([pak]);
+     (mockPakService.getMountedPaks as vi.Mock).mockReturnValue([pak]);
 
      const mods = await service.detectMods(mockPakService);
 
@@ -94,7 +94,7 @@ describe('ModDetectionService', () => {
     const archive2 = createMockArchive({ 'pics/colormap.pcx': '...' });
     const pak2: MountedPak = { id: '2', name: 'pak1.pak', archive: archive2, isUser: false };
 
-    (mockPakService.getMountedPaks as jest.Mock).mockReturnValue([pak1, pak2]);
+    (mockPakService.getMountedPaks as vi.Mock).mockReturnValue([pak1, pak2]);
 
     const mods = await service.detectMods(mockPakService);
 

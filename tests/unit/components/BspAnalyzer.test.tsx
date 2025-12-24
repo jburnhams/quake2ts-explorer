@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
@@ -5,7 +6,7 @@ import { BspAnalyzer, BspAnalyzerProps } from '@/src/components/BspAnalyzer';
 import { BspMap } from 'quake2ts/engine';
 
 // Mock UniversalViewer
-jest.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
+vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
   UniversalViewer: () => <div data-testid="universal-viewer">Universal Viewer</div>
 }));
 

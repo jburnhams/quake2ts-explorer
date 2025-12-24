@@ -1,30 +1,30 @@
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
+
 
 // Mock comlink
-jest.mock('comlink', () => ({
-    expose: jest.fn(),
-    transfer: jest.fn((obj) => obj)
+vi.mock('comlink', () => ({
+    expose: vi.fn(),
+    transfer: vi.fn((obj) => obj)
 }));
 
 import { expose, transfer } from 'comlink';
-const mockTransfer = transfer as jest.Mock;
+const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-jest.mock('quake2ts/engine', () => ({
-    parseWal: jest.fn(),
-    walToRgba: jest.fn(),
-    parsePcx: jest.fn(),
-    pcxToRgba: jest.fn(),
-    parseMd2: jest.fn(),
-    groupMd2Animations: jest.fn(),
-    parseMd3: jest.fn(),
-    parseTga: jest.fn(),
-    parseWav: jest.fn(),
-    parseBsp: jest.fn(),
+vi.mock('quake2ts/engine', () => ({
+    parseWal: vi.fn(),
+    walToRgba: vi.fn(),
+    parsePcx: vi.fn(),
+    pcxToRgba: vi.fn(),
+    parseMd2: vi.fn(),
+    groupMd2Animations: vi.fn(),
+    parseMd3: vi.fn(),
+    parseTga: vi.fn(),
+    parseWav: vi.fn(),
+    parseBsp: vi.fn(),
 }));
 
-jest.mock('@/src/utils/sp2Parser', () => ({
-    parseSprite: jest.fn()
+vi.mock('@/src/utils/sp2Parser', () => ({
+    parseSprite: vi.fn()
 }));
 
 // Import worker
@@ -35,9 +35,9 @@ describe('AssetProcessorWorker Coverage', () => {
     let api: any;
 
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         // expose is called on import. Capture args.
-        const mockExpose = expose as jest.Mock;
+        const mockExpose = expose as vi.Mock;
         // In some environments, module is cached, so expose might not be called again if not reset.
         // But we import it again? No, import is cached.
         // We rely on previous call or mock state.
@@ -49,11 +49,11 @@ describe('AssetProcessorWorker Coverage', () => {
     it('processWal with multiple mipmap levels', () => {
         if (!api) {
             // Re-require to force expose
-             jest.isolateModules(() => {
+             vi.isolateModules(() => {
                  const worker = require('@/src/workers/assetProcessor.worker');
                  // expose is called
              });
-             api = (expose as jest.Mock).mock.calls[(expose as jest.Mock).mock.calls.length - 1][0];
+             api = (expose as vi.Mock).mock.calls[(expose as vi.Mock).mock.calls.length - 1][0];
         }
 
         const mockBuffer = new ArrayBuffer(8);
@@ -68,8 +68,8 @@ describe('AssetProcessorWorker Coverage', () => {
             { width: 16, height: 16, rgba: mockRgba1 }
         ];
 
-        (engine.parseWal as jest.Mock).mockReturnValue(mockTexture);
-        (engine.walToRgba as jest.Mock).mockReturnValue({ levels: mockLevels });
+        (engine.parseWal as vi.Mock).mockReturnValue(mockTexture);
+        (engine.walToRgba as vi.Mock).mockReturnValue({ levels: mockLevels });
 
         const result = api.processWal(mockBuffer, mockPalette);
 

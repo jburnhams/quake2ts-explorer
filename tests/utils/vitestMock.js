@@ -1,8 +1,8 @@
 // Mock for vitest to allow quake2ts/test-utils to be used in Jest
 module.exports = {
   vi: {
-    fn: (impl) => jest.fn(impl),
-    spyOn: (obj, prop) => jest.spyOn(obj, prop),
+    fn: (impl) => vi.fn(impl),
+    spyOn: (obj, prop) => vi.spyOn(obj, prop),
     mocked: (item) => item,
     // Add other vitest methods as needed by test-utils
   },

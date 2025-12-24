@@ -1,16 +1,16 @@
 import { thumbnailService } from '../../../src/services/thumbnailService';
 import { cacheService } from '../../../src/services/cacheService';
-import { jest, describe, it, expect, beforeEach } from '@jest/globals';
 
-jest.mock('../../../src/services/cacheService');
+
+vi.mock('../../../src/services/cacheService');
 
 describe('ThumbnailService Coverage', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     it('saves thumbnail', async () => {
@@ -21,7 +21,7 @@ describe('ThumbnailService Coverage', () => {
 
     it('gets thumbnail', async () => {
         const blob = new Blob([''], { type: 'image/jpeg' });
-        (cacheService.get as jest.Mock).mockResolvedValue(blob);
+        (cacheService.get as vi.Mock).mockResolvedValue(blob);
         const result = await thumbnailService.getThumbnail('key');
         expect(result).toBe(blob);
     });
@@ -32,14 +32,14 @@ describe('ThumbnailService Coverage', () => {
         const mockCanvas = {
             width: 0,
             height: 0,
-            getContext: jest.fn(() => ({
-                drawImage: jest.fn(),
+            getContext: vi.fn(() => ({
+                drawImage: vi.fn(),
                 imageSmoothingEnabled: false,
                 imageSmoothingQuality: ''
             })),
-            toBlob: jest.fn((cb: any) => cb(mockBlob))
+            toBlob: vi.fn((cb: any) => cb(mockBlob))
         };
-        jest.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any);
+        vi.spyOn(document, 'createElement').mockReturnValue(mockCanvas as any);
 
         const img = {} as any;
         const result = await thumbnailService.generateThumbnail(img, 100, 100);
@@ -50,8 +50,8 @@ describe('ThumbnailService Coverage', () => {
     });
 
     it('handles canvas context failure', async () => {
-        jest.spyOn(document, 'createElement').mockReturnValue({
-            getContext: jest.fn(() => null)
+        vi.spyOn(document, 'createElement').mockReturnValue({
+            getContext: vi.fn(() => null)
         } as any);
 
         const result = await thumbnailService.generateThumbnail({} as any);

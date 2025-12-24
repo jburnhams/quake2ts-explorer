@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import React from 'react';
 import { CameraSettingsPanel } from '@/src/components/CameraSettingsPanel';
@@ -5,8 +6,8 @@ import { DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
 
 describe('CameraSettingsPanel', () => {
   it('renders all settings fields', () => {
-    const onChange = jest.fn();
-    const onClose = jest.fn();
+    const onChange = vi.fn();
+    const onClose = vi.fn();
     render(
       <CameraSettingsPanel
         settings={DEFAULT_CAMERA_SETTINGS}
@@ -23,8 +24,8 @@ describe('CameraSettingsPanel', () => {
   });
 
   it('calls onChange when a slider is moved', () => {
-    const onChange = jest.fn();
-    const onClose = jest.fn();
+    const onChange = vi.fn();
+    const onClose = vi.fn();
     render(
       <CameraSettingsPanel
         settings={DEFAULT_CAMERA_SETTINGS}
@@ -46,8 +47,8 @@ describe('CameraSettingsPanel', () => {
   });
 
   it('calls onClose when close button is clicked', () => {
-    const onChange = jest.fn();
-    const onClose = jest.fn();
+    const onChange = vi.fn();
+    const onClose = vi.fn();
     render(
       <CameraSettingsPanel
         settings={DEFAULT_CAMERA_SETTINGS}
@@ -61,8 +62,8 @@ describe('CameraSettingsPanel', () => {
   });
 
   it('resets to defaults', () => {
-    const onChange = jest.fn();
-    const onClose = jest.fn();
+    const onChange = vi.fn();
+    const onClose = vi.fn();
     const customSettings = { ...DEFAULT_CAMERA_SETTINGS, thirdPersonDistance: 500 };
 
     render(

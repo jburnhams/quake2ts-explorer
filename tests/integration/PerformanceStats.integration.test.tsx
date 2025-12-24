@@ -7,33 +7,33 @@ import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter
 import 'jest-canvas-mock';
 
 // Mock dependencies
-jest.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
-jest.mock('@/src/services/performanceService', () => ({
+vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
+vi.mock('@/src/services/performanceService', () => ({
   performanceService: {
     createFpsCounter: () => ({
-      update: jest.fn(),
+      update: vi.fn(),
       getAverageFps: () => 60,
       getMinFps: () => 58,
       getMaxFps: () => 62,
-      reset: jest.fn(),
+      reset: vi.fn(),
     }),
     now: () => 1000,
-    startMeasure: jest.fn(),
-    endMeasure: jest.fn(),
+    startMeasure: vi.fn(),
+    endMeasure: vi.fn(),
   },
 }));
 
 // Mock WebGL context
 const mockGl = {
-  clearColor: jest.fn(),
-  clear: jest.fn(),
-  enable: jest.fn(),
-  viewport: jest.fn(),
+  clearColor: vi.fn(),
+  clear: vi.fn(),
+  enable: vi.fn(),
+  viewport: vi.fn(),
 } as unknown as WebGL2RenderingContext;
 
-jest.mock('quake2ts/engine', () => ({
+vi.mock('quake2ts/engine', () => ({
   createWebGLContext: () => ({ gl: mockGl }),
-  Camera: jest.fn().mockImplementation(() => ({
+  Camera: vi.fn().mockImplementation(() => ({
     fov: 60,
     aspect: 1,
     position: [0, 0, 0],
@@ -46,13 +46,13 @@ describe('PerformanceStats Integration', () => {
 
   beforeEach(() => {
     mockAdapter = {
-      load: jest.fn().mockResolvedValue(undefined),
-      render: jest.fn(),
-      cleanup: jest.fn(),
-      setRenderOptions: jest.fn(),
-      setDebugMode: jest.fn(),
-      update: jest.fn(),
-      getStatistics: jest.fn().mockReturnValue({
+      load: vi.fn().mockResolvedValue(undefined),
+      render: vi.fn(),
+      cleanup: vi.fn(),
+      setRenderOptions: vi.fn(),
+      setDebugMode: vi.fn(),
+      update: vi.fn(),
+      getStatistics: vi.fn().mockReturnValue({
         cpuFrameTimeMs: 16,
         drawCalls: 10,
         triangles: 100,
@@ -61,7 +61,7 @@ describe('PerformanceStats Integration', () => {
         visibleSurfaces: 5,
       }),
     };
-    (Md2Adapter as jest.Mock).mockImplementation(() => mockAdapter);
+    (Md2Adapter as vi.Mock).mockImplementation(() => mockAdapter);
   });
 
   it('renders performance stats when enabled', async () => {

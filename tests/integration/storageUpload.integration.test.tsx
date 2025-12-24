@@ -8,29 +8,29 @@ import { pakService } from '../../src/services/pakService';
 import { PakArchive } from 'quake2ts/engine';
 
 // Mock dependencies
-jest.mock('../../src/services/workerService', () => ({
+vi.mock('../../src/services/workerService', () => ({
   workerService: {
-    executePakParserTask: jest.fn(),
-    executeAssetProcessorTask: jest.fn(),
+    executePakParserTask: vi.fn(),
+    executeAssetProcessorTask: vi.fn(),
   }
 }));
 
-jest.mock('../../src/services/cacheService', () => ({
+vi.mock('../../src/services/cacheService', () => ({
     cacheService: {
-        get: jest.fn().mockResolvedValue(null),
-        set: jest.fn().mockResolvedValue(undefined),
+        get: vi.fn().mockResolvedValue(null),
+        set: vi.fn().mockResolvedValue(undefined),
     },
     CACHE_STORES: { PAK_INDEX: 'pak-index', ASSET_METADATA: 'asset-metadata' }
 }));
 
 // Mock PakService.getMountedPaks/readFile to control the file flow
-jest.spyOn(pakService, 'getMountedPaks').mockReturnValue([]);
+vi.spyOn(pakService, 'getMountedPaks').mockReturnValue([]);
 
 describe('Storage Upload Integration', () => {
   beforeAll(() => server.listen());
   afterEach(() => {
       server.resetHandlers();
-      jest.clearAllMocks();
+      vi.clearAllMocks();
   });
   afterAll(() => server.close());
 
@@ -48,8 +48,8 @@ describe('Storage Upload Integration', () => {
     };
 
     // @ts-ignore
-    jest.spyOn(pakService, 'getMountedPaks').mockReturnValue([mockPak]);
-    jest.spyOn(pakService, 'readFile').mockResolvedValue(new Uint8Array([1, 2, 3]));
+    vi.spyOn(pakService, 'getMountedPaks').mockReturnValue([mockPak]);
+    vi.spyOn(pakService, 'readFile').mockResolvedValue(new Uint8Array([1, 2, 3]));
 
     // 2. Render App
     await act(async () => {

@@ -1,3 +1,4 @@
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // tests/unit/components/DemoBrowser.test.tsx
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -5,16 +6,16 @@ import { DemoBrowser } from '../../../src/components/DemoBrowser';
 import { demoStorageService } from '../../../src/services/demoStorageService';
 
 // Mock demoStorageService
-jest.mock('../../../src/services/demoStorageService', () => ({
+vi.mock('../../../src/services/demoStorageService', () => ({
   demoStorageService: {
-    getDemos: jest.fn(),
-    deleteDemo: jest.fn(),
+    getDemos: vi.fn(),
+    deleteDemo: vi.fn(),
   }
 }));
 
 // Mock URL.createObjectURL
-global.URL.createObjectURL = jest.fn(() => 'blob:url');
-global.URL.revokeObjectURL = jest.fn();
+global.URL.createObjectURL = vi.fn(() => 'blob:url');
+global.URL.revokeObjectURL = vi.fn();
 
 const mockDemos = [
   {
@@ -36,17 +37,17 @@ const mockDemos = [
 
 describe('DemoBrowser', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    (demoStorageService.getDemos as jest.Mock).mockResolvedValue(mockDemos);
+    vi.clearAllMocks();
+    (demoStorageService.getDemos as vi.Mock).mockResolvedValue(mockDemos);
   });
 
   it('renders loading state initially', async () => {
     // Delay resolution
     let resolvePromise: (value: any) => void;
     const promise = new Promise(resolve => { resolvePromise = resolve; });
-    (demoStorageService.getDemos as jest.Mock).mockReturnValue(promise);
+    (demoStorageService.getDemos as vi.Mock).mockReturnValue(promise);
 
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
     expect(screen.getByText('Loading...')).toBeInTheDocument();
 
     // Clean up promise to avoid act warning
@@ -56,7 +57,7 @@ describe('DemoBrowser', () => {
   });
 
   it('renders demo list', async () => {
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
 
     await waitFor(() => {
       expect(screen.getByText('demo1.dm2')).toBeInTheDocument();
@@ -66,8 +67,8 @@ describe('DemoBrowser', () => {
   });
 
   it('handles play action', async () => {
-    const onPlay = jest.fn();
-    render(<DemoBrowser onPlayDemo={onPlay} onClose={jest.fn()} />);
+    const onPlay = vi.fn();
+    render(<DemoBrowser onPlayDemo={onPlay} onClose={vi.fn()} />);
 
     await waitFor(() => screen.getByText('demo1.dm2'));
 
@@ -76,10 +77,10 @@ describe('DemoBrowser', () => {
   });
 
   it('handles delete action', async () => {
-    (demoStorageService.deleteDemo as jest.Mock).mockResolvedValue(undefined);
-    window.confirm = jest.fn(() => true);
+    (demoStorageService.deleteDemo as vi.Mock).mockResolvedValue(undefined);
+    window.confirm = vi.fn(() => true);
 
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={jest.fn()} />);
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={vi.fn()} />);
 
     await waitFor(() => screen.getByText('demo1.dm2'));
 
@@ -95,8 +96,8 @@ describe('DemoBrowser', () => {
   });
 
   it('handles close action', () => {
-    const onClose = jest.fn();
-    render(<DemoBrowser onPlayDemo={jest.fn()} onClose={onClose} />);
+    const onClose = vi.fn();
+    render(<DemoBrowser onPlayDemo={vi.fn()} onClose={onClose} />);
 
     fireEvent.click(screen.getByText('×'));
     expect(onClose).toHaveBeenCalled();

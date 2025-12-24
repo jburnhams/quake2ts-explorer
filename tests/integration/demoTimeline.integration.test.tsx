@@ -7,7 +7,7 @@ import { Dm2Adapter } from '../../src/components/UniversalViewer/adapters/Dm2Ada
 import { DemoPlaybackController } from 'quake2ts/engine';
 
 // Mock gl-matrix
-jest.mock('gl-matrix', () => ({
+vi.mock('gl-matrix', () => ({
   vec3: {
     create: () => new Float32Array([0, 0, 0]),
     fromValues: (x: number, y: number, z: number) => new Float32Array([x, y, z]),
@@ -33,55 +33,55 @@ jest.mock('gl-matrix', () => ({
 }));
 
 // Mock quake2ts/engine
-jest.mock('quake2ts/engine', () => {
+vi.mock('quake2ts/engine', () => {
     return {
-        createWebGLContext: jest.fn(() => ({
+        createWebGLContext: vi.fn(() => ({
             gl: {
-                clearColor: jest.fn(),
-                clear: jest.fn(),
-                enable: jest.fn(),
-                viewport: jest.fn(),
+                clearColor: vi.fn(),
+                clear: vi.fn(),
+                enable: vi.fn(),
+                viewport: vi.fn(),
                 COLOR_BUFFER_BIT: 16384,
                 DEPTH_BUFFER_BIT: 256,
                 DEPTH_TEST: 2929,
                 CULL_FACE: 2884,
-                createShader: jest.fn(),
-                shaderSource: jest.fn(),
-                compileShader: jest.fn(),
-                createProgram: jest.fn(),
-                attachShader: jest.fn(),
-                linkProgram: jest.fn(),
-                useProgram: jest.fn(),
-                getAttribLocation: jest.fn(),
-                getUniformLocation: jest.fn(),
-                createBuffer: jest.fn(),
-                bindBuffer: jest.fn(),
-                bufferData: jest.fn(),
-                enableVertexAttribArray: jest.fn(),
-                vertexAttribPointer: jest.fn(),
-                createVertexArray: jest.fn(),
-                bindVertexArray: jest.fn(),
+                createShader: vi.fn(),
+                shaderSource: vi.fn(),
+                compileShader: vi.fn(),
+                createProgram: vi.fn(),
+                attachShader: vi.fn(),
+                linkProgram: vi.fn(),
+                useProgram: vi.fn(),
+                getAttribLocation: vi.fn(),
+                getUniformLocation: vi.fn(),
+                createBuffer: vi.fn(),
+                bindBuffer: vi.fn(),
+                bufferData: vi.fn(),
+                enableVertexAttribArray: vi.fn(),
+                vertexAttribPointer: vi.fn(),
+                createVertexArray: vi.fn(),
+                bindVertexArray: vi.fn(),
             }
         })),
-        Camera: jest.fn(() => ({
+        Camera: vi.fn(() => ({
             position: new Float32Array([0,0,0]),
             angles: new Float32Array([0,0,0]),
             viewMatrix: new Float32Array(16)
         })),
-        DemoPlaybackController: jest.fn().mockImplementation(() => ({
-            loadDemo: jest.fn(),
-            play: jest.fn(),
-            pause: jest.fn(),
-            stop: jest.fn(),
-            update: jest.fn(),
-            getState: jest.fn().mockReturnValue({ origin: [0,0,0], angles: [0,0,0] }),
-            getDuration: jest.fn().mockReturnValue(60),
-            getCurrentTime: jest.fn().mockReturnValue(0),
-            getCurrentFrame: jest.fn().mockReturnValue(0),
-            getFrameCount: jest.fn().mockReturnValue(600),
-            seekToTime: jest.fn(),
-            getDemoEvents: jest.fn().mockReturnValue([]),
-            getDemoHeader: jest.fn().mockReturnValue({ tickRate: 40 })
+        DemoPlaybackController: vi.fn().mockImplementation(() => ({
+            loadDemo: vi.fn(),
+            play: vi.fn(),
+            pause: vi.fn(),
+            stop: vi.fn(),
+            update: vi.fn(),
+            getState: vi.fn().mockReturnValue({ origin: [0,0,0], angles: [0,0,0] }),
+            getDuration: vi.fn().mockReturnValue(60),
+            getCurrentTime: vi.fn().mockReturnValue(0),
+            getCurrentFrame: vi.fn().mockReturnValue(0),
+            getFrameCount: vi.fn().mockReturnValue(600),
+            seekToTime: vi.fn(),
+            getDemoEvents: vi.fn().mockReturnValue([]),
+            getDemoHeader: vi.fn().mockReturnValue({ tickRate: 40 })
         })),
         DemoEventType: {
             Death: 1
@@ -90,32 +90,32 @@ jest.mock('quake2ts/engine', () => {
 });
 
 // Mock Dm2Adapter
-jest.mock('../../src/components/UniversalViewer/adapters/Dm2Adapter');
+vi.mock('../../src/components/UniversalViewer/adapters/Dm2Adapter');
 
 describe('UniversalViewer - Demo Integration', () => {
   let mockPakService: PakService;
 
   beforeEach(() => {
-      jest.clearAllMocks();
-      (Dm2Adapter as unknown as jest.Mock).mockImplementation(() => {
+      vi.clearAllMocks();
+      (Dm2Adapter as unknown as vi.Mock).mockImplementation(() => {
           const controller = new (require('quake2ts/engine').DemoPlaybackController)();
           return {
-              load: jest.fn().mockResolvedValue(undefined),
-              update: jest.fn(),
-              render: jest.fn(),
-              cleanup: jest.fn(),
-              play: jest.fn(),
-              pause: jest.fn(),
-              isPlaying: jest.fn().mockReturnValue(true),
-              getDemoController: jest.fn().mockReturnValue(controller),
-              hasCameraControl: jest.fn().mockReturnValue(true),
-              getCameraUpdate: jest.fn().mockReturnValue({ position: [0,0,0], angles: [0,0,0] })
+              load: vi.fn().mockResolvedValue(undefined),
+              update: vi.fn(),
+              render: vi.fn(),
+              cleanup: vi.fn(),
+              play: vi.fn(),
+              pause: vi.fn(),
+              isPlaying: vi.fn().mockReturnValue(true),
+              getDemoController: vi.fn().mockReturnValue(controller),
+              hasCameraControl: vi.fn().mockReturnValue(true),
+              getCameraUpdate: vi.fn().mockReturnValue({ position: [0,0,0], angles: [0,0,0] })
           };
       });
 
       mockPakService = {
-          hasFile: jest.fn().mockReturnValue(false),
-          parseFile: jest.fn()
+          hasFile: vi.fn().mockReturnValue(false),
+          parseFile: vi.fn()
       } as unknown as PakService;
   });
 

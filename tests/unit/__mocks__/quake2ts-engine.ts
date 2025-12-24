@@ -133,15 +133,15 @@ export const mockWavData = {
   samples: new Int16Array(22050),
 };
 
-export const parsePcx = jest.fn(() => mockPcxImage);
-export const pcxToRgba = jest.fn(() => new Uint8Array(64 * 64 * 4));
-export const parseWal = jest.fn(() => mockWalTexture);
-export const walToRgba = jest.fn(() => ({
+export const parsePcx = vi.fn(() => mockPcxImage);
+export const pcxToRgba = vi.fn(() => new Uint8Array(64 * 64 * 4));
+export const parseWal = vi.fn(() => mockWalTexture);
+export const walToRgba = vi.fn(() => ({
   levels: [{ level: 0, width: 64, height: 64, rgba: new Uint8Array(64 * 64 * 4) }],
 }));
-export const parseMd2 = jest.fn(() => mockMd2Model);
-export const parseMd3 = jest.fn(() => mockMd3Model);
-export const parseWav = jest.fn(() => mockWavData);
+export const parseMd2 = vi.fn(() => mockMd2Model);
+export const parseMd3 = vi.fn(() => mockMd3Model);
+export const parseWav = vi.fn(() => mockWavData);
 
 export const PakArchive = MockPakArchive;
 export const VirtualFileSystem = MockVirtualFileSystem;
