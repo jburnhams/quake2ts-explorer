@@ -1,6 +1,6 @@
 import { setupServer } from 'msw/node';
 import { http, HttpResponse } from 'msw';
-import { STORAGE_API_URL } from '../src/services/authService';
+import { STORAGE_API_URL } from '../../../src/services/authService';
 
 export const handlers = [
   http.get(`${STORAGE_API_URL}/api/collections`, () => {
