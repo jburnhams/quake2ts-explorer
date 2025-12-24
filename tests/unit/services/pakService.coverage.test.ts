@@ -30,7 +30,14 @@ jest.mock('quake2ts/engine', () => {
         parseMd3: jest.fn(),
         parseBsp: jest.fn(),
         parseWav: jest.fn(),
-        parseTga: jest.fn()
+        parseTga: jest.fn(),
+    };
+});
+
+jest.mock('@/src/utils/sp2Parser', () => {
+    const { jest } = require('@jest/globals');
+    return {
+        parseSprite: jest.fn()
     };
 });
 
@@ -210,6 +217,12 @@ describe('PakService Coverage', () => {
             name: 'test.pak'
         } as unknown as File;
 
+        // Mock crypto
+        (global as any).crypto = {
+            randomUUID: () => 'uuid',
+            subtle: { digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)) }
+        };
+
         await service.loadPakFile(file);
 
         expect(mockCacheService.get).toHaveBeenCalled();
@@ -229,10 +242,64 @@ describe('PakService Coverage', () => {
             name: 'test.pak'
         } as unknown as File;
 
+         (global as any).crypto = {
+            randomUUID: () => 'uuid',
+            subtle: { digest: jest.fn().mockResolvedValue(new ArrayBuffer(32)) }
+        };
+
         await service.loadPakFile(file);
 
         expect(mockCacheService.get).toHaveBeenCalled();
         expect(mockPakParser.parsePak).toHaveBeenCalled();
         expect(mockCacheService.set).toHaveBeenCalled();
+    });
+
+    it('should fallback for other types (pcx, wal, tga, md3, sp2, wav, bsp)', async () => {
+        // Setup mocks for fallbacks
+        const { parsePcx, parseWal, parseTga, parseMd3, parseWav, parseBsp } = require('quake2ts/engine');
+        const { parseSprite } = require('@/src/utils/sp2Parser');
+
+        // PCX
+        mockAssetWorker.processPcx.mockRejectedValue(new Error('fail'));
+        parsePcx.mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(768), data: new Uint8Array(100) });
+        mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
+        await service.parseFile('test.pcx');
+        expect(parsePcx).toHaveBeenCalled();
+
+        // WAL
+        mockAssetWorker.processWal.mockRejectedValue(new Error('fail'));
+        parseWal.mockReturnValue({ width: 10, height: 10, mipmaps: [] });
+        await service.parseFile('test.wal');
+        expect(parseWal).toHaveBeenCalled();
+
+        // TGA
+        mockAssetWorker.processTga.mockRejectedValue(new Error('fail'));
+        parseTga.mockReturnValue({ width: 10, height: 10, pixels: new Uint8Array(100) });
+        await service.parseFile('test.tga');
+        expect(parseTga).toHaveBeenCalled();
+
+        // MD3
+        mockAssetWorker.processMd3.mockRejectedValue(new Error('fail'));
+        parseMd3.mockReturnValue({});
+        await service.parseFile('test.md3');
+        expect(parseMd3).toHaveBeenCalled();
+
+        // SP2
+        mockAssetWorker.processSp2.mockRejectedValue(new Error('fail'));
+        parseSprite.mockReturnValue({});
+        await service.parseFile('test.sp2');
+        expect(parseSprite).toHaveBeenCalled();
+
+        // WAV
+        mockAssetWorker.processWav.mockRejectedValue(new Error('fail'));
+        parseWav.mockReturnValue({});
+        await service.parseFile('test.wav');
+        expect(parseWav).toHaveBeenCalled();
+
+        // BSP
+        mockAssetWorker.processBsp.mockRejectedValue(new Error('fail'));
+        parseBsp.mockReturnValue({});
+        await service.parseFile('test.bsp');
+        expect(parseBsp).toHaveBeenCalled();
     });
 });
