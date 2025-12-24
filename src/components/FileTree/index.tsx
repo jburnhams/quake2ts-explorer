@@ -133,7 +133,7 @@ const Row = ({ index, style, items, selectedPath, expandedPaths, onSelect, onTog
 
 export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['']));
-  const listRef = React.useRef<List>(null);
+  const listRef = React.useRef<any>(null);
 
   const handleToggle = useCallback((path: string) => {
     setExpandedPaths((prev) => {
@@ -218,12 +218,6 @@ export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTree
   // Auto-scroll to selected item when it changes
   useEffect(() => {
       if (selectedPath && listRef.current) {
-          // Find index of selected path in flattenedItems
-          // Since flattenedItems depends on expandedPaths, we must ensure it's expanded first.
-          // handleSearchSelect does that.
-
-          // We need to wait for flattenedItems to update?
-          // This effect runs when flattenedItems changes.
           const index = flattenedItems.findIndex(item => item.node.path === selectedPath);
           if (index >= 0) {
               listRef.current.scrollToItem(index, 'smart');
