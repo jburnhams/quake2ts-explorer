@@ -3,7 +3,6 @@ import 'fast-text-encoding';
 import { TextDecoder, TextEncoder } from 'util';
 import 'whatwg-fetch'; // Polyfill fetch, Request, Response
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB
-import { webcrypto } from 'crypto';
 
 global.TextEncoder = TextEncoder;
 // @ts-ignore
@@ -40,33 +39,5 @@ if (typeof global.Response === 'undefined') {
     }
 }
 
-// Polyfill crypto
-if (typeof global.crypto === 'undefined') {
-    // @ts-ignore
-    global.crypto = webcrypto;
-} else {
-    // Ensure subtle is available
-    if (typeof global.crypto.subtle === 'undefined') {
-        // @ts-ignore
-        global.crypto.subtle = webcrypto.subtle;
-    }
-
-    // Polyfill randomUUID if missing
-    if (typeof global.crypto.randomUUID === 'undefined') {
-         // @ts-ignore
-         global.crypto.randomUUID = () => {
-             return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c: any) =>
-                 (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
-             );
-         };
-    }
-}
-
-// Final fallback for randomUUID if webcrypto assignment didn't bring it in (Node < 19?)
-if (!global.crypto.randomUUID) {
-    try {
-        global.crypto.randomUUID = require('crypto').randomUUID;
-    } catch (e) {
-        // ignore
-    }
-}
+// Crypto is now natively supported in JSDOM > 20 (Node 19+ for global.crypto)
+// We remove the manual polyfill.
