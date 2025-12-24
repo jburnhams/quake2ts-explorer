@@ -4,6 +4,9 @@ import AutoSizer from 'react-virtualized-auto-sizer';
 import type { TreeNode } from '../../services/pakService';
 import { FileSearch } from './FileSearch';
 
+// Cast List to any to avoid TS2322 regarding ref type mismatch in strict environments
+const ListComponent = List as any;
+
 export interface FileTreeProps {
   root: TreeNode | null;
   selectedPath: string | null;
@@ -249,7 +252,7 @@ export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTree
       <div style={{ flex: 1 }}>
         <AutoSizer>
           {({ height, width }) => (
-            <List<RowData>
+            <ListComponent
               ref={listRef}
               style={{ width, height }}
               rowCount={flattenedItems.length}
