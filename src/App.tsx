@@ -365,7 +365,8 @@ function App() {
            try {
              // Read file content
              const data = await pakService.readFile(entryName);
-             const blob = new Blob([data]);
+             // Cast to any to avoid TS2322 (Uint8Array vs BlobPart)
+             const blob = new Blob([data as any]);
 
              await remoteStorageService.createEntry({
                key: entryName,
