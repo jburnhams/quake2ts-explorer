@@ -20,15 +20,24 @@ import { GameMenu } from './components/GameMenu';
 import { LoadingScreen } from './components/LoadingScreen';
 import { UniversalViewer } from './components/UniversalViewer/UniversalViewer';
 import { SettingsPanel } from './components/SettingsPanel';
+import { StorageUploadModal } from './components/StorageUploadModal';
 import { settingsService } from './services/settingsService';
 import { themeService } from './services/themeService';
 import { authService, User } from './services/authService';
+import { remoteStorageService } from './services/remoteStorageService';
 import { getFileName } from './utils/helpers';
 import './App.css';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+
+  // Storage Upload State
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [currentUploadFile, setCurrentUploadFile] = useState('');
+  const [canCloseUploadModal, setCanCloseUploadModal] = useState(false);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -310,6 +319,80 @@ function App() {
       }
   };
 
+  const handleStoreFiles = async () => {
+    if (!user) return;
+
+    setIsUploadModalOpen(true);
+    setUploadProgress(0);
+    setUploadStatus('Initializing upload...');
+    setCanCloseUploadModal(false);
+
+    try {
+      const paks = pakService.getMountedPaks();
+      const collections = await remoteStorageService.listCollections();
+
+      let totalFiles = 0;
+      let processedFiles = 0;
+
+      // Count total files first for progress
+      for (const pak of paks) {
+        totalFiles += pak.archive.listEntries().length;
+      }
+
+      for (const pak of paks) {
+        setUploadStatus(`Processing PAK: ${pak.name}`);
+
+        // Find or create collection
+        let collection = collections.find(c => c.name === pak.name);
+        if (!collection) {
+          setUploadStatus(`Creating collection: ${pak.name}`);
+          try {
+            collection = await remoteStorageService.createCollection({
+              name: pak.name,
+              description: `Imported from ${pak.name}`
+            });
+          } catch (e) {
+            console.error(`Failed to create collection ${pak.name}`, e);
+            continue; // Skip this PAK
+          }
+        }
+
+        const entries = pak.archive.listEntries();
+        for (const entry of entries) {
+           const entryName = typeof entry === 'string' ? entry : entry.name;
+           setCurrentUploadFile(entryName);
+
+           try {
+             // Read file content
+             const data = await pakService.readFile(entryName);
+             const blob = new Blob([data]);
+
+             await remoteStorageService.createEntry({
+               key: entryName,
+               file: blob,
+               collection_id: collection.id
+             });
+           } catch (e) {
+             console.warn(`Failed to upload ${entryName}`, e);
+             // Continue to next file
+           }
+
+           processedFiles++;
+           setUploadProgress((processedFiles / totalFiles) * 100);
+        }
+      }
+
+      setUploadStatus('Upload complete!');
+      setUploadProgress(100);
+    } catch (e) {
+      console.error('Upload process failed', e);
+      setUploadStatus(`Error: ${e instanceof Error ? e.message : 'Unknown error'}`);
+    } finally {
+      setCanCloseUploadModal(true);
+      setCurrentUploadFile('');
+    }
+  };
+
   return (
     <DropZone onDrop={handleFileSelect}>
       <div className="app" data-testid="app">
@@ -325,6 +408,7 @@ function App() {
             onOpenDemoBrowser={() => setShowDemoBrowser(true)}
             onOpenServerBrowser={() => setShowServerBrowser(true)}
             onOpenSettings={() => setShowSettings(true)}
+            onStoreFiles={handleStoreFiles}
             user={user}
           />
         )}
@@ -351,6 +435,14 @@ function App() {
             onClose={() => setShowSettings(false)}
           />
         )}
+        <StorageUploadModal
+          isOpen={isUploadModalOpen}
+          progress={uploadProgress}
+          status={uploadStatus}
+          currentFile={currentUploadFile}
+          onClose={() => setIsUploadModalOpen(false)}
+          canClose={canCloseUploadModal}
+        />
         <Console isOpen={isConsoleOpen} onClose={() => setIsConsoleOpen(false)} />
         {error && (
           <div className="error-banner" data-testid="error-banner">
