@@ -44,16 +44,29 @@ if (typeof global.Response === 'undefined') {
 if (typeof global.crypto === 'undefined') {
     // @ts-ignore
     global.crypto = webcrypto;
-} else if (typeof global.crypto.randomUUID === 'undefined') {
-    // Polyfill randomUUID if missing (e.g. older Node or specific JSDOM setups)
-    // @ts-ignore
-    global.crypto.randomUUID = () => {
-        return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c: any) =>
-            (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
-        );
-    };
+} else {
+    // Ensure subtle is available
+    if (typeof global.crypto.subtle === 'undefined') {
+        // @ts-ignore
+        global.crypto.subtle = webcrypto.subtle;
+    }
+
+    // Polyfill randomUUID if missing
+    if (typeof global.crypto.randomUUID === 'undefined') {
+         // @ts-ignore
+         global.crypto.randomUUID = () => {
+             return '10000000-1000-4000-8000-100000000000'.replace(/[018]/g, (c: any) =>
+                 (c ^ (crypto.getRandomValues(new Uint8Array(1))[0] & (15 >> (c / 4)))).toString(16)
+             );
+         };
+    }
 }
-// Ensure simple polyfill for randomUUID if strictly needed and webcrypto didn't provide it
+
+// Final fallback for randomUUID if webcrypto assignment didn't bring it in (Node < 19?)
 if (!global.crypto.randomUUID) {
-    global.crypto.randomUUID = require('crypto').randomUUID;
+    try {
+        global.crypto.randomUUID = require('crypto').randomUUID;
+    } catch (e) {
+        // ignore
+    }
 }
