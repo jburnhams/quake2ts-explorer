@@ -1,0 +1,74 @@
+.file-search-container {
+  padding: 8px;
+  background: var(--bg-color-secondary, #2a2a2a);
+  border-bottom: 1px solid var(--border-color, #444);
+  position: relative;
+  z-index: 100;
+}
+
+.file-search-input {
+  width: 100%;
+  padding: 6px 8px;
+  background: var(--bg-color, #1a1a1a);
+  border: 1px solid var(--border-color, #444);
+  color: var(--text-color, #eee);
+  border-radius: 4px;
+  font-size: 13px;
+  outline: none;
+}
+
+.file-search-input:focus {
+  border-color: var(--accent-color, #007acc);
+  box-shadow: 0 0 0 1px var(--accent-color, #007acc);
+}
+
+.file-search-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  background: var(--bg-color-secondary, #2a2a2a);
+  border: 1px solid var(--border-color, #444);
+  border-top: none;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+  z-index: 101;
+}
+
+.file-search-item {
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color, #ccc);
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color-subtle, #333);
+}
+
+.file-search-item:last-child {
+  border-bottom: none;
+}
+
+.file-search-item:hover,
+.file-search-item.selected {
+  background: var(--hover-color, #3a3a3a);
+  color: var(--text-color-highlight, #fff);
+}
+
+.file-search-item-icon {
+  margin-right: 8px;
+  font-size: 14px;
+}
+
+.file-search-item-path {
+  font-size: 11px;
+  color: var(--text-color-dim, #888);
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.file-search-highlight {
+    background-color: rgba(255, 255, 0, 0.2);
+    color: white;
+}

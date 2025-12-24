@@ -1,7 +1,11 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { List, RowComponentProps } from 'react-window';
 import AutoSizer from 'react-virtualized-auto-sizer';
-import type { TreeNode } from '../services/pakService';
+import type { TreeNode } from '../../services/pakService';
+import { FileSearch } from './FileSearch';
+
+// Cast List to any to avoid TS2322 regarding ref type mismatch in strict environments
+const ListComponent = List as any;
 
 export interface FileTreeProps {
   root: TreeNode | null;
@@ -132,6 +136,7 @@ const Row = ({ index, style, items, selectedPath, expandedPaths, onSelect, onTog
 
 export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTreeProps) {
   const [expandedPaths, setExpandedPaths] = useState<Set<string>>(new Set(['']));
+  const listRef = React.useRef<any>(null);
 
   const handleToggle = useCallback((path: string) => {
     setExpandedPaths((prev) => {
@@ -162,6 +167,67 @@ export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTree
     return result;
   }, [root, expandedPaths]);
 
+  // Collect all searchable files from the tree
+  const searchableFiles = useMemo(() => {
+    const files: TreeNode[] = [];
+    if (!root || !root.children) return files;
+
+    const traverse = (node: TreeNode) => {
+      if (!node.isDirectory) {
+        files.push(node);
+      }
+      if (node.children) {
+        node.children.forEach(traverse);
+      }
+    };
+    // Start traversal from children (skip root)
+    if (root.children) {
+        root.children.forEach(traverse);
+    }
+    return files;
+  }, [root]);
+
+  const handleSearchSelect = (path: string) => {
+    onSelect(path);
+
+    // Expand parents
+    const parts = path.split(':');
+    let prefix = '';
+    let relativePath = path;
+
+    const newExpanded = new Set(expandedPaths);
+
+    if (parts.length > 1) {
+      prefix = parts[0];
+      relativePath = parts.slice(1).join(':');
+      // Add the pak root
+      newExpanded.add(prefix);
+    }
+
+    const segments = relativePath.split('/');
+    // Remove filename
+    segments.pop();
+
+    let current = '';
+    segments.forEach(seg => {
+      current = current ? `${current}/${seg}` : seg;
+      const full = prefix ? `${prefix}:${current}` : current;
+      newExpanded.add(full);
+    });
+
+    setExpandedPaths(newExpanded);
+  };
+
+  // Auto-scroll to selected item when it changes
+  useEffect(() => {
+      if (selectedPath && listRef.current) {
+          const index = flattenedItems.findIndex(item => item.node.path === selectedPath);
+          if (index >= 0) {
+              listRef.current.scrollToItem(index, 'smart');
+          }
+      }
+  }, [selectedPath, flattenedItems]);
+
   if (!root || !root.children || root.children.length === 0) {
     return (
       <div className="file-tree file-tree-empty" data-testid="file-tree">
@@ -181,19 +247,23 @@ export function FileTree({ root, selectedPath, onSelect, onRemovePak }: FileTree
   };
 
   return (
-    <div className="file-tree" role="tree" data-testid="file-tree" style={{ overflow: 'hidden' }}>
-      <AutoSizer>
-        {({ height, width }) => (
-          <List<RowData>
-            style={{ width, height }}
-            rowCount={flattenedItems.length}
-            rowHeight={32}
-            rowProps={itemData}
-            rowComponent={Row}
-            overscanCount={5}
-          />
-        )}
-      </AutoSizer>
+    <div className="file-tree" role="tree" data-testid="file-tree" style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
+      <FileSearch files={searchableFiles} onSelect={handleSearchSelect} />
+      <div style={{ flex: 1 }}>
+        <AutoSizer>
+          {({ height, width }) => (
+            <ListComponent
+              ref={listRef}
+              style={{ width, height }}
+              rowCount={flattenedItems.length}
+              rowHeight={32}
+              rowProps={itemData}
+              rowComponent={Row}
+              overscanCount={5}
+            />
+          )}
+        </AutoSizer>
+      </div>
     </div>
   );
 }
