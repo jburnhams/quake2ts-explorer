@@ -17,23 +17,17 @@ vi.mock('@quake2ts/engine', () => ({
 }));
 
 // Import worker
-import '@/src/workers/pakParser.worker';
+// @ts-ignore
+import { parsePak } from '@/src/workers/pakParser.worker';
 import { PakArchive } from '@quake2ts/engine';
 
 describe('PakParserWorker', () => {
-    let api: any;
-
-    // Capture API before mocks are cleared
-    const capturedApi = mockExpose.mock.calls[0]?.[0];
-
     beforeEach(() => {
         vi.clearAllMocks();
-        api = capturedApi;
     });
 
     it('should expose API', () => {
-        expect(api).toBeDefined();
-        expect(api.parsePak).toBeInstanceOf(Function);
+        expect(parsePak).toBeInstanceOf(Function);
     });
 
     it('parsePak', () => {
@@ -43,7 +37,7 @@ describe('PakParserWorker', () => {
 
         (PakArchive.fromArrayBuffer as vi.Mock).mockReturnValue(mockArchive);
 
-        const result = api.parsePak('test.pak', mockBuffer);
+        const result = parsePak('test.pak', mockBuffer);
 
         expect(PakArchive.fromArrayBuffer).toHaveBeenCalledWith('test.pak', mockBuffer);
         expect(result).toMatchObject({

@@ -12,8 +12,6 @@ import {
   type PredictionState
 } from '@quake2ts/client';
 
-import { predictionService } from '../../../src/services/predictionService';
-
 // Mock ClientPrediction
 vi.mock('@quake2ts/client', () => {
   return {
@@ -36,8 +34,13 @@ vi.mock('@quake2ts/client', () => {
 describe('PredictionService', () => {
   let mockTrace: TraceFunction;
   let mockPointContents: PointContentsFunction;
+  let predictionService: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
+    vi.resetModules();
+    const module = await import('../../../src/services/predictionService');
+    predictionService = module.predictionService;
+
     mockTrace = vi.fn();
     mockPointContents = vi.fn();
     (ClientPrediction as vi.Mock).mockClear();

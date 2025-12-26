@@ -8,7 +8,7 @@ export interface ParseResult {
   name: string;
 }
 
-const parsePak = (name: string, buffer: ArrayBuffer): ParseResult => {
+export const parsePak = (name: string, buffer: ArrayBuffer): ParseResult => {
   // Parse in the worker
   const archive = PakArchive.fromArrayBuffer(name, buffer);
 

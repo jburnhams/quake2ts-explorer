@@ -8,7 +8,7 @@ describe('WorkerService Coverage', () => {
   let AssetProcessorWorker: any;
   let PakParserWorker: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
 
     mockApi = {
@@ -22,7 +22,7 @@ describe('WorkerService Coverage', () => {
       wrap: mockWrap,
     }));
 
-    const serviceModule = require('../../../src/services/workerService');
+    const serviceModule = await import('@/src/services/workerService');
     workerService = serviceModule.workerService;
 
     // Reset workers

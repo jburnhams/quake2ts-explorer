@@ -1,6 +1,8 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { DebugMode } from '@/src/types/debugMode';
-
+import { GizmoRenderer } from '@/src/components/UniversalViewer/adapters/GizmoRenderer';
+import { EntityEditorService } from '@/src/services/entityEditorService';
+import type { Mock } from 'vitest';
 
 // Mocks
 vi.mock('@quake2ts/engine', () => {
@@ -149,7 +151,7 @@ describe('BspAdapter Branch Coverage', () => {
 
     it('should handle pickEntity with gizmo intersection', () => {
         // Setup mock gizmo hit
-        const mockGizmo = require('@/src/components/UniversalViewer/adapters/GizmoRenderer').GizmoRenderer.mock.instances[0];
+        // const mockGizmo = (GizmoRenderer as unknown as Mock).mock.instances[0];
         // @ts-ignore
         adapter.gizmoRenderer = {
             intersect: vi.fn().mockReturnValue({ axis: 'x', distance: 10 }),
@@ -157,7 +159,7 @@ describe('BspAdapter Branch Coverage', () => {
         };
 
         // Mock selected entity
-        const mockEntityService = require('@/src/services/entityEditorService').EntityEditorService.getInstance();
+        const mockEntityService = (EntityEditorService.getInstance as Mock)();
         mockEntityService.getSelectedEntities.mockReturnValue([{ properties: { origin: '0 0 0' } }]);
 
         // Provide map stub
@@ -179,7 +181,7 @@ describe('BspAdapter Branch Coverage', () => {
             entities: { entities: [mockEntity] }
         };
 
-        const mockEntityService = require('@/src/services/entityEditorService').EntityEditorService.getInstance();
+        const mockEntityService = (EntityEditorService.getInstance as Mock)();
 
         adapter.pickEntity({ origin: [0,0,0], direction: [0,0,1] } as any, { multiSelect: true });
 
@@ -188,7 +190,7 @@ describe('BspAdapter Branch Coverage', () => {
 
     it('should handle dragging start logic branches', () => {
         // Mock Entity Props variants
-        const mockEntityService = require('@/src/services/entityEditorService').EntityEditorService.getInstance();
+        const mockEntityService = (EntityEditorService.getInstance as Mock)();
 
         // Case 1: Angle property instead of Angles
         mockEntityService.getSelectedEntities.mockReturnValue([{ properties: { origin: '0 0 0', angle: '90' } }]);

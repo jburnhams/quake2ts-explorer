@@ -14,7 +14,7 @@ vi.mock('../../src/services/workerService', () => ({
 }));
 
 // Mock quake2ts/engine
-vi.mock('quake2ts', () => ({
+vi.mock('@quake2ts/engine', () => ({
   PakArchive: {
     fromArrayBuffer: vi.fn((name: string, _buffer: ArrayBuffer) => ({
       name,
@@ -87,7 +87,44 @@ vi.mock('quake2ts', () => ({
 
 // Mock services
 vi.mock('@/src/services/gameService');
-vi.mock('@/src/services/pakService');
+vi.mock('@/src/services/pakService', () => {
+  const PakServiceMock = vi.fn().mockImplementation(function(this: any) {
+     // Return the instance, which can have its own methods
+     // But to support spyOn(prototype), we should probably use the prototype methods if they exist
+     return {
+          buildFileTree: vi.fn().mockReturnValue({ children: [] }),
+          getMountedPaks: vi.fn().mockReturnValue([]),
+          listDirectory: vi.fn().mockReturnValue({ files: [] }),
+          loadPakFile: this.loadPakFile ? this.loadPakFile.bind(this) : vi.fn().mockResolvedValue(undefined),
+          unloadPak: vi.fn(),
+          loadPakFromBuffer: vi.fn().mockResolvedValue(undefined),
+          getFileMetadata: vi.fn(),
+          hasFile: vi.fn().mockReturnValue(false),
+          parseFile: vi.fn(),
+          vfs: {
+            mountPak: vi.fn(),
+            hasFile: vi.fn(),
+            stat: vi.fn(),
+            readFile: vi.fn(),
+            list: vi.fn().mockReturnValue({ files: [], directories: [] }),
+            findByExtension: vi.fn().mockReturnValue([]),
+          }
+     };
+  });
+
+  // Add methods to prototype so spyOn(PakService.prototype, 'method') works
+  PakServiceMock.prototype.loadPakFile = vi.fn().mockResolvedValue(undefined);
+
+  return {
+    PakService: Object.assign(
+        PakServiceMock,
+        {
+          getVfsPath: vi.fn((path: string) => path.includes(':') ? path.split(':').slice(1).join(':') : path)
+        }
+    )
+  };
+});
+
 vi.mock('@/src/services/indexedDBService', () => ({
   indexedDBService: {
     init: vi.fn().mockResolvedValue(undefined),
@@ -104,9 +141,18 @@ vi.mock('@/src/services/themeService', () => ({
   }
 }));
 vi.mock('@/src/services/consoleService', () => ({
+  LogLevel: {
+    INFO: 'info',
+    WARNING: 'warning',
+    ERROR: 'error',
+    SUCCESS: 'success'
+  },
   consoleService: {
     registerCommand: vi.fn(),
+    unregisterCommand: vi.fn(),
     log: vi.fn(),
+    getLogs: vi.fn().mockReturnValue([]),
+    subscribe: vi.fn().mockReturnValue(() => {}),
   }
 }));
 

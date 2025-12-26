@@ -316,13 +316,14 @@ describe('ViewerControls', () => {
     it('highlights time in yellow if warning limit exceeded', () => {
         render(<ViewerControls {...defaultProps} onScreenshot={vi.fn()} onStartRecording={vi.fn()} onStopRecording={vi.fn()} isRecording={true} recordingTime={61} />);
         const timer = screen.getByText('1:01');
-        expect(timer).toHaveStyle('color: yellow');
+        // JSDOM computes colors to RGB
+        expect(timer).toHaveStyle('color: rgb(255, 255, 0)');
     });
 
     it('shows normal time color if below warning limit', () => {
         render(<ViewerControls {...defaultProps} onScreenshot={vi.fn()} onStartRecording={vi.fn()} onStopRecording={vi.fn()} isRecording={true} recordingTime={59} />);
         const timer = screen.getByText('0:59');
-        expect(timer).toHaveStyle('color: inherit');
+        expect(timer).toHaveStyle('color: rgb(0, 0, 0)');
     });
   });
 });

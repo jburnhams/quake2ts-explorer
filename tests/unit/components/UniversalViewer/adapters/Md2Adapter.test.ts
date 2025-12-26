@@ -1,7 +1,17 @@
 
 import { Md2Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md2Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
-import { Md2Pipeline, Md2MeshBuffers, createAnimationState, computeFrameBlend } from '@quake2ts/engine';
+import {
+    Md2Pipeline,
+    Md2MeshBuffers,
+    createAnimationState,
+    computeFrameBlend,
+    advanceAnimation,
+    parsePcx,
+    pcxToRgba,
+    Texture2D
+} from '@quake2ts/engine';
+import { type Mock, vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => {
@@ -116,13 +126,13 @@ describe('Md2Adapter', () => {
 
       mockPakService.hasFile.mockReturnValue(true);
       mockPakService.readFile.mockResolvedValue(new Uint8Array(10));
-      (require('@quake2ts/engine').parsePcx as vi.Mock).mockReturnValue({ width: 10, height: 10 });
-      (require('@quake2ts/engine').pcxToRgba as vi.Mock).mockReturnValue(new Uint8Array(400));
+      (parsePcx as Mock).mockReturnValue({ width: 10, height: 10 });
+      (pcxToRgba as Mock).mockReturnValue(new Uint8Array(400));
 
       await adapter.load(mockGl, file, mockPakService, 'test.md2');
 
       expect(mockPakService.readFile).toHaveBeenCalledWith('skin.pcx');
-      expect(require('@quake2ts/engine').Texture2D).toHaveBeenCalled();
+      expect(Texture2D).toHaveBeenCalled();
   });
 
   it('renders model', async () => {
@@ -138,10 +148,10 @@ describe('Md2Adapter', () => {
 
       adapter.render(mockGl, camera, viewMatrix);
 
-      const pipeline = (require('@quake2ts/engine').Md2Pipeline as vi.Mock).mock.results[0].value;
+      const pipeline = (Md2Pipeline as Mock).mock.results[0].value;
       expect(pipeline.bind).toHaveBeenCalled();
 
-      const buffers = (require('@quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
+      const buffers = (Md2MeshBuffers as Mock).mock.results[0].value;
       expect(buffers.bind).toHaveBeenCalled();
       expect(mockGl.drawElements).toHaveBeenCalled();
   });
@@ -149,13 +159,6 @@ describe('Md2Adapter', () => {
   it('updates animation state', () => {
       adapter.setSpeed(1.0); // coverage
       adapter.play(); // coverage
-
-      // Need to load first to have animState
-       // ... actually update checks isPlayingState && this.animState
-       // so let's reuse a loaded adapter or mock it?
-       // Can't easily reuse across tests as adapter is new in beforeEach
-       // So I just skip load and manually set private props? No, TypeScript private.
-       // I'll just load in this test.
   });
 
   it('updates animation when loaded', async () => {
@@ -167,9 +170,9 @@ describe('Md2Adapter', () => {
       await adapter.load(mockGl, file, mockPakService, 'test.md2');
 
       adapter.update(0.1);
-      expect(require('@quake2ts/engine').advanceAnimation).toHaveBeenCalled();
-      expect(require('@quake2ts/engine').computeFrameBlend).toHaveBeenCalled();
-      const buffers = (require('@quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
+      expect(advanceAnimation).toHaveBeenCalled();
+      expect(computeFrameBlend).toHaveBeenCalled();
+      const buffers = (Md2MeshBuffers as Mock).mock.results[0].value;
       expect(buffers.update).toHaveBeenCalled();
   });
 });
