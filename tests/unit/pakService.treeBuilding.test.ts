@@ -16,7 +16,7 @@ vi.mock('@/src/services/workerService', () => ({
 // Mock quake2ts/engine with configurable file lists
 let mockFileList: Array<{ path: string; size: number; sourcePak: string }> = [];
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   PakArchive: {
     fromArrayBuffer: vi.fn((name: string) => ({
       name,

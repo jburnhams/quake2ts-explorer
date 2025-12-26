@@ -2,10 +2,10 @@ import { Dm2Adapter } from '@/src/components/UniversalViewer/adapters/Dm2Adapter
 import { CameraMode } from '@/src/types/cameraMode';
 import { vec3 } from 'gl-matrix';
 import { PakService } from '@/src/services/pakService';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   DemoPlaybackController: vi.fn().mockImplementation(() => ({
     loadDemo: vi.fn(),
     play: vi.fn(),

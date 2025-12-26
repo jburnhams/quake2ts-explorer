@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BspAnalyzer } from '@/src/components/BspAnalyzer';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 import { PakService } from '@/src/services/pakService';
 
 // Mock dependencies

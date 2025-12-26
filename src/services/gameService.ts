@@ -4,7 +4,7 @@ import {
   type BspMap,
   type GameFrameResult,
   type FixedStepContext
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 
 import {
   createGame,
@@ -16,7 +16,7 @@ import {
   type MulticastType,
   type GameEngine,
   type GameSaveFile
-} from 'quake2ts/game';
+} from '@quake2ts/game';
 
 import {
   Vec3,
@@ -28,7 +28,7 @@ import {
   CollisionEntityIndex,
   type CollisionEntityLink,
   type CollisionPlane
-} from 'quake2ts/shared';
+} from '@quake2ts/shared';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
 import { multiplayerGameService } from './multiplayerGameService';

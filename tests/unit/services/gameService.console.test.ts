@@ -1,11 +1,11 @@
 
 import { createGameSimulation, shutdownGameService } from '@/src/services/gameService';
 import { consoleService } from '@/src/services/consoleService';
-import { VirtualFileSystem } from 'quake2ts/engine';
-import { createGame } from 'quake2ts/game';
+import { VirtualFileSystem } from '@quake2ts/engine';
+import { createGame } from '@quake2ts/game';
 
 // Mock dependencies
-vi.mock('quake2ts/client', () => ({
+vi.mock('@quake2ts/client', () => ({
     ClientPrediction: vi.fn().mockImplementation(() => ({
         setPredictionEnabled: vi.fn(),
         enqueueCommand: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('quake2ts/client', () => ({
     }))
 }));
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
   AssetManager: vi.fn().mockImplementation(() => ({
     loadMap: vi.fn().mockResolvedValue({
@@ -27,7 +27,7 @@ vi.mock('quake2ts/engine', () => ({
   }))
 }));
 
-vi.mock('quake2ts/game', () => ({
+vi.mock('@quake2ts/game', () => ({
   createGame: vi.fn().mockImplementation(() => ({
     init: vi.fn().mockReturnValue({ state: {} }),
     shutdown: vi.fn(),
@@ -42,7 +42,7 @@ vi.mock('@/src/utils/collisionAdapter', () => ({
   createCollisionModel: vi.fn()
 }));
 
-vi.mock('quake2ts/shared', () => ({
+vi.mock('@quake2ts/shared', () => ({
     CollisionEntityIndex: vi.fn().mockImplementation(() => ({
         trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
         link: vi.fn(),

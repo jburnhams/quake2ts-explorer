@@ -1,9 +1,9 @@
 
 import { AssetCrossRefService } from '@/src/services/assetCrossRefService';
-import { VirtualFileSystem } from 'quake2ts/engine';
+import { VirtualFileSystem } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
         findByExtension: vi.fn().mockReturnValue([]),
         readFile: vi.fn(),
@@ -32,7 +32,7 @@ describe('AssetCrossRefService Coverage', () => {
 
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        const { parseMd2 } = require('quake2ts/engine');
+        const { parseMd2 } = require('@quake2ts/engine');
         parseMd2.mockReturnValue({
             skins: [{ name: 'models/test_skin.pcx' }]
         });

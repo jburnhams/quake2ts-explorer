@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { PlayerStat } from 'quake2ts/shared';
+import { PlayerStat } from '@quake2ts/shared';
 import { GameStateSnapshot } from '@/src/services/gameService';
 import { PakService } from '@/src/services/pakService';
 import './GameHUD.css';

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 import { Bookmark, bookmarkService } from '@/src/services/bookmarkService';
 import { BookmarkList } from './BookmarkList';
 import { BookmarkDialog } from './BookmarkDialog';

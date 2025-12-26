@@ -1,8 +1,8 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   ...vi.requireActual('quake2ts/engine'),
   BspSurfacePipeline: vi.fn(),
   DebugRenderer: vi.fn(),

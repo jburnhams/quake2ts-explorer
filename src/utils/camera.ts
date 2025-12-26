@@ -1,4 +1,4 @@
-import { Camera } from 'quake2ts/engine';
+import { Camera } from '@quake2ts/engine';
 import { vec3, mat4 } from 'gl-matrix';
 
 export interface Ray {

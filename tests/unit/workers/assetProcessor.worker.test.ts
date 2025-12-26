@@ -11,7 +11,7 @@ const mockExpose = expose as vi.Mock;
 const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     parsePcx: vi.fn(),
     pcxToRgba: vi.fn(),
     parseWal: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock('@/src/utils/sp2Parser', () => ({
 // Import worker (this will execute the top-level code and call expose)
 // We use require to ensure it executes
 import '@/src/workers/assetProcessor.worker';
-import * as engine from 'quake2ts/engine';
+import * as engine from '@quake2ts/engine';
 import * as sp2 from '@/src/utils/sp2Parser';
 
 describe('AssetProcessorWorker', () => {

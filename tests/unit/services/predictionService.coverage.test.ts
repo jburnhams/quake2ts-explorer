@@ -1,6 +1,6 @@
 
 import { predictionService } from '@/src/services/predictionService';
-import { ClientPrediction } from 'quake2ts/client';
+import { ClientPrediction } from '@quake2ts/client';
 
 // Define mock functions
 const mockSetPredictionEnabled = vi.fn();
@@ -11,7 +11,7 @@ const mockDecayError = vi.fn();
 const mockGetPredictedState = vi.fn().mockReturnValue({});
 
 // Mock dependencies
-vi.mock('quake2ts/client', () => ({
+vi.mock('@quake2ts/client', () => ({
     ClientPrediction: vi.fn().mockImplementation(() => ({
         setPredictionEnabled: mockSetPredictionEnabled,
         enqueueCommand: mockEnqueueCommand,

@@ -4,7 +4,7 @@ import {
   BspEntity,
   BspMap,
   BspEntities
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 import { toArrayBuffer } from '../utils/helpers';
 
 export interface EntityRecord {

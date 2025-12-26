@@ -1,4 +1,4 @@
-import { BspEntity } from 'quake2ts/engine';
+import { BspEntity } from '@quake2ts/engine';
 
 export enum SelectionMode {
   Single,

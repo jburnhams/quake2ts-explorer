@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 interface FrameInfoProps {
   controller: DemoPlaybackController;

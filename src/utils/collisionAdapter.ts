@@ -1,4 +1,4 @@
-import type { BspMap } from 'quake2ts/engine';
+import type { BspMap } from '@quake2ts/engine';
 import type {
   CollisionModel,
   CollisionNode,
@@ -8,8 +8,8 @@ import type {
   CollisionBrushSide,
   CollisionBmodel,
   CollisionVisibility
-} from 'quake2ts/shared';
-import { Vec3 } from 'quake2ts/shared';
+} from '@quake2ts/shared';
+import { Vec3 } from '@quake2ts/shared';
 
 function toVec3(tuple: [number, number, number]): Vec3 {
   return { x: tuple[0], y: tuple[1], z: tuple[2] };

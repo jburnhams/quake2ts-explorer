@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 import { PakService } from '../services/pakService';
 import { UniversalViewer } from './UniversalViewer/UniversalViewer';
 import { LightmapInspector } from './LightmapInspector';

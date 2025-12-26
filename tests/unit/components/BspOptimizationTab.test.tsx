@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BspOptimizationTab } from '@/src/components/BspOptimizationTab';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 
 describe('BspOptimizationTab', () => {
     it('shows no suggestions when map is optimized', () => {

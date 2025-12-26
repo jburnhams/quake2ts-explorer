@@ -2,10 +2,10 @@ import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter
 import { DebugMode } from '@/src/types/debugMode';
 import { ViewerAdapter } from '@/src/components/UniversalViewer/ViewerAdapter';
 
-import { Texture2D } from 'quake2ts/engine';
+import { Texture2D } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         Texture2D: vi.fn().mockImplementation(() => ({

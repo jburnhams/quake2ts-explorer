@@ -39,7 +39,7 @@ vi.mock('@/src/hooks/usePakExplorer', () => ({
 }));
 
 // Mock Engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   createWebGLContext: vi.fn(() => ({
     gl: {
       createShader: vi.fn(),

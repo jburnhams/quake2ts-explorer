@@ -10,7 +10,7 @@ import {
     walToRgba,
     resolveLightStyles,
     applySurfaceState
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 
 // Mock DebugRenderer
@@ -39,7 +39,7 @@ vi.mock('../../../../../src/components/UniversalViewer/adapters/GizmoRenderer', 
 });
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     BspSurfacePipeline: vi.fn().mockImplementation(() => ({
         bind: vi.fn().mockReturnValue({}),

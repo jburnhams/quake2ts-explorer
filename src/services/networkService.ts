@@ -9,7 +9,7 @@ import {
   MAX_MSGLEN,
   PlayerState,
   EntityState
-} from 'quake2ts/shared';
+} from '@quake2ts/shared';
 import { ServerInfo } from '../types/serverInfo';
 import { CS_NAME, CS_MAPNAME, CS_MAXCLIENTS, CS_PLAYERSKINS } from './protocolConstants';
 

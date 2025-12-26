@@ -20,7 +20,7 @@ vi.mock('@/src/services/workerService', () => ({
 }));
 
 // Mock quake2ts/engine before importing pakService
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   PakArchive: {
     fromArrayBuffer: vi.fn((name: string, _buffer: ArrayBuffer) => ({
       name,

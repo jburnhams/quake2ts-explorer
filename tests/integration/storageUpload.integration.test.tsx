@@ -5,7 +5,7 @@ import { server } from './mocks/storageServer';
 import { http, HttpResponse } from 'msw';
 import { STORAGE_API_URL } from '../../src/services/authService';
 import { pakService } from '../../src/services/pakService';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 
 // Mock dependencies
 vi.mock('../../src/services/workerService', () => ({

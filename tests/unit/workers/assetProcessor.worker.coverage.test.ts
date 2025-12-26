@@ -10,7 +10,7 @@ import { expose, transfer } from 'comlink';
 const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     parseWal: vi.fn(),
     walToRgba: vi.fn(),
     parsePcx: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock('@/src/utils/sp2Parser', () => ({
 
 // Import worker
 import '@/src/workers/assetProcessor.worker';
-import * as engine from 'quake2ts/engine';
+import * as engine from '@quake2ts/engine';
 
 describe('AssetProcessorWorker Coverage', () => {
     let api: any;

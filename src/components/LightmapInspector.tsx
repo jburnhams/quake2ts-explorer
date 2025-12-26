@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { BspMap, Texture2D } from 'quake2ts/engine';
+import { BspMap, Texture2D } from '@quake2ts/engine';
 import { ViewerAdapter } from './UniversalViewer/adapters/types';
 import './LightmapInspector.css';
 

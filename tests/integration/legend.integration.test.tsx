@@ -7,7 +7,7 @@ import { usePakExplorer } from '../../src/hooks/usePakExplorer';
 vi.mock('../../src/hooks/usePakExplorer');
 
 // Mock quake2ts/engine parts used by BspAdapter
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
         readFile: vi.fn(),
         stat: vi.fn(),
@@ -184,7 +184,7 @@ describe('Legend Integration', () => {
             vertices: [],
             leafs: []
         };
-        const quake2ts = require('quake2ts/engine');
+        const quake2ts = require('@quake2ts/engine');
 
         // Need surfaces to prevent bail out
         quake2ts.createBspSurfaces.mockReturnValue([{}]);

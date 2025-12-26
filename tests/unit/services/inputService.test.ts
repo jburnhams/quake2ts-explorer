@@ -1,9 +1,9 @@
 
 import { initInputController, cleanupInputController, generateUserCommand, setInputMode, getInputController } from '@/src/services/inputService';
-import { InputController, InputBindings } from 'quake2ts/client';
+import { InputController, InputBindings } from '@quake2ts/client';
 
 // Mock quake2ts/client
-vi.mock('quake2ts/client', () => {
+vi.mock('@quake2ts/client', () => {
     const mockInputController = {
         handleKeyDown: vi.fn(),
         handleKeyUp: vi.fn(),

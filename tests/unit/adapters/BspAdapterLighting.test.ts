@@ -1,11 +1,11 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
-import { Camera, BspMap, Texture2D, BspSurfacePipeline, resolveLightStyles } from 'quake2ts/engine';
+import { Camera, BspMap, Texture2D, BspSurfacePipeline, resolveLightStyles } from '@quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 import { PakService } from '@/src/services/pakService';
 import { RenderOptions } from '@/src/components/UniversalViewer/adapters/types';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     const originalModule = vi.requireActual('quake2ts/engine');
     return {
         ...originalModule,

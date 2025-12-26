@@ -1,10 +1,10 @@
 
 import { EntityService, EntityRecord } from '@/src/services/entityService';
-import { VirtualFileSystem, parseBsp } from 'quake2ts/engine';
+import { VirtualFileSystem, parseBsp } from '@quake2ts/engine';
 import { toArrayBuffer } from '@/src/utils/helpers';
 
 // Mock quake2ts engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
       findByExtension: vi.fn(),
@@ -25,7 +25,7 @@ describe('EntityService', () => {
 
   beforeEach(() => {
     // Reset mocks
-    const { VirtualFileSystem } = require('quake2ts/engine');
+    const { VirtualFileSystem } = require('@quake2ts/engine');
     vfs = new VirtualFileSystem();
     service = new EntityService(vfs);
 
@@ -64,7 +64,7 @@ describe('EntityService', () => {
     vfs.findByExtension.mockReturnValue(['maps/map1.bsp', 'maps/map2.bsp']);
     vfs.readFile.mockResolvedValue(mockBspData);
 
-    const { parseBsp } = require('quake2ts/engine');
+    const { parseBsp } = require('@quake2ts/engine');
     parseBsp.mockReturnValue(mockMap);
 
     const onProgress = vi.fn();
@@ -84,7 +84,7 @@ describe('EntityService', () => {
     vfs.findByExtension.mockReturnValue(['maps/bad.bsp']);
     vfs.readFile.mockResolvedValue(new Uint8Array([0]));
 
-    const { parseBsp } = require('quake2ts/engine');
+    const { parseBsp } = require('@quake2ts/engine');
     parseBsp.mockImplementation(() => { throw new Error('Parse error'); });
 
     const records = await service.scanAllMaps();

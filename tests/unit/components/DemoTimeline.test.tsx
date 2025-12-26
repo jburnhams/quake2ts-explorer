@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DemoTimeline } from '@/src/components/DemoTimeline';
-import { DemoPlaybackController, DemoEventType } from 'quake2ts/engine';
-import { createMockRAF } from 'quake2ts/test-utils';
+import { DemoPlaybackController, DemoEventType } from '@quake2ts/engine';
+import { createMockRAF } from '@quake2ts/test-utils';
 
 describe('DemoTimeline', () => {
   let mockController: vi.Mocked<DemoPlaybackController>;

@@ -1,9 +1,9 @@
 
 import { demoRecorderService } from '@/src/services/demoRecorder';
-import { DemoRecorder } from 'quake2ts/engine';
+import { DemoRecorder } from '@quake2ts/engine';
 
 // Mock DemoRecorder
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         DemoRecorder: vi.fn().mockImplementation(() => ({
             startRecording: vi.fn(),

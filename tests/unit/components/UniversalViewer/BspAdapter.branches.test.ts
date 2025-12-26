@@ -3,7 +3,7 @@ import { DebugMode } from '@/src/types/debugMode';
 
 
 // Mocks
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         Texture2D: vi.fn().mockImplementation(() => ({

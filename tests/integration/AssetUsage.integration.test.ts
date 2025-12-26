@@ -1,5 +1,5 @@
 import { AssetCrossRefService } from '@/src/services/assetCrossRefService';
-import { VirtualFileSystem } from 'quake2ts/engine';
+import { VirtualFileSystem } from '@quake2ts/engine';
 
 // This is a "realistic" integration test that uses a real VFS but mocks file content slightly
 // to avoid needing actual valid binary files for everything, while still exercising the service logic.
@@ -8,14 +8,17 @@ import { VirtualFileSystem } from 'quake2ts/engine';
 // Since we can't easily import real parse functions in test environment without wasm/binary setup sometimes,
 // we will mock the engine imports but keep the service logic real.
 
-vi.mock('quake2ts/engine', () => ({
-  VirtualFileSystem: vi.requireActual('quake2ts/engine').VirtualFileSystem,
-  parseMd2: vi.fn(),
-  parseMd3: vi.fn(),
-  parseBsp: vi.fn(),
-}));
+vi.mock('@quake2ts/engine', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@quake2ts/engine')>();
+  return {
+    VirtualFileSystem: actual.VirtualFileSystem,
+    parseMd2: vi.fn(),
+    parseMd3: vi.fn(),
+    parseBsp: vi.fn(),
+  };
+});
 
-import { parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
+import { parseMd2, parseMd3, parseBsp } from '@quake2ts/engine';
 
 describe('AssetCrossRefService Integration', () => {
   let vfs: VirtualFileSystem;

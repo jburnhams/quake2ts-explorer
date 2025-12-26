@@ -5,17 +5,17 @@ import {
   type PlayerState,
   type PmoveTraceResult,
   Vec3
-} from 'quake2ts/shared';
+} from '@quake2ts/shared';
 
 import {
   ClientPrediction,
   type PredictionState
-} from 'quake2ts/client';
+} from '@quake2ts/client';
 
 import { predictionService } from '../../../src/services/predictionService';
 
 // Mock ClientPrediction
-vi.mock('quake2ts/client', () => {
+vi.mock('@quake2ts/client', () => {
   return {
     ClientPrediction: vi.fn().mockImplementation(() => ({
       setPredictionEnabled: vi.fn(),

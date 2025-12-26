@@ -8,7 +8,7 @@ const mockStop = vi.fn();
 const mockIsRunning = vi.fn();
 const mockPump = vi.fn();
 
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         FixedTimestepLoop: vi.fn().mockImplementation((opts, config) => {

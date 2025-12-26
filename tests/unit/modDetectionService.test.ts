@@ -1,7 +1,7 @@
 
 import { ModDetectionServiceImpl } from '../../src/services/modDetectionService';
 import { PakService, MountedPak } from '../../src/services/pakService';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 import { MOD_PRIORITY } from '../../src/types/modInfo';
 
 // Mock PakArchive

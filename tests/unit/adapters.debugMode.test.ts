@@ -21,7 +21,7 @@ vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
 });
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     BspSurfacePipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
     createBspSurfaces: vi.fn().mockReturnValue([]),
     buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [], lightmaps: [] }),

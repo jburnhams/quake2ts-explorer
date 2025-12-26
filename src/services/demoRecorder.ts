@@ -1,5 +1,5 @@
 // src/services/demoRecorder.ts
-import { DemoRecorder as EngineDemoRecorder } from 'quake2ts/engine';
+import { DemoRecorder as EngineDemoRecorder } from '@quake2ts/engine';
 import { demoStorageService } from './demoStorageService';
 
 class DemoRecorderService {

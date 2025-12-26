@@ -1,7 +1,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { PakArchive, VirtualFileSystem } from 'quake2ts/engine';
+import { PakArchive, VirtualFileSystem } from '@quake2ts/engine';
 import { parseSprite } from '../../src/utils/sp2Parser';
 
 describe('SP2 File Integration Tests', () => {

@@ -1,4 +1,4 @@
-import { Camera, Md3Model, Md3ModelMesh, Md3Pipeline, parsePcx, pcxToRgba, Texture2D, Md3Surface, Md3SurfaceMesh } from 'quake2ts/engine';
+import { Camera, Md3Model, Md3ModelMesh, Md3Pipeline, parsePcx, pcxToRgba, Texture2D, Md3Surface, Md3SurfaceMesh } from '@quake2ts/engine';
 
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter, AnimationInfo, FrameInfo } from './types';

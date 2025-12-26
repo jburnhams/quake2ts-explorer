@@ -2,7 +2,7 @@ import {
   type FixedStepContext,
   type VirtualFileSystem,
   AssetManager
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 
 import {
   type GameSimulation,
@@ -23,8 +23,8 @@ import {
   Vec3,
   type PmoveTraceResult,
   CONTENTS_SOLID
-} from 'quake2ts/shared';
-import { type Entity } from 'quake2ts/game';
+} from '@quake2ts/shared';
+import { type Entity } from '@quake2ts/game';
 
 import { createCollisionModel } from '../utils/collisionAdapter';
 import { networkService, type GameStateSnapshot as NetSnapshot } from './networkService';

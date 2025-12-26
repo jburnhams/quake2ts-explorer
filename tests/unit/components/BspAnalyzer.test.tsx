@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BspAnalyzer, BspAnalyzerProps } from '@/src/components/BspAnalyzer';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 
 // Mock UniversalViewer
 vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({

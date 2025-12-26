@@ -1,8 +1,8 @@
 
 import { createGameLoop } from '@/src/utils/gameLoop';
-import { FixedTimestepLoop } from 'quake2ts/engine';
+import { FixedTimestepLoop } from '@quake2ts/engine';
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   FixedTimestepLoop: vi.fn().mockImplementation(() => ({
     start: vi.fn(),
     stop: vi.fn(),

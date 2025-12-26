@@ -4,7 +4,7 @@ import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewe
 import { ParsedFile, PakService } from '@/src/services/pakService';
 import { Dm2Adapter } from '@/src/components/UniversalViewer/adapters/Dm2Adapter';
 import { CameraMode } from '@/src/types/cameraMode';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 // Mock everything
 vi.mock('@/src/components/UniversalViewer/adapters/Dm2Adapter');
@@ -27,7 +27,7 @@ vi.mock('@/src/services/performanceService', () => ({
     }
 }));
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     createWebGLContext: vi.fn().mockReturnValue({ gl: {
         clearColor: vi.fn(),
         clear: vi.fn(),

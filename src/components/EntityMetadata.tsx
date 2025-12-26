@@ -1,5 +1,5 @@
 import React from 'react';
-import { BspEntity } from 'quake2ts/engine';
+import { BspEntity } from '@quake2ts/engine';
 
 interface EntityMetadataProps {
   entity: BspEntity | null;

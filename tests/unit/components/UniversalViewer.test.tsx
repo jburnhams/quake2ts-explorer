@@ -19,21 +19,18 @@ vi.mock('../../../src/components/UniversalViewer/adapters/DebugRenderer', () => 
 });
 
 // Mock quake2ts/engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', async () => {
+    const {
+        createMockWebGL2Context,
+        createMockMd2Pipeline,
+        createMockBspPipeline,
+        createMockMd3Pipeline
+    } = await import('@quake2ts/test-utils');
+
     return {
-        createWebGLContext: vi.fn().mockReturnValue({
-            gl: {
-                clearColor: vi.fn(), clear: vi.fn(), enable: vi.fn(), drawElements: vi.fn(), viewport: vi.fn(), activeTexture: vi.fn(),
-                generateMipmap: vi.fn(),
-                TRIANGLES: 0, COLOR_BUFFER_BIT: 0, DEPTH_BUFFER_BIT: 0, DEPTH_TEST: 0, CULL_FACE: 0, UNSIGNED_SHORT: 0, RGBA: 0,
-                UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0,
-                createShader: vi.fn(), shaderSource: vi.fn(), compileShader: vi.fn(), getShaderParameter: vi.fn(() => true),
-                createProgram: vi.fn(), attachShader: vi.fn(), linkProgram: vi.fn(),
-                getUniformLocation: vi.fn(), createVertexArray: vi.fn(), bindVertexArray: vi.fn(),
-                createBuffer: vi.fn(), bindBuffer: vi.fn(), bufferData: vi.fn(), enableVertexAttribArray: vi.fn(),
-                vertexAttribPointer: vi.fn(), drawArrays: vi.fn(), uniformMatrix4fv: vi.fn(), uniform3fv: vi.fn(), uniform4fv: vi.fn()
-            },
-        }),
+        createWebGLContext: vi.fn().mockImplementation(() => ({
+            gl: createMockWebGL2Context()
+        })),
         Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: new Float32Array(16),
             viewMatrix: new Float32Array(16),
@@ -43,7 +40,7 @@ vi.mock('quake2ts/engine', () => {
             updateMatrices: vi.fn(),
         })),
         // MD2
-        Md2Pipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+        Md2Pipeline: vi.fn().mockImplementation(() => createMockMd2Pipeline()),
         Md2MeshBuffers: vi.fn().mockImplementation(() => ({ bind: vi.fn(), update: vi.fn(), indexCount: 123 })),
         createAnimationState: vi.fn((seq) => ({ sequence: seq })),
         advanceAnimation: vi.fn(state => state),
@@ -51,7 +48,7 @@ vi.mock('quake2ts/engine', () => {
         parsePcx: vi.fn().mockReturnValue({ width: 32, height: 32 }),
         pcxToRgba: vi.fn().mockReturnValue(new Uint8Array(10)),
         // BSP
-        BspSurfacePipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+        BspSurfacePipeline: vi.fn().mockImplementation(() => createMockBspPipeline()),
         createBspSurfaces: vi.fn().mockReturnValue([]),
         buildBspGeometry: vi.fn().mockReturnValue({ surfaces: [{ texture: 't1', indexCount: 6, vao: { bind: vi.fn() }, surfaceFlags: 0 }], lightmaps: [] }),
         resolveLightStyles: vi.fn().mockReturnValue(new Float32Array(32)),
@@ -59,7 +56,7 @@ vi.mock('quake2ts/engine', () => {
         parseWal: vi.fn().mockReturnValue({ width: 64, height: 64 }),
         walToRgba: vi.fn().mockReturnValue({ levels: [{ width: 64, height: 64, rgba: new Uint8Array() }] }),
         // MD3
-        Md3Pipeline: vi.fn().mockImplementation(() => ({ bind: vi.fn() })),
+        Md3Pipeline: vi.fn().mockImplementation(() => createMockMd3Pipeline()),
         Md3ModelMesh: vi.fn().mockImplementation(() => ({})),
         // DM2
         DemoPlaybackController: vi.fn().mockImplementation(() => ({
@@ -127,7 +124,7 @@ describe('UniversalViewer', () => {
           parseFile: vi.fn(),
           getPalette: vi.fn(),
       };
-      quake2tsMock = require('quake2ts/engine');
+      quake2tsMock = require('@quake2ts/engine');
       vi.clearAllMocks();
 
       let frameId = 0;

@@ -3,10 +3,10 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { GameHUD } from '@/src/components/GameHUD';
 import { GameStateSnapshot } from '@/src/services/gameService';
-import { PlayerStat } from 'quake2ts/shared';
+import { PlayerStat } from '@quake2ts/shared';
 
 // Mock dependencies
-vi.mock('quake2ts/shared', () => ({
+vi.mock('@quake2ts/shared', () => ({
   PlayerStat: {
     STAT_HEALTH: 0,
     STAT_AMMO_ICON: 1,

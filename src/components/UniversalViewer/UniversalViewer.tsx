@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { createWebGLContext, Camera } from 'quake2ts/engine';
+import { createWebGLContext, Camera } from '@quake2ts/engine';
 import { mat4, vec3 } from 'gl-matrix';
 import { ParsedFile, PakService } from '../../services/pakService';
 import { ViewerAdapter } from './adapters/types';
