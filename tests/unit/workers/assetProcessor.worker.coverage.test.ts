@@ -1,5 +1,4 @@
 
-
 // Mock comlink
 vi.mock('comlink', () => ({
     expose: vi.fn(),
@@ -34,28 +33,21 @@ import * as engine from '@quake2ts/engine';
 describe('AssetProcessorWorker Coverage', () => {
     let api: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         // expose is called on import. Capture args.
+        // Re-import to ensure expose is called again if possible, or grab from mock.
+        // Jest/Vitest module cache handling:
+        await vi.isolateModulesAsync(async () => {
+             await import('@/src/workers/assetProcessor.worker');
+        });
         const mockExpose = expose as vi.Mock;
-        // In some environments, module is cached, so expose might not be called again if not reset.
-        // But we import it again? No, import is cached.
-        // We rely on previous call or mock state.
         if (mockExpose.mock.calls.length > 0) {
-             api = mockExpose.mock.calls[0][0];
+             api = mockExpose.mock.calls[mockExpose.mock.calls.length - 1][0];
         }
     });
 
     it('processWal with multiple mipmap levels', () => {
-        if (!api) {
-            // Re-require to force expose
-             vi.isolateModules(() => {
-                 const worker = require('@/src/workers/assetProcessor.worker');
-                 // expose is called
-             });
-             api = (expose as vi.Mock).mock.calls[(expose as vi.Mock).mock.calls.length - 1][0];
-        }
-
         const mockBuffer = new ArrayBuffer(8);
         const mockPalette = new Uint8Array(768);
         const mockTexture = { width: 32, height: 32 };
@@ -73,18 +65,32 @@ describe('AssetProcessorWorker Coverage', () => {
 
         const result = api.processWal(mockBuffer, mockPalette);
 
-        // Verify transfer list contains buffers
-        expect(mockTransfer).toHaveBeenCalledWith(
-            expect.objectContaining({
-                mipmaps: mockLevels
-            }),
-            expect.arrayContaining([
-                mockRgba0.buffer,
-                mockRgba1.buffer
-            ])
-        );
+        expect(result).toMatchObject({
+            type: 'wal',
+            texture: mockTexture,
+            rgba: mockRgba0,
+            mipmaps: mockLevels
+        });
 
-        // Verify we hit the loop
-        expect(result.mipmaps).toHaveLength(2);
+        // Check transfer list (second arg to transfer)
+        expect(mockTransfer).toHaveBeenCalled();
+        const transferList = mockTransfer.mock.calls[0][1];
+        expect(transferList).toContain(mockRgba0.buffer);
+        expect(transferList).toContain(mockRgba1.buffer);
+    });
+
+    it('processPcx handles SharedArrayBuffer safely', () => {
+        const mockBuffer = new ArrayBuffer(8);
+        const mockImage = { width: 10, height: 10 };
+        // Simulate SharedArrayBuffer
+        const mockRgba = new Uint8Array(new SharedArrayBuffer(100));
+
+        (engine.parsePcx as vi.Mock).mockReturnValue(mockImage);
+        (engine.pcxToRgba as vi.Mock).mockReturnValue(mockRgba);
+
+        api.processPcx(mockBuffer);
+
+        const transferList = mockTransfer.mock.calls[0][1];
+        expect(transferList).not.toContain(mockRgba.buffer);
     });
 });

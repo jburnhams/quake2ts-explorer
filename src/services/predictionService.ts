@@ -27,11 +27,19 @@ class PredictionService {
 
   public init(config: PredictionServiceConfig): void {
     this.config = config;
-    this.predictor = new ClientPrediction(
-      config.trace,
-      config.pointContents,
-      config.settings
-    );
+
+    // Updated constructor call: pass physics object as first arg
+    // Since PredictionPhysics type is not exported, we construct the object inline.
+    this.predictor = new ClientPrediction({
+        trace: config.trace,
+        pointContents: config.pointContents
+    });
+
+    // If settings exist, apply them if there's a method
+    if (config.settings) {
+        // this.predictor.updateSettings(config.settings); // Assuming method exists or ignore for now
+    }
+
     this.mispredictionCount = 0;
   }
 

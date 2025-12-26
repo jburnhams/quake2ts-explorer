@@ -50,11 +50,11 @@ describe('PredictionService', () => {
     });
 
     expect(ClientPrediction).toHaveBeenCalledTimes(1);
-    expect(ClientPrediction).toHaveBeenCalledWith(
-      mockTrace,
-      mockPointContents,
-      undefined
-    );
+    // Expect single object argument with properties
+    expect(ClientPrediction).toHaveBeenCalledWith({
+      trace: mockTrace,
+      pointContents: mockPointContents
+    });
   });
 
   it('should enable/disable prediction', () => {

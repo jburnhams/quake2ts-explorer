@@ -10,8 +10,8 @@ const mockWriteReliableByte = vi.fn();
 const mockWriteReliableString = vi.fn();
 
 // Mock dependencies
-vi.mock('@quake2ts/shared', () => {
-    const original = vi.requireActual('quake2ts/shared') as any;
+vi.mock('@quake2ts/shared', async () => {
+    const original = await vi.importActual('@quake2ts/shared') as any;
     return {
         ...original,
         NetChan: vi.fn().mockImplementation(() => ({

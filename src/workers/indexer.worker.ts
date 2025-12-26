@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { expose } from 'comlink';
-import { parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
+import { parseMd2, parseMd3, parseBsp } from '@quake2ts/engine';
 
 export interface FileReference {
   path: string;
