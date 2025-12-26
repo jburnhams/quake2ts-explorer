@@ -2,7 +2,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { BspAnalyzer } from '@/src/components/BspAnalyzer';
 import { PakService } from '@/src/services/pakService';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 
 // Mock dependencies
 vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({

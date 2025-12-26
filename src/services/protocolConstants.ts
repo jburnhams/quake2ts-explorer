@@ -1,5 +1,5 @@
 // Temporary file to hold protocol constants until library exports them
-// TODO: Replace with imports from 'quake2ts/shared' when available
+// TODO: Replace with imports from '@quake2ts/shared' when available
 
 export const CS_NAME = 0;
 export const CS_CDTRACK = 1;

@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { FrameInfo } from '../../../src/components/FrameInfo';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 const mockController = {
   getCurrentFrame: vi.fn(),

@@ -15,7 +15,7 @@ const mockPump = vi.fn();
 
 let capturedOpts: any;
 
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         FixedTimestepLoop: vi.fn().mockImplementation((opts) => {

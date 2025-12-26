@@ -1,8 +1,8 @@
 
 import { AssetCrossRefService } from '../../../src/services/assetCrossRefService';
-import { VirtualFileSystem, parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
+import { VirtualFileSystem, parseMd2, parseMd3, parseBsp } from '@quake2ts/engine';
 
-vi.mock('quake2ts/engine');
+vi.mock('@quake2ts/engine');
 
 describe('AssetCrossRefService', () => {
   let service: AssetCrossRefService;

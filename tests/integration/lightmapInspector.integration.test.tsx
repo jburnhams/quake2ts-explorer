@@ -6,7 +6,7 @@ import '@testing-library/jest-dom';
 import { act } from 'react-dom/test-utils';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     BspMap: class {},
     Texture2D: vi.fn(),
     createBspSurfaces: vi.fn().mockReturnValue([]),

@@ -1,11 +1,11 @@
 import { Md3Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md3Adapter';
-import { Md3Pipeline, Md3SurfaceMesh, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
+import { Md3Pipeline, Md3SurfaceMesh, Texture2D, parsePcx, pcxToRgba } from '@quake2ts/engine';
 import { DebugRenderer } from '../../../../../src/components/UniversalViewer/adapters/DebugRenderer';
 import { PakService } from '../../../../../src/services/pakService';
 import { DebugMode } from '@/src/types/debugMode';
 
 // Mocks
-vi.mock('quake2ts/engine');
+vi.mock('@quake2ts/engine');
 vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer');
 
 describe('Md3Adapter Coverage', () => {

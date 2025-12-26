@@ -1,9 +1,9 @@
 import { MultiplayerGameService } from '@/src/services/multiplayerGameService';
 import { networkService } from '@/src/services/networkService';
 import { predictionService } from '@/src/services/predictionService';
-import { AssetManager } from 'quake2ts/engine';
+import { AssetManager } from '@quake2ts/engine';
 import { createCollisionModel } from '@/src/utils/collisionAdapter';
-import { traceBox, pointContents } from 'quake2ts/shared';
+import { traceBox, pointContents } from '@quake2ts/shared';
 
 // Mock dependencies
 vi.mock('@/src/services/networkService', () => ({
@@ -15,11 +15,11 @@ vi.mock('@/src/services/networkService', () => ({
     }
 }));
 vi.mock('@/src/services/predictionService');
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     AssetManager: vi.fn()
 }));
 vi.mock('@/src/utils/collisionAdapter');
-vi.mock('quake2ts/shared', () => ({
+vi.mock('@quake2ts/shared', () => ({
     ...vi.requireActual('quake2ts/shared'),
     traceBox: vi.fn(),
     pointContents: vi.fn()

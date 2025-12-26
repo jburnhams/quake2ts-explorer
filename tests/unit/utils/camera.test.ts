@@ -1,12 +1,12 @@
 import { createPickingRay } from '../../../src/utils/camera';
-import { Camera } from 'quake2ts/engine';
+import { Camera } from '@quake2ts/engine';
 import { mat4, vec3 } from 'gl-matrix';
 
 // Use real gl-matrix
 vi.mock('gl-matrix', () => vi.requireActual('gl-matrix'));
 
 // Mock quake2ts/engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         Camera: vi.fn(),
     };

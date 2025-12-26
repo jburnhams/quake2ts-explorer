@@ -1,11 +1,11 @@
 
 import { createGameSimulation, shutdownGameService } from '@/src/services/gameService';
-import { VirtualFileSystem } from 'quake2ts/engine';
-import { createGame } from 'quake2ts/game';
-import * as shared from 'quake2ts/shared';
+import { VirtualFileSystem } from '@quake2ts/engine';
+import { createGame } from '@quake2ts/game';
+import * as shared from '@quake2ts/shared';
 
 // Mock dependencies
-vi.mock('quake2ts/client', () => ({
+vi.mock('@quake2ts/client', () => ({
     ClientPrediction: vi.fn().mockImplementation(() => ({
         setPredictionEnabled: vi.fn(),
         enqueueCommand: vi.fn(),
@@ -16,7 +16,7 @@ vi.mock('quake2ts/client', () => ({
     }))
 }));
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
   AssetManager: vi.fn().mockImplementation(() => ({
     loadMap: vi.fn().mockResolvedValue({
@@ -30,7 +30,7 @@ vi.mock('quake2ts/engine', () => ({
   }))
 }));
 
-vi.mock('quake2ts/game', () => ({
+vi.mock('@quake2ts/game', () => ({
   createGame: vi.fn().mockImplementation(() => ({
     init: vi.fn().mockReturnValue({ state: { time: 0 } }),
     shutdown: vi.fn(),
@@ -62,7 +62,7 @@ const mockEntityIndexInstance = {
     gatherTriggerTouches: vi.fn().mockReturnValue([])
 };
 
-vi.mock('quake2ts/shared', () => ({
+vi.mock('@quake2ts/shared', () => ({
     CollisionEntityIndex: vi.fn().mockImplementation(() => mockEntityIndexInstance),
     traceBox: vi.fn().mockReturnValue({
         allsolid: false,

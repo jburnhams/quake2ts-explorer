@@ -1,9 +1,9 @@
 
 import { ModDetectionServiceImpl } from '../../src/services/modDetectionService';
 import { PakService, MountedPak } from '../../src/services/pakService';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 import { MOD_PRIORITY } from '../../src/types/modInfo';
-import { VirtualFileSystem } from 'quake2ts/engine';
+import { VirtualFileSystem } from '@quake2ts/engine';
 
 // Mock everything needed for integration-like test (running in Node with mocks)
 // Ideally we use a real VFS if possible, but VFS in quake2ts is just a class.

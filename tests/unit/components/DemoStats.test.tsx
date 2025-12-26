@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DemoStats } from '../../../src/components/DemoStats';
-import { DemoPlaybackController, PlayerStatistics, DemoStatistics } from 'quake2ts/engine';
+import { DemoPlaybackController, PlayerStatistics, DemoStatistics } from '@quake2ts/engine';
 
 // Mock the controller
 const mockController = {

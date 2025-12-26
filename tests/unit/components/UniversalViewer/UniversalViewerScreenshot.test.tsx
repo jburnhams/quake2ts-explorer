@@ -3,11 +3,11 @@ import { render, screen, fireEvent, waitFor, act } from '@testing-library/react'
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
 import * as screenshotService from '@/src/services/screenshotService';
-import { createWebGLContext } from 'quake2ts/engine';
+import { createWebGLContext } from '@quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   createWebGLContext: vi.fn(),
   Camera: vi.fn().mockImplementation(() => ({
     fov: 60,

@@ -1,4 +1,4 @@
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 import { ModInfo, MOD_PRIORITY } from '../types/modInfo';
 import { PakService, MountedPak } from './pakService';
 

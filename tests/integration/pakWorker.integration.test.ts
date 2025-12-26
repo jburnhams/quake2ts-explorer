@@ -1,5 +1,5 @@
 import { workerService } from '../../src/services/workerService';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 import { PakService } from '../../src/services/pakService';
 import { WorkerPakArchive } from '../../src/utils/WorkerPakArchive';
 

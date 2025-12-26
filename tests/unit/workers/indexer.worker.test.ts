@@ -9,14 +9,14 @@ import { expose } from 'comlink';
 const mockExpose = expose as vi.Mock;
 
 // Mock engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     parseMd2: vi.fn(),
     parseMd3: vi.fn(),
     parseBsp: vi.fn(),
 }));
 
 import '@/src/workers/indexer.worker';
-import * as engine from 'quake2ts/engine';
+import * as engine from '@quake2ts/engine';
 
 describe('IndexerWorker', () => {
     let api: any;

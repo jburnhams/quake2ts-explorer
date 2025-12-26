@@ -3,10 +3,10 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DemoTimeline } from '../../../src/components/DemoTimeline';
-import { DemoEventType } from 'quake2ts/engine';
+import { DemoEventType } from '@quake2ts/engine';
 
 // Mock engine enum if not available in jest environment directly
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   DemoEventType: {
     Death: 0,
     WeaponFire: 1,

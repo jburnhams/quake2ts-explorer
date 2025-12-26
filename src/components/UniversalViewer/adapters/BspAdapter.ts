@@ -1,4 +1,4 @@
-import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity, findLeafForPoint } from 'quake2ts/engine';
+import { Camera, BspSurfacePipeline, createBspSurfaces, buildBspGeometry, Texture2D, parseWal, walToRgba, BspGeometryBuildResult, resolveLightStyles, applySurfaceState, BspMap, BspSurfaceInput, BspEntity, findLeafForPoint } from '@quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { RenderOptions, ViewerAdapter, Ray, PickOptions } from './types';
 import { mat4, vec3, vec4 } from 'gl-matrix';

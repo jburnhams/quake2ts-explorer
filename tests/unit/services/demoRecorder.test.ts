@@ -1,14 +1,14 @@
 // tests/unit/services/demoRecorder.test.ts
 import { demoRecorderService } from '../../../src/services/demoRecorder';
 import { demoStorageService } from '../../../src/services/demoStorageService';
-import { DemoRecorder } from 'quake2ts/engine';
+import { DemoRecorder } from '@quake2ts/engine';
 
 const mockRecordMessage = vi.fn();
 const mockStartRecording = vi.fn();
 const mockStopRecording = vi.fn().mockReturnValue(new Uint8Array([1, 2, 3]));
 const mockGetIsRecording = vi.fn().mockReturnValue(true);
 
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         DemoRecorder: vi.fn().mockImplementation(() => ({
             startRecording: mockStartRecording,

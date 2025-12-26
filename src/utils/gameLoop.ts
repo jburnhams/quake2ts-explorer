@@ -2,7 +2,7 @@ import {
   FixedTimestepLoop,
   type FixedStepContext,
   type RenderContext
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 
 export interface GameLoop {
   start(): void;

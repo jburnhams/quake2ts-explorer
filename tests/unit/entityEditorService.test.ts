@@ -1,5 +1,5 @@
 import { EntityEditorService, SelectionMode } from '@/src/services/entityEditorService';
-import { BspEntity } from 'quake2ts/engine';
+import { BspEntity } from '@quake2ts/engine';
 
 describe('EntityEditorService', () => {
   let service: EntityEditorService;

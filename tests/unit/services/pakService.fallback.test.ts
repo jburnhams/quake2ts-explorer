@@ -1,7 +1,7 @@
 import { PakService } from '@/src/services/pakService';
 import { workerService } from '@/src/services/workerService';
 
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 
 // Mocks
 vi.mock('@/src/services/workerService');
@@ -21,7 +21,7 @@ vi.mock('@/src/services/cacheService', () => {
 });
 
 // Mock quake2ts/engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         PakArchive: {

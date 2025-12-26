@@ -5,10 +5,10 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { videoRecorderService } from '@/src/services/videoRecorder';
 import { ParsedFile, PakService } from '@/src/services/pakService';
-import { createWebGLContext } from 'quake2ts/engine';
+import { createWebGLContext } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         createWebGLContext: vi.fn(),
         Camera: vi.fn().mockImplementation(() => ({

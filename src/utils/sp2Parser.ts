@@ -1,4 +1,4 @@
-import { type SpriteModel, type SpriteFrame } from 'quake2ts/engine';
+import { type SpriteModel, type SpriteFrame } from '@quake2ts/engine';
 
 export function parseSprite(buffer: ArrayBuffer): SpriteModel {
     const view = new DataView(buffer);

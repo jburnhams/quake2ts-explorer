@@ -1,10 +1,10 @@
 import { createGameSimulation } from '@/src/services/gameService';
-import { VirtualFileSystem, AssetManager } from 'quake2ts/engine';
-import { createGame } from 'quake2ts/game';
-import { traceBox, pointContents, CollisionEntityIndex } from 'quake2ts/shared';
+import { VirtualFileSystem, AssetManager } from '@quake2ts/engine';
+import { createGame } from '@quake2ts/game';
+import { traceBox, pointContents, CollisionEntityIndex } from '@quake2ts/shared';
 
 // Mocks
-vi.mock('quake2ts/client', () => ({
+vi.mock('@quake2ts/client', () => ({
     ClientPrediction: vi.fn().mockImplementation(() => ({
         setPredictionEnabled: vi.fn(),
         enqueueCommand: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock('quake2ts/client', () => ({
     }))
 }));
 
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
     AssetManager: vi.fn().mockImplementation(() => ({
@@ -26,14 +26,14 @@ vi.mock('quake2ts/engine', () => {
   };
 });
 
-vi.mock('quake2ts/game', () => {
+vi.mock('@quake2ts/game', () => {
   return {
     createGame: vi.fn(),
     MulticastType: { All: 0 }
   };
 });
 
-vi.mock('quake2ts/shared', () => {
+vi.mock('@quake2ts/shared', () => {
   const actual = vi.requireActual('quake2ts/shared');
   return {
     ...actual,

@@ -1,7 +1,7 @@
 
 import { Md3Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md3Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
-import { Md3SurfaceMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from 'quake2ts/engine';
+import { Md3SurfaceMesh, Md3Pipeline, Texture2D, parsePcx, pcxToRgba } from '@quake2ts/engine';
 import { mat4 } from 'gl-matrix';
 
 // Mock DebugRenderer
@@ -18,7 +18,7 @@ vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', 
 });
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     Md3Pipeline: vi.fn().mockImplementation(() => ({
         bind: vi.fn(),

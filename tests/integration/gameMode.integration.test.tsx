@@ -5,8 +5,8 @@ import * as pakServiceModule from '../../src/services/pakService';
 import { createGameSimulation } from '../../src/services/gameService';
 import { createGameLoop } from '../../src/utils/gameLoop';
 import { PakService, ParsedFile } from '../../src/services/pakService';
-import { VirtualFileSystem, BspMap } from 'quake2ts/engine';
-import { GameSimulation, GameStateSnapshot } from 'quake2ts/game';
+import { VirtualFileSystem, BspMap } from '@quake2ts/engine';
+import { GameSimulation, GameStateSnapshot } from '@quake2ts/game';
 import { indexedDBService } from '../../src/services/indexedDBService';
 
 // Mock AutoSizer to render children with fixed dimensions

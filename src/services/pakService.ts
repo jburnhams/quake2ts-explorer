@@ -24,7 +24,7 @@ import {
   type WavData,
   type BspMap,
   type TgaImage,
-} from 'quake2ts/engine';
+} from '@quake2ts/engine';
 
 export interface VirtualFileHandle {
   readonly path: string;

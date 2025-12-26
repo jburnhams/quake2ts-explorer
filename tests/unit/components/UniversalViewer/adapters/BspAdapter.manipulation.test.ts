@@ -5,7 +5,7 @@ import { GizmoRenderer } from '@/src/components/UniversalViewer/adapters/GizmoRe
 import { TransformUtils } from '@/src/utils/transformUtils';
 
 // Mocks
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         BspSurfacePipeline: vi.fn().mockImplementation(() => ({
             bind: vi.fn().mockReturnValue({}),

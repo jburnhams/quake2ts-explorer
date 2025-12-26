@@ -1,13 +1,12 @@
 import React from 'react';
-import 'jest-canvas-mock';
 import { render, act } from '@testing-library/react';
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { PakService, ParsedFile } from '../../src/services/pakService';
 import { EntityEditorService, SelectionMode } from '../../src/services/entityEditorService';
-import { BspMap, BspEntity } from 'quake2ts/engine';
+import { BspMap, BspEntity } from '@quake2ts/engine';
 
 // Mock engine dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         createWebGLContext: vi.fn(() => ({ gl: {
             viewport: vi.fn(),

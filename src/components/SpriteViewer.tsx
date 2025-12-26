@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { SpriteModel, parsePcx, pcxToRgba } from 'quake2ts/engine';
+import { SpriteModel, parsePcx, pcxToRgba } from '@quake2ts/engine';
 
 interface SpriteViewerProps {
   model: SpriteModel;

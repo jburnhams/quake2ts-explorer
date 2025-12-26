@@ -1,11 +1,11 @@
 
 import { PakService, getPakService, resetPakService } from '@/src/services/pakService';
-import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
+import { VirtualFileSystem, PakArchive } from '@quake2ts/engine';
 import { MOD_PRIORITY } from '@/src/types/modInfo';
 
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     
     return {
         PakArchive: {
@@ -142,7 +142,7 @@ describe('PakService Coverage', () => {
         mockVfs.hasFile.mockImplementation((path: string) => path === 'colormap.pcx');
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        const { parsePcx } = require('quake2ts/engine');
+        const { parsePcx } = require('@quake2ts/engine');
         parsePcx.mockReturnValue({ palette: new Uint8Array(768) });
 
         const archive = {};
@@ -170,7 +170,7 @@ describe('PakService Coverage', () => {
 
         mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
-        const { parseMd2, groupMd2Animations } = require('quake2ts/engine');
+        const { parseMd2, groupMd2Animations } = require('@quake2ts/engine');
         parseMd2.mockReturnValue({});
         groupMd2Animations.mockReturnValue([]);
 
@@ -185,7 +185,7 @@ describe('PakService Coverage', () => {
 
         mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
-        const { parseMd2 } = require('quake2ts/engine');
+        const { parseMd2 } = require('@quake2ts/engine');
         parseMd2.mockImplementation(() => { throw new Error("Fallback Fail"); });
 
         const result = await service.parseFile('models/test.md2');
@@ -302,7 +302,7 @@ describe('PakService Coverage', () => {
 
     it('should fallback for other types (pcx, wal, tga, md3, sp2, wav, bsp)', async () => {
         // Setup mocks for fallbacks
-        const { parsePcx, parseWal, parseTga, parseMd3, parseWav, parseBsp } = require('quake2ts/engine');
+        const { parsePcx, parseWal, parseTga, parseMd3, parseWav, parseBsp } = require('@quake2ts/engine');
         const { parseSprite } = require('@/src/utils/sp2Parser');
 
         // PCX

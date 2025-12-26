@@ -1,7 +1,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from 'quake2ts/engine';
+import { PakArchive, VirtualFileSystem, parseMd2, groupMd2Animations } from '@quake2ts/engine';
 import { PakService } from '../../src/services/pakService';
 
 // Mock workerService to force fallback to main thread parsing

@@ -28,7 +28,7 @@
     "gl-matrix": "^3.4.4",
     "html2canvas": "^1.4.1",
     "jszip": "^3.10.1",
-    "quake2ts": "0.0.598",
+    "quake2ts": "0.0.741",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-virtualized-auto-sizer": "^1.0.26",
@@ -40,6 +40,7 @@
     "@babel/preset-react": "^7.28.5",
     "@babel/preset-typescript": "^7.28.5",
     "@napi-rs/canvas": "^0.1.82",
+    "@quake2ts/test-utils": "0.0.741",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.1",
     "@testing-library/user-event": "^14.6.1",
@@ -51,7 +52,7 @@
     "@types/react-virtualized-auto-sizer": "^1.0.4",
     "@types/react-window": "^1.8.8",
     "@vitejs/plugin-react": "^5.1.2",
-    "@vitest/coverage-v8": "^4.0.16",
+    "@vitest/coverage-v8": "^1.6.0",
     "fake-indexeddb": "^6.2.5",
     "fast-text-encoding": "^1.0.6",
     "jsdom": "^27.0.1",
@@ -61,7 +62,8 @@
     "serve-handler": "^6.1.6",
     "typescript": "^5.9.3",
     "vite": "^7.3.0",
-    "vitest": "^4.0.16",
+    "vitest": "^1.6.0",
+    "vitest-canvas-mock": "^0.3.3",
     "whatwg-fetch": "^3.6.20"
   }
 }

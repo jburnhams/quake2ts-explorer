@@ -21,7 +21,7 @@ vi.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () 
 });
 
 // Mock quake2ts/engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         createWebGLContext: vi.fn().mockReturnValue({
             gl: {
@@ -85,7 +85,7 @@ describe('UniversalViewer Picking', () => {
           parseFile: vi.fn(),
           getPalette: vi.fn(),
       };
-      quake2tsMock = require('quake2ts/engine');
+      quake2tsMock = require('@quake2ts/engine');
       vi.clearAllMocks();
 
       let frameId = 0;

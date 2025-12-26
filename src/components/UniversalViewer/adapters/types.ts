@@ -1,4 +1,4 @@
-import { Camera, DemoPlaybackController } from 'quake2ts/engine';
+import { Camera, DemoPlaybackController } from '@quake2ts/engine';
 import { ParsedFile, PakService } from '../../../services/pakService';
 import { mat4, vec3 } from 'gl-matrix';
 import { DebugMode } from '@/src/types/debugMode';

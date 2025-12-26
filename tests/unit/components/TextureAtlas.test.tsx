@@ -6,7 +6,7 @@ import { TextureAtlas } from '../../../src/components/TextureAtlas';
 import { AssetCrossRefService } from '../../../src/services/assetCrossRefService';
 import { pakService } from '../../../src/services/pakService';
 import { thumbnailService } from '../../../src/services/thumbnailService';
-import { Md2Model, Md3Model } from 'quake2ts/engine';
+import { Md2Model, Md3Model } from '@quake2ts/engine';
 
 // Mock dependencies
 vi.mock('../../../src/services/assetCrossRefService');

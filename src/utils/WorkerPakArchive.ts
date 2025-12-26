@@ -1,4 +1,4 @@
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 
 // This class mimics PakArchive but is constructed from pre-parsed data
 // @ts-ignore - We are knowingly implementing a class with private members

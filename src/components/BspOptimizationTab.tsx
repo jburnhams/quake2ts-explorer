@@ -1,5 +1,5 @@
 import React from 'react';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 import './BspAnalyzer.css'; // Reuse existing CSS
 
 interface BspOptimizationTabProps {

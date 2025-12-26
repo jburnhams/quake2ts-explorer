@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { createGameSimulation } from '@/src/services/gameService';
-import { VirtualFileSystem, PakArchive } from 'quake2ts/engine';
+import { VirtualFileSystem, PakArchive } from '@quake2ts/engine';
 
 // Real game simulation test
 describe('GameService Integration', () => {

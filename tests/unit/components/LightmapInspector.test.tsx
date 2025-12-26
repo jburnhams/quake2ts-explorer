@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LightmapInspector } from '@/src/components/LightmapInspector';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 import '@testing-library/jest-dom';
 
 // Mock gl-matrix
@@ -12,7 +12,7 @@ vi.mock('gl-matrix', () => ({
 }));
 
 // Mock quake2ts engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   Texture2D: vi.fn()
 }));
 

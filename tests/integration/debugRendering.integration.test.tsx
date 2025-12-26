@@ -22,7 +22,7 @@ vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
   };
 });
 
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         createWebGLContext: vi.fn().mockReturnValue({
             gl: {

@@ -1,6 +1,6 @@
 
 import { networkService, NetworkCallbacks } from '../../../src/services/networkService';
-import { NetChan, ClientCommand, ServerCommand, BinaryWriter } from 'quake2ts/shared';
+import { NetChan, ClientCommand, ServerCommand, BinaryWriter } from '@quake2ts/shared';
 
 // Mock WebSocket
 class MockWebSocket {
@@ -18,12 +18,12 @@ class MockWebSocket {
 (global as any).WebSocket = MockWebSocket;
 
 // Mock NetChan
-vi.mock('quake2ts/shared', () => {
+vi.mock('@quake2ts/shared', () => {
   const actual = vi.requireActual('quake2ts/shared') as any;
   // We can't import strictly from test-utils here easily if it's not a standard module,
   // but we set up the alias in jest config.
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createNetChanMock } = require('quake2ts/test-utils');
+  const { createNetChanMock } = require('@quake2ts/test-utils');
   return {
     ...actual,
     NetChan: vi.fn().mockImplementation(() => {
@@ -241,7 +241,7 @@ describe('NetworkService', () => {
     // The current mock setup is: NetChan: vi.fn().mockImplementation(() => ({ ... }))
 
     // Let's grab the last created NetChan mock instance
-    const MockNetChan = require('quake2ts/shared').NetChan;
+    const MockNetChan = require('@quake2ts/shared').NetChan;
     const mockQueryNetChan = MockNetChan.mock.results[MockNetChan.mock.calls.length - 1].value;
 
     // Prepare response packet data

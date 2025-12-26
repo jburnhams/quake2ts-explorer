@@ -1,7 +1,7 @@
 
 import { networkService } from '../../../src/services/networkService';
 import { WebSocket, Server } from 'mock-socket';
-import { NetChan, ServerCommand } from 'quake2ts/shared';
+import { NetChan, ServerCommand } from '@quake2ts/shared';
 
 // Mock the global WebSocket
 (global as any).WebSocket = WebSocket;

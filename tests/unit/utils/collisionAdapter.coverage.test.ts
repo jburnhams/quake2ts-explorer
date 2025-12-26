@@ -1,5 +1,5 @@
 import { createCollisionModel } from '@/src/utils/collisionAdapter';
-import { BspMap } from 'quake2ts/engine';
+import { BspMap } from '@quake2ts/engine';
 
 describe('collisionAdapter', () => {
     it('handles nested leafBrushes structure', () => {

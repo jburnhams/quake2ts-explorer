@@ -1,6 +1,6 @@
 
 import { PakService } from '../../src/services/pakService';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 import { workerService } from '../../src/services/workerService';
 
 // Mock worker service to return immediate result
@@ -21,7 +21,7 @@ vi.mock('../../src/services/workerService', () => ({
 }));
 
 // Mock PakArchive and VirtualFileSystem logic
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     PakArchive: {
       fromArrayBuffer: vi.fn((id: string, buffer: ArrayBuffer) => {

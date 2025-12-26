@@ -11,7 +11,7 @@ const mockExpose = expose as vi.Mock;
 const mockTransfer = transfer as vi.Mock;
 
 // Mock engine
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     PakArchive: {
         fromArrayBuffer: vi.fn()
     }
@@ -19,7 +19,7 @@ vi.mock('quake2ts/engine', () => ({
 
 // Import worker
 import '@/src/workers/pakParser.worker';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 
 describe('PakParserWorker', () => {
     let api: any;

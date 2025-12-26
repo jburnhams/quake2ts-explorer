@@ -10,7 +10,7 @@ const mockWriteReliableByte = vi.fn();
 const mockWriteReliableString = vi.fn();
 
 // Mock dependencies
-vi.mock('quake2ts/shared', () => {
+vi.mock('@quake2ts/shared', () => {
     const original = vi.requireActual('quake2ts/shared') as any;
     return {
         ...original,

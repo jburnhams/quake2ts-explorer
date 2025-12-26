@@ -5,13 +5,13 @@ import {
   type PmoveState,
   type PmoveTraceResult,
   Vec3
-} from 'quake2ts/shared';
+} from '@quake2ts/shared';
 
 import {
   ClientPrediction,
   type PredictionState,
   type PredictionSettings
-} from 'quake2ts/client';
+} from '@quake2ts/client';
 
 export interface PredictionServiceConfig {
   trace: PmoveTraceFn;

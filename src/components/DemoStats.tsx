@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { DemoPlaybackController, PlayerStatistics, DemoStatistics } from 'quake2ts/engine';
+import { DemoPlaybackController, PlayerStatistics, DemoStatistics } from '@quake2ts/engine';
 import { SpeedGraph } from './SpeedGraph';
 
 interface DemoStatsProps {

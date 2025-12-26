@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { EntityDatabase } from '@/src/components/EntityDatabase';
 import { PakService } from '@/src/services/pakService';
-import { VirtualFileSystem } from 'quake2ts/engine';
+import { VirtualFileSystem } from '@quake2ts/engine';
 
 // Mock AutoSizer to render children with fixed dimensions
 vi.mock('react-virtualized-auto-sizer', () => {
@@ -30,7 +30,7 @@ vi.mock('react-window', () => {
 });
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
       mountPak: vi.fn(),

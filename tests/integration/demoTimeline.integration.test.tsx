@@ -4,7 +4,7 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../../src/services/pakService';
 import { Dm2Adapter } from '../../src/components/UniversalViewer/adapters/Dm2Adapter';
-import { DemoPlaybackController } from 'quake2ts/engine';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 // Mock gl-matrix
 vi.mock('gl-matrix', () => ({
@@ -33,7 +33,7 @@ vi.mock('gl-matrix', () => ({
 }));
 
 // Mock quake2ts/engine
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
     return {
         createWebGLContext: vi.fn(() => ({
             gl: {
@@ -98,7 +98,7 @@ describe('UniversalViewer - Demo Integration', () => {
   beforeEach(() => {
       vi.clearAllMocks();
       (Dm2Adapter as unknown as vi.Mock).mockImplementation(() => {
-          const controller = new (require('quake2ts/engine').DemoPlaybackController)();
+          const controller = new (require('@quake2ts/engine').DemoPlaybackController)();
           return {
               load: vi.fn().mockResolvedValue(undefined),
               update: vi.fn(),

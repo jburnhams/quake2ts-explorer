@@ -8,7 +8,7 @@ import { performanceService } from '../../../../src/services/performanceService'
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
 
 vi.mock('../../../../src/services/pakService');
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   VirtualFileSystem: vi.fn(),
   createWebGLContext: vi.fn().mockReturnValue({ gl: {
       viewport: vi.fn(),

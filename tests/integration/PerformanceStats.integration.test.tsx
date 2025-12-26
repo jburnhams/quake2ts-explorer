@@ -4,7 +4,6 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
-import 'jest-canvas-mock';
 
 // Mock dependencies
 vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
@@ -31,7 +30,7 @@ const mockGl = {
   viewport: vi.fn(),
 } as unknown as WebGL2RenderingContext;
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
   createWebGLContext: () => ({ gl: mockGl }),
   Camera: vi.fn().mockImplementation(() => ({
     fov: 60,

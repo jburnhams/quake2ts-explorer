@@ -2,7 +2,7 @@
 import { multiplayerGameService } from '@/src/services/multiplayerGameService';
 import { networkService } from '@/src/services/networkService';
 import { predictionService } from '@/src/services/predictionService';
-import { PlayerState } from 'quake2ts/shared';
+import { PlayerState } from '@quake2ts/shared';
 
 // Mock dependencies
 vi.mock('@/src/services/networkService', () => ({
@@ -22,13 +22,13 @@ vi.mock('@/src/services/predictionService', () => ({
     }
 }));
 
-vi.mock('quake2ts/engine', () => ({
+vi.mock('@quake2ts/engine', () => ({
     AssetManager: vi.fn().mockImplementation(() => ({
         loadMap: vi.fn().mockResolvedValue({})
     }))
 }));
 
-vi.mock('quake2ts/shared', () => ({
+vi.mock('@quake2ts/shared', () => ({
     CollisionEntityIndex: vi.fn().mockImplementation(() => ({
         trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
         link: vi.fn()
@@ -43,7 +43,7 @@ vi.mock('@/src/utils/collisionAdapter', () => ({
     createCollisionModel: vi.fn().mockReturnValue({})
 }));
 
-vi.mock('quake2ts/game', () => ({
+vi.mock('@quake2ts/game', () => ({
     // Mock Entity if needed
 }));
 

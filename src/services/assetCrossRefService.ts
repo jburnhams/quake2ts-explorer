@@ -1,4 +1,4 @@
-import { VirtualFileSystem, parseMd2, parseMd3, parseBsp } from 'quake2ts/engine';
+import { VirtualFileSystem, parseMd2, parseMd3, parseBsp } from '@quake2ts/engine';
 
 export interface AssetUsage {
   type: 'model' | 'map';

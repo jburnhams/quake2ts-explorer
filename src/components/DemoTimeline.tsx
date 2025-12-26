@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { DemoPlaybackController, DemoEvent, DemoEventType } from 'quake2ts/engine';
+import { DemoPlaybackController, DemoEvent, DemoEventType } from '@quake2ts/engine';
 import { Bookmark } from '@/src/services/bookmarkService';
 import './DemoTimeline.css';
 

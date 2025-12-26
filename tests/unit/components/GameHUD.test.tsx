@@ -3,12 +3,12 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { GameHUD } from '@/src/components/GameHUD';
 import { PakService } from '@/src/services/pakService';
-import { PlayerStat } from 'quake2ts/shared';
+import { PlayerStat } from '@quake2ts/shared';
 import { GameStateSnapshot } from '@/src/services/gameService';
 
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const { createGameStateSnapshotFactory } = require('quake2ts/test-utils');
+const { createGameStateSnapshotFactory } = require('@quake2ts/test-utils');
 
 describe('GameHUD', () => {
     let mockPakService: PakService;

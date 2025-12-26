@@ -1,7 +1,7 @@
 import { initInputController, cleanupInputController, generateUserCommand, getInputController, setInputMode } from '../../../src/services/inputService';
 
 
-vi.mock('quake2ts/client', () => {
+vi.mock('@quake2ts/client', () => {
     
     return {
         InputController: vi.fn().mockImplementation(() => ({

@@ -1,10 +1,10 @@
 
 import { Md2Adapter } from '../../../../../src/components/UniversalViewer/adapters/Md2Adapter';
 import { PakService, ParsedFile } from '../../../../../src/services/pakService';
-import { Md2Pipeline, Md2MeshBuffers, createAnimationState, computeFrameBlend } from 'quake2ts/engine';
+import { Md2Pipeline, Md2MeshBuffers, createAnimationState, computeFrameBlend } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('quake2ts/engine', () => {
+vi.mock('@quake2ts/engine', () => {
   return {
     Md2Pipeline: vi.fn().mockImplementation(() => ({
         bind: vi.fn(),
@@ -116,13 +116,13 @@ describe('Md2Adapter', () => {
 
       mockPakService.hasFile.mockReturnValue(true);
       mockPakService.readFile.mockResolvedValue(new Uint8Array(10));
-      (require('quake2ts/engine').parsePcx as vi.Mock).mockReturnValue({ width: 10, height: 10 });
-      (require('quake2ts/engine').pcxToRgba as vi.Mock).mockReturnValue(new Uint8Array(400));
+      (require('@quake2ts/engine').parsePcx as vi.Mock).mockReturnValue({ width: 10, height: 10 });
+      (require('@quake2ts/engine').pcxToRgba as vi.Mock).mockReturnValue(new Uint8Array(400));
 
       await adapter.load(mockGl, file, mockPakService, 'test.md2');
 
       expect(mockPakService.readFile).toHaveBeenCalledWith('skin.pcx');
-      expect(require('quake2ts/engine').Texture2D).toHaveBeenCalled();
+      expect(require('@quake2ts/engine').Texture2D).toHaveBeenCalled();
   });
 
   it('renders model', async () => {
@@ -138,10 +138,10 @@ describe('Md2Adapter', () => {
 
       adapter.render(mockGl, camera, viewMatrix);
 
-      const pipeline = (require('quake2ts/engine').Md2Pipeline as vi.Mock).mock.results[0].value;
+      const pipeline = (require('@quake2ts/engine').Md2Pipeline as vi.Mock).mock.results[0].value;
       expect(pipeline.bind).toHaveBeenCalled();
 
-      const buffers = (require('quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
+      const buffers = (require('@quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
       expect(buffers.bind).toHaveBeenCalled();
       expect(mockGl.drawElements).toHaveBeenCalled();
   });
@@ -167,9 +167,9 @@ describe('Md2Adapter', () => {
       await adapter.load(mockGl, file, mockPakService, 'test.md2');
 
       adapter.update(0.1);
-      expect(require('quake2ts/engine').advanceAnimation).toHaveBeenCalled();
-      expect(require('quake2ts/engine').computeFrameBlend).toHaveBeenCalled();
-      const buffers = (require('quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
+      expect(require('@quake2ts/engine').advanceAnimation).toHaveBeenCalled();
+      expect(require('@quake2ts/engine').computeFrameBlend).toHaveBeenCalled();
+      const buffers = (require('@quake2ts/engine').Md2MeshBuffers as vi.Mock).mock.results[0].value;
       expect(buffers.update).toHaveBeenCalled();
   });
 });
