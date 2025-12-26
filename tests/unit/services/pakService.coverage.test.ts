@@ -41,7 +41,7 @@ vi.mock('@/src/utils/sp2Parser', () => {
     };
 });
 
-vi.mock('@/src/services/workerService', () => {
+vi.mock('../../../src/services/workerService', () => {
     
 
     const mockAssetWorker = {
@@ -72,7 +72,7 @@ vi.mock('@/src/services/workerService', () => {
     };
 });
 
-vi.mock('@/src/services/cacheService', () => {
+vi.mock('../../../src/services/cacheService', () => {
     
     return {
         cacheService: {
@@ -97,11 +97,11 @@ describe('PakService Coverage', () => {
         mockVfs = service.getVfs();
 
         // Get the mock worker to inspect calls
-        const { workerService } = require('@/src/services/workerService');
+        const { workerService } = require('../../../src/services/workerService.ts');
         mockAssetWorker = workerService._mockAssetWorker;
         mockPakParser = workerService._mockPakParser;
 
-        const { cacheService } = require('@/src/services/cacheService');
+        const { cacheService } = require('../../../src/services/cacheService.ts');
         mockCacheService = cacheService;
     });
 
