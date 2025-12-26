@@ -1,0 +1,8 @@
+
+ RUN  v1.6.1 /app
+
+include: tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}
+exclude:  tests/integration/**
+watch exclude:  **/node_modules/**, **/dist/**
+
+No test files found, exiting with code 1

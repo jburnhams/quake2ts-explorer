@@ -1,5 +1,6 @@
 import { defineConfig, mergeConfig } from 'vitest/config';
 import viteConfig from './vite.config';
+import path from 'path';
 
 export default mergeConfig(
   viteConfig,
@@ -23,6 +24,15 @@ export default mergeConfig(
           '**/__mocks__/*',
           '**/*.test.*',
         ],
+      },
+      alias: {
+        // Map worker imports to the worker mock
+        '../workers/pakParser.worker?worker': path.resolve(__dirname, './tests/utils/workerMock.js'),
+        '../workers/assetProcessor.worker?worker': path.resolve(__dirname, './tests/utils/workerMock.js'),
+        '../workers/indexer.worker?worker': path.resolve(__dirname, './tests/utils/workerMock.js'),
+        // Also map relative imports if needed (though Vite usually handles resolving to the above keys)
+        '@/src': path.resolve(__dirname, './src'),
+        '@/tests': path.resolve(__dirname, './tests'),
       },
       deps: {
         optimizer: {
