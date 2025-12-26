@@ -10,8 +10,8 @@ import { createGameLoop } from '../../src/utils/gameLoop';
 // To make this "integration" test meaningful without relying on internal engine behavior we can't see,
 // we will verify that calling start() on our wrapper triggers callbacks over time.
 
-// IMPORTANT: We need to unmock quake2ts/engine if it was mocked in unit tests
-vi.unmock('quake2ts/engine');
+// IMPORTANT: We need to unmock @quake2ts/engine if it was mocked in unit tests
+vi.unmock('@quake2ts/engine');
 
 describe('GameLoop Integration', () => {
   beforeEach(() => {
