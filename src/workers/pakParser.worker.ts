@@ -1,6 +1,6 @@
 /// <reference lib="webworker" />
 import { expose, transfer } from 'comlink';
-import { PakArchive } from 'quake2ts/engine';
+import { PakArchive } from '@quake2ts/engine';
 
 export interface ParseResult {
   entries: Map<string, any>;

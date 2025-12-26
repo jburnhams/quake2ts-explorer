@@ -57,7 +57,11 @@ vi.mock('@quake2ts/shared', () => ({
         transmit: vi.fn(),
         reset: vi.fn(),
         process: vi.fn()
-    }))
+    })),
+    ServerCommand: {
+      serverdata: 1,
+      configstring: 2
+    }
 }));
 
 describe('GameService Console Commands', () => {

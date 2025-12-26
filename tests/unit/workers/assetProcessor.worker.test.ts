@@ -1,5 +1,4 @@
 
-
 // Mock dependencies
 vi.mock('comlink', () => ({
     expose: vi.fn(),
