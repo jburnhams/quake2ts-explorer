@@ -22,7 +22,7 @@ import { expose, transfer } from 'comlink';
  * This handles parsing textures, models, and sounds.
  */
 
-const processor = {
+export const processor = {
   processPcx(buffer: ArrayBuffer) {
       const image = parsePcx(buffer as ArrayBuffer);
       const rgba = pcxToRgba(image);

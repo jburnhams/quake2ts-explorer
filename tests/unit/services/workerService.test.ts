@@ -6,7 +6,7 @@ describe('WorkerService', () => {
   let mockApi: any;
   let PakParserWorker: any;
 
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.resetModules();
 
     mockApi = {
@@ -21,10 +21,10 @@ describe('WorkerService', () => {
     }));
 
     // We need to require the service after mocking dependencies
-    const serviceModule = require('../../../src/services/workerService');
+    const serviceModule = await import('@/src/services/workerService');
     workerService = serviceModule.workerService;
 
-    const workerModule = require('../../../src/workers/pakParser.worker?worker');
+    const workerModule = await import('../../../src/workers/pakParser.worker?worker');
     PakParserWorker = workerModule.default;
   });
 

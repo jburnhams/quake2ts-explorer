@@ -1,6 +1,8 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { DebugMode } from '@/src/types/debugMode';
 import { ViewerAdapter } from '@/src/components/UniversalViewer/ViewerAdapter';
+import { EntityEditorService } from '@/src/services/entityEditorService';
+import type { Mock } from 'vitest';
 
 import { Texture2D } from '@quake2ts/engine';
 
@@ -278,7 +280,7 @@ describe('BspAdapter Extra Coverage', () => {
         };
 
         // Mock entity service
-        const mockEntityService = require('@/src/services/entityEditorService').EntityEditorService.getInstance();
+        const mockEntityService = (EntityEditorService.getInstance as Mock)();
         mockEntityService.getSelectedEntities.mockReturnValue([{ properties: { origin: '0 0 0' } }]);
         mockEntityService.getSelectedEntityIds.mockReturnValue([0]);
         mockEntityService.getEntity.mockReturnValue({ properties: { origin: '0 0 0' } });
@@ -311,7 +313,7 @@ describe('BspAdapter Extra Coverage', () => {
             setMode: vi.fn()
         };
 
-        const mockEntityService = require('@/src/services/entityEditorService').EntityEditorService.getInstance();
+        const mockEntityService = (EntityEditorService.getInstance as Mock)();
         mockEntityService.getSelectedEntities.mockReturnValue([{ properties: { origin: '0 0 0', angles: '0 0 0' } }]);
 
         // Set rotate mode
