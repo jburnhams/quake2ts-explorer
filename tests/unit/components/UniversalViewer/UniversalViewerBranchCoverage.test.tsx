@@ -6,25 +6,16 @@ import { Md2Adapter } from '../../../../src/components/UniversalViewer/adapters/
 import * as screenshotService from '../../../../src/services/screenshotService';
 import { performanceService } from '../../../../src/services/performanceService';
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
+import { createMockWebGL2Context } from '../../../utils/mockWebGL';
 
 vi.mock('../../../../src/services/pakService');
 vi.mock('@quake2ts/engine', () => ({
   VirtualFileSystem: vi.fn(),
-  createWebGLContext: vi.fn().mockReturnValue({ gl: {
-      viewport: vi.fn(),
-      clearColor: vi.fn(),
-      clear: vi.fn(),
-      enable: vi.fn(),
-      createShader: vi.fn(),
-      createProgram: vi.fn(),
-      createBuffer: vi.fn(),
-      bindBuffer: vi.fn(),
-      bufferData: vi.fn(),
-      getAttribLocation: vi.fn(),
-      vertexAttribPointer: vi.fn(),
-      enableVertexAttribArray: vi.fn(),
-      useProgram: vi.fn(),
-  } }),
+  // Use local helper
+  createWebGLContext: vi.fn().mockImplementation(() => {
+      const mockContext = createMockWebGL2Context();
+      return { gl: mockContext };
+  }),
   Camera: vi.fn().mockImplementation(() => ({
       position: [0,0,0],
       angles: [0,0,0],
