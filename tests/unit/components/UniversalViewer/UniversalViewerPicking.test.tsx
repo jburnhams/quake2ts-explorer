@@ -3,9 +3,10 @@ import { UniversalViewer } from '../../../../src/components/UniversalViewer/Univ
 import { ParsedFile } from '../../../../src/services/pakService';
 import { BspAdapter } from '../../../../src/components/UniversalViewer/adapters/BspAdapter';
 import React from 'react';
+import * as engine from '@quake2ts/engine';
 
 // Mock gl-matrix (use actual for math logic in picking)
-vi.mock('gl-matrix', () => vi.requireActual('gl-matrix'));
+// vi.mock('gl-matrix', () => vi.requireActual('gl-matrix'));
 
 // Mock DebugRenderer
 vi.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
@@ -27,8 +28,35 @@ vi.mock('@quake2ts/engine', () => {
             gl: {
                 clearColor: vi.fn(), clear: vi.fn(), enable: vi.fn(), drawElements: vi.fn(), viewport: vi.fn(), activeTexture: vi.fn(),
                 generateMipmap: vi.fn(),
+                createShader: vi.fn().mockReturnValue({}),
+                shaderSource: vi.fn(),
+                compileShader: vi.fn(),
+                getShaderParameter: vi.fn().mockReturnValue(true),
+                createProgram: vi.fn().mockReturnValue({}),
+                attachShader: vi.fn(),
+                linkProgram: vi.fn(),
+                getProgramParameter: vi.fn().mockReturnValue(true),
+                useProgram: vi.fn(),
+                getUniformLocation: vi.fn(),
+                uniform1i: vi.fn(),
+                uniform1f: vi.fn(),
+                createTexture: vi.fn(),
+                bindTexture: vi.fn(),
+                texParameteri: vi.fn(),
+                createBuffer: vi.fn(),
+                bindBuffer: vi.fn(),
+                bufferData: vi.fn(),
+                enableVertexAttribArray: vi.fn(),
+                vertexAttribPointer: vi.fn(),
+                createVertexArray: vi.fn(),
+                bindVertexArray: vi.fn(),
+                blendFuncSeparate: vi.fn(),
+                depthFunc: vi.fn(),
+                cullFace: vi.fn(),
+                texImage2D: vi.fn(),
                 TRIANGLES: 0, COLOR_BUFFER_BIT: 0, DEPTH_BUFFER_BIT: 0, DEPTH_TEST: 0, CULL_FACE: 0, UNSIGNED_SHORT: 0, RGBA: 0,
-                UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0
+                UNSIGNED_BYTE: 0, LINEAR_MIPMAP_LINEAR: 0, LINEAR: 0, REPEAT: 0, TEXTURE0: 0, TEXTURE_2D: 0,
+                FRAGMENT_SHADER: 0, VERTEX_SHADER: 0, ARRAY_BUFFER: 0, ELEMENT_ARRAY_BUFFER: 0, STATIC_DRAW: 0, FLOAT: 0
             },
         }),
         Camera: vi.fn().mockImplementation(() => {
@@ -76,7 +104,7 @@ vi.mock('../../../../src/components/UniversalViewer/ViewerControls', () => ({
 
 describe('UniversalViewer Picking', () => {
   let pakServiceMock: any;
-  let quake2tsMock: any;
+  // let quake2tsMock: any;
 
   beforeEach(() => {
       pakServiceMock = {
@@ -85,7 +113,7 @@ describe('UniversalViewer Picking', () => {
           parseFile: vi.fn(),
           getPalette: vi.fn(),
       };
-      quake2tsMock = require('@quake2ts/engine');
+      // quake2tsMock = require('@quake2ts/engine');
       vi.clearAllMocks();
 
       let frameId = 0;
@@ -122,7 +150,7 @@ describe('UniversalViewer Picking', () => {
 
       const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} onEntitySelected={onEntitySelected} />);
 
-      await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
+      await waitFor(() => expect(engine.BspSurfacePipeline).toHaveBeenCalled());
 
       await act(async () => {
          await new Promise(resolve => setTimeout(resolve, 0));
@@ -163,7 +191,7 @@ describe('UniversalViewer Picking', () => {
 
       const { container } = render(<UniversalViewer parsedFile={parsedFile} pakService={pakServiceMock} />);
 
-      await waitFor(() => expect(quake2tsMock.BspSurfacePipeline).toHaveBeenCalled());
+      await waitFor(() => expect(engine.BspSurfacePipeline).toHaveBeenCalled());
 
       await act(async () => {
          await new Promise(resolve => setTimeout(resolve, 0));
