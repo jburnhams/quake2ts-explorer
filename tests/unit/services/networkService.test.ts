@@ -1,6 +1,50 @@
 
-import { networkService, NetworkCallbacks } from '../../../src/services/networkService';
-import { NetChan, ClientCommand, ServerCommand, BinaryWriter } from '@quake2ts/shared';
+import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+
+// Mock NetChan
+vi.mock('@quake2ts/shared', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  const createNetChanMock = () => ({
+    qport: 1234,
+    incomingSequence: 0,
+    outgoingSequence: 0,
+    incomingAcknowledged: 0,
+    incomingReliableAcknowledged: false,
+    incomingReliableSequence: 0,
+    outgoingReliableSequence: 0,
+    reliableLength: 0,
+    fragmentSendOffset: 0,
+    fragmentBuffer: null,
+    fragmentLength: 0,
+    fragmentReceived: 0,
+    lastReceived: 0,
+    lastSent: 0,
+    remoteAddress: { type: 'IP', port: 1234 },
+    setup: vi.fn(),
+    reset: vi.fn(),
+    transmit: vi.fn(),
+    process: vi.fn(),
+    canSendReliable: vi.fn(() => true),
+    writeReliableByte: vi.fn(),
+    writeReliableShort: vi.fn(),
+    writeReliableLong: vi.fn(),
+    writeReliableString: vi.fn(),
+    getReliableData: vi.fn(() => new Uint8Array(0)),
+    needsKeepalive: vi.fn(() => false),
+    isTimedOut: vi.fn(() => false),
+    writeReliableBytes: vi.fn(),
+  });
+
+  return {
+    ...actual,
+    NetChan: vi.fn().mockImplementation(() => {
+        const mock = createNetChanMock();
+        // Override default transmit to match test expectations
+        mock.transmit.mockReturnValue(new Uint8Array([1, 2, 3]));
+        return mock;
+    }),
+  };
+});
 
 // Mock WebSocket
 class MockWebSocket {
@@ -17,23 +61,9 @@ class MockWebSocket {
 
 (global as any).WebSocket = MockWebSocket;
 
-// Mock NetChan
-vi.mock('@quake2ts/shared', () => {
-  const actual = vi.requireActual('quake2ts/shared') as any;
-  // We can't import strictly from test-utils here easily if it's not a standard module,
-  // but we set up the alias in jest config.
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createNetChanMock } = require('@quake2ts/test-utils');
-  return {
-    ...actual,
-    NetChan: vi.fn().mockImplementation(() => {
-        const mock = createNetChanMock();
-        // Override default transmit to match test expectations
-        mock.transmit.mockReturnValue(new Uint8Array([1, 2, 3]));
-        return mock;
-    }),
-  };
-});
+// Import AFTER mocks
+import { networkService, NetworkCallbacks } from '../../../src/services/networkService';
+import { NetChan, ClientCommand, ServerCommand, BinaryWriter } from '@quake2ts/shared';
 
 describe('NetworkService', () => {
   let callbacks: NetworkCallbacks;
@@ -217,32 +247,14 @@ describe('NetworkService', () => {
     const ws = new MockWebSocket('ws://localhost:27910');
     (global as any).WebSocket = vi.fn(() => ws);
 
-    // Mock NetChan for the query specifically
-    // Since queryServer creates its own NetChan internally, we rely on the vi.mock above
-    // to intercept it.
-
-    // We need to access the NetChan instance created inside queryServer.
-    // The vi.mock implementation returns a new mock object each time NetChan is instantiated.
-    // We can capture it if we spy on it, or we can just mock process return value globally
-    // since we control when onmessage fires.
-
     const queryPromise = networkService.queryServer('ws://localhost:27910');
 
     // Simulate connection open
     ws.onopen!();
 
-    // Construct a mock server packet with serverdata and configstrings
-    // CS_NAME=0, CS_MAPNAME=31, CS_MAXCLIENTS=30
-
-    // We need to inject data that the MockNetChan.process returns
-    // Since our mock implementation of process returns [1, 2, 3] by default (see top of file),
-    // we need to override it for this test case. But `process` is a method on the instance.
-    // We can use mockImplementationOnce on the class mock constructor?
-    // The current mock setup is: NetChan: vi.fn().mockImplementation(() => ({ ... }))
-
-    // Let's grab the last created NetChan mock instance
-    const MockNetChan = require('@quake2ts/shared').NetChan;
-    const mockQueryNetChan = MockNetChan.mock.results[MockNetChan.mock.calls.length - 1].value;
+    // Get the mock NetChan class and the last instance
+    const MockNetChan = (await import('@quake2ts/shared')).NetChan;
+    const mockQueryNetChan = (MockNetChan as any).mock.results[(MockNetChan as any).mock.calls.length - 1].value;
 
     // Prepare response packet data
     const writer = new BinaryWriter();
@@ -314,25 +326,7 @@ describe('NetworkService', () => {
     const queryPromise = networkService.queryServer('ws://localhost:27910');
 
     // Simulate connection but no message
-    // Note: If we don't await this, the advanceTimers might run before onopen in real loop,
-    // but in jest fake timers environment, sync callbacks should be fine.
-    // However, if the promise rejection happens inside a timeout callback,
-    // we must ensure that rejection is caught by the test expectation.
-
     ws.onopen!();
-
-    // Advance timers past timeout (5000ms)
-    // We use a try-catch block or .catch to handle the promise if we want to suppress the unhandled rejection warning
-    // but expect(...).rejects should handle it.
-    // The issue might be that advanceTimersByTimeAsync triggers the rejection
-    // which happens *before* we await `expect(queryPromise)`.
-    // Wait, queryPromise is a pending promise. When we advance time, it rejects.
-    // If nothing has a .catch on it YET, node might complain about unhandled rejection?
-    // But we attach the handler in the next line.
-
-    // Let's try wrapping the advance and expect together or ensure order is correct.
-    // Actually, advanceTimersByTimeAsync is async. The timeout callback fires.
-    // The promise rejects.
 
     const timerPromise = vi.advanceTimersByTimeAsync(6000);
     await expect(queryPromise).rejects.toThrow('Query timeout');

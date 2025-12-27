@@ -1,9 +1,10 @@
 /**
- * @jest-environment node
+ * @jest-environment jsdom
  */
 
 import * as fs from 'fs';
 import * as path from 'path';
+import { vi, describe, it, expect, beforeAll, beforeEach } from 'vitest';
 
 // Mock worker service to use a synchronous-like mock instead of real worker
 // This is critical for tests that don't support workers or for performance
