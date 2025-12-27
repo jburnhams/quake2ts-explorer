@@ -33,8 +33,8 @@ vi.mock('@quake2ts/game', () => {
   };
 });
 
-vi.mock('@quake2ts/shared', () => {
-  const actual = vi.requireActual('quake2ts/shared');
+vi.mock('@quake2ts/shared', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@quake2ts/shared')>();
   return {
     ...actual,
     buildCollisionModel: vi.fn(),

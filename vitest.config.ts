@@ -8,9 +8,8 @@ export default mergeConfig(
     test: {
       globals: true,
       environment: 'jsdom', // Default to jsdom for most tests (React components)
-      setupFiles: ['./tests/setup.ts'],
-      include: ['tests/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
-      exclude: ['tests/integration/**'], // Exclude integration tests for now or configure them separately if needed
+      setupFiles: ['./tests/polyfill-jest.ts', './tests/setup.ts'],
+      include: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
       coverage: {
         provider: 'v8',
         reporter: ['text', 'json', 'html'],

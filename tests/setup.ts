@@ -2,6 +2,7 @@ import { afterEach, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import 'vitest-canvas-mock';
 import { cleanup } from '@testing-library/react';
+import 'fake-indexeddb/auto';
 
 // Sync setup
 if (typeof window !== 'undefined') {

@@ -3,7 +3,33 @@ import React from 'react';
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import { DemoTimeline } from '@/src/components/DemoTimeline';
 import { DemoPlaybackController, DemoEventType } from '@quake2ts/engine';
-import { createMockRAF } from '@quake2ts/test-utils';
+
+// Local RAF mock to avoid @quake2ts/test-utils dependency issues
+const createMockRAF = () => {
+    let callbacks: FrameRequestCallback[] = [];
+    let time = 0;
+
+    const raf = (cb: FrameRequestCallback) => {
+        callbacks.push(cb);
+        return callbacks.length;
+    };
+
+    const cancel = (id: number) => {
+        // No-op for now
+    };
+
+    const tick = (dt = 16) => {
+        time += dt;
+        const currentCallbacks = callbacks;
+        callbacks = [];
+        currentCallbacks.forEach(cb => cb(time));
+    };
+
+    vi.stubGlobal('requestAnimationFrame', raf);
+    vi.stubGlobal('cancelAnimationFrame', cancel);
+
+    return { tick };
+};
 
 describe('DemoTimeline', () => {
   let mockController: vi.Mocked<DemoPlaybackController>;
