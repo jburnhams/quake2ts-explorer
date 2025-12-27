@@ -39,6 +39,12 @@ vi.mock('@quake2ts/engine', async () => {
             angles: { set: vi.fn() },
             updateMatrices: vi.fn(),
         })),
+        // Add DLight export
+        DLight: vi.fn().mockImplementation(() => ({
+             origin: new Float32Array(3),
+             color: new Float32Array(3),
+             intensity: 1.0
+        })),
         // MD2
         Md2Pipeline: vi.fn().mockImplementation(() => createMockMd2Pipeline()),
         Md2MeshBuffers: vi.fn().mockImplementation(() => ({ bind: vi.fn(), update: vi.fn(), indexCount: 123 })),

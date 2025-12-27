@@ -2,13 +2,18 @@
 import { EntityService, EntityRecord } from '@/src/services/entityService';
 import { VirtualFileSystem, parseBsp } from '@quake2ts/engine';
 import { toArrayBuffer } from '@/src/utils/helpers';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
+
+// Define the mock implementation for findByExtension globally to access it in tests
+const mockFindByExtension = vi.fn().mockReturnValue([]);
+const mockReadFile = vi.fn();
 
 // Mock quake2ts engine
 vi.mock('@quake2ts/engine', () => {
   return {
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
-      findByExtension: vi.fn().mockReturnValue([]),
-      readFile: vi.fn(),
+      findByExtension: mockFindByExtension,
+      readFile: mockReadFile,
     })),
     parseBsp: vi.fn(),
   };
@@ -24,7 +29,11 @@ describe('EntityService', () => {
   let mockMap: any;
 
   beforeEach(() => {
-    // Reset mocks
+    // Reset global mocks
+    mockFindByExtension.mockReset();
+    mockFindByExtension.mockReturnValue([]);
+    mockReadFile.mockReset();
+
     const { VirtualFileSystem } = require('@quake2ts/engine');
     vfs = new VirtualFileSystem();
     service = new EntityService(vfs);
@@ -62,8 +71,8 @@ describe('EntityService', () => {
   it('should scan all maps and aggregate entities', async () => {
     const mockBspData = new Uint8Array([1, 2, 3]);
     // Ensure findByExtension returns files with 'path' property
-    vfs.findByExtension.mockReturnValue([{ path: 'maps/map1.bsp' }, { path: 'maps/map2.bsp' }]);
-    vfs.readFile.mockResolvedValue(mockBspData);
+    mockFindByExtension.mockReturnValue([{ path: 'maps/map1.bsp' }, { path: 'maps/map2.bsp' }]);
+    mockReadFile.mockResolvedValue(mockBspData);
 
     // Using the directly imported parseBsp mock and casting it to Mock
     (parseBsp as any).mockReturnValue(mockMap);
@@ -71,8 +80,8 @@ describe('EntityService', () => {
     const onProgress = vi.fn();
     const records = await service.scanAllMaps(onProgress);
 
-    expect(vfs.findByExtension).toHaveBeenCalledWith('bsp');
-    expect(vfs.readFile).toHaveBeenCalledTimes(2);
+    expect(mockFindByExtension).toHaveBeenCalledWith('bsp');
+    expect(mockReadFile).toHaveBeenCalledTimes(2);
     expect(parseBsp).toHaveBeenCalledTimes(2);
 
     // 2 maps * 3 entities each = 6 entities
@@ -82,8 +91,9 @@ describe('EntityService', () => {
   });
 
   it('should handle errors during map parsing', async () => {
-    vfs.findByExtension.mockReturnValue([{ path: 'maps/bad.bsp' }]);
-    vfs.readFile.mockResolvedValue(new Uint8Array([0]));
+    // Reset mock return values from previous test
+    mockFindByExtension.mockReturnValue([{ path: 'maps/bad.bsp' }]);
+    mockReadFile.mockResolvedValue(new Uint8Array([0]));
 
     (parseBsp as any).mockImplementation(() => { throw new Error('Parse error'); });
 

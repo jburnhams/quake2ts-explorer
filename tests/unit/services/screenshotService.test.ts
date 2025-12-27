@@ -1,8 +1,12 @@
 import { captureScreenshot, generateScreenshotFilename, downloadScreenshot, ScreenshotOptions } from '@/src/services/screenshotService';
 import html2canvas from 'html2canvas';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock html2canvas
-vi.mock('html2canvas', () => vi.fn());
+// vi.mock requires returning an object with 'default' property for default exports in ESM/Vitest
+vi.mock('html2canvas', () => ({
+    default: vi.fn()
+}));
 
 // Mock URL.createObjectURL and revokeObjectURL
 global.URL.createObjectURL = vi.fn();

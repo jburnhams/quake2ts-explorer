@@ -1,15 +1,24 @@
-import { captureBurst, captureScreenshot, BurstOptions } from '@/src/services/screenshotService';
+import { captureBurst, BurstOptions } from '@/src/services/screenshotService';
 import JSZip from 'jszip';
 import html2canvas from 'html2canvas';
+import { vi, describe, test, expect, beforeEach } from 'vitest';
 
 // Mock dependencies
-vi.mock('html2canvas', () => vi.fn());
+// vi.mock requires returning an object with 'default' property for default exports in ESM/Vitest
+vi.mock('html2canvas', () => ({
+    default: vi.fn()
+}));
+
 vi.mock('jszip', () => {
-  return vi.fn().mockImplementation(() => ({
-    folder: vi.fn().mockReturnThis(),
-    file: vi.fn(),
-    generateAsync: vi.fn().mockResolvedValue(new Blob(['zip-content'], { type: 'application/zip' })),
-  }));
+    // Constructable mock
+    const JSZipMock = vi.fn().mockImplementation(() => ({
+        folder: vi.fn().mockReturnThis(),
+        file: vi.fn(),
+        generateAsync: vi.fn().mockResolvedValue(new Blob(['zip-content'], { type: 'application/zip' })),
+    }));
+    return {
+        default: JSZipMock
+    };
 });
 
 describe('ScreenshotService - Burst Mode', () => {
