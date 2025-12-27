@@ -16,16 +16,21 @@ vi.mock('@quake2ts/client', () => ({
     }))
 }));
 
-vi.mock('@quake2ts/engine', () => ({
-  VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
-  AssetManager: vi.fn().mockImplementation(() => ({
-    loadMap: vi.fn().mockResolvedValue({
-        // Minimal map mock
+// Return a class with instance methods for AssetManager
+vi.mock('@quake2ts/engine', () => {
+  class MockAssetManager {
+    loadMap = vi.fn().mockResolvedValue({
         leafs: [], nodes: [], models: [], planes: []
-    }),
-    clearCache: vi.fn()
-  }))
-}));
+    });
+    clearCache = vi.fn();
+    resetForLevelChange = vi.fn();
+  }
+
+  return {
+    VirtualFileSystem: vi.fn().mockImplementation(() => ({})),
+    AssetManager: MockAssetManager
+  };
+});
 
 vi.mock('@quake2ts/game', () => ({
   createGame: vi.fn().mockImplementation(() => ({
@@ -42,33 +47,38 @@ vi.mock('@/src/utils/collisionAdapter', () => ({
   createCollisionModel: vi.fn()
 }));
 
-vi.mock('@quake2ts/shared', () => ({
-    CollisionEntityIndex: vi.fn().mockImplementation(() => ({
-        trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
-        link: vi.fn(),
-        gatherTriggerTouches: vi.fn()
-    })),
-    traceBox: vi.fn().mockReturnValue({ fraction: 1.0 }),
-    pointContents: vi.fn().mockReturnValue(0),
-    Vec3: {},
-    CollisionPlane: {},
-    NetChan: vi.fn().mockImplementation(() => ({
-        setup: vi.fn(),
-        transmit: vi.fn(),
-        reset: vi.fn(),
-        process: vi.fn()
-    })),
-    ServerCommand: {
-      serverdata: 1,
-      configstring: 2
-    }
-}));
+vi.mock('@quake2ts/shared', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@quake2ts/shared')>();
+    return {
+        ...actual,
+        CollisionEntityIndex: vi.fn().mockImplementation(() => ({
+            trace: vi.fn().mockReturnValue({ fraction: 1.0 }),
+            link: vi.fn(),
+            gatherTriggerTouches: vi.fn()
+        })),
+        traceBox: vi.fn().mockReturnValue({ fraction: 1.0 }),
+        pointContents: vi.fn().mockReturnValue(0),
+        Vec3: {},
+        CollisionPlane: {},
+        NetChan: vi.fn().mockImplementation(() => ({
+            setup: vi.fn(),
+            transmit: vi.fn(),
+            reset: vi.fn(),
+            process: vi.fn()
+        })),
+        ServerCommand: {
+          serverdata: 1,
+          configstring: 2
+        }
+    };
+});
 
 describe('GameService Console Commands', () => {
     let commands: Record<string, Function> = {};
     let vfs: VirtualFileSystem;
 
     beforeEach(() => {
+        vi.clearAllMocks();
         vfs = new VirtualFileSystem();
         commands = {};
         vi.spyOn(consoleService, 'registerCommand').mockImplementation((name, cb) => {

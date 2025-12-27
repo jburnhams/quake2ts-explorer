@@ -68,12 +68,23 @@ vi.mock('@/src/services/workerService', () => {
     };
 });
 
-vi.mock('@/src/services/cacheService', () => ({
-    cacheService: {
-        get: vi.fn(),
-        set: vi.fn(),
-    }
-}));
+// Mock cacheService fully including constants
+vi.mock('@/src/services/cacheService', async (importOriginal) => {
+    // We can't import actual here easily inside factory if we want to mock singleton
+    // But we can define constants manually as they are simple strings
+    return {
+        cacheService: {
+            get: vi.fn(),
+            set: vi.fn(),
+        },
+        CACHE_STORES: {
+            PAK_INDEX: 'pak-index',
+            THUMBNAILS: 'thumbnails',
+            ASSET_METADATA: 'asset-metadata',
+            DEMO_INDEX: 'demo-index'
+        }
+    };
+});
 
 // Mock sp2Parser
 vi.mock('@/src/utils/sp2Parser', () => ({
@@ -105,6 +116,9 @@ describe('PakService Coverage', () => {
 
         const cacheModule = await import('@/src/services/cacheService');
         mockCacheService = cacheModule.cacheService;
+
+        // Mock computeCacheKey (private) to bypass crypto issues
+        (service as any).computeCacheKey = vi.fn().mockResolvedValue('mock-cache-key');
     });
 
     it('should handle unloadPak with VFS rebuild fallback', () => {
@@ -216,34 +230,6 @@ describe('PakService Coverage', () => {
             name: 'test.pak'
         } as unknown as File;
 
-        // Mock crypto safely
-        const mockRandomUUID = vi.fn().mockReturnValue('uuid');
-        const mockDigest = vi.fn().mockResolvedValue(new ArrayBuffer(32));
-
-        if (global.crypto) {
-             Object.defineProperty(global.crypto, 'randomUUID', {
-                 value: mockRandomUUID,
-                 writable: true
-             });
-             if (global.crypto.subtle) {
-                 Object.defineProperty(global.crypto.subtle, 'digest', {
-                     value: mockDigest,
-                     writable: true
-                 });
-             } else {
-                 // @ts-ignore
-                 Object.defineProperty(global.crypto, 'subtle', {
-                     value: { digest: mockDigest },
-                     writable: true
-                 });
-             }
-        } else {
-            (global as any).crypto = {
-                randomUUID: mockRandomUUID,
-                subtle: { digest: mockDigest }
-            };
-        }
-
         await service.loadPakFile(file);
 
         expect(mockCacheService.get).toHaveBeenCalled();
@@ -262,35 +248,6 @@ describe('PakService Coverage', () => {
             arrayBuffer: vi.fn().mockResolvedValue(new ArrayBuffer(100)),
             name: 'test.pak'
         } as unknown as File;
-
-        // Mock crypto safely
-        const mockRandomUUID = vi.fn().mockReturnValue('uuid');
-        const mockDigest = vi.fn().mockResolvedValue(new ArrayBuffer(32));
-
-        if (global.crypto) {
-             Object.defineProperty(global.crypto, 'randomUUID', {
-                 value: mockRandomUUID,
-                 writable: true
-             });
-             // Ensure subtle exists
-             if (!global.crypto.subtle) {
-                 // @ts-ignore
-                 Object.defineProperty(global.crypto, 'subtle', {
-                     value: { digest: mockDigest },
-                     writable: true
-                 });
-             } else {
-                 Object.defineProperty(global.crypto.subtle, 'digest', {
-                     value: mockDigest,
-                     writable: true
-                 });
-             }
-        } else {
-             (global as any).crypto = {
-                randomUUID: mockRandomUUID,
-                subtle: { digest: mockDigest }
-            };
-        }
 
         await service.loadPakFile(file);
 

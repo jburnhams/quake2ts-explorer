@@ -2,13 +2,16 @@ import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter
 import { BspMap } from '@quake2ts/engine';
 
 // Mock dependencies
-vi.mock('@quake2ts/engine', () => ({
-  ...vi.requireActual('quake2ts/engine'),
-  BspSurfacePipeline: vi.fn(),
-  DebugRenderer: vi.fn(),
-  createBspSurfaces: vi.fn(() => []),
-  buildBspGeometry: vi.fn(() => ({ surfaces: [], lightmaps: [] })),
-}));
+vi.mock('@quake2ts/engine', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@quake2ts/engine')>();
+  return {
+    ...original,
+    BspSurfacePipeline: vi.fn(),
+    DebugRenderer: vi.fn(),
+    createBspSurfaces: vi.fn(() => []),
+    buildBspGeometry: vi.fn(() => ({ surfaces: [], lightmaps: [] })),
+  };
+});
 
 describe('BspAdapter - Extended', () => {
   let adapter: BspAdapter;

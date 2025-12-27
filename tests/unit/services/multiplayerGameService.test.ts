@@ -19,11 +19,14 @@ vi.mock('@quake2ts/engine', () => ({
     AssetManager: vi.fn()
 }));
 vi.mock('@/src/utils/collisionAdapter');
-vi.mock('@quake2ts/shared', () => ({
-    ...vi.requireActual('quake2ts/shared'),
-    traceBox: vi.fn(),
-    pointContents: vi.fn()
-}));
+vi.mock('@quake2ts/shared', async (importOriginal) => {
+    const original = await importOriginal<typeof import('@quake2ts/shared')>();
+    return {
+        ...original,
+        traceBox: vi.fn(),
+        pointContents: vi.fn()
+    };
+});
 
 describe('MultiplayerGameService', () => {
     let service: MultiplayerGameService;

@@ -5,8 +5,8 @@ import { PakService } from '@/src/services/pakService';
 import { RenderOptions } from '@/src/components/UniversalViewer/adapters/types';
 
 // Mock dependencies
-vi.mock('@quake2ts/engine', () => {
-    const originalModule = vi.requireActual('quake2ts/engine');
+vi.mock('@quake2ts/engine', async (importOriginal) => {
+    const originalModule = await importOriginal<typeof import('@quake2ts/engine')>();
     return {
         ...originalModule,
         BspSurfacePipeline: vi.fn().mockImplementation(() => ({

@@ -38,6 +38,10 @@ describe('EntityService', () => {
     vfs = new VirtualFileSystem();
     service = new EntityService(vfs);
 
+    // Ensure vfs uses the mock
+    vfs.findByExtension = mockFindByExtension;
+    vfs.readFile = mockReadFile;
+
     mockMap = {
       entities: {
         entities: [
