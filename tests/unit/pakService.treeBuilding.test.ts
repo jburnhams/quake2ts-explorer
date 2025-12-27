@@ -1,5 +1,4 @@
 
-
 // Mock worker service first to avoid import issues
 vi.mock('@/src/services/workerService', () => ({
     workerService: {
@@ -9,7 +8,27 @@ vi.mock('@/src/services/workerService', () => ({
                 buffer,
                 name
             }))
-        }))
+        })),
+        executePakParserTask: vi.fn().mockImplementation(async (taskName, args) => {
+            if (taskName === 'parsePak') {
+                const [name, buffer] = args;
+                // Return mock entries that match what the test expects in mockFileList
+                // We need to access mockFileList here, but it's outside the scope.
+                // However, since we mock getPakParser above returning the same structure,
+                // we can rely on that or replicate simple behavior.
+                // The fallback logic calls executePakParserTask, so we must return success to avoid fallback if we want to avoid the error log,
+                // OR we accept that fallback happens but we fix the error log by providing the function.
+                // The current tests seem to rely on fallback behavior implicitly because they check for 'Fallback for ...' logs in the output.
+                // But the error 'executePakParserTask is not a function' is because the mock was missing it.
+                // So we just need to provide it.
+                // If we want to simulate failure to force fallback (which seems to be what's happening given the logs), we can throw.
+                // But the logs show "Worker parsing failed... executePakParserTask is not a function".
+                // So let's provide it and make it fail so the fallback path is exercised cleanly without the TypeError.
+                throw new Error('Worker parsing failed (simulated)');
+            }
+            return null;
+        }),
+        executeAssetProcessorTask: vi.fn().mockResolvedValue({})
     }
 }));
 
