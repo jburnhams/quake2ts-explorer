@@ -7,7 +7,7 @@ import { toArrayBuffer } from '@/src/utils/helpers';
 vi.mock('@quake2ts/engine', () => {
   return {
     VirtualFileSystem: vi.fn().mockImplementation(() => ({
-      findByExtension: vi.fn(),
+      findByExtension: vi.fn().mockReturnValue([]),
       readFile: vi.fn(),
     })),
     parseBsp: vi.fn(),
@@ -61,11 +61,12 @@ describe('EntityService', () => {
 
   it('should scan all maps and aggregate entities', async () => {
     const mockBspData = new Uint8Array([1, 2, 3]);
-    vfs.findByExtension.mockReturnValue(['maps/map1.bsp', 'maps/map2.bsp']);
+    // Ensure findByExtension returns files with 'path' property
+    vfs.findByExtension.mockReturnValue([{ path: 'maps/map1.bsp' }, { path: 'maps/map2.bsp' }]);
     vfs.readFile.mockResolvedValue(mockBspData);
 
-    const { parseBsp } = require('@quake2ts/engine');
-    parseBsp.mockReturnValue(mockMap);
+    // Using the directly imported parseBsp mock and casting it to Mock
+    (parseBsp as any).mockReturnValue(mockMap);
 
     const onProgress = vi.fn();
     const records = await service.scanAllMaps(onProgress);
@@ -81,11 +82,10 @@ describe('EntityService', () => {
   });
 
   it('should handle errors during map parsing', async () => {
-    vfs.findByExtension.mockReturnValue(['maps/bad.bsp']);
+    vfs.findByExtension.mockReturnValue([{ path: 'maps/bad.bsp' }]);
     vfs.readFile.mockResolvedValue(new Uint8Array([0]));
 
-    const { parseBsp } = require('@quake2ts/engine');
-    parseBsp.mockImplementation(() => { throw new Error('Parse error'); });
+    (parseBsp as any).mockImplementation(() => { throw new Error('Parse error'); });
 
     const records = await service.scanAllMaps();
 

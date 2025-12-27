@@ -6,17 +6,17 @@ import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { OrbitState } from '../../../src/utils/cameraUtils';
 
 // Mock gl-matrix
-vi.mock('gl-matrix', () => {
-  const original = vi.requireActual('gl-matrix');
+vi.mock('gl-matrix', async (importOriginal) => {
+  const original = await importOriginal();
   return {
-    ...original,
+    ...(original as any),
     mat4: {
-      ...original.mat4,
+      ...(original as any).mat4,
       create: vi.fn(() => new Float32Array(16)),
       lookAt: vi.fn(),
     },
     vec3: {
-        ...original.vec3,
+        ...(original as any).vec3,
         create: vi.fn(() => new Float32Array(3)),
     }
   };

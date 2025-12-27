@@ -4,12 +4,12 @@ import { DEFAULT_CAMERA_SETTINGS } from '@/src/types/CameraSettings';
 import { vec3 } from 'gl-matrix';
 
 // Mock gl-matrix
-vi.mock('gl-matrix', () => {
-    const original = vi.requireActual('gl-matrix');
+vi.mock('gl-matrix', async (importOriginal) => {
+    const original = await importOriginal();
     return {
-        ...original,
+        ...(original as any),
         vec3: {
-            ...original.vec3,
+            ...(original as any).vec3,
             create: vi.fn(() => new Float32Array([0, 0, 0])),
             copy: vi.fn((out, a) => {
                 out[0] = a[0];
