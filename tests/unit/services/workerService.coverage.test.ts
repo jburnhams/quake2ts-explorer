@@ -1,12 +1,16 @@
 
-
 describe('WorkerService Coverage', () => {
   let workerService: any;
-  let mockWrap: any;
+  // let mockWrap: any;
   let mockApi: any;
   let IndexerWorker: any;
   let AssetProcessorWorker: any;
   let PakParserWorker: any;
+
+  // Use vi.hoisted for mockWrap to avoid hoisting issues
+  const mocks = vi.hoisted(() => ({
+    wrap: vi.fn(),
+  }));
 
   beforeEach(async () => {
     vi.resetModules();
@@ -17,9 +21,9 @@ describe('WorkerService Coverage', () => {
       analyzeBsp: vi.fn().mockResolvedValue([]),
     };
 
-    mockWrap = vi.fn().mockReturnValue(mockApi);
+    mocks.wrap.mockReturnValue(mockApi);
     vi.mock('comlink', () => ({
-      wrap: mockWrap,
+      wrap: mocks.wrap,
     }));
 
     const serviceModule = await import('@/src/services/workerService');
@@ -51,7 +55,7 @@ describe('WorkerService Coverage', () => {
       return await api.processPcx(new ArrayBuffer(0));
     });
 
-    expect(mockWrap).toHaveBeenCalled();
+    expect(mocks.wrap).toHaveBeenCalled();
     expect(mockApi.processPcx).toHaveBeenCalled();
   });
 
@@ -60,7 +64,7 @@ describe('WorkerService Coverage', () => {
       return await api.analyzeBsp(new ArrayBuffer(0));
     });
 
-    expect(mockWrap).toHaveBeenCalled();
+    expect(mocks.wrap).toHaveBeenCalled();
     expect(mockApi.analyzeBsp).toHaveBeenCalled();
   });
 

@@ -1,15 +1,13 @@
 import { render, waitFor, act } from '@testing-library/react';
 import { SpriteViewer } from '../../src/components/SpriteViewer';
 import { SpriteModel } from '@quake2ts/engine';
+import * as engine from '@quake2ts/engine';
 
 // Mock quake2ts/engine
 vi.mock('@quake2ts/engine', () => ({
     parsePcx: vi.fn().mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(0), pixels: new Uint8Array(0) }),
     pcxToRgba: vi.fn().mockReturnValue(new Uint8Array(10 * 10 * 4).fill(255)),
 }));
-
-const mockParsePcx = require('@quake2ts/engine').parsePcx;
-const mockPcxToRgba = require('@quake2ts/engine').pcxToRgba;
 
 describe('SpriteViewer', () => {
     const model: SpriteModel = {
@@ -43,8 +41,8 @@ describe('SpriteViewer', () => {
             expect(loadFile).toHaveBeenCalledWith('sprites/frame2.pcx');
         });
 
-        expect(mockParsePcx).toHaveBeenCalledTimes(2);
-        expect(mockPcxToRgba).toHaveBeenCalledTimes(2);
+        expect(engine.parsePcx).toHaveBeenCalledTimes(2);
+        expect(engine.pcxToRgba).toHaveBeenCalledTimes(2);
 
         // Check if canvas has correct size
         const canvas = container.querySelector('canvas');

@@ -2,9 +2,9 @@ import { vec3 } from 'gl-matrix';
 import { CameraKeyframe, CinematicPath, PathInterpolator } from '../../../src/utils/cameraPath';
 
 
-vi.mock('gl-matrix', () => {
+vi.mock('gl-matrix', async () => {
     
-    const original = vi.requireActual('gl-matrix') as any;
+    const original = await vi.importActual('gl-matrix') as any;
     return {
         ...original,
         vec3: {

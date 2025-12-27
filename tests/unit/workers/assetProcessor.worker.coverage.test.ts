@@ -38,9 +38,9 @@ describe('AssetProcessorWorker Coverage', () => {
         // expose is called on import. Capture args.
         // Re-import to ensure expose is called again if possible, or grab from mock.
         // Jest/Vitest module cache handling:
-        await vi.isolateModulesAsync(async () => {
-             await import('@/src/workers/assetProcessor.worker');
-        });
+        vi.resetModules();
+        await import('@/src/workers/assetProcessor.worker');
+
         const mockExpose = expose as vi.Mock;
         if (mockExpose.mock.calls.length > 0) {
              api = mockExpose.mock.calls[mockExpose.mock.calls.length - 1][0];

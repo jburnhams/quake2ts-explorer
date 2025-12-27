@@ -2,11 +2,10 @@
 import { PakService, getPakService, resetPakService } from '@/src/services/pakService';
 import { VirtualFileSystem, PakArchive } from '@quake2ts/engine';
 import { MOD_PRIORITY } from '@/src/types/modInfo';
-
+import * as engine from '@quake2ts/engine';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => {
-    
     return {
         PakArchive: {
             fromArrayBuffer: vi.fn().mockReturnValue({})
@@ -28,81 +27,84 @@ vi.mock('@quake2ts/engine', () => {
         parseMd2: vi.fn(),
         groupMd2Animations: vi.fn(),
         parseMd3: vi.fn(),
-        parseBsp: vi.fn(),
-        parseWav: vi.fn(),
         parseTga: vi.fn(),
+        parseWav: vi.fn(),
+        parseBsp: vi.fn(),
+        Texture2D: vi.fn(),
     };
 });
 
-vi.mock('@/src/utils/sp2Parser', () => {
-    
-    return {
-        parseSprite: vi.fn()
-    };
-});
-
-vi.mock('../../../src/services/workerService', () => {
-    
-
+// Mock workerService to expose inner mocks
+const mocks = vi.hoisted(() => {
     const mockAssetWorker = {
+        processMd2: vi.fn(),
         processPcx: vi.fn(),
         processWal: vi.fn(),
         processTga: vi.fn(),
-        processMd2: vi.fn(),
         processMd3: vi.fn(),
         processSp2: vi.fn(),
         processWav: vi.fn(),
-        processBsp: vi.fn()
+        processBsp: vi.fn(),
     };
 
     const mockPakParser = {
         parsePak: vi.fn()
     };
 
+    return { mockAssetWorker, mockPakParser };
+});
+
+vi.mock('@/src/services/workerService', () => {
     return {
         workerService: {
-            getPakParser: vi.fn().mockReturnValue(mockPakParser),
-            getAssetProcessor: vi.fn().mockReturnValue(mockAssetWorker),
-            executeAssetProcessorTask: vi.fn(async (cb: any) => cb(mockAssetWorker)),
-            executePakParserTask: vi.fn(async (cb: any) => cb(mockPakParser)),
-            // Expose mocks for test access
-            _mockAssetWorker: mockAssetWorker,
-            _mockPakParser: mockPakParser
+            getAssetProcessor: vi.fn().mockReturnValue(mocks.mockAssetWorker),
+            executeAssetProcessorTask: vi.fn(async (cb: any) => cb(mocks.mockAssetWorker)),
+            getPakParser: vi.fn().mockReturnValue(mocks.mockPakParser),
+            executePakParserTask: vi.fn(async (cb: any) => cb(mocks.mockPakParser)),
+            // We expose these for testing purposes
+            _mockAssetWorker: mocks.mockAssetWorker,
+            _mockPakParser: mocks.mockPakParser,
         }
     };
 });
 
-vi.mock('../../../src/services/cacheService', () => {
-    
-    return {
-        cacheService: {
-            get: vi.fn(),
-            set: vi.fn().mockResolvedValue(undefined)
-        },
-        CACHE_STORES: { PAK_INDEX: 'pak-index' }
-    };
-});
+vi.mock('@/src/services/cacheService', () => ({
+    cacheService: {
+        get: vi.fn(),
+        set: vi.fn(),
+    }
+}));
+
+// Mock sp2Parser
+vi.mock('@/src/utils/sp2Parser', () => ({
+    parseSprite: vi.fn()
+}));
+
+// Mock Workers
+vi.mock('../../../src/workers/pakParser.worker?worker', () => ({
+    default: class {}
+}));
+vi.mock('../../../src/workers/assetProcessor.worker?worker', () => ({
+    default: class {}
+}));
+vi.mock('../../../src/workers/indexer.worker?worker', () => ({
+    default: class {}
+}));
+
 
 describe('PakService Coverage', () => {
     let service: PakService;
     let mockVfs: any;
-    let mockAssetWorker: any;
     let mockCacheService: any;
-    let mockPakParser: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         resetPakService();
         vi.clearAllMocks();
         service = getPakService();
         mockVfs = service.getVfs();
 
-        // Get the mock worker to inspect calls
-        const { workerService } = require('../../../src/services/workerService.ts');
-        mockAssetWorker = workerService._mockAssetWorker;
-        mockPakParser = workerService._mockPakParser;
-
-        const { cacheService } = require('../../../src/services/cacheService.ts');
-        mockCacheService = cacheService;
+        const cacheModule = await import('@/src/services/cacheService');
+        mockCacheService = cacheModule.cacheService;
     });
 
     it('should handle unloadPak with VFS rebuild fallback', () => {
@@ -142,8 +144,7 @@ describe('PakService Coverage', () => {
         mockVfs.hasFile.mockImplementation((path: string) => path === 'colormap.pcx');
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        const { parsePcx } = require('@quake2ts/engine');
-        parsePcx.mockReturnValue({ palette: new Uint8Array(768) });
+        (engine.parsePcx as any).mockReturnValue({ palette: new Uint8Array(768) });
 
         const archive = {};
         (service as any).mountPak(archive, 'id1', 'pak.pak', false, 0);
@@ -157,36 +158,34 @@ describe('PakService Coverage', () => {
 
     it('should parse MD2 via worker', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
-        mockAssetWorker.processMd2.mockResolvedValue({ type: 'md2', model: {}, animations: [] });
+        mocks.mockAssetWorker.processMd2.mockResolvedValue({ type: 'md2', model: {}, animations: [] });
 
         const result = await service.parseFile('models/test.md2');
 
         expect(result.type).toBe('md2');
-        expect(mockAssetWorker.processMd2).toHaveBeenCalled();
+        expect(mocks.mockAssetWorker.processMd2).toHaveBeenCalled();
     });
 
     it('should handle worker failure and fallback to main thread for MD2', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+        mocks.mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
-        const { parseMd2, groupMd2Animations } = require('@quake2ts/engine');
-        parseMd2.mockReturnValue({});
-        groupMd2Animations.mockReturnValue([]);
+        (engine.parseMd2 as any).mockReturnValue({});
+        (engine.groupMd2Animations as any).mockReturnValue([]);
 
         const result = await service.parseFile('models/test.md2');
 
         expect(result.type).toBe('md2');
-        expect(parseMd2).toHaveBeenCalled(); // Fallback called
+        expect(engine.parseMd2).toHaveBeenCalled(); // Fallback called
     });
 
     it('should handle failure in both worker and fallback', async () => {
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
 
-        mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
+        mocks.mockAssetWorker.processMd2.mockRejectedValue(new Error("Worker Fail"));
 
-        const { parseMd2 } = require('@quake2ts/engine');
-        parseMd2.mockImplementation(() => { throw new Error("Fallback Fail"); });
+        (engine.parseMd2 as any).mockImplementation(() => { throw new Error("Fallback Fail"); });
 
         const result = await service.parseFile('models/test.md2');
 
@@ -248,12 +247,12 @@ describe('PakService Coverage', () => {
         await service.loadPakFile(file);
 
         expect(mockCacheService.get).toHaveBeenCalled();
-        expect(mockPakParser.parsePak).not.toHaveBeenCalled();
+        expect(mocks.mockPakParser.parsePak).not.toHaveBeenCalled();
     });
 
     it('should parse and cache pak if not in cache', async () => {
         mockCacheService.get.mockResolvedValue(null); // Cache miss
-        mockPakParser.parsePak.mockResolvedValue({
+        mocks.mockPakParser.parsePak.mockResolvedValue({
             entries: new Map(),
             buffer: new ArrayBuffer(0),
             name: 'test.pak'
@@ -296,56 +295,54 @@ describe('PakService Coverage', () => {
         await service.loadPakFile(file);
 
         expect(mockCacheService.get).toHaveBeenCalled();
-        expect(mockPakParser.parsePak).toHaveBeenCalled();
+        expect(mocks.mockPakParser.parsePak).toHaveBeenCalled();
         expect(mockCacheService.set).toHaveBeenCalled();
     });
 
     it('should fallback for other types (pcx, wal, tga, md3, sp2, wav, bsp)', async () => {
-        // Setup mocks for fallbacks
-        const { parsePcx, parseWal, parseTga, parseMd3, parseWav, parseBsp } = require('@quake2ts/engine');
-        const { parseSprite } = require('@/src/utils/sp2Parser');
+        const sp2Parser = await import('@/src/utils/sp2Parser');
 
         // PCX
-        mockAssetWorker.processPcx.mockRejectedValue(new Error('fail'));
-        parsePcx.mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(768), data: new Uint8Array(100) });
+        mocks.mockAssetWorker.processPcx.mockRejectedValue(new Error('fail'));
+        (engine.parsePcx as any).mockReturnValue({ width: 10, height: 10, palette: new Uint8Array(768), data: new Uint8Array(100) });
         mockVfs.readFile.mockResolvedValue(new Uint8Array(10));
         await service.parseFile('test.pcx');
-        expect(parsePcx).toHaveBeenCalled();
+        expect(engine.parsePcx).toHaveBeenCalled();
 
         // WAL
-        mockAssetWorker.processWal.mockRejectedValue(new Error('fail'));
-        parseWal.mockReturnValue({ width: 10, height: 10, mipmaps: [] });
+        mocks.mockAssetWorker.processWal.mockRejectedValue(new Error('fail'));
+        (engine.parseWal as any).mockReturnValue({ width: 10, height: 10, mipmaps: [] });
         await service.parseFile('test.wal');
-        expect(parseWal).toHaveBeenCalled();
+        expect(engine.parseWal).toHaveBeenCalled();
 
         // TGA
-        mockAssetWorker.processTga.mockRejectedValue(new Error('fail'));
-        parseTga.mockReturnValue({ width: 10, height: 10, pixels: new Uint8Array(100) });
+        mocks.mockAssetWorker.processTga.mockRejectedValue(new Error('fail'));
+        (engine.parseTga as any).mockReturnValue({ width: 10, height: 10, pixels: new Uint8Array(100) });
         await service.parseFile('test.tga');
-        expect(parseTga).toHaveBeenCalled();
+        expect(engine.parseTga).toHaveBeenCalled();
 
         // MD3
-        mockAssetWorker.processMd3.mockRejectedValue(new Error('fail'));
-        parseMd3.mockReturnValue({});
+        mocks.mockAssetWorker.processMd3.mockRejectedValue(new Error('fail'));
+        (engine.parseMd3 as any).mockReturnValue({});
         await service.parseFile('test.md3');
-        expect(parseMd3).toHaveBeenCalled();
+        expect(engine.parseMd3).toHaveBeenCalled();
 
         // SP2
-        mockAssetWorker.processSp2.mockRejectedValue(new Error('fail'));
-        parseSprite.mockReturnValue({});
+        mocks.mockAssetWorker.processSp2.mockRejectedValue(new Error('fail'));
+        (sp2Parser.parseSprite as any).mockReturnValue({});
         await service.parseFile('test.sp2');
-        expect(parseSprite).toHaveBeenCalled();
+        expect(sp2Parser.parseSprite).toHaveBeenCalled();
 
         // WAV
-        mockAssetWorker.processWav.mockRejectedValue(new Error('fail'));
-        parseWav.mockReturnValue({});
+        mocks.mockAssetWorker.processWav.mockRejectedValue(new Error('fail'));
+        (engine.parseWav as any).mockReturnValue({});
         await service.parseFile('test.wav');
-        expect(parseWav).toHaveBeenCalled();
+        expect(engine.parseWav).toHaveBeenCalled();
 
         // BSP
-        mockAssetWorker.processBsp.mockRejectedValue(new Error('fail'));
-        parseBsp.mockReturnValue({});
+        mocks.mockAssetWorker.processBsp.mockRejectedValue(new Error('fail'));
+        (engine.parseBsp as any).mockReturnValue({});
         await service.parseFile('test.bsp');
-        expect(parseBsp).toHaveBeenCalled();
+        expect(engine.parseBsp).toHaveBeenCalled();
     });
 });
