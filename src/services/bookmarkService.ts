@@ -1,4 +1,4 @@
-import { DemoPlaybackController } from '@quake2ts/client';
+import { DemoPlaybackController } from '@quake2ts/engine';
 
 export interface Bookmark {
   id: string;
