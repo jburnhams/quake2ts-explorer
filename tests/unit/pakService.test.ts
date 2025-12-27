@@ -15,7 +15,36 @@ vi.mock('@/src/services/workerService', () => ({
                 buffer,
                 name
             }))
-        }))
+        })),
+        executePakParserTask: vi.fn(async (task) => {
+            const api = {
+                parsePak: vi.fn(async (name: string, buffer: ArrayBuffer) => ({
+                    entries: new Map([
+                        ['test.txt', { name: 'test.txt', offset: 0, length: 100 }],
+                        ['pics/test.pcx', { name: 'pics/test.pcx', offset: 100, length: 200 }],
+                        ['models/test.md2', { name: 'models/test.md2', offset: 300, length: 500 }],
+                        ['sprites/test.sp2', { name: 'sprites/test.sp2', offset: 800, length: 100 }],
+                        ['maps/test.bsp', { name: 'maps/test.bsp', offset: 1200, length: 2000 }],
+                    ]),
+                    buffer,
+                    name
+                }))
+            };
+            return task(api);
+        }),
+        executeAssetProcessorTask: vi.fn(async (task) => {
+             const api = {
+                 processPcx: vi.fn(() => ({ type: 'pcx', image: { width: 64, height: 64 } })),
+                 processWal: vi.fn(() => ({ type: 'wal', texture: { width: 64, height: 64 } })),
+                 processTga: vi.fn(() => ({ type: 'tga', image: { width: 64, height: 64 } })),
+                 processMd2: vi.fn(() => ({ type: 'md2', model: {} })),
+                 processMd3: vi.fn(() => ({ type: 'md3', model: {} })),
+                 processSp2: vi.fn(() => ({ type: 'sp2', model: {} })),
+                 processWav: vi.fn(() => ({ type: 'wav', audio: {} })),
+                 processBsp: vi.fn(() => ({ type: 'bsp', map: {} }))
+             };
+             return task(api);
+        })
     }
 }));
 

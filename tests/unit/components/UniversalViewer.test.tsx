@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, waitFor, act } from '@testing-library/react';
+import { render, waitFor, act, cleanup } from '@testing-library/react';
 import { UniversalViewer } from '../../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { vec3 } from 'gl-matrix';
@@ -51,6 +51,8 @@ vi.mock('@quake2ts/engine', () => {
         uniform4fv: vi.fn(),
         drawArrays: vi.fn(),
         deleteShader: vi.fn(),
+        deleteProgram: vi.fn(), // Missing function causing the crash
+        deleteVertexArray: vi.fn(), // Often called alongside deleteProgram
         getExtension: vi.fn(),
         viewport: vi.fn(),
         clear: vi.fn(),
@@ -60,6 +62,19 @@ vi.mock('@quake2ts/engine', () => {
         cullFace: vi.fn(),
         blendFunc: vi.fn(),
         blendFuncSeparate: vi.fn(),
+        createRenderbuffer: vi.fn().mockReturnValue({}),
+        bindRenderbuffer: vi.fn(),
+        renderbufferStorage: vi.fn(),
+        createFramebuffer: vi.fn().mockReturnValue({}),
+        bindFramebuffer: vi.fn(),
+        framebufferTexture2D: vi.fn(),
+        framebufferRenderbuffer: vi.fn(),
+        checkFramebufferStatus: vi.fn().mockReturnValue(36053), // gl.FRAMEBUFFER_COMPLETE
+        readPixels: vi.fn(),
+        deleteTexture: vi.fn(),
+        deleteFramebuffer: vi.fn(),
+        deleteRenderbuffer: vi.fn(),
+        pixelStorei: vi.fn(),
     });
 
     return {
@@ -188,6 +203,10 @@ describe('UniversalViewer', () => {
           callbacks.forEach(cb => cb(time));
       };
       (global as any).getFrameCallbacksSize = () => frameCallbacks.size;
+  });
+
+  afterEach(() => {
+      cleanup();
   });
 
   it('renders MD2 adapter', async () => {

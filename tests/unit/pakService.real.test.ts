@@ -30,7 +30,14 @@ vi.mock('@/src/services/workerService', () => ({
                     name
                 };
             })
-        }))
+        })),
+        executePakParserTask: vi.fn().mockImplementation(async (taskName, args) => {
+             // Mocking failure to force fallback to main thread (or we could implement it)
+             // The main thread fallback logic uses the real PakArchive, which is what we want for this 'Real PAK' test.
+             // If we let this throw, the service catches it and does fallback.
+             throw new Error('Worker parsing failed (simulated)');
+        }),
+        executeAssetProcessorTask: vi.fn().mockResolvedValue({})
     }
 }));
 
