@@ -3,6 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LightmapInspector } from '@/src/components/LightmapInspector';
 import { BspMap } from '@quake2ts/engine';
+import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
 import '@testing-library/jest-dom';
 
 // Mock gl-matrix
@@ -22,7 +23,7 @@ describe('LightmapInspector', () => {
     let mockGl: Partial<WebGL2RenderingContext>;
 
     beforeEach(() => {
-        mockMap = {
+        mockMap = createMockBspMap({
             models: [],
             vertices: [],
             faces: [],
@@ -30,9 +31,7 @@ describe('LightmapInspector', () => {
             nodes: [],
             leafs: [],
             planes: [],
-            entities: { entities: [], getUniqueClassnames: vi.fn() },
-            // ... other properties
-        } as any;
+        } as any);
 
         mockGl = {
             createFramebuffer: vi.fn(() => ({})),
