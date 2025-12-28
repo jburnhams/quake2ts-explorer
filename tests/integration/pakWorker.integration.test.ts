@@ -6,6 +6,14 @@ import { WorkerPakArchive } from '../../src/utils/WorkerPakArchive';
 // Mock dependencies
 vi.mock('../../src/services/workerService');
 
+vi.mock('../../src/services/cacheService', () => ({
+    cacheService: {
+        get: vi.fn().mockResolvedValue(null),
+        set: vi.fn().mockResolvedValue(undefined),
+    },
+    CACHE_STORES: { PAK_INDEX: 'pak-index' }
+}));
+
 describe('PakService with Worker Integration', () => {
     let pakService: PakService;
 
