@@ -16,8 +16,10 @@ vi.mock('@/src/services/workerService', () => ({
 
 // Mock react-virtualized-auto-sizer to provide dimensions
 vi.mock('react-virtualized-auto-sizer', () => {
-    return ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) => {
-        return children({ width: 500, height: 500 });
+    return {
+        default: ({ children }: { children: (size: { width: number; height: number }) => React.ReactNode }) => {
+            return children({ width: 500, height: 500 });
+        }
     };
 });
 

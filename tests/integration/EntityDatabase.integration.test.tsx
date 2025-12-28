@@ -7,8 +7,10 @@ import { VirtualFileSystem } from '@quake2ts/engine';
 
 // Mock AutoSizer to render children with fixed dimensions
 vi.mock('react-virtualized-auto-sizer', () => {
-  return ({ children }: any) => {
-    return children({ height: 500, width: 500 });
+  return {
+    default: ({ children }: any) => {
+      return children({ height: 500, width: 500 });
+    }
   };
 });
 
