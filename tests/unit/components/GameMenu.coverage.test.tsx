@@ -37,6 +37,12 @@ describe('GameMenu', () => {
     // Mock URL methods
     global.URL.createObjectURL = vi.fn();
     global.URL.revokeObjectURL = vi.fn();
+
+    // Mock HTMLAnchorElement.click to prevent navigation
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+        writable: true,
+        value: vi.fn()
+    });
   });
 
   it('renders menu items', () => {

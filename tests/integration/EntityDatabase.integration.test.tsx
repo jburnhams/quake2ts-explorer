@@ -103,6 +103,12 @@ describe('EntityDatabase Integration', () => {
     global.URL.createObjectURL = mockCreateObjectURL;
     global.URL.revokeObjectURL = mockRevokeObjectURL;
 
+    // Mock HTMLAnchorElement.click to prevent navigation
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+        writable: true,
+        value: vi.fn()
+    });
+
     render(<EntityDatabase pakService={pakService} />);
 
     // Wait for load

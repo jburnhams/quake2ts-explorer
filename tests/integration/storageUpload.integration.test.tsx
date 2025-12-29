@@ -16,6 +16,13 @@ vi.mock('../../src/services/workerService', () => ({
   }
 }));
 
+// Mock HTMLAnchorElement.click to prevent navigation if any
+const clickMock = vi.fn();
+Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+    writable: true,
+    value: clickMock
+});
+
 vi.mock('../../src/services/cacheService', () => ({
     cacheService: {
         get: vi.fn().mockResolvedValue(null),

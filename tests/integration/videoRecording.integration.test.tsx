@@ -55,6 +55,13 @@ HTMLCanvasElement.prototype.captureStream = vi.fn().mockReturnValue({
 global.URL.createObjectURL = vi.fn(() => 'blob:url');
 global.URL.revokeObjectURL = vi.fn();
 
+// Mock HTMLAnchorElement.click to prevent navigation
+const clickMock = vi.fn();
+Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+    writable: true,
+    value: clickMock
+});
+
 describe('Video Recording Integration', () => {
     let mockPakService: PakService;
     let mockParsedFile: ParsedFile;
