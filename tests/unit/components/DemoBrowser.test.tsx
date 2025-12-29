@@ -95,9 +95,13 @@ describe('DemoBrowser', () => {
     });
   });
 
-  it('handles close action', () => {
+  it('handles close action', async () => {
     const onClose = vi.fn();
     render(<DemoBrowser onPlayDemo={vi.fn()} onClose={onClose} />);
+
+    await waitFor(() => {
+        expect(screen.getByText('demo1.dm2')).toBeInTheDocument();
+    });
 
     fireEvent.click(screen.getByText('×'));
     expect(onClose).toHaveBeenCalled();
