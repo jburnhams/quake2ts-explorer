@@ -2,7 +2,23 @@ import { demoMetadataService, DemoMetadata } from '../../../src/services/demoMet
 
 describe('DemoMetadataService', () => {
   beforeEach(() => {
-    localStorage.clear();
+    // Defensive check for localStorage
+    if (typeof localStorage !== 'undefined' && typeof localStorage.clear === 'function') {
+      localStorage.clear();
+    } else {
+      // Mock if missing (e.g. in some environments)
+      Object.defineProperty(global, 'localStorage', {
+        value: {
+          getItem: vi.fn(),
+          setItem: vi.fn(),
+          removeItem: vi.fn(),
+          clear: vi.fn(),
+          length: 0,
+          key: vi.fn(),
+        },
+        writable: true
+      });
+    }
     vi.clearAllMocks();
   });
 
