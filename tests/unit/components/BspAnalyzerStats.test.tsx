@@ -4,6 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BspMap } from '@quake2ts/engine';
 import { PakService } from '@/src/services/pakService';
+import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
 
 // Mock dependencies
 vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
@@ -20,25 +21,26 @@ describe('BspAnalyzer', () => {
 
     beforeEach(() => {
         // Setup mock map with stats data
-        mockMap = {
-            models: [{}],
+        mockMap = createMockBspMap({
+            models: [{}] as any,
+            // @ts-ignore - legacy property support in mock
             entities: [{ classname: 'worldspawn' }, { classname: 'info_player_start' }],
             faces: [
                 { numEdges: 3, texInfo: 0 },
                 { numEdges: 4, texInfo: 0 },
                 { numEdges: 4, texInfo: 1 }
-            ],
-            vertices: new Array(10),
-            brushes: new Array(5),
-            nodes: new Array(5),
-            leafs: new Array(5),
-            vis: { numClusters: 10, buffer: new Uint8Array(100) },
+            ] as any,
+            vertices: new Array(10) as any,
+            brushes: new Array(5) as any,
+            nodes: new Array(5) as any,
+            leafs: new Array(5) as any,
+            vis: { numClusters: 10, buffer: new Uint8Array(100) } as any,
             // Mock texture info
             texInfo: [
                  { texture: 'wall' },
                  { texture: 'floor' }
-            ]
-        } as unknown as BspMap;
+            ] as any
+        });
 
         mockPakService = {} as PakService;
     });

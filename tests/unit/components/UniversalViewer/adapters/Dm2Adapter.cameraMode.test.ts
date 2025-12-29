@@ -36,6 +36,9 @@ describe('Dm2Adapter Camera Modes', () => {
 
     beforeEach(async () => {
         adapter = new Dm2Adapter();
+        // Disable auto-map loading for this test to avoid warnings about missing maps
+        adapter.setAutoLoadMap(false);
+
         mockGl = {} as WebGL2RenderingContext;
         mockPakService = {
             hasFile: vi.fn().mockReturnValue(false)

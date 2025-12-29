@@ -38,18 +38,20 @@ vi.mock('../../../../../src/components/UniversalViewer/adapters/BspAdapter');
 describe('Dm2Adapter', () => {
   let adapter: Dm2Adapter;
   let mockGl: WebGL2RenderingContext;
-  let mockPakService: vi.Mocked<PakService>;
+  let mockPakService: { hasFile: ReturnType<typeof vi.fn>, parseFile: ReturnType<typeof vi.fn> };
   let mockBspAdapter: vi.Mocked<BspAdapter>;
 
   beforeEach(() => {
     adapter = new Dm2Adapter();
     mockGl = {} as WebGL2RenderingContext;
+
+    // Explicitly define mocks for each test run to avoid leakage
     mockPakService = {
       hasFile: vi.fn(),
       parseFile: vi.fn(),
-    } as unknown as vi.Mocked<PakService>;
+    };
 
-    // Clear mocks
+    // Clear class mocks
     (DemoPlaybackController as vi.Mock).mockClear();
     (BspAdapter as vi.Mock).mockClear();
 
@@ -60,7 +62,7 @@ describe('Dm2Adapter', () => {
 
   it('throws error if file type is not dm2', async () => {
     const file: ParsedFile = { type: 'bsp' } as any;
-    await expect(adapter.load(mockGl, file, mockPakService, 'demos/test.bsp')).rejects.toThrow('Invalid file type');
+    await expect(adapter.load(mockGl, file, mockPakService as any, 'demos/test.bsp')).rejects.toThrow('Invalid file type');
   });
 
   it('loads demo and attempts to load map based on filename', async () => {
@@ -73,7 +75,7 @@ describe('Dm2Adapter', () => {
     mockPakService.hasFile.mockImplementation((path) => path === 'maps/demo1.bsp');
     mockPakService.parseFile.mockResolvedValue({ type: 'bsp', map: {} } as any);
 
-    await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/demo1.dm2');
 
     const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     expect(controllerInstance.loadDemo).toHaveBeenCalled();
@@ -93,11 +95,20 @@ describe('Dm2Adapter', () => {
 
     // Map does not exist
     mockPakService.hasFile.mockReturnValue(false);
+
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
+    // Ensure auto-load is ON (default)
+    adapter.setAutoLoadMap(true);
 
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/demo1.dm2');
+
+    // Verify hasFile was called
+    expect(mockPakService.hasFile).toHaveBeenCalled();
+
+    // Check warning
     expect(consoleSpy).toHaveBeenCalledWith('Map file not found:', 'maps/demo1.bsp');
+
     consoleSpy.mockRestore();
   });
 
@@ -112,7 +123,7 @@ describe('Dm2Adapter', () => {
 
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/demo1.dm2');
 
     expect(consoleSpy).toHaveBeenCalledWith('Map file is not a valid BSP:', 'maps/demo1.bsp');
     consoleSpy.mockRestore();
@@ -129,7 +140,7 @@ describe('Dm2Adapter', () => {
 
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/demo1.dm2');
 
     expect(consoleSpy).toHaveBeenCalledWith('Failed to load map for demo', expect.any(Error));
     consoleSpy.mockRestore();
@@ -138,7 +149,8 @@ describe('Dm2Adapter', () => {
   it('updates controller and extracts camera state (FirstPerson)', async () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(false);
-    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+    adapter.setAutoLoadMap(false); // Disable map load for this test to avoid warnings
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
 
     const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
     // Mock frame data
@@ -158,7 +170,8 @@ describe('Dm2Adapter', () => {
   it('updates camera in ThirdPerson mode', async () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(false);
-    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+    adapter.setAutoLoadMap(false);
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
 
     adapter.setCameraMode(CameraMode.ThirdPerson);
     adapter.setCameraSettings({ ...DEFAULT_CAMERA_SETTINGS, thirdPersonDistance: 100 });
@@ -184,7 +197,8 @@ describe('Dm2Adapter', () => {
   it('updates camera in Orbital mode', async () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(false);
-    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+    adapter.setAutoLoadMap(false);
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
 
     adapter.setCameraMode(CameraMode.Orbital);
     const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
@@ -203,7 +217,8 @@ describe('Dm2Adapter', () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.parseFile.mockResolvedValue({ type: 'bsp', map: {} } as any);
-    await adapter.load(mockGl, file, mockPakService, 'demos/demo1.dm2');
+    adapter.setAutoLoadMap(true);
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/demo1.dm2');
 
     adapter.update(16);
     expect(mockBspAdapter.update).toHaveBeenCalledWith(16);
@@ -215,7 +230,8 @@ describe('Dm2Adapter', () => {
   it('controls playback', async () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(false);
-    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+    adapter.setAutoLoadMap(false);
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
 
     const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
@@ -232,8 +248,9 @@ describe('Dm2Adapter', () => {
     const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
     mockPakService.hasFile.mockReturnValue(true);
     mockPakService.parseFile.mockResolvedValue({ type: 'bsp', map: {} } as any);
+    adapter.setAutoLoadMap(true);
 
-    await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+    await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
     const controllerInstance = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
     adapter.cleanup();
@@ -249,7 +266,8 @@ describe('Dm2Adapter', () => {
   it('implements smooth stepping logic', async () => {
       const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
       mockPakService.hasFile.mockReturnValue(false);
-      await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+      adapter.setAutoLoadMap(false);
+      await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
       const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
       controller.getCurrentTime.mockReturnValue(10);
@@ -269,7 +287,8 @@ describe('Dm2Adapter', () => {
   it('exposes demo controller', async () => {
       const file: ParsedFile = { type: 'dm2', data: new Uint8Array(100) } as any;
       mockPakService.hasFile.mockReturnValue(false);
-      await adapter.load(mockGl, file, mockPakService, 'demos/test.dm2');
+      adapter.setAutoLoadMap(false);
+      await adapter.load(mockGl, file, mockPakService as any, 'demos/test.dm2');
       const controller = (DemoPlaybackController as vi.Mock).mock.results[0].value;
 
       expect(adapter.getDemoController()).toBe(controller);

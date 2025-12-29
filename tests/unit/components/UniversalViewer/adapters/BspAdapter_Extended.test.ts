@@ -1,5 +1,6 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { BspMap } from '@quake2ts/engine';
+import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', async (importOriginal) => {
@@ -19,21 +20,22 @@ describe('BspAdapter - Extended', () => {
 
   beforeEach(() => {
     adapter = new BspAdapter();
-    mockMap = {
+    mockMap = createMockBspMap({
       pickEntity: vi.fn(),
-      faces: [{ texInfoIndex: 0 }, { texInfoIndex: 1 }],
+      faces: [{ texInfoIndex: 0 }, { texInfoIndex: 1 }] as any,
+      // @ts-ignore - legacy property
       texinfo: [
         { texture: 'wall1', flags: 1, value: 100, contents: 0 },
         { texture: 'sky', flags: 4, value: 0, contents: 0 }
-      ],
+      ] as any,
       entities: {
           getUniqueClassnames: vi.fn(() => []),
           entities: []
-      },
-      models: [],
-      leafs: [],
-      planes: [],
-    };
+      } as any,
+      models: [] as any,
+      leafs: [] as any,
+      planes: [] as any,
+    });
     // Inject map directly for testing helper methods that depend on it
     (adapter as any).map = mockMap;
   });

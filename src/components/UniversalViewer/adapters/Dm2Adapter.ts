@@ -32,6 +32,9 @@ export class Dm2Adapter implements ViewerAdapter {
   private stepProgress = 0;
   private stepDuration = 0.2; // 200ms animation for step
 
+  // Option to disable auto-map loading (mostly for testing)
+  private autoLoadMap = true;
+
   async load(gl: WebGL2RenderingContext, file: ParsedFile, pakService: PakService, filePath: string): Promise<void> {
     if (file.type !== 'dm2') throw new Error('Invalid file type for Dm2Adapter');
 
@@ -40,35 +43,42 @@ export class Dm2Adapter implements ViewerAdapter {
     this.demoBuffer = buffer; // Store for extraction
     this.controller.loadDemo(buffer);
 
-    // Attempt to load map
-    let mapPath = 'maps/demo1.bsp';
-    const parts = filePath.split('/');
-    const filename = parts[parts.length - 1];
-    const name = filename.split('.')[0];
-    const potentialMap = `maps/${name}.bsp`;
+    if (this.autoLoadMap) {
+        // Attempt to load map
+        let mapPath = 'maps/demo1.bsp';
+        const parts = filePath.split('/');
+        const filename = parts[parts.length - 1];
+        const name = filename.split('.')[0];
+        const potentialMap = `maps/${name}.bsp`;
 
-    if (pakService.hasFile(potentialMap)) {
-        mapPath = potentialMap;
-    }
+        if (pakService.hasFile(potentialMap)) {
+            mapPath = potentialMap;
+        }
 
-    if (pakService.hasFile(mapPath)) {
-         try {
-             const mapFile = await pakService.parseFile(mapPath);
-             if (mapFile.type === 'bsp') {
-                 this.bspAdapter = new BspAdapter();
-                 await this.bspAdapter.loadMap(gl, mapFile.map, pakService);
-             } else {
-                console.warn('Map file is not a valid BSP:', mapPath);
+        if (pakService.hasFile(mapPath)) {
+             try {
+                 const mapFile = await pakService.parseFile(mapPath);
+                 if (mapFile.type === 'bsp') {
+                     this.bspAdapter = new BspAdapter();
+                     await this.bspAdapter.loadMap(gl, mapFile.map, pakService);
+                 } else {
+                    console.warn('Map file is not a valid BSP:', mapPath);
+                 }
+             } catch (e) {
+                 console.warn('Failed to load map for demo', e);
              }
-         } catch (e) {
-             console.warn('Failed to load map for demo', e);
-         }
-    } else {
-        console.warn('Map file not found:', mapPath);
+        } else {
+            console.warn('Map file not found:', mapPath);
+        }
     }
 
     this.controller.play();
     this.isPlayingState = true;
+  }
+
+  // Method to configure auto-load behavior
+  setAutoLoadMap(enable: boolean) {
+      this.autoLoadMap = enable;
   }
 
   update(deltaTime: number): void {
