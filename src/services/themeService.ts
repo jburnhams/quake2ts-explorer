@@ -16,7 +16,15 @@ export class ThemeService {
     this.registerTheme(highContrastTheme);
 
     // Load persisted theme
-    const savedThemeId = localStorage.getItem(THEME_STORAGE_KEY);
+    let savedThemeId: string | null = null;
+    try {
+      if (typeof localStorage !== 'undefined' && typeof localStorage.getItem === 'function') {
+        savedThemeId = localStorage.getItem(THEME_STORAGE_KEY);
+      }
+    } catch (e) {
+      console.warn('Failed to access localStorage:', e);
+    }
+
     if (savedThemeId && this.themes.has(savedThemeId)) {
       this.setTheme(savedThemeId);
     } else {
@@ -41,7 +49,15 @@ export class ThemeService {
     if (theme) {
       this.currentTheme = theme;
       this.applyTheme(theme);
-      localStorage.setItem(THEME_STORAGE_KEY, themeId);
+
+      try {
+        if (typeof localStorage !== 'undefined' && typeof localStorage.setItem === 'function') {
+          localStorage.setItem(THEME_STORAGE_KEY, themeId);
+        }
+      } catch (e) {
+        console.warn('Failed to save theme to localStorage:', e);
+      }
+
       this.notifyListeners();
     }
   }
@@ -58,6 +74,9 @@ export class ThemeService {
   }
 
   private applyTheme(theme: Theme): void {
+    // Check if document is available (for SSR/Node environments)
+    if (typeof document === 'undefined') return;
+
     const root = document.documentElement;
 
     // Map theme properties to CSS variables
