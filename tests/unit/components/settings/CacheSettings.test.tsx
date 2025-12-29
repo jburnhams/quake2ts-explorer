@@ -38,6 +38,12 @@ describe('CacheSettingsTab', () => {
     (cacheService.getStorageEstimate as vi.Mock).mockResolvedValue(mockEstimate);
     vi.clearAllMocks();
     window.confirm = vi.fn(() => true);
+
+    // Mock HTMLAnchorElement.click to prevent navigation
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+        writable: true,
+        value: vi.fn()
+    });
   });
 
   afterEach(() => {

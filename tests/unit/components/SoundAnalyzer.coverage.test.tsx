@@ -155,6 +155,12 @@ describe('SoundAnalyzer Coverage', () => {
         global.URL.createObjectURL = vi.fn() as any;
         global.URL.revokeObjectURL = vi.fn() as any;
 
+        // Mock HTMLAnchorElement.click to prevent navigation
+        Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+            writable: true,
+            value: vi.fn()
+        });
+
         await act(async () => {
             render(<SoundAnalyzer
                 audio={mockAudioData}

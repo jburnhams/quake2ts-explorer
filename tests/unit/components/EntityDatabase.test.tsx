@@ -91,6 +91,12 @@ describe('EntityDatabase Component', () => {
     global.URL.createObjectURL = vi.fn(() => 'mock-url');
     // @ts-ignore
     global.URL.revokeObjectURL = vi.fn();
+
+    // Mock HTMLAnchorElement.click to prevent navigation
+    Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
+      writable: true,
+      value: vi.fn()
+    });
   });
 
   afterEach(() => {
