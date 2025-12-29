@@ -27,12 +27,25 @@ vi.mock('../../../src/services/demoStorageService', () => ({
 }));
 
 describe('DemoRecorderService', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
     // Stop any existing recording to reset state
-    // We need to access private state or just ensure we are clean
-    // The service is a singleton, so we rely on stopRecording clearing it.
-    // However, stopRecording is async now.
+    if (demoRecorderService.isRecording()) {
+       // Mock engine recorder might return true for isRecording if we don't clear it
+       // But demoRecorderService tracks its own instance.
+       // We force stop to clear the internal 'recorder' instance in the service.
+       // However, since we mock getIsRecording to ALWAYS return true in the mock engine,
+       // the service.isRecording() might return true if it has a recorder instance.
+       // We need to ensure startRecording resets or we manually reset via stopRecording.
+
+       // Force stop (ignore warnings/returns)
+       try {
+         await demoRecorderService.stopRecording();
+       } catch (e) {}
+    }
+
+    // Also reset mock behavior if needed
+    mockGetIsRecording.mockReturnValue(true);
   });
 
   it('starts recording', () => {
@@ -53,6 +66,10 @@ describe('DemoRecorderService', () => {
       expect(mockStopRecording).toHaveBeenCalled();
       expect(demoStorageService.saveDemo).toHaveBeenCalledWith('test.dm2', data);
 
+      // We need to ensure the service thinks it stopped.
+      // But our mockGetIsRecording returns true always for the mock instance?
+      // No, once stopRecording is called on service, it sets this.recorder = null.
+      // So service.isRecording() should return false (check: return this.recorder ? ... : false).
       expect(demoRecorderService.isRecording()).toBe(false);
   });
 

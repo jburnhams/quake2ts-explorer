@@ -13,6 +13,21 @@ vi.mock('@/src/components/DemoStats', () => ({
   DemoStats: ({ visible }: { visible: boolean }) => visible ? <div data-testid="demo-stats">Demo Stats Overlay</div> : null
 }));
 
+// Mock PostProcessor
+vi.mock('@/src/utils/postProcessing', () => {
+  return {
+    PostProcessor: vi.fn().mockImplementation(() => ({
+      init: vi.fn(),
+      resize: vi.fn(),
+      render: vi.fn(),
+      bind: vi.fn(),
+      unbind: vi.fn(),
+      cleanup: vi.fn()
+    })),
+    defaultPostProcessOptions: { enabled: false }
+  };
+});
+
 // Mock WebGL
 const mockGl = {
   getExtension: vi.fn(),
