@@ -154,6 +154,11 @@ describe('UniversalViewer Branch Coverage', () => {
          await waitFor(() => expect(capturedAdapter).toBeDefined());
          expect(capturedAdapter).toBe(mockAdapterInstance);
 
+         // Ensure effects have run and listeners are attached
+         await act(async () => {
+            await new Promise(resolve => setTimeout(resolve, 10));
+         });
+
          const canvas = document.querySelector('canvas')!;
 
          // Dragging (should not pick)
