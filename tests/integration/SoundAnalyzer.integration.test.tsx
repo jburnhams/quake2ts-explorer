@@ -70,7 +70,10 @@ describe('SoundAnalyzer Integration', () => {
             hasFile: vi.fn(),
             readFile: vi.fn(),
             parseFile: vi.fn(),
-            getPalette: vi.fn()
+            getPalette: vi.fn(),
+            getVfs: vi.fn(() => ({
+                findByExtension: vi.fn().mockReturnValue([]),
+            })),
         } as unknown as PakService;
     });
 
