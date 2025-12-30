@@ -100,14 +100,45 @@ describe('DemoMetadataService', () => {
   });
 
   test('should handle storage errors gracefully', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('Storage full');
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Completely replace localStorage object
+    const originalLocalStorage = global.localStorage;
+
+    // Create a plain mock object
+    const mockStorage = {
+        getItem: vi.fn(),
+        setItem: vi.fn(() => {
+            throw new Error('Storage full');
+        }),
+        removeItem: vi.fn(),
+        clear: vi.fn(),
+        length: 0,
+        key: vi.fn()
+    };
+
+    Object.defineProperty(global, 'localStorage', {
+        value: mockStorage,
+        writable: true,
+        configurable: true
     });
 
-    demoMetadataService.saveMetadata(mockMetadata);
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to save demo metadata', expect.any(Error));
+    try {
+      demoMetadataService.saveMetadata(mockMetadata);
 
-    consoleSpy.mockRestore();
+      expect(consoleSpy).toHaveBeenCalledTimes(1);
+      const args = consoleSpy.mock.lastCall;
+      expect(args?.[0]).toBe('Failed to save demo metadata');
+      expect(args?.[1]).toBeInstanceOf(Error);
+      expect((args?.[1] as Error).message).toBe('Storage full');
+    } finally {
+      // Restore original
+      Object.defineProperty(global, 'localStorage', {
+          value: originalLocalStorage,
+          writable: true,
+          configurable: true
+      });
+      consoleSpy.mockRestore();
+    }
   });
 });
