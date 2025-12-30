@@ -6,6 +6,7 @@ import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewe
 import { videoRecorderService } from '@/src/services/videoRecorder';
 import { ParsedFile, PakService } from '@/src/services/pakService';
 import { createWebGLContext } from '@quake2ts/engine';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => {
@@ -65,7 +66,6 @@ Object.defineProperty(HTMLAnchorElement.prototype, 'click', {
 describe('Video Recording Integration', () => {
     let mockPakService: PakService;
     let mockParsedFile: ParsedFile;
-    let mockGl: Partial<WebGL2RenderingContext>;
 
     beforeEach(() => {
         mockPakService = {
@@ -92,35 +92,8 @@ describe('Video Recording Integration', () => {
             animations: []
         } as unknown as ParsedFile;
 
-        mockGl = {
-            viewport: vi.fn(),
-            clearColor: vi.fn(),
-            clear: vi.fn(),
-            enable: vi.fn(),
-            disable: vi.fn(),
-            cullFace: vi.fn(),
-            getExtension: vi.fn(),
-            getParameter: vi.fn(),
-            createShader: vi.fn(),
-            createProgram: vi.fn(),
-            createBuffer: vi.fn(),
-            bindBuffer: vi.fn(),
-            bufferData: vi.fn(),
-            enableVertexAttribArray: vi.fn(),
-            vertexAttribPointer: vi.fn(),
-            createVertexArray: vi.fn(),
-            bindVertexArray: vi.fn(),
-            getShaderParameter: vi.fn().mockReturnValue(true),
-            getProgramParameter: vi.fn().mockReturnValue(true),
-            createTexture: vi.fn(),
-            bindTexture: vi.fn(),
-            texParameteri: vi.fn(),
-            texImage2D: vi.fn(),
-            generateMipmap: vi.fn(),
-            drawElements: vi.fn(),
-            activeTexture: vi.fn(),
-        };
-
+        // Use WebGL mock from test-utils
+        const mockGl = createMockWebGL2Context();
         (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
         (videoRecorderService.isRecording as vi.Mock).mockReturnValue(false);
     });
@@ -130,16 +103,14 @@ describe('Video Recording Integration', () => {
     });
 
     it('opens video settings when clicking record', async () => {
-        render(
-            <UniversalViewer
-                parsedFile={mockParsedFile}
-                pakService={mockPakService}
-                filePath="models/test.md2"
-            />
-        );
-
         await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
+             render(
+                <UniversalViewer
+                    parsedFile={mockParsedFile}
+                    pakService={mockPakService}
+                    filePath="models/test.md2"
+                />
+            );
         });
 
         const recordBtn = screen.getByTitle('Record Video');
@@ -149,16 +120,14 @@ describe('Video Recording Integration', () => {
     });
 
     it('starts recording with selected options', async () => {
-        render(
-            <UniversalViewer
-                parsedFile={mockParsedFile}
-                pakService={mockPakService}
-                filePath="models/test.md2"
-            />
-        );
-
         await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
+            render(
+                <UniversalViewer
+                    parsedFile={mockParsedFile}
+                    pakService={mockPakService}
+                    filePath="models/test.md2"
+                />
+            );
         });
 
         fireEvent.click(screen.getByTitle('Record Video'));
@@ -178,16 +147,14 @@ describe('Video Recording Integration', () => {
         (videoRecorderService.isRecording as vi.Mock).mockReturnValue(true);
         (videoRecorderService.stopRecording as vi.Mock).mockResolvedValue(new Blob(['video data'], { type: 'video/webm' }));
 
-        render(
-            <UniversalViewer
-                parsedFile={mockParsedFile}
-                pakService={mockPakService}
-                filePath="models/test.md2"
-            />
-        );
-
         await act(async () => {
-            await new Promise(resolve => setTimeout(resolve, 0));
+            render(
+                <UniversalViewer
+                    parsedFile={mockParsedFile}
+                    pakService={mockPakService}
+                    filePath="models/test.md2"
+                />
+            );
         });
 
         fireEvent.click(screen.getByTitle('Record Video'));

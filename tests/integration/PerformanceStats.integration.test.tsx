@@ -4,6 +4,8 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewer';
 import { PakService } from '@/src/services/pakService';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
+import { createWebGLContext } from '@quake2ts/engine';
 
 // Mock dependencies
 vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter');
@@ -22,68 +24,25 @@ vi.mock('@/src/services/performanceService', () => ({
   },
 }));
 
-// Mock WebGL context
-const mockGl = {
-  clearColor: vi.fn(),
-  clear: vi.fn(),
-  enable: vi.fn(),
-  viewport: vi.fn(),
-  createShader: vi.fn().mockReturnValue({}),
-  createProgram: vi.fn().mockReturnValue({}),
-  shaderSource: vi.fn(),
-  compileShader: vi.fn(),
-  attachShader: vi.fn(),
-  linkProgram: vi.fn(),
-  useProgram: vi.fn(),
-  getProgramParameter: vi.fn().mockReturnValue(true),
-  getShaderParameter: vi.fn().mockReturnValue(true),
-  getUniformLocation: vi.fn().mockReturnValue(1),
-  getAttribLocation: vi.fn().mockReturnValue(1),
-  enableVertexAttribArray: vi.fn(),
-  vertexAttribPointer: vi.fn(),
-  bindBuffer: vi.fn(),
-  createBuffer: vi.fn().mockReturnValue({}),
-  bufferData: vi.fn(),
-  deleteShader: vi.fn(),
-  deleteProgram: vi.fn(),
-  deleteBuffer: vi.fn(),
-  bindVertexArray: vi.fn(),
-  createVertexArray: vi.fn(),
-  drawArrays: vi.fn(),
-  createTexture: vi.fn(),
-  bindTexture: vi.fn(),
-  texParameteri: vi.fn(),
-  texImage2D: vi.fn(),
-  uniform1i: vi.fn(),
-  uniform1f: vi.fn(),
-  activeTexture: vi.fn(),
-  createFramebuffer: vi.fn().mockReturnValue({}),
-  bindFramebuffer: vi.fn(),
-  createRenderbuffer: vi.fn().mockReturnValue({}),
-  bindRenderbuffer: vi.fn(),
-  renderbufferStorage: vi.fn(),
-  framebufferTexture2D: vi.fn(),
-  framebufferRenderbuffer: vi.fn(),
-  checkFramebufferStatus: vi.fn().mockReturnValue(36053),
-  deleteFramebuffer: vi.fn(),
-  deleteRenderbuffer: vi.fn(),
-  deleteTexture: vi.fn(),
-} as unknown as WebGL2RenderingContext;
-
-vi.mock('@quake2ts/engine', () => ({
-  createWebGLContext: () => ({ gl: mockGl }),
-  Camera: vi.fn().mockImplementation(() => ({
-    fov: 60,
-    aspect: 1,
-    position: [0, 0, 0],
-    angles: [0, 0, 0],
-  })),
-}));
+vi.mock('@quake2ts/engine', () => {
+    return {
+        createWebGLContext: vi.fn(),
+        Camera: vi.fn().mockImplementation(() => ({
+            fov: 60,
+            aspect: 1,
+            position: [0, 0, 0],
+            angles: [0, 0, 0],
+        })),
+    };
+});
 
 describe('PerformanceStats Integration', () => {
   let mockAdapter: any;
 
   beforeEach(() => {
+    const mockGl = createMockWebGL2Context();
+    (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
+
     mockAdapter = {
       load: vi.fn().mockResolvedValue(undefined),
       render: vi.fn(),

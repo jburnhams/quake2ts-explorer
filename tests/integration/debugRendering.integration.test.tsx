@@ -4,6 +4,8 @@ import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalV
 import { PakService } from '../../src/services/pakService';
 import { DebugMode } from '../../src/types/debugMode';
 import '@testing-library/jest-dom';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
+import { createWebGLContext } from '@quake2ts/engine';
 
 // Mocks
 const mockAddBox = vi.fn();
@@ -24,60 +26,7 @@ vi.mock('../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
 
 vi.mock('@quake2ts/engine', () => {
     return {
-        createWebGLContext: vi.fn().mockReturnValue({
-            gl: {
-                clearColor: vi.fn(),
-                clear: vi.fn(),
-                enable: vi.fn(),
-                viewport: vi.fn(),
-                createShader: vi.fn(),
-                createProgram: vi.fn(),
-                createBuffer: vi.fn(),
-                createVertexArray: vi.fn(),
-                bindBuffer: vi.fn(),
-                bindVertexArray: vi.fn(),
-                bufferData: vi.fn(),
-                vertexAttribPointer: vi.fn(),
-                enableVertexAttribArray: vi.fn(),
-                useProgram: vi.fn(),
-                getUniformLocation: vi.fn(),
-                uniformMatrix4fv: vi.fn(),
-                drawElements: vi.fn(),
-                drawArrays: vi.fn(),
-                getShaderParameter: vi.fn().mockReturnValue(true),
-                getProgramParameter: vi.fn().mockReturnValue(true),
-                activeTexture: vi.fn(),
-                generateMipmap: vi.fn(),
-                texParameteri: vi.fn(),
-                texImage2D: vi.fn(),
-                deleteShader: vi.fn(),
-                deleteProgram: vi.fn(),
-                deleteBuffer: vi.fn(),
-                deleteVertexArray: vi.fn(),
-                COLOR_BUFFER_BIT: 16384,
-                DEPTH_BUFFER_BIT: 256,
-                DEPTH_TEST: 2929,
-                CULL_FACE: 2884,
-                TRIANGLES: 4,
-                UNSIGNED_SHORT: 5123,
-                FLOAT: 5126,
-                ARRAY_BUFFER: 34962,
-                STATIC_DRAW: 35044,
-                DYNAMIC_DRAW: 35048,
-                FRAGMENT_SHADER: 35632,
-                VERTEX_SHADER: 35633,
-                COMPILE_STATUS: 35713,
-                LINK_STATUS: 35714,
-                TEXTURE0: 33984,
-                TEXTURE_2D: 3553,
-                LINEAR: 9729,
-                LINEAR_MIPMAP_LINEAR: 9987,
-                REPEAT: 10497,
-                RGBA: 6408,
-                UNSIGNED_BYTE: 5121,
-                LINES: 1,
-            }
-        }),
+        createWebGLContext: vi.fn(),
         Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: new Float32Array(16),
             viewMatrix: new Float32Array(16),
@@ -113,6 +62,9 @@ describe('Debug Rendering Integration', () => {
         } as unknown as PakService;
 
         vi.clearAllMocks();
+
+        const mockGl = createMockWebGL2Context();
+        (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
     });
 
     it('enables bounding box visualization when selected in UI', async () => {
