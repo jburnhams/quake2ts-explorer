@@ -12,6 +12,7 @@ import {
     applySurfaceState
 } from '@quake2ts/engine';
 import { mat4 } from 'gl-matrix';
+import { createMockWebGL2Context, MockWebGL2RenderingContext } from '@quake2ts/test-utils/src/engine/mocks/webgl';
 
 // Mock DebugRenderer
 vi.mock('../../../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
@@ -64,42 +65,19 @@ vi.mock('@quake2ts/engine', () => {
 
 describe('BspAdapter', () => {
   let adapter: BspAdapter;
-  let mockGl: WebGL2RenderingContext;
+  let mockGl: MockWebGL2RenderingContext;
   let mockPakService: vi.Mocked<PakService>;
 
   beforeEach(() => {
     adapter = new BspAdapter();
-    mockGl = {
-        LINEAR_MIPMAP_LINEAR: 1,
-        LINEAR: 2,
-        REPEAT: 3,
-        RGBA: 4,
-        UNSIGNED_BYTE: 5,
-        TEXTURE_2D: 6,
-        TEXTURE0: 7,
-        TEXTURE1: 8,
-        TRIANGLES: 9,
-        UNSIGNED_SHORT: 10,
+    mockGl = createMockWebGL2Context();
+
+    // Polyfill missing constants and methods in MockWebGL2RenderingContext
+    Object.assign(mockGl, {
         LINES: 1,
-        NEAREST: 0,
-        CLAMP_TO_EDGE: 33071,
+        TEXTURE1: 0x84c1,
         generateMipmap: vi.fn(),
-        activeTexture: vi.fn(),
-        drawElements: vi.fn(),
-        createShader: vi.fn(),
-        createProgram: vi.fn(),
-        getUniformLocation: vi.fn(),
-        getAttribLocation: vi.fn(),
-        createBuffer: vi.fn(),
-        bindBuffer: vi.fn(),
-        bufferData: vi.fn(),
-        enableVertexAttribArray: vi.fn(),
-        vertexAttribPointer: vi.fn(),
-        createVertexArray: vi.fn(),
-        bindVertexArray: vi.fn(),
-        enable: vi.fn(),
-        disable: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
+    });
 
     mockPakService = {
       hasFile: vi.fn(),
@@ -114,7 +92,7 @@ describe('BspAdapter', () => {
 
   it('throws error if file type is not bsp', async () => {
     const file: ParsedFile = { type: 'md2' } as any;
-    await expect(adapter.load(mockGl, file, mockPakService, 'maps/test.bsp')).rejects.toThrow('Invalid file type');
+    await expect(adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp')).rejects.toThrow('Invalid file type');
   });
 
   it('loads bsp map and textures', async () => {
@@ -142,7 +120,7 @@ describe('BspAdapter', () => {
         ]
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     expect(BspSurfacePipeline).toHaveBeenCalledWith(mockGl);
     expect(createBspSurfaces).toHaveBeenCalledWith(file.map);
@@ -158,7 +136,7 @@ describe('BspAdapter', () => {
     // Access returned objects via results, not instances
     const results = (Texture2D as vi.Mock).mock.results;
     expect(results.length).toBeGreaterThanOrEqual(2);
-    expect(mockGl.generateMipmap).toHaveBeenCalled();
+    expect((mockGl as any).generateMipmap).toHaveBeenCalled();
   });
 
   it('handles missing textures gracefully', async () => {
@@ -169,7 +147,7 @@ describe('BspAdapter', () => {
     });
     mockPakService.hasFile.mockReturnValue(false);
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     expect(mockPakService.readFile).not.toHaveBeenCalled();
   });
@@ -185,7 +163,7 @@ describe('BspAdapter', () => {
 
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     expect(consoleSpy).toHaveBeenCalledWith('Failed to load texture broken', expect.any(Error));
     consoleSpy.mockRestore();
@@ -218,18 +196,18 @@ describe('BspAdapter', () => {
         levels: [{ width: 32, height: 32, rgba: new Uint8Array() }]
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     const camera = { projectionMatrix: mat4.create() } as any;
     const viewMatrix = mat4.create();
 
-    adapter.render(mockGl, camera, viewMatrix);
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
     expect(resolveLightStyles).toHaveBeenCalled();
     // Verify texture binding
     expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE0); // Diffuse
 
-    expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE1); // Lightmap
+    expect(mockGl.activeTexture).toHaveBeenCalledWith((mockGl as any).TEXTURE1); // Lightmap
 
     expect(applySurfaceState).toHaveBeenCalled();
     expect(mockVao.bind).toHaveBeenCalled();
@@ -247,12 +225,12 @@ describe('BspAdapter', () => {
         lightmaps: []
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
     const camera = { projectionMatrix: mat4.create() } as any;
     const viewMatrix = mat4.create();
 
     adapter.setRenderOptions({ mode: 'textured', color: [1, 1, 1], brightness: 0.5 });
-    adapter.render(mockGl, camera, viewMatrix);
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
     const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
@@ -278,16 +256,16 @@ describe('BspAdapter', () => {
         ]
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
     const camera = { projectionMatrix: mat4.create() } as any;
     const viewMatrix = mat4.create();
 
     // Enable fullbright
     adapter.setRenderOptions({ mode: 'textured', color: [1, 1, 1], fullbright: true });
-    adapter.render(mockGl, camera, viewMatrix);
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
     // Should bind white texture to unit 1 (lightmap)
-    expect(mockGl.activeTexture).toHaveBeenCalledWith(mockGl.TEXTURE1);
+    expect(mockGl.activeTexture).toHaveBeenCalledWith((mockGl as any).TEXTURE1);
 
     // The white texture is created first in load()
     // Use mock.results to access returned object
@@ -314,16 +292,16 @@ describe('BspAdapter', () => {
         lightmaps: []
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     const camera = { projectionMatrix: mat4.create() } as any;
     const viewMatrix = mat4.create();
 
     // Test wireframe
     adapter.setRenderOptions({ mode: 'wireframe', color: [0.1, 0.2, 0.3] });
-    adapter.render(mockGl, camera, viewMatrix);
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
-    expect(mockGl.drawElements).toHaveBeenCalledWith(1, 6, mockGl.UNSIGNED_SHORT, 0); // Assuming 1 is LINES for wireframe in mock
+    expect(mockGl.drawElements).toHaveBeenCalledWith((mockGl as any).LINES, 6, mockGl.UNSIGNED_SHORT, 0);
 
     const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
@@ -336,7 +314,7 @@ describe('BspAdapter', () => {
 
     // Test solid color
     adapter.setRenderOptions({ mode: 'solid', color: [0.4, 0.5, 0.6] });
-    adapter.render(mockGl, camera, viewMatrix);
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
     expect(mockGl.drawElements).toHaveBeenCalledWith(mockGl.TRIANGLES, 6, mockGl.UNSIGNED_SHORT, 0);
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
@@ -359,7 +337,7 @@ describe('BspAdapter', () => {
 
     (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     expect(adapter.getUniqueClassnames()).toBe(classnames);
     expect(mockMap.entities.getUniqueClassnames).toHaveBeenCalled();
@@ -379,7 +357,7 @@ describe('BspAdapter', () => {
         lightmaps: []
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     (buildBspGeometry as vi.Mock).mockClear();
 
@@ -392,7 +370,7 @@ describe('BspAdapter', () => {
   it('delegates pickEntity to map', async () => {
     const file: ParsedFile = { type: 'bsp', map: { pickEntity: vi.fn().mockReturnValue('hit') } } as any;
     (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     const result = adapter.pickEntity!('ray' as any);
     expect(file.map.pickEntity).toHaveBeenCalledWith('ray');
@@ -406,7 +384,7 @@ describe('BspAdapter', () => {
           entities: { entities: mockEntities }
       } } as any;
       (buildBspGeometry as vi.Mock).mockReturnValue({ surfaces: [], lightmaps: [] });
-      await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
       // First selection (Single)
       adapter.pickEntity!('ray' as any, { multiSelect: false });
@@ -432,13 +410,13 @@ describe('BspAdapter', () => {
         lightmaps: []
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     const hoveredEntity = { classname: 'worldspawn', properties: {} };
     adapter.setHoveredEntity!(hoveredEntity as any);
 
     const camera = { projectionMatrix: mat4.create() } as any;
-    adapter.render(mockGl, camera, mat4.create());
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, mat4.create());
 
     const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
@@ -464,14 +442,14 @@ describe('BspAdapter', () => {
         lightmaps: []
     });
 
-    await adapter.load(mockGl, file, mockPakService, 'maps/test.bsp');
+    await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'maps/test.bsp');
 
     // Entity pointing to model *1
     const hoveredEntity = { classname: 'func_door', properties: { model: '*1' } };
     adapter.setHoveredEntity!(hoveredEntity as any);
 
     const camera = { projectionMatrix: mat4.create() } as any;
-    adapter.render(mockGl, camera, mat4.create());
+    adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, mat4.create());
 
     const pipeline = (BspSurfacePipeline as vi.Mock).mock.results[0].value;
     expect(pipeline.bind).toHaveBeenCalledWith(expect.objectContaining({
