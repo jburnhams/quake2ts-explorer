@@ -12,6 +12,7 @@ import {
     Texture2D
 } from '@quake2ts/engine';
 import { type Mock, vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockWebGL2Context, MockWebGL2RenderingContext } from '@quake2ts/test-utils/src/engine/mocks/webgl';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => {
@@ -43,28 +44,19 @@ vi.mock('@quake2ts/engine', () => {
 
 describe('Md2Adapter', () => {
   let adapter: Md2Adapter;
-  let mockGl: WebGL2RenderingContext;
+  let mockGl: MockWebGL2RenderingContext;
   let mockPakService: vi.Mocked<PakService>;
 
   beforeEach(() => {
     adapter = new Md2Adapter();
-    mockGl = {
-        TRIANGLES: 0,
+    mockGl = createMockWebGL2Context();
+    // Polyfill missing
+    Object.assign(mockGl, {
         LINES: 1,
-        UNSIGNED_SHORT: 2,
-        TEXTURE0: 3,
-        drawElements: vi.fn(),
-        activeTexture: vi.fn(),
+        TEXTURE1: 0x84c1,
         generateMipmap: vi.fn(),
-        createShader: vi.fn(),
-        createProgram: vi.fn(),
-        createBuffer: vi.fn(),
-        createVertexArray: vi.fn(),
-        bindVertexArray: vi.fn(),
-        bindBuffer: vi.fn(),
-        enableVertexAttribArray: vi.fn(),
-        vertexAttribPointer: vi.fn(),
-    } as unknown as WebGL2RenderingContext;
+    });
+
     mockPakService = {
         hasFile: vi.fn(),
         readFile: vi.fn(),
@@ -80,7 +72,7 @@ describe('Md2Adapter', () => {
           animations: [{ name: 'anim1', firstFrame: 0, lastFrame: 10 }] as any
       };
 
-      await adapter.load(mockGl, file, mockPakService, 'test.md2');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'test.md2');
 
       expect(Md2Pipeline).toHaveBeenCalledWith(mockGl);
       expect(createAnimationState).toHaveBeenCalled();
@@ -96,7 +88,7 @@ describe('Md2Adapter', () => {
           ] as any
       };
 
-      await adapter.load(mockGl, file, mockPakService, 'test.md2');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'test.md2');
 
       // Get animations
       const anims = adapter.getAnimations();
@@ -129,7 +121,7 @@ describe('Md2Adapter', () => {
       (parsePcx as Mock).mockReturnValue({ width: 10, height: 10 });
       (pcxToRgba as Mock).mockReturnValue(new Uint8Array(400));
 
-      await adapter.load(mockGl, file, mockPakService, 'test.md2');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'test.md2');
 
       expect(mockPakService.readFile).toHaveBeenCalledWith('skin.pcx');
       expect(Texture2D).toHaveBeenCalled();
@@ -141,12 +133,12 @@ describe('Md2Adapter', () => {
           model: { header: { numFrames: 20 }, skins: [], frames: [] } as any,
           animations: [{ name: 'anim1', firstFrame: 0, lastFrame: 10 }] as any
       };
-      await adapter.load(mockGl, file, mockPakService, 'test.md2');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'test.md2');
 
       const camera: any = { projectionMatrix: new Float32Array(16) };
       const viewMatrix = new Float32Array(16);
 
-      adapter.render(mockGl, camera, viewMatrix);
+      adapter.render(mockGl as unknown as WebGL2RenderingContext, camera, viewMatrix);
 
       const pipeline = (Md2Pipeline as Mock).mock.results[0].value;
       expect(pipeline.bind).toHaveBeenCalled();
@@ -167,7 +159,7 @@ describe('Md2Adapter', () => {
           model: { header: { numFrames: 20 }, skins: [], frames: [] } as any,
           animations: [{ name: 'anim1', firstFrame: 0, lastFrame: 10 }] as any
       };
-      await adapter.load(mockGl, file, mockPakService, 'test.md2');
+      await adapter.load(mockGl as unknown as WebGL2RenderingContext, file, mockPakService, 'test.md2');
 
       adapter.update(0.1);
       expect(advanceAnimation).toHaveBeenCalled();

@@ -1,59 +1,35 @@
 import { GizmoRenderer } from '@/src/components/UniversalViewer/adapters/GizmoRenderer';
 import { vec3, mat4 } from 'gl-matrix';
-
-// Mock WebGL context
-const mockGl = {
-    createShader: vi.fn(() => 'shader'),
-    shaderSource: vi.fn(),
-    compileShader: vi.fn(),
-    getShaderParameter: vi.fn(() => true),
-    getShaderInfoLog: vi.fn(() => ''),
-    createProgram: vi.fn(() => 'program'),
-    attachShader: vi.fn(),
-    linkProgram: vi.fn(),
-    getProgramParameter: vi.fn(() => true),
-    createBuffer: vi.fn(),
-    bindBuffer: vi.fn(),
-    bufferData: vi.fn(),
-    enableVertexAttribArray: vi.fn(),
-    vertexAttribPointer: vi.fn(),
-    createVertexArray: vi.fn(() => 'vao'),
-    bindVertexArray: vi.fn(),
-    useProgram: vi.fn(),
-    getUniformLocation: vi.fn(() => 'loc'),
-    uniformMatrix4fv: vi.fn(),
-    uniform3fv: vi.fn(),
-    uniform4fv: vi.fn(),
-    drawArrays: vi.fn(),
-    deleteShader: vi.fn(),
-    VERTEX_SHADER: 35633,
-    FRAGMENT_SHADER: 35632,
-    ARRAY_BUFFER: 34962,
-    STATIC_DRAW: 35044,
-    FLOAT: 5126,
-    LINES: 1,
-    LINE_STRIP: 3,
-} as unknown as WebGL2RenderingContext;
+import { createMockWebGL2Context, MockWebGL2RenderingContext } from '@quake2ts/test-utils/src/engine/mocks/webgl';
 
 describe('GizmoRenderer Coverage', () => {
     let renderer: GizmoRenderer;
+    let mockGl: MockWebGL2RenderingContext;
 
     beforeEach(() => {
         vi.clearAllMocks();
-        renderer = new GizmoRenderer(mockGl);
+        mockGl = createMockWebGL2Context();
+        // Setup uniform locations map so getUniformLocation returns a valid location
+        mockGl.uniformLocations.set('u_color', {} as WebGLUniformLocation);
+        mockGl.uniformLocations.set('u_mvp', {} as WebGLUniformLocation);
+        mockGl.uniformLocations.set('u_origin', {} as WebGLUniformLocation);
+        renderer = new GizmoRenderer(mockGl as unknown as WebGL2RenderingContext);
     });
 
     test('handles shader compilation failure', () => {
-        const glMock = { ...mockGl, getShaderParameter: vi.fn(() => false) } as unknown as WebGL2RenderingContext;
+        const gl = createMockWebGL2Context();
+        gl.compileSucceeds = false;
         const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
-        new GizmoRenderer(glMock);
+        new GizmoRenderer(gl as unknown as WebGL2RenderingContext);
         expect(consoleSpy).toHaveBeenCalled();
         consoleSpy.mockRestore();
     });
 
     test('handles program creation failure', () => {
-         const glMock = { ...mockGl, createProgram: vi.fn(() => null) } as unknown as WebGL2RenderingContext;
-         new GizmoRenderer(glMock);
+         const gl = createMockWebGL2Context();
+         gl.createProgram = vi.fn().mockReturnValue(null);
+
+         new GizmoRenderer(gl as unknown as WebGL2RenderingContext);
          // Expect no crash
     });
 
