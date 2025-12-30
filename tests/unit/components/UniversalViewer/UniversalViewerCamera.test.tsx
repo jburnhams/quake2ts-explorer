@@ -4,6 +4,7 @@ import { UniversalViewer } from '@/src/components/UniversalViewer/UniversalViewe
 import { ViewerControls } from '@/src/components/UniversalViewer/ViewerControls';
 import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { OrbitState } from '../../../src/utils/cameraUtils';
+import { createMockWebGL2Context, createMockBspMap } from '@quake2ts/test-utils';
 
 // Mock gl-matrix
 vi.mock('gl-matrix', async (importOriginal) => {
@@ -38,16 +39,7 @@ vi.mock('../../../../src/components/UniversalViewer/adapters/DebugRenderer', () 
 // Mock quake2ts/engine
 vi.mock('@quake2ts/engine', () => ({
   createWebGLContext: vi.fn(() => ({
-    gl: {
-      viewport: vi.fn(),
-      clearColor: vi.fn(),
-      clear: vi.fn(),
-      enable: vi.fn(),
-      CULL_FACE: 0,
-      DEPTH_TEST: 1,
-      COLOR_BUFFER_BIT: 16384,
-      DEPTH_BUFFER_BIT: 256,
-    }
+    gl: createMockWebGL2Context()
   })),
   Camera: vi.fn(() => ({
     fov: 60,
@@ -74,29 +66,26 @@ vi.mock('@quake2ts/engine', () => ({
   })),
   parseWal: vi.fn(() => ({})),
   walToRgba: vi.fn(() => ({ levels: [] })),
+  parseBsp: vi.fn(() => createMockBspMap()), // Use helper from test-utils
+  // Mock other things needed by BspAdapter real implementation if it runs
+  VirtualFileSystem: {
+    mountPak: vi.fn(),
+    unmountPak: vi.fn(),
+    resolvePath: vi.fn(),
+    search: vi.fn(() => []),
+  }
 }));
 
-// Mock adapters using js extension as required by jest config map if present, or just path
-// The Jest config maps .js to .ts effectively via resolver or standard resolution.
-// But we might need to be explicit or use moduleNameMapper if using ESM.
-// Our config has: '^(\\.{1,2}/.*)\\.js$': '$1' which strips .js extension to look for file?
-// No, it maps relative imports ending in .js to the same path without .js? No, '$1' includes the path part.
-// Actually '$1' is the capture group. So it keeps the path as is?
-// Wait, `^(\\.{1,2}/.*)\\.js$`: '$1' means `../foo.js` -> `../foo`.
-// So if I import `.../Md2Adapter`, it looks for `Md2Adapter.ts` automatically?
-// But here I'm using `vi.mock`.
-
-vi.mock('../../../src/components/UniversalViewer/adapters/Md2Adapter', () => ({
-  Md2Adapter: vi.fn(() => ({
-    load: vi.fn(),
-    update: vi.fn(),
-    render: vi.fn(),
-    cleanup: vi.fn(),
-    hasCameraControl: () => false
-  }))
-}), { virtual: true }); // virtual might help if resolution fails? No, file exists.
-
-vi.mock('../../../src/components/UniversalViewer/adapters/BspAdapter', () => ({
+// We want to mock BspAdapter to avoid running its complex logic, but previous attempts failed to intercept.
+// Let's try mocking with the exact path used in UniversalViewer import or use moduleNameMapper alias.
+// UniversalViewer.tsx imports: import { BspAdapter } from './adapters/BspAdapter';
+// This resolves to src/components/UniversalViewer/adapters/BspAdapter.tsx
+//
+// If we mock the adapter, we don't need to mock parseBsp above, technically.
+// But if the mock fails to apply, parseBsp mock is a fallback safety.
+//
+// Let's try mocking via alias which is cleaner.
+vi.mock('@/src/components/UniversalViewer/adapters/BspAdapter', () => ({
   BspAdapter: vi.fn(() => ({
     load: vi.fn(),
     update: vi.fn(),
@@ -105,7 +94,17 @@ vi.mock('../../../src/components/UniversalViewer/adapters/BspAdapter', () => ({
     hasCameraControl: () => false,
     useZUp: () => true
   }))
-}), { virtual: true });
+}));
+
+vi.mock('@/src/components/UniversalViewer/adapters/Md2Adapter', () => ({
+  Md2Adapter: vi.fn(() => ({
+    load: vi.fn(),
+    update: vi.fn(),
+    render: vi.fn(),
+    cleanup: vi.fn(),
+    hasCameraControl: () => false
+  }))
+}));
 
 describe('UniversalViewer Camera Integration', () => {
     let pakService: PakService;
