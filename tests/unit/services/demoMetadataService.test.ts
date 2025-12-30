@@ -100,14 +100,20 @@ describe('DemoMetadataService', () => {
   });
 
   test('should handle storage errors gracefully', () => {
-    const consoleSpy = vi.spyOn(console, 'error').mockImplementation();
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('Storage full');
     });
 
     demoMetadataService.saveMetadata(mockMetadata);
-    expect(consoleSpy).toHaveBeenCalledWith('Failed to save demo metadata', expect.any(Error));
 
+    expect(consoleSpy).toHaveBeenCalledTimes(1);
+    const args = consoleSpy.mock.lastCall;
+    expect(args?.[0]).toBe('Failed to save demo metadata');
+    expect(args?.[1]).toBeInstanceOf(Error);
+    expect((args?.[1] as Error).message).toBe('Storage full');
+
+    setItemSpy.mockRestore();
     consoleSpy.mockRestore();
   });
 });
