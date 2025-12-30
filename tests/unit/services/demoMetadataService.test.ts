@@ -101,6 +101,8 @@ describe('DemoMetadataService', () => {
 
   test('should handle storage errors gracefully', () => {
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    // Spy on Storage.prototype.setItem to correctly intercept JSDOM localStorage
     const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
       throw new Error('Storage full');
     });
