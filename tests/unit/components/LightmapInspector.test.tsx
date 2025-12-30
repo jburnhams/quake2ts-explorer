@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { LightmapInspector } from '@/src/components/LightmapInspector';
 import { BspMap } from '@quake2ts/engine';
-import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
+import { createMockBspMap } from '@quake2ts/test-utils';
 import '@testing-library/jest-dom';
 
 // Mock gl-matrix

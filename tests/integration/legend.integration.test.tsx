@@ -120,10 +120,15 @@ describe('Legend Integration', () => {
                 entities: [],
                 raw: '',
                 worldspawn: undefined
-            }
-        } as any);
+            } as any,
+            // Add required properties for adapter that might not be in default createMockBspMap
+            faces: [],
+            models: [],
+            leafs: [],
+            planes: [],
+        });
 
-        (usePakExplorer as vi.Mock).mockReturnValue({
+        (usePakExplorer as any).mockReturnValue({
             pakService: { hasFile: vi.fn(), readFile: vi.fn() },
             fileTree: { name: 'root', children: [] },
             selectedPath: 'maps/test.bsp',
@@ -138,6 +143,15 @@ describe('Legend Integration', () => {
             hasFile: vi.fn(),
             dismissError: vi.fn(),
             loadFromUrl: vi.fn(),
+
+            // Missing properties to prevent errors
+            startGameMode: vi.fn(),
+            stopGameMode: vi.fn(),
+            gameMode: null,
+            isPaused: false,
+            gameStateSnapshot: null,
+            isRecording: false,
+            isRecordingVideo: false,
         });
 
         render(<App />);
@@ -160,8 +174,12 @@ describe('Legend Integration', () => {
                 entities: [],
                 raw: '',
                 worldspawn: undefined
-            }
-        } as any);
+            } as any,
+            faces: [],
+            models: [],
+            leafs: [],
+            planes: [],
+        });
 
         // Need surfaces to prevent bail out
         vi.mocked(quake2tsEngine.createBspSurfaces).mockReturnValue([{} as any]);
@@ -169,7 +187,7 @@ describe('Legend Integration', () => {
         // Setup buildBspGeometry return
         vi.mocked(quake2tsEngine.buildBspGeometry).mockReturnValue({ surfaces: [], lightmaps: [] });
 
-        (usePakExplorer as vi.Mock).mockReturnValue({
+        (usePakExplorer as any).mockReturnValue({
             pakService: { hasFile: vi.fn(), readFile: vi.fn() },
             fileTree: { name: 'root', children: [] },
             selectedPath: 'maps/test.bsp',
@@ -184,6 +202,15 @@ describe('Legend Integration', () => {
             hasFile: vi.fn(),
             dismissError: vi.fn(),
             loadFromUrl: vi.fn(),
+
+             // Missing properties
+             startGameMode: vi.fn(),
+             stopGameMode: vi.fn(),
+             gameMode: null,
+             isPaused: false,
+             gameStateSnapshot: null,
+             isRecording: false,
+             isRecordingVideo: false,
         });
 
         render(<App />);

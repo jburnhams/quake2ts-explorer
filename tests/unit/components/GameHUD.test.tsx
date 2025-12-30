@@ -1,37 +1,11 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
 import { GameHUD } from '@/src/components/GameHUD';
 import { PakService } from '@/src/services/pakService';
 import { PlayerStat } from '@quake2ts/shared';
 import { GameStateSnapshot } from '@/src/services/gameService';
-
-// Manual factory to avoid @quake2ts/test-utils dependency
-const createGameStateSnapshotFactory = (overrides: Partial<GameStateSnapshot> = {}): GameStateSnapshot => ({
-    time: 0,
-    playerState: {
-        origin: { x: 0, y: 0, z: 0 },
-        velocity: { x: 0, y: 0, z: 0 },
-        angles: { x: 0, y: 0, z: 0 },
-        viewangles: { x: 0, y: 0, z: 0 },
-        gunindex: 0,
-        gunframe: 0,
-        gunoffset: { x: 0, y: 0, z: 0 },
-        gunangles: { x: 0, y: 0, z: 0 },
-        fov: 90,
-        stats: new Array(32).fill(0),
-        pm_type: 0,
-        pm_flags: 0,
-        pm_time: 0,
-        rdflags: 0,
-    } as any, // Cast to any because PlayerState has many fields
-    entities: {
-        activeCount: 0,
-        entities: []
-    } as any,
-    stats: new Array(32).fill(0), // Flattened stats as per memory
-    ...overrides
-});
+import { createGameStateSnapshotFactory } from '@quake2ts/test-utils';
 
 describe('GameHUD', () => {
     let mockPakService: PakService;
@@ -43,7 +17,7 @@ describe('GameHUD', () => {
             readFile: vi.fn().mockResolvedValue(new Uint8Array(0))
         } as unknown as PakService;
 
-        // Mock GameStateSnapshot using factory
+        // Mock GameStateSnapshot using factory from test-utils
         mockGameState = createGameStateSnapshotFactory({
             stats: new Array(32).fill(0)
         });

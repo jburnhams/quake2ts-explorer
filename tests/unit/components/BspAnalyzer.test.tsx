@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { BspAnalyzer, BspAnalyzerProps } from '@/src/components/BspAnalyzer';
 import { BspMap } from '@quake2ts/engine';
-import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
+import { createMockBspMap } from '@quake2ts/test-utils';
 
 // Mock UniversalViewer
 vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
@@ -14,8 +14,12 @@ vi.mock('@/src/components/UniversalViewer/UniversalViewer', () => ({
 describe('BspAnalyzer', () => {
   const mockMap = createMockBspMap({
     models: [{ firstFace: 0, numFaces: 10 }] as any,
-    // @ts-ignore - legacy property support in mock
-    entities: [{ classname: 'worldspawn' }, { classname: 'info_player_start' }],
+    entities: {
+      entities: [
+        { classname: 'worldspawn' },
+        { classname: 'info_player_start' }
+      ]
+    } as any,
     faces: [
        { texInfo: 0, numEdges: 4 },
        { texInfo: 0, numEdges: 4 },
