@@ -3,6 +3,7 @@ import { EntityService, EntityRecord } from '@/src/services/entityService';
 import { VirtualFileSystem, parseBsp } from '@quake2ts/engine';
 import { toArrayBuffer } from '@/src/utils/helpers';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createMockBspMap } from '@quake2ts/test-utils';
 
 // Define the mock implementation for findByExtension globally to access it in tests
 const mockFindByExtension = vi.fn().mockReturnValue([]);
@@ -42,7 +43,7 @@ describe('EntityService', () => {
     vfs.findByExtension = mockFindByExtension;
     vfs.readFile = mockReadFile;
 
-    mockMap = {
+    mockMap = createMockBspMap({
       entities: {
         entities: [
           {
@@ -58,8 +59,8 @@ describe('EntityService', () => {
             properties: { classname: 'light', light: '300', origin: '100 200 100' }
           }
         ]
-      }
-    };
+      } as any
+    });
   });
 
   it('should extract entities from a map correctly', () => {

@@ -1,6 +1,7 @@
 import { BspAdapter } from '@/src/components/UniversalViewer/adapters/BspAdapter';
 import { BspMap } from '@quake2ts/engine';
-import { createMockBspMap } from '@quake2ts/test-utils/src/engine/mocks/assets';
+import { createMockBspMap } from '@quake2ts/test-utils';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', async (importOriginal) => {
@@ -22,9 +23,8 @@ describe('BspAdapter - Extended', () => {
     adapter = new BspAdapter();
     mockMap = createMockBspMap({
       pickEntity: vi.fn(),
-      faces: [{ texInfoIndex: 0 }, { texInfoIndex: 1 }] as any,
-      // @ts-ignore - legacy property
-      texinfo: [
+      faces: [{ texInfo: 0 }, { texInfo: 1 }] as any,
+      texInfo: [
         { texture: 'wall1', flags: 1, value: 100, contents: 0 },
         { texture: 'sky', flags: 4, value: 0, contents: 0 }
       ] as any,
@@ -42,6 +42,18 @@ describe('BspAdapter - Extended', () => {
 
   describe('getSurfaceProperties', () => {
     it('returns properties for valid face index', () => {
+      // In BspAdapter.ts, it uses `texInfoIndex` property on face if available, otherwise `texinfo`.
+      // The createMockBspMap faces might not have texInfoIndex.
+      // Let's ensure the mock faces have texInfoIndex or whatever BspAdapter expects.
+      // Looking at BspAdapter: const texInfoIndex = (face as any).texInfoIndex !== undefined ? (face as any).texInfoIndex : (face as any).texinfo;
+
+      // Update mock faces to match expectations
+      mockMap.faces[0].texInfoIndex = 0;
+      mockMap.faces[1].texInfoIndex = 1;
+      // also ensure texinfo property exists for legacy fallback
+      mockMap.faces[0].texinfo = 0;
+      mockMap.faces[1].texinfo = 1;
+
       const props = adapter.getSurfaceProperties(0);
       expect(props).toEqual({
         textureName: 'wall1',
@@ -52,6 +64,11 @@ describe('BspAdapter - Extended', () => {
     });
 
     it('returns correct properties for another face', () => {
+      mockMap.faces[0].texInfoIndex = 0;
+      mockMap.faces[1].texInfoIndex = 1;
+      mockMap.faces[0].texinfo = 0;
+      mockMap.faces[1].texinfo = 1;
+
       const props = adapter.getSurfaceProperties(1);
       expect(props).toEqual({
         textureName: 'sky',

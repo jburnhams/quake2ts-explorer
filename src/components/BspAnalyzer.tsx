@@ -166,6 +166,11 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
   const renderTabContent = () => {
     switch (activeTab) {
       case 'overview':
+        // Handle both direct array and object wrapper for entities
+        const entityCount = Array.isArray(map.entities)
+            ? map.entities.length
+            : (map.entities as any).entities?.length || (map.entities as any).length || 0;
+
         return (
           <div className="bsp-analyzer-tab-content">
             <h3>Map Overview</h3>
@@ -180,7 +185,7 @@ export function BspAnalyzer({ map, pakService, filePath, onClassnamesLoaded, hid
               </div>
                <div className="bsp-stat-item">
                  <label>Entities</label>
-                 <span>{(map.entities as any).length || 0}</span>
+                 <span>{entityCount}</span>
               </div>
                <div className="bsp-stat-item">
                  <label>Textures</label>

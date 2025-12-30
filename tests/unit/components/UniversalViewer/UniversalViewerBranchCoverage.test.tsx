@@ -6,12 +6,12 @@ import { Md2Adapter } from '../../../../src/components/UniversalViewer/adapters/
 import * as screenshotService from '../../../../src/services/screenshotService';
 import { performanceService } from '../../../../src/services/performanceService';
 import { ViewerControls } from '../../../../src/components/UniversalViewer/ViewerControls';
-import { createMockWebGL2Context } from '../../../utils/mockWebGL';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
 
 vi.mock('../../../../src/services/pakService');
 vi.mock('@quake2ts/engine', () => ({
   VirtualFileSystem: vi.fn(),
-  // Use local helper
+  // Use createMockWebGL2Context from test-utils
   createWebGLContext: vi.fn().mockImplementation(() => {
       const mockContext = createMockWebGL2Context();
       return { gl: mockContext };

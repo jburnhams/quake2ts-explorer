@@ -4,6 +4,7 @@ import { UniversalViewer } from '../../../src/components/UniversalViewer/Univers
 import { ParsedFile, PakService } from '../../../src/services/pakService';
 import { vec3 } from 'gl-matrix';
 import React from 'react';
+import { createMockBspMap, createMockWebGL2Context } from '@quake2ts/test-utils';
 
 // Mock DebugRenderer
 vi.mock('../../../src/components/UniversalViewer/adapters/DebugRenderer', () => {
@@ -20,63 +21,6 @@ vi.mock('../../../src/components/UniversalViewer/adapters/DebugRenderer', () => 
 
 // Mock quake2ts/engine with inline helper
 vi.mock('@quake2ts/engine', () => {
-    const createMockWebGL2Context = () => ({
-        createTexture: vi.fn(),
-        bindTexture: vi.fn(),
-        texImage2D: vi.fn(),
-        texParameteri: vi.fn(),
-        generateMipmap: vi.fn(),
-        activeTexture: vi.fn(),
-        drawElements: vi.fn(),
-        createShader: vi.fn().mockReturnValue({}),
-        shaderSource: vi.fn(),
-        compileShader: vi.fn(),
-        createProgram: vi.fn().mockReturnValue({}),
-        attachShader: vi.fn(),
-        linkProgram: vi.fn(),
-        getProgramParameter: vi.fn().mockReturnValue(true),
-        getShaderParameter: vi.fn().mockReturnValue(true),
-        getAttribLocation: vi.fn(),
-        getUniformLocation: vi.fn(),
-        createBuffer: vi.fn(),
-        bindBuffer: vi.fn(),
-        bufferData: vi.fn(),
-        enableVertexAttribArray: vi.fn(),
-        vertexAttribPointer: vi.fn(),
-        createVertexArray: vi.fn().mockReturnValue({}),
-        bindVertexArray: vi.fn(),
-        useProgram: vi.fn(),
-        uniformMatrix4fv: vi.fn(),
-        uniform3fv: vi.fn(),
-        uniform4fv: vi.fn(),
-        drawArrays: vi.fn(),
-        deleteShader: vi.fn(),
-        deleteProgram: vi.fn(), // Missing function causing the crash
-        deleteVertexArray: vi.fn(), // Often called alongside deleteProgram
-        getExtension: vi.fn(),
-        viewport: vi.fn(),
-        clear: vi.fn(),
-        clearColor: vi.fn(),
-        enable: vi.fn(),
-        depthFunc: vi.fn(),
-        cullFace: vi.fn(),
-        blendFunc: vi.fn(),
-        blendFuncSeparate: vi.fn(),
-        createRenderbuffer: vi.fn().mockReturnValue({}),
-        bindRenderbuffer: vi.fn(),
-        renderbufferStorage: vi.fn(),
-        createFramebuffer: vi.fn().mockReturnValue({}),
-        bindFramebuffer: vi.fn(),
-        framebufferTexture2D: vi.fn(),
-        framebufferRenderbuffer: vi.fn(),
-        checkFramebufferStatus: vi.fn().mockReturnValue(36053), // gl.FRAMEBUFFER_COMPLETE
-        readPixels: vi.fn(),
-        deleteTexture: vi.fn(),
-        deleteFramebuffer: vi.fn(),
-        deleteRenderbuffer: vi.fn(),
-        pixelStorei: vi.fn(),
-    });
-
     return {
         createWebGLContext: vi.fn().mockImplementation(() => ({
             gl: createMockWebGL2Context()
@@ -230,7 +174,13 @@ describe('UniversalViewer', () => {
   it('renders BSP adapter', async () => {
       const parsedFile: ParsedFile = {
           type: 'bsp',
-          map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
+          map: createMockBspMap({
+              models: [],
+              entities: {
+                  getUniqueClassnames: () => [],
+                  entities: []
+              } as any
+          }),
       };
 
       const onAdapterReady = vi.fn();
@@ -293,15 +243,16 @@ describe('UniversalViewer', () => {
 
   it('calls onClassnamesLoaded when BSP is loaded', async () => {
       const classnames = ['worldspawn', 'light'];
-      const mockMap = {
+      const mockMap = createMockBspMap({
           entities: {
-              getUniqueClassnames: vi.fn().mockReturnValue(classnames)
-          },
+              getUniqueClassnames: vi.fn().mockReturnValue(classnames),
+              entities: []
+          } as any,
           models: []
-      };
+      });
       const parsedFile: ParsedFile = {
           type: 'bsp',
-          map: mockMap as any,
+          map: mockMap,
       };
 
       const onClassnamesLoaded = vi.fn();
@@ -320,7 +271,13 @@ describe('UniversalViewer', () => {
   it('updates hidden classes on adapter when prop changes', async () => {
       const parsedFile: ParsedFile = {
           type: 'bsp',
-          map: { models: [], entities: { getUniqueClassnames: () => [] } } as any,
+          map: createMockBspMap({
+              models: [],
+              entities: {
+                  getUniqueClassnames: () => [],
+                  entities: []
+              } as any
+          }),
       };
 
       // Ensure surfaces are returned so setHiddenClasses doesn't bail out
