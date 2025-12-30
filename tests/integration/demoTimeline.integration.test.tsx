@@ -4,7 +4,8 @@ import '@testing-library/jest-dom';
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { ParsedFile, PakService } from '../../src/services/pakService';
 import { Dm2Adapter } from '../../src/components/UniversalViewer/adapters/Dm2Adapter';
-import { DemoPlaybackController } from '@quake2ts/engine';
+import { DemoPlaybackController, createWebGLContext } from '@quake2ts/engine';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
 
 // Mock gl-matrix
 vi.mock('gl-matrix', () => ({
@@ -35,40 +36,7 @@ vi.mock('gl-matrix', () => ({
 // Mock quake2ts/engine
 vi.mock('@quake2ts/engine', () => {
     return {
-        createWebGLContext: vi.fn(() => ({
-            gl: {
-                clearColor: vi.fn(),
-                clear: vi.fn(),
-                enable: vi.fn(),
-                viewport: vi.fn(),
-                COLOR_BUFFER_BIT: 16384,
-                DEPTH_BUFFER_BIT: 256,
-                DEPTH_TEST: 2929,
-                CULL_FACE: 2884,
-                createShader: vi.fn(),
-                shaderSource: vi.fn(),
-                compileShader: vi.fn(),
-                createProgram: vi.fn(),
-                attachShader: vi.fn(),
-                linkProgram: vi.fn(),
-                useProgram: vi.fn(),
-                getAttribLocation: vi.fn(),
-                getUniformLocation: vi.fn(),
-                createBuffer: vi.fn(),
-                bindBuffer: vi.fn(),
-                bufferData: vi.fn(),
-                enableVertexAttribArray: vi.fn(),
-                vertexAttribPointer: vi.fn(),
-                createVertexArray: vi.fn(),
-                bindVertexArray: vi.fn(),
-            },
-            // Mock WebGLContextState interface
-            extensions: new Map(),
-            isLost: () => false,
-            onLost: () => () => {},
-            onRestored: () => () => {},
-            dispose: () => {}
-        })),
+        createWebGLContext: vi.fn(),
         Camera: vi.fn(() => ({
             position: new Float32Array([0,0,0]),
             angles: new Float32Array([0,0,0]),
@@ -104,6 +72,10 @@ describe('UniversalViewer - Demo Integration', () => {
 
   beforeEach(() => {
       vi.clearAllMocks();
+
+      const mockGl = createMockWebGL2Context();
+      (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
+
       // Setup window mocks if needed
       (global as any).requestAnimationFrame = (cb: any) => setTimeout(cb, 0);
       (global as any).cancelAnimationFrame = (id: any) => clearTimeout(id);

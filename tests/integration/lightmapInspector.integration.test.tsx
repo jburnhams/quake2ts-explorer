@@ -3,7 +3,7 @@ import { render, screen } from '@testing-library/react';
 import { BspAnalyzer } from '@/src/components/BspAnalyzer';
 import { PakService } from '@/src/services/pakService';
 import '@testing-library/jest-dom';
-import { act } from 'react-dom/test-utils';
+import { act } from 'react';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => ({

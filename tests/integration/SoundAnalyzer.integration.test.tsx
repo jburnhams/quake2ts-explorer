@@ -51,6 +51,14 @@ Object.defineProperty(window, 'AudioContext', {
     value: MockAudioContext
 });
 
+// Mock AssetCrossRefService
+vi.mock('../../src/services/assetCrossRefService', () => ({
+    AssetCrossRefService: class {
+        constructor() {}
+        findSoundUsage = vi.fn().mockResolvedValue([]);
+    }
+}));
+
 // Mock other heavy components
 vi.mock('../../src/components/UniversalViewer/UniversalViewer', () => ({
     UniversalViewer: () => <div data-testid="universal-viewer" />
@@ -92,17 +100,24 @@ describe('SoundAnalyzer Integration', () => {
 
         const filePath = 'sound/test.wav';
 
-        render(
-            <PreviewPanel
-                parsedFile={parsedFile}
-                filePath={filePath}
-                pakService={pakServiceMock}
-            />
-        );
+        await act(async () => {
+            render(
+                <PreviewPanel
+                    parsedFile={parsedFile}
+                    filePath={filePath}
+                    pakService={pakServiceMock}
+                />
+            );
+        });
 
         expect(screen.getByTestId('sound-analyzer')).toBeInTheDocument();
         expect(screen.getByText('test.wav')).toBeInTheDocument();
         expect(screen.getByTestId('waveform-canvas')).toBeInTheDocument();
         expect(screen.getByTestId('frequency-spectrum')).toBeInTheDocument();
+
+        // Wait for usage analysis to complete to avoid act warning
+        await waitFor(() => {
+            expect(screen.queryByText('Scanning...')).not.toBeInTheDocument();
+        });
     });
 });

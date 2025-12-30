@@ -5,6 +5,7 @@ import { PakService } from '@/src/services/pakService';
 import * as screenshotService from '@/src/services/screenshotService';
 import { createWebGLContext } from '@quake2ts/engine';
 import { Md2Adapter } from '@/src/components/UniversalViewer/adapters/Md2Adapter';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
 
 // Mock dependencies
 vi.mock('@quake2ts/engine', () => ({
@@ -44,7 +45,7 @@ vi.mock('@/src/components/UniversalViewer/ViewerControls', () => {
 
 describe('Screenshot Integration', () => {
   let mockPakService: PakService;
-  let mockGlContext: any;
+  let mockGl: any;
   let mockMd2Adapter: any;
 
   beforeEach(() => {
@@ -52,62 +53,18 @@ describe('Screenshot Integration', () => {
 
     mockPakService = {} as PakService;
 
-    mockGlContext = {
-      gl: {
-        clearColor: vi.fn(),
-        clear: vi.fn(),
-        enable: vi.fn(),
-        viewport: vi.fn(),
-        createShader: vi.fn().mockReturnValue({}),
-        createProgram: vi.fn().mockReturnValue({}),
-        shaderSource: vi.fn(),
-        compileShader: vi.fn(),
-        attachShader: vi.fn(),
-        linkProgram: vi.fn(),
-        useProgram: vi.fn(),
-        getProgramParameter: vi.fn().mockReturnValue(true),
-        getShaderParameter: vi.fn().mockReturnValue(true),
-        getUniformLocation: vi.fn().mockReturnValue(1),
-        getAttribLocation: vi.fn().mockReturnValue(1),
-        enableVertexAttribArray: vi.fn(),
-        vertexAttribPointer: vi.fn(),
-        bindBuffer: vi.fn(),
-        createBuffer: vi.fn().mockReturnValue({}),
-        bufferData: vi.fn(),
-        deleteShader: vi.fn(),
-        deleteProgram: vi.fn(),
-        deleteBuffer: vi.fn(),
-        bindVertexArray: vi.fn(),
-        createVertexArray: vi.fn(),
-        drawArrays: vi.fn(),
-        createTexture: vi.fn(),
-        bindTexture: vi.fn(),
-        texParameteri: vi.fn(),
-        texImage2D: vi.fn(),
-        uniform1i: vi.fn(),
-        uniform1f: vi.fn(),
-        activeTexture: vi.fn(),
-        createFramebuffer: vi.fn().mockReturnValue({}),
-        bindFramebuffer: vi.fn(),
-        createRenderbuffer: vi.fn().mockReturnValue({}),
-        bindRenderbuffer: vi.fn(),
-        renderbufferStorage: vi.fn(),
-        framebufferTexture2D: vi.fn(),
-        framebufferRenderbuffer: vi.fn(),
-        checkFramebufferStatus: vi.fn().mockReturnValue(36053), // gl.FRAMEBUFFER_COMPLETE
-        deleteFramebuffer: vi.fn(),
-        deleteRenderbuffer: vi.fn(),
-        deleteTexture: vi.fn(),
-      },
-      canvas: {
-          width: 800,
-          height: 600,
-          addEventListener: vi.fn(),
-          removeEventListener: vi.fn(),
-          style: {},
-      }
+    // Use test-utils for WebGL mock
+    mockGl = createMockWebGL2Context();
+    // Add canvas mock that is missing in the return type but present in implementation/needed
+    mockGl.canvas = {
+        width: 800,
+        height: 600,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+        style: {},
     };
-    (createWebGLContext as vi.Mock).mockReturnValue(mockGlContext);
+
+    (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
 
     mockMd2Adapter = {
       load: vi.fn().mockResolvedValue(undefined),

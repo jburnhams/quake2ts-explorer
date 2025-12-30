@@ -3,51 +3,13 @@ import { render, act } from '@testing-library/react';
 import { UniversalViewer } from '../../src/components/UniversalViewer/UniversalViewer';
 import { PakService, ParsedFile } from '../../src/services/pakService';
 import { EntityEditorService, SelectionMode } from '../../src/services/entityEditorService';
-import { BspMap, BspEntity } from '@quake2ts/engine';
+import { BspMap, BspEntity, createWebGLContext } from '@quake2ts/engine';
+import { createMockWebGL2Context } from '@quake2ts/test-utils';
 
 // Mock engine dependencies
 vi.mock('@quake2ts/engine', () => {
     return {
-        createWebGLContext: vi.fn(() => ({ gl: {
-            viewport: vi.fn(),
-            clearColor: vi.fn(),
-            clear: vi.fn(),
-            enable: vi.fn(),
-            getExtension: vi.fn(),
-            createShader: vi.fn(),
-            shaderSource: vi.fn(),
-            compileShader: vi.fn(),
-            getShaderParameter: vi.fn(() => true),
-            createProgram: vi.fn(),
-            attachShader: vi.fn(),
-            linkProgram: vi.fn(),
-            getProgramParameter: vi.fn(() => true),
-            createBuffer: vi.fn(),
-            bindBuffer: vi.fn(),
-            bufferData: vi.fn(),
-            enableVertexAttribArray: vi.fn(),
-            vertexAttribPointer: vi.fn(),
-            createTexture: vi.fn(),
-            bindTexture: vi.fn(),
-            texImage2D: vi.fn(),
-            texParameteri: vi.fn(),
-            generateMipmap: vi.fn(),
-            getUniformLocation: vi.fn(),
-            getAttribLocation: vi.fn(),
-            useProgram: vi.fn(),
-            uniformMatrix4fv: vi.fn(),
-            uniform1i: vi.fn(),
-            uniform1f: vi.fn(),
-            uniform3fv: vi.fn(),
-            drawElements: vi.fn(),
-            createVertexArray: vi.fn(),
-            bindVertexArray: vi.fn(),
-            deleteBuffer: vi.fn(),
-            deleteTexture: vi.fn(),
-            deleteProgram: vi.fn(),
-            deleteShader: vi.fn(),
-            deleteVertexArray: vi.fn(),
-        } })),
+        createWebGLContext: vi.fn(),
         Camera: vi.fn().mockImplementation(() => ({
             projectionMatrix: [],
             viewMatrix: [],
@@ -110,6 +72,9 @@ describe('Entity Manipulation Integration', () => {
             readFile: vi.fn(),
             getPalette: vi.fn()
         } as any;
+
+        const mockGl = createMockWebGL2Context();
+        (createWebGLContext as vi.Mock).mockReturnValue({ gl: mockGl });
     });
 
     test('Loads BSP, populates EntityEditorService, and selects entity on click', async () => {
